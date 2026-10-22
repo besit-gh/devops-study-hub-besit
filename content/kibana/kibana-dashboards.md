@@ -13,18 +13,18 @@ exercises: 3
 
 Система визуализации Kibana построена непосредственно на агрегациях Elasticsearch. Каждая панель дашборда — это запрос. Перетаскивая поле на холст Lens, вы настраиваете bucket- или metric-агрегацию, которая выполняется над индексом Elasticsearch. Понимание этой связи помогает строить точные дашборды и избегать бессмысленных показателей, например усреднения перцентилей или использования Terms-агрегации там, где нужна Date histogram.
 
-In the broader DevOps toolchain, Kibana dashboards sit at the observability presentation layer alongside Grafana (which typically fronts Prometheus/Loki). Kibana's strength is log-centric workflows: correlating structured log fields, drilling from a high-level error rate chart into the raw log events that caused it, and filtering by arbitrary field combinations without writing queries manually. It complements but does not replace a metrics-focused tool like Grafana. Many teams run both.
+В стеке DevOps дашборды Kibana находятся на уровне визуализации наблюдаемости наряду с Grafana, которая обычно работает с Prometheus и Loki. Сильная сторона Kibana — работа с журналами: сопоставление структурированных полей, переход от графика общей частоты ошибок к исходным записям и фильтрация по сочетаниям полей без ручного написания запросов. Kibana дополняет Grafana, но не заменяет ориентированный на метрики инструмент. Многие команды используют оба решения.
 
 ---
 
 ## Основные понятия
 
-### Lens Editor
+### Редактор Lens
 
-Lens is Kibana's primary visualization builder, replacing the older Visualize editor (still present but deprecated in most distributions). Lens uses a drag-and-drop interface and infers appropriate visualization types as you add fields, reducing configuration friction while still exposing full aggregation control when you need it.
+Lens — основной инструмент создания визуализаций в Kibana, заменивший старый редактор Visualize, который во многих дистрибутивах уже считается устаревшим. В Lens используется интерфейс перетаскивания: по мере добавления полей система предлагает подходящий тип визуализации. Это упрощает настройку, сохраняя возможность полностью управлять агрегациями.
 
-**Opening Lens:**
-- From a dashboard: **Edit mode → Create visualization**
+**Как открыть Lens:**
+- На дашборде: **Edit mode → Create visualization**
 - Standalone: **Visualize Library → Create visualization → Lens**
 
 **Core Lens interface elements:**
