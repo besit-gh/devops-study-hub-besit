@@ -237,9 +237,9 @@ jobs:
 }
 ```
 
-**Gotcha:** using `StringLike` with a wildcard (`repo:myorg/*`) instead of `StringEquals` for the `sub` condition allows any repo in your org to assume the role. Scope it to the exact repo and branch unless you deliberately want org-wide access.
+**Важно:** использование `StringLike` с шаблоном (`repo:myorg/*`) вместо `StringEquals` в условии `sub` позволяет любому репозиторию организации принять эту роль. Ограничивайте условие конкретным репозиторием и веткой, если намеренно не предоставляете доступ всей организации.
 
-**Registering the GitHub OIDC provider in AWS** — this is a one-time setup per account:
+**Регистрация провайдера GitHub OIDC в AWS** — это однократная настройка для каждого аккаунта:
 
 ```bash
 # Get the thumbprint of the GitHub OIDC endpoint (required by AWS)
@@ -255,7 +255,7 @@ aws iam create-open-id-connect-provider \
   --thumbprint-list "$THUMBPRINT"
 ```
 
-For GCP, the equivalent is Workload Identity Federation:
+В GCP аналогичный механизм называется Workload Identity Federation:
 
 ```bash
 # Create a Workload Identity Pool for GitHub Actions
@@ -283,9 +283,9 @@ gcloud iam service-accounts add-iam-policy-binding \
 
 ---
 
-### MFA and Root Account Hardening
+### MFA и усиление защиты root-аккаунта
 
-The AWS root account has unconditional access to everything including canceling the account, changing billing, and bypassing SCPs. It must be treated as a break-glass credential: strong hardware MFA, no access keys, and rarely used.
+Root-аккаунт AWS имеет безусловный доступ ко всему, включая закрытие аккаунта, изменение платёжных настроек и обход SCP. Рассматривайте его как аварийную учётную запись: используйте надёжный аппаратный MFA, не создавайте ключи доступа и входите под ним только в исключительных случаях.
 
 | Control | Root Account | IAM Users | IAM Roles |
 |---|---|---|---|
