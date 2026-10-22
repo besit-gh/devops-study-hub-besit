@@ -36,14 +36,14 @@ exercises: 4
 - Слои Docker-образа (секреты, добавленные командами `RUN`, могут сохраниться и быть обнаружены даже через `docker history --no-trunc`)
 - `ENV` instructions in Dockerfiles
 - YAML-файлы конвейеров CI/CD в открытом виде (используйте встроенное хранилище секретов платформы)
-- Kubernetes `ConfigMap` objects (use `Secret` objects, and enable envelope encryption at rest)
-- Log output — even partial values enable brute-force attacks
+- Объекты `ConfigMap` в Kubernetes (используйте `Secret` и включайте envelope encryption для данных в покое).
+- Вывод журналов: даже частичные значения могут помочь атаке перебором.
 
-**The git history problem:** Running `git filter-repo` or BFG Cleaner to remove a secret from history does not protect you if the repo was ever cloned or if GitHub/GitLab cached the commit. Treat any leaked credential as compromised and rotate it immediately, regardless of whether you cleaned the history.
+**Проблема истории Git:** удаление секрета из истории с помощью `git filter-repo` или BFG Cleaner не защитит вас, если репозиторий уже клонировали или GitHub/GitLab сохранил коммит в кэше. Считайте любые утёкшие учётные данные скомпрометированными и немедленно замените их, даже если очистили историю.
 
 ---
 
-### HashiCorp Vault Architecture
+### Архитектура HashiCorp Vault
 
 Understanding Vault's internals prevents misconfiguration surprises in production.
 
