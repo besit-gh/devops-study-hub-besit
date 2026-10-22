@@ -101,7 +101,7 @@ instance_info{role="frontend"}
 
 ### Операторы агрегации
 
-Aggregations collapse or group instant vectors across label dimensions.
+Агрегации объединяют или группируют мгновенные векторы по измерениям меток.
 
 | Function | Description |
 |----------|-------------|
@@ -114,7 +114,7 @@ Aggregations collapse or group instant vectors across label dimensions.
 | `quantile(φ, v)` | φ-quantile across series (not histogram!) |
 | `stddev()` | Standard deviation |
 
-**`by` and `without` clauses** control which labels are preserved in the result:
+**Операторы `by` и `without`** определяют, какие метки сохраняются в результате:
 
 ```promql
 # Total request rate across all instances of the "app" job
@@ -130,11 +130,11 @@ sum without(instance) (rate(http_requests_total[5m]))
 topk(5, sum by(handler) (rate(http_requests_total[5m])))
 ```
 
-The aggregation drops all labels not listed in `by()`. If you want to group by `job` and `handler`, list both: `sum by(job, handler)`.
+Агрегация удаляет все метки, не перечисленные в `by()`. Чтобы сгруппировать данные по `job` и `handler`, укажите обе метки: `sum by(job, handler)`.
 
-### Key Functions
+### Основные функции
 
-**rate() and irate():**
+**`rate()` и `irate()`:**
 
 ```promql
 # rate(): per-second average rate over the window — smooth, use for alerts and graphs
