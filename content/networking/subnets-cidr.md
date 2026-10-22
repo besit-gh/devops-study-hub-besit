@@ -214,7 +214,7 @@ print(check_overlap("172.16.0.0/12", "172.20.0.0/16"))  # True — 172.20 is ins
 
 Суперсеть (или агрегированный блок) — это крупный диапазон, включающий несколько меньших. Агрегация маршрутов сокращает таблицу маршрутизации: множество конкретных маршрутов заменяются одним суммарным. Это важно для масштабирования BGP и упрощения правил групп безопасности.
 
-`10.0.0.0/16` is the supernet for all of these:
+`10.0.0.0/16` — суперсеть для всех следующих диапазонов:
 - `10.0.1.0/24`
 - `10.0.2.0/24`
 - `10.0.128.0/17`
@@ -252,7 +252,7 @@ print(collapsed2)  # [IPv4Network('10.0.0.0/24'), IPv4Network('10.0.2.0/24')]
 
 Чтобы разделить полученный адресный блок, увеличьте длину префикса. Каждый дополнительный бит делит адресное пространство пополам.
 
-Splitting `10.0.0.0/24` into four `/26` subnets:
+Разделение `10.0.0.0/24` на четыре подсети `/26`:
 
 | Subnet | CIDR            | Host range                | Usable hosts |
 |--------|-----------------|---------------------------|--------------|
@@ -290,7 +290,7 @@ for subnet in parent.subnets(prefixlen_diff=1):
 - Разделены по уровням (public / private / data) для управления группами безопасности и NACL
 - Спроектированы с учётом расширения: изменение CIDR работающей VPC — сложная задача
 
-Example layout for `10.0.0.0/16` across two AZs with three tiers:
+Пример структуры `10.0.0.0/16` в двух зонах доступности с тремя уровнями:
 
 | Subnet name | CIDR           | AZ         | Tier    | Purpose                      |
 |-------------|----------------|------------|---------|------------------------------|
@@ -301,14 +301,14 @@ Example layout for `10.0.0.0/16` across two AZs with three tiers:
 | data-1a     | 10.0.48.0/24   | us-east-1a | Data    | RDS, ElastiCache             |
 | data-1b     | 10.0.49.0/24   | us-east-1b | Data    | RDS, ElastiCache             |
 
-The private subnets use `/20` (4,094 usable addresses each) rather than `/24` — intentional when EKS nodes each consume dozens of pod IPs via AWS VPC CNI. The gap between `10.0.1.0/24` and `10.0.16.0/20` (`10.0.2.0` through `10.0.15.255`) is deliberately reserved for a third AZ.
+Для частных подсетей используется `/20` (по 4094 доступных адреса), а не `/24`. Это намеренно: каждый узел EKS расходует десятки IP-адресов Pod через AWS VPC CNI. Промежуток между `10.0.1.0/24` и `10.0.16.0/20` (от `10.0.2.0` до `10.0.15.255`) зарезервирован для третьей зоны доступности.
 
-**Routing rules for each tier:**
-- Public subnets: route `0.0.0.0/0 → internet gateway`; instances can have public IPs
-- Private subnets: route `0.0.0.0/0 → NAT gateway` (which lives in the public subnet); no inbound from internet
-- Data subnets: no internet route at all; only VPC-local routes; access controlled by security groups
+**Правила маршрутизации для каждого уровня:**
+- Публичные подсети: маршрут `0.0.0.0/0 → internet gateway`; экземпляры могут иметь публичные IP-адреса.
+- Частные подсети: маршрут `0.0.0.0/0 → NAT gateway` (шлюз находится в публичной подсети); входящие подключения из интернета запрещены.
+- Подсети данных: маршрута в интернет нет, доступны только локальные маршруты VPC; доступ контролируется группами безопасности.
 
-**Reserve the upper half of your VPC CIDR.** With `10.0.0.0/16`, you have 256 possible `/24` subnets. Use the low range now; reserve `10.0.128.0/17` for future expansion — adding AZs, VPC peering, or Transit Gateway attachments that require non-overlapping space.
+**Зарезервируйте верхнюю половину CIDR VPC.** В `10.0.0.0/16` помещается 256 подсетей `/24`. Сейчас используйте нижнюю часть, а `10.0.128.0/17` оставьте для расширения: добавления зон доступности, пиринга VPC или подключений Transit Gateway, которым нужны непересекающиеся диапазоны.
 
 ```hcl
 # Terraform example: defining subnets programmatically
@@ -357,9 +357,9 @@ resource "aws_subnet" "private" {
 }
 ```
 
-### Using `ipcalc` and `sipcalc` for Quick Verification
+### Быстрая проверка с помощью `ipcalc` и `sipcalc`
 
-You shouldn't do subnet math by hand in production. Use command-line tools to verify your calculations before committing to Terraform or a YAML config.
+В production не рассчитывайте подсети вручную. Перед фиксацией конфигурации Terraform или YAML проверьте вычисления командными инструментами.
 
 ```bash
 # ipcalc: shows network, broadcast, first/last host, and mask
@@ -396,7 +396,7 @@ print(ip in net)  # True
 
 ## Примеры
 
-### Example 1: Auditing a VPC for Overlapping Subnets Before Peering
+### Пример 1. Проверка VPC на пересекающиеся подсети перед настройкой пиринга
 
 You want to peer two VPCs. Before requesting the peering, verify their subnets don't overlap — AWS will reject the peering if they do, but better to catch it before writing the Terraform.
 
