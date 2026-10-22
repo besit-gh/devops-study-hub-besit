@@ -173,7 +173,7 @@ export default function CodePlayground({ initialCode, initialLanguage, expectedO
               className="text-xs px-4 py-1.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white font-medium rounded-full transition-colors flex items-center gap-1.5"
             >
               <span>{checking ? '…' : '✓'}</span>
-              <span>{checking ? 'Checking' : 'Check'}</span>
+              <span>{checking ? 'Проверка…' : 'Проверить'}</span>
               {!checking && <span className="text-amber-200 text-[10px]">Ctrl+⇧+Enter</span>}
             </button>
           )}
@@ -192,7 +192,7 @@ export default function CodePlayground({ initialCode, initialLanguage, expectedO
       {/* Answer */}
       {answer !== null && (
         <div className="px-4 py-3 bg-blue-950/40 border-b border-blue-800/50">
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-blue-400 mb-2">Solution</div>
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-blue-400 mb-2">Решение</div>
           <div className="text-xs text-blue-100 prose prose-xs prose-invert max-w-none
             prose-headings:text-blue-200 prose-headings:font-semibold prose-headings:text-sm
             prose-p:text-blue-100 prose-p:leading-relaxed
