@@ -2,7 +2,7 @@
 
 ## Основы PromQL
 
-| Query | Description |
+| Запрос | Описание |
 |-------|-------------|
 | `metric_name` | Мгновенный вектор — текущее значение |
 | `metric_name[5m]` | Вектор диапазона — последние 5 минут |
@@ -14,7 +14,7 @@
 
 ## Операторы агрегации
 
-| Query | Description |
+| Запрос | Описание |
 |-------|-------------|
 | `sum(metric)` | Сумма всех рядов |
 | `sum by (label) (metric)` | Сумма с группировкой по метке |
@@ -27,7 +27,7 @@
 
 ## Функции скорости и изменения
 
-| Query | Description |
+| Запрос | Описание |
 |-------|-------------|
 | `rate(counter[5m])` | Скорость в секунду за 5 минут (сглаженная) |
 | `irate(counter[5m])` | Мгновенная скорость по двум последним выборкам |
@@ -38,7 +38,7 @@
 
 ## Распространённые метрики
 
-| Metric | Description |
+| Метрика | Описание |
 |--------|-------------|
 | `up` | Статус сбора метрик: 1 — доступен, 0 — недоступен |
 | `scrape_duration_seconds` | Длительность сбора метрик |
@@ -53,7 +53,7 @@
 
 ## Командная строка alertmanager
 
-| Command | Description |
+| Command | Описание |
 |---------|-------------|
 | `amtool alert` | Список активных оповещений |
 | `amtool alert query alertname=name` | Фильтр оповещений |
@@ -65,15 +65,15 @@
 
 ## promtool
 
-| Command | Description |
+| Command | Описание |
 |---------|-------------|
 | `promtool check config prometheus.yml` | Проверить конфигурацию |
 | `promtool check rules rules.yml` | Проверить правила оповещений |
-| `promtool query instant http://localhost:9090 'up'` | Run instant query |
-| `promtool query range http://localhost:9090 'up'` | Run range query |
-| `promtool test rules tests.yml` | Unit test alert rules |
+| `promtool query instant http://localhost:9090 'up'` | Выполнить мгновенный запрос |
+| `promtool query range http://localhost:9090 'up'` | Выполнить запрос по диапазону времени |
+| `promtool test rules tests.yml` | Модульно проверить правила оповещений |
 
-## Recording Rule Patterns
+## Шаблоны правил записи
 
 ```yaml
 groups:
