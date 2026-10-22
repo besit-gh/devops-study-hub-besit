@@ -23,9 +23,9 @@ on:
   push:
     branches: [main]
   pull_request:
-  workflow_dispatch:          # Manual trigger
+  workflow_dispatch:          # Ручной запуск
   schedule:
-    - cron: '0 2 * * *'      # Nightly at 2am UTC
+    - cron: '0 2 * * *'      # Каждую ночь в 02:00 UTC
 
 jobs:
   build:
@@ -48,19 +48,19 @@ jobs:
 
 ## GitHub Actions — распространённые шаблоны
 
-| Pattern | Description |
+| Шаблон | Description |
 |---------|-------------|
-| `${{ secrets.MY_SECRET }}` | Reference secret |
-| `${{ vars.MY_VAR }}` | Reference variable |
-| `${{ github.ref_name }}` | Current branch/tag name |
-| `${{ github.sha }}` | Current commit SHA |
-| `needs: [job1, job2]` | Wait for other jobs |
-| `if: github.ref == 'refs/heads/main'` | Condition on step/job |
-| `continue-on-error: true` | Don't fail job on step failure |
-| `timeout-minutes: 10` | Job timeout |
-| `strategy.matrix` | Parallel matrix builds |
-| `environment: production` | Require deployment approval |
-| `concurrency: ci-${{ github.ref }}` | Cancel older runs |
+| `${{ secrets.MY_SECRET }}` | Обратиться к секрету |
+| `${{ vars.MY_VAR }}` | Обратиться к переменной |
+| `${{ github.ref_name }}` | Имя текущей ветки или тега |
+| `${{ github.sha }}` | SHA текущего коммита |
+| `needs: [job1, job2]` | Дождаться завершения других заданий |
+| `if: github.ref == 'refs/heads/main'` | Условие для шага или задания |
+| `continue-on-error: true` | Не завершать задание с ошибкой при сбое шага |
+| `timeout-minutes: 10` | Тайм-аут задания |
+| `strategy.matrix` | Параллельная матрица сборок |
+| `environment: production` | Требовать подтверждение развёртывания |
+| `concurrency: ci-${{ github.ref }}` | Отменять предыдущие запуски |
 
 ## Jenkins — Pipeline (Declarative)
 
@@ -91,20 +91,20 @@ pipeline {
 
 | Command | Description |
 |---------|-------------|
-| `java -jar jenkins-cli.jar -s URL build JOB` | Trigger build |
-| `java -jar jenkins-cli.jar -s URL list-jobs` | List jobs |
-| `java -jar jenkins-cli.jar -s URL console JOB` | View console output |
-| `java -jar jenkins-cli.jar -s URL get-job JOB` | Export job XML |
-| `jenkins-jobs update jobs/` | Apply JJB configs |
+| `java -jar jenkins-cli.jar -s URL build JOB` | Запустить сборку |
+| `java -jar jenkins-cli.jar -s URL list-jobs` | Список заданий |
+| `java -jar jenkins-cli.jar -s URL console JOB` | Просмотреть вывод консоли |
+| `java -jar jenkins-cli.jar -s URL get-job JOB` | Экспортировать задание в XML |
+| `jenkins-jobs update jobs/` | Применить конфигурации JJB |
 
 ## ArgoCD CLI
 
 | Command | Description |
 |---------|-------------|
-| `argocd login host` | Login to ArgoCD |
-| `argocd app list` | List applications |
-| `argocd app get name` | Application status |
-| `argocd app sync name` | Sync app to git state |
-| `argocd app diff name` | Show drift from desired state |
-| `argocd app rollback name REVISION` | Roll back to revision |
-| `argocd app history name` | Rollout history |
+| `argocd login host` | Войти в ArgoCD |
+| `argocd app list` | Список приложений |
+| `argocd app get name` | Состояние приложения |
+| `argocd app sync name` | Синхронизировать приложение с состоянием Git |
+| `argocd app diff name` | Показать отклонения от желаемого состояния |
+| `argocd app rollback name REVISION` | Откатиться к ревизии |
+| `argocd app history name` | История развёртываний |
