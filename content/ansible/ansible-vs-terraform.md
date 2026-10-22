@@ -224,15 +224,15 @@ cd infra/
 terraform init -input=false
 terraform apply -auto-approve
 
-# Extract Terraform outputs as plain strings
+# Извлечь выходные значения Terraform в виде обычных строк
 DB_HOST=$(terraform output -raw db_host)
 REDIS_URL=$(terraform output -raw redis_url)
-# -json gives a JSON array; jq converts it to newline-separated IPs
+# -json возвращает массив JSON; jq преобразует его в список IP-адресов по одному в строке
 WEB_IPS=$(terraform output -json web_private_ips | jq -r '.[]')
 
-# Build an Ansible inventory dynamically from Terraform outputs.
-# A production pipeline would use a dynamic inventory plugin instead,
-# but this approach is transparent and easy to debug.
+# Динамически сформировать inventory Ansible из выходных значений Terraform.
+# В production-пайплайне вместо этого лучше использовать плагин динамического inventory,
+# но такой способ нагляден и прост в диагностике.
 INVENTORY_FILE=$(mktemp /tmp/inventory.XXXXXX.ini)
 trap "rm -f $INVENTORY_FILE" EXIT  # всегда удалять временный файл
 
@@ -261,54 +261,54 @@ ansible-playbook \
 # ansible/inventory/terraform.yml
 plugin: cloud.terraform.terraform_provider
 project_path: ../infra/
-# Reads infra/terraform.tfstate and exposes resources as inventory hosts.
-# Instances tagged with ansible_group=webservers appear in the [webservers] group.
-# Requires: ansible-galaxy collection install cloud.terraform
+# Читает infra/terraform.tfstate и представляет ресурсы как узлы inventory.
+# Экземпляры с тегом ansible_group=webservers попадут в группу [webservers].
+# Требуется установить коллекцию: ansible-galaxy collection install cloud.terraform
 ```
 
 **Почему бы не использовать Terraform для всего?** Некоторые команды применяют provisioner `remote-exec` или `local-exec`, чтобы обойтись одним инструментом. Обычно это создаёт проблемы: теряются идемпотентность Ansible, повторные попытки, шаблоны и возможность повторно настраивать систему независимо от жизненного цикла инфраструктуры. Поддерживать два инструмента обычно дешевле, чем в два часа ночи отлаживать неправильно настроенные provisioner.
 
-### Idempotency: Where Each Tool Stands
+### Идемпотентность: особенности каждого инструмента
 
 Идемпотентность означает, что многократное выполнение одной операции приводит к одному и тому же результату. Оба инструмента стремятся к этому, но используют разные механизмы; у каждого есть характерные ошибки, о которых важно знать.
 
 **Идемпотентность Terraform** обеспечивается самим движком. Файл состояния вместе с чтением актуального состояния через API (этап refresh) показывает Terraform, какие ресурсы существуют. Если ресурс соответствует конфигурации, API-вызов не выполняется. Это поведение предусмотрено по умолчанию — не нужно писать дополнительную защитную логику в HCL.
 
 **Идемпотентность Ansible** зависит от конкретного модуля. Хорошо написанные модули проверяют состояние перед выполнением действий:
-- `ansible.builtin.apt` checks if the package is already at the right version
-- `ansible.builtin.template` checksums the rendered file against what's on disk
-- `ansible.builtin.service` reads current service state before issuing start/stop
+- `ansible.builtin.apt` проверяет, установлена ли нужная версия пакета
+- `ansible.builtin.template` сравнивает контрольную сумму созданного шаблоном файла с файлом на диске
+- `ansible.builtin.service` проверяет текущее состояние службы перед запуском или остановкой
 
-The idempotency traps in Ansible all involve `command` and `shell`:
+Основные проблемы с идемпотентностью в Ansible связаны с модулями `command` и `shell`:
 
 ```yaml
-# ❌ NOT idempotent — appends every time the playbook runs
-- name: Add line to config
+# ❌ Неидемпотентно — строка добавляется при каждом запуске плейбука
+- name: Добавить строку в конфигурацию
   ansible.builtin.command:
     cmd: echo "option=value" >> /etc/myapp/config.ini
 
-# ✅ Idempotent — checks if line exists before adding
-- name: Ensure option is set in config
+# ✅ Идемпотентно — перед добавлением проверяется, существует ли строка
+- name: Убедиться, что параметр задан в конфигурации
   ansible.builtin.lineinfile:
     path: /etc/myapp/config.ini
     line: "option=value"
     state: present
 
-# ❌ NOT idempotent without changed_when — always reports "changed"
-# and always triggers any downstream handlers unnecessarily
-- name: Run migration
+# ❌ Без changed_when неидемпотентно — всегда сообщает об изменении
+# и без необходимости запускает связанные обработчики
+- name: Выполнить миграцию
   ansible.builtin.command:
     cmd: /opt/myapp/bin/migrate
 
-# ✅ Use changed_when to control when Ansible considers this a change
-- name: Run migration (only if needed)
+# ✅ Используйте changed_when, чтобы указать, когда Ansible должен считать действие изменением
+- name: Выполнить миграцию (only if needed)
   ansible.builtin.command:
     cmd: /opt/myapp/bin/migrate --check-first
   register: migrate_result
   changed_when: "'Applied' in migrate_result.stdout"
 
-# ✅ Use creates: to skip a command if its output artifact already exists
-- name: Compile assets (skip if already done)
+# ✅ Используйте creates:, чтобы пропустить команду, если её результат уже существует
+- name: Собрать ресурсы (пропустить, если уже собрано)
   ansible.builtin.command:
     cmd: /opt/myapp/bin/compile-assets
     creates: /opt/myapp/public/assets/manifest.json
@@ -324,18 +324,18 @@ The idempotency traps in Ansible all involve `command` and `shell`:
   changed_when: false   # это операция чтения, а не изменение
 ```
 
-**Summary of idempotency approach by tool:**
+**Сравнение подходов к идемпотентности:**
 
-| Scenario | Terraform behavior | Ansible behavior |
+| Сценарий | Поведение Terraform | Поведение Ansible |
 |---|---|---|
-| Resource already matches config | No-op, no API call | Depends on module — most skip, `command` acts |
-| Resource drifted from config | Detects and corrects | Detects and corrects (for supported modules) |
-| Resource deleted externally | Detects on refresh, recreates | Doesn't know — module may create duplicate |
-| Script/command tasks | Not applicable | Not idempotent without `creates:` or `changed_when:` |
+| Ресурс уже соответствует конфигурации | Ничего не делать, без API-вызова | Зависит от модуля: большинство пропускают задачу, `command` выполняет команду |
+| Ресурс отклонился от конфигурации | Обнаруживает и исправляет | Обнаруживает и исправляет (для поддерживаемых модулей) |
+| Ресурс удалён извне | Обнаруживает при refresh и создаёт заново | Не знает об удалении — модуль может создать дубликат |
+| Скрипты и команды | Не применимо | Неидемпотентны без `creates:` или `changed_when:` |
 
-### When to Reach for Each Tool: Decision Heuristic
+### Как выбрать инструмент: практическая схема
 
-A practical mental flowchart for choosing the right tool:
+Практическая схема выбора подходящего инструмента:
 
 ```
 Is the task creating or destroying a cloud resource (instance, DB, network, DNS)?
@@ -429,11 +429,11 @@ output "web_public_dns" {
 ```
 
 ```bash
-# Provision the infrastructure
+# Создать инфраструктуру
 cd infra/
 terraform init
-terraform plan   # review what will be created
-terraform apply  # creates SG + EC2 instance
+terraform plan   # проверить, что будет создано
+terraform apply  # создать группу безопасности и экземпляр EC2
 
 # Capture the IP for use in the next step
 export WEB_IP=$(terraform output -raw web_public_ip)
@@ -473,7 +473,7 @@ echo "Server ready at: $WEB_IP"
 ```
 
 ```bash
-# Run Ansible against the IP Terraform gave us
+# Запустить Ansible для IP-адреса, полученного от Terraform
 ansible-playbook \
   -i "${WEB_IP}," \           # завершающая запятая означает, что inventory задаётся прямо в командной строке
   -u ec2-user \
@@ -560,14 +560,14 @@ This shows how Ansible handles a fleet update that Terraform cannot — updating
 ```
 
 ```bash
-# Trigger a rolling deploy to all webservers
+# Запустить последовательное развёртывание на всех веб-серверах
 ansible-playbook \
   -i inventory/production.ini \
   --extra-vars "app_version=v2.4.1" \
   ansible/rolling-deploy.yml
 
-# Watch it progress: each host is drained, updated, health-checked, re-added
-# If any host's health check fails, the play stops before touching remaining hosts
+# Следить за ходом развёртывания: каждый узел исключается из балансировки, обновляется, проходит проверку и возвращается в пул
+# Если проверка узла не пройдёт, play остановится до обновления остальных узлов
 ```
 
 ---
@@ -652,7 +652,7 @@ ansible-playbook \
   --extra-vars "db_host=${DB_HOST} db_port=${DB_PORT} db_password=${DB_PASSWORD}" \
   ansible/configure-app.yml
 
-# Verify the app can reach the database
+# Проверить, может ли приложение подключиться к базе данных
 ansible webservers -i inventory/production.ini \
   -m command -a "/opt/myapp/bin/check-db-connection"
 ```
