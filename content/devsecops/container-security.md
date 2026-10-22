@@ -13,15 +13,15 @@ exercises: 4
 
 Основной принцип безопасности контейнеров — минимальные привилегии: контейнер должен иметь ровно те права, которые нужны для его задачи, и не больше. Это означает запуск не от root, файловые системы только для чтения там, где это возможно, минимальные базовые образы, удаление ненужных Linux capabilities и строго ограниченные сетевые правила. Каждое ограничение уменьшает масштаб последствий компрометации. Глубокоэшелонированная защита должна гарантировать, что даже при эксплуатации CVE в приложении злоумышленник окажется в ограниченной среде без shell, права записи и сетевого доступа к базе данных.
 
-Container security fits into the DevSecOps toolchain as a set of gates at multiple pipeline stages. Image scanning runs in CI alongside tests. Dockerfile linting and `trivy config` catch misconfigurations before the image is built. Kubernetes admission controllers (PodSecurityAdmission, OPA/Gatekeeper, Kyverno) enforce policy at deploy time and prevent non-compliant workloads from ever reaching a node. Network policies are infrastructure-as-code, versioned alongside application manifests. The result is security that is automated, auditable, and hard to bypass accidentally.
+Безопасность контейнеров встраивается в DevSecOps как набор проверок на разных этапах конвейера. Сканирование образов выполняется в CI вместе с тестами. Линтер Dockerfile и команда `trivy config` выявляют неверные настройки ещё до сборки образа. Контроллеры допуска Kubernetes (PodSecurityAdmission, OPA/Gatekeeper, Kyverno) применяют политики при развёртывании и не позволяют несоответствующим требованиям рабочим нагрузкам попасть на узел. Сетевые политики хранятся как код инфраструктуры и версионируются вместе с манифестами приложения. В результате безопасность автоматизирована, проверяема и защищена от случайного обхода.
 
 ## Основные понятия
 
-### Image Scanning
+### Сканирование образов
 
-Image scanning inspects container images for known vulnerabilities (CVEs) in OS packages and language-level dependencies. Scanners work by extracting the image's software bill of materials (SBOM) — every installed package and its version — and matching it against CVE databases like NVD, GitHub Advisory, and OS-specific sources (Debian Security, Alpine secdb, etc.).
+Сканирование образов ищет известные уязвимости (CVE) в пакетах операционной системы и зависимостях языков программирования. Сканер формирует перечень компонентов образа (SBOM) — все установленные пакеты и их версии — и сопоставляет его с базами уязвимостей, например NVD, GitHub Advisory и источниками конкретных ОС (Debian Security, Alpine secdb и другими).
 
-**Trivy** is the most widely used open-source scanner. It handles OCI images, Dockerfiles, Helm charts, Kubernetes manifests, and Terraform configs with a single tool.
+**Trivy** — широко используемый сканер с открытым исходным кодом. Один инструмент проверяет OCI-образы, Dockerfile, чарты Helm, манифесты Kubernetes и конфигурации Terraform.
 
 ```bash
 # Install Trivy
@@ -46,7 +46,7 @@ trivy config ./Dockerfile
 trivy config ./k8s/
 ```
 
-**Docker Scout** is built into Docker Desktop and Docker Hub. It provides continuous monitoring: once an image is pushed, Scout re-evaluates it as new CVEs are published without requiring a re-scan.
+**Docker Scout** встроен в Docker Desktop и Docker Hub. Он обеспечивает непрерывный мониторинг: после отправки образа в реестр Scout повторно оценивает его при публикации новых CVE, не требуя запускать сканирование вручную.
 
 ```bash
 docker scout quickview myapp:latest                     # summary: critical/high/medium/low counts
@@ -54,7 +54,7 @@ docker scout cves myapp:latest                          # full CVE list with fix
 docker scout compare myapp:v1.1 --to myapp:v1.0        # diff vulnerabilities between versions
 ```
 
-#### Integrating Trivy into GitHub Actions CI
+#### Подключение Trivy к CI на GitHub Actions
 
 ```yaml
 - name: Build image
