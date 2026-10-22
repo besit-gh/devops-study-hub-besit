@@ -13,13 +13,13 @@ exercises: 3
 
 Для DevOps-инженера умение строить дашборды означает превращать сырые метрики — CPU, задержки, частоту ошибок и события развёртывания — в наглядную картину, по которой команда может действовать без ручного изучения CLI-вывода. Важно и сохранять дашборды как код: хранить в Git и развёртывать через CI, а не создавать вручную в интерфейсе и забывать. И визуальный дизайн, и воспроизводимость важны как в production, так и на собеседованиях.
 
-Grafana's dashboard model is built around a 24-column grid. Every panel occupies a rectangular region of the grid (`gridPos`). Understanding this model lets you build dashboards programmatically — as JSON — and version them alongside the infrastructure they monitor.
+Модель дашбордов Grafana основана на сетке из 24 столбцов. Каждая панель занимает прямоугольную область сетки (`gridPos`). Понимание этой модели позволяет создавать дашборды программно в формате JSON и хранить их версии вместе с описанием отслеживаемой инфраструктуры.
 
 ## Основные понятия
 
 ### Типы панелей
 
-Grafana ships several panel types out of the box. Choosing the right one determines whether data is legible or misleading.
+В Grafana есть несколько встроенных типов панелей. От правильного выбора зависит, будут ли данные понятными или вводящими в заблуждение.
 
 | Panel Type | Best For | Notes |
 |------------|----------|-------|
@@ -35,9 +35,9 @@ Grafana ships several panel types out of the box. Choosing the right one determi
 
 ### Creating a Panel — Step by Step
 
-Starting from a new or existing dashboard:
+Начните с нового или существующего дашборда:
 
-1. Click **+ Add panel** (top toolbar) → **Add a new panel**.
+1. Нажмите **+ Add panel** (на верхней панели инструментов), затем выберите **Add a new panel**.
 2. The **panel editor** opens. It has three regions:
    - **Left**: query editor and transformations.
    - **Center**: live preview of the panel.
