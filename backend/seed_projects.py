@@ -345,8 +345,8 @@ PROJECTS = [
                 "language": "bash",
                 "expected_output": "2",
                 "hints": [
-                    "Think about what text pattern uniquely identifies a merge commit in the git log output shown.",
-                    "Use `grep -c 'Merge'` to count lines containing the word 'Merge' in the input.",
+                    "Определите текстовый шаблон, однозначно обозначающий merge-коммит в приведённом выводе git log.",
+                    "Используйте `grep -c 'Merge'`, чтобы подсчитать строки, содержащие слово `Merge`.",
                 ],
             },
             {
@@ -361,8 +361,8 @@ PROJECTS = [
                 "language": "python",
                 "expected_output": "Synced",
                 "hints": [
-                    "Use `json.loads()` to parse the string, then navigate the nested dict to find the sync status field.",
-                    "Access `json.loads(s)['status']['sync']['status']` after `import json`.",
+                    "Разберите строку через `json.loads()`, затем пройдите по вложенному словарю до поля состояния синхронизации.",
+                    "После `import json` обратитесь к `json.loads(s)['status']['sync']['status']`.",
                 ],
             },
             {
@@ -370,19 +370,19 @@ PROJECTS = [
                 "title": "Написать манифест Application для Argo CD",
                 "type": "ai",
                 "prompt": (
-                    "Write a complete ArgoCD `Application` manifest that:\n"
-                    "- Deploys from a Git repo `https://github.com/org/k8s-manifests` path `apps/api-server`\n"
-                    "- Targets the `staging` namespace on the local cluster\n"
-                    "- Uses `automated` sync policy with self-healing and pruning enabled\n"
-                    "- Tracks the `main` branch\n\n"
+                    "Напишите полный манифест `Application` для Argo CD, который:\n"
+                    "- Развёртывает приложение из Git-репозитория `https://github.com/org/k8s-manifests`, каталог `apps/api-server`\n"
+                    "- Использует namespace `staging` в локальном кластере\n"
+                    "- Использует политику синхронизации `automated` с включёнными self-healing и pruning\n"
+                    "- Отслеживает ветку `main`\n\n"
                     "Explain the difference between ArgoCD's `Synced` and `Healthy` status fields, "
                     "and what it means when a resource is `OutOfSync` but `Healthy`."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "The `Application` CRD has three main spec sections: `source` (repoURL, path, targetRevision), `destination` (server, namespace), and `syncPolicy`.",
-                    "Key fields: `spec.source.targetRevision: main`, `spec.syncPolicy.automated.selfHeal: true`, `spec.syncPolicy.automated.prune: true`.",
+                    "CRD `Application` содержит три основные секции `spec`: `source` (repoURL, path, targetRevision), `destination` (server, namespace) и `syncPolicy`.",
+                    "Ключевые поля: `spec.source.targetRevision: main`, `spec.syncPolicy.automated.selfHeal: true`, `spec.syncPolicy.automated.prune: true`.",
                 ],
             },
             {
@@ -392,18 +392,18 @@ PROJECTS = [
                 "prompt": (
                     "Design a GitOps multi-environment promotion workflow for dev → staging → production "
                     "using a single Git repository.\n\n"
-                    "Cover:\n"
-                    "1. Directory structure for environment-specific manifests\n"
-                    "2. How image version promotion is triggered (manual PR vs automated image updater)\n"
-                    "3. How to prevent dev changes from accidentally reaching production\n"
-                    "4. What a rollback looks like in a GitOps model vs `kubectl rollout undo`\n\n"
-                    "Be specific: name files, branches, or tools where relevant."
+                    "Рассмотрите:\n"
+                    "1. Структуру каталогов для манифестов каждого окружения\n"
+                    "2. Как запускается продвижение версии образа (ручной PR или автоматический image updater)\n"
+                    "3. Как не допустить случайного попадания изменений dev в production\n"
+                    "4. Как выполняется откат в GitOps по сравнению с `kubectl rollout undo`\n\n"
+                    "Будьте конкретны: укажите имена файлов, веток и инструментов, где это уместно."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "The standard pattern is `apps/<service>/overlays/<env>` (Kustomize) or `values-<env>.yaml` (Helm); promotion means updating the image tag in the target env's config file via PR.",
-                    "GitOps rollback = revert the Git commit that changed the image tag (full audit trail); `kubectl rollout undo` bypasses Git and can cause drift — use it only for emergencies.",
+                    "Стандартный шаблон — `apps/<service>/overlays/<env>` для Kustomize или `values-<env>.yaml` для Helm. Продвижение означает обновление тега образа в конфигурации целевого окружения через PR.",
+                    "Откат в GitOps — это отмена Git-коммита, изменившего тег образа, с полной историей аудита. `kubectl rollout undo` обходит Git и может вызвать drift, поэтому используйте его только в экстренных случаях.",
                 ],
             },
         ],
