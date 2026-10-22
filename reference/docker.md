@@ -2,7 +2,7 @@
 
 ## Образы
 
-| Command | Description |
+| Команда | Назначение |
 |---------|-------------|
 | `docker build -t name:tag .` | Собрать образ из Dockerfile |
 | `docker build --no-cache -t name .` | Собрать без кэша |
@@ -18,7 +18,7 @@
 
 ## Контейнеры
 
-| Command | Description |
+| Команда | Назначение |
 |---------|-------------|
 | `docker run image` | Запустить контейнер |
 | `docker run -d image` | Запустить в фоновом режиме |
@@ -37,7 +37,7 @@
 
 ## Просмотр состояния и отладка
 
-| Command | Description |
+| Команда | Назначение |
 |---------|-------------|
 | `docker logs name` | Показать журналы контейнера |
 | `docker logs -f name` | Следить за журналом |
@@ -51,7 +51,7 @@
 
 ## Сети и тома
 
-| Command | Description |
+| Команда | Назначение |
 |---------|-------------|
 | `docker network ls` | Список сетей |
 | `docker network create mynet` | Создать сеть |
@@ -63,7 +63,7 @@
 
 ## Docker Compose
 
-| Command | Description |
+| Команда | Назначение |
 |---------|-------------|
 | `docker compose up` | Запустить службы |
 | `docker compose up -d` | Запустить в фоне |
@@ -78,7 +78,7 @@
 
 ## Шаблоны Dockerfile
 
-| Instruction | Description |
+| Инструкция | Назначение |
 |------------|-------------|
 | `FROM base:tag` | Базовый образ |
 | `RUN cmd` | Выполнить во время сборки |
