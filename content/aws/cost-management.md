@@ -185,9 +185,9 @@ aws budgets create-budget \
 
 **Не берите долгосрочные обязательства, пока не соберёте данные об использовании за 2–3 месяца.** Покупка Reserved Instance на три года для типа инстанса, который позже придётся изменить, может дорого обойтись. Используйте рекомендации Compute Optimizer, а также RI/Savings Plans в Cost Explorer только после стабилизации нагрузки.
 
-#### Spot Instances
+#### Spot-инстансы
 
-Spot instances run on AWS spare capacity. When AWS needs that capacity back, your instance receives a 2-minute interruption notice via instance metadata and EventBridge, then is stopped or terminated depending on your configuration.
+Spot-инстансы используют свободные мощности AWS. Когда AWS требуется вернуть эти мощности, экземпляр получает предупреждение о прерывании за 2 минуты через метаданные экземпляра и EventBridge, после чего останавливается или завершается в зависимости от конфигурации.
 
 ```bash
 # Launch a spot instance with stop-on-interruption behavior
@@ -221,9 +221,9 @@ aws ec2 describe-spot-price-history \
   --output table
 ```
 
-**Interruption handling is mandatory, not optional.** Your application must handle `SIGTERM` gracefully. A termination handler should checkpoint state (write progress to SQS or DynamoDB), drain in-flight work, and exit cleanly within 2 minutes. CI/CD workers, EMR nodes, and batch processing jobs are natural fits. Databases and stateful services are not.
+**Обработка прерывания обязательна.** Приложение должно корректно обрабатывать `SIGTERM`. Обработчик завершения должен сохранять контрольную точку состояния (например, записывать прогресс в SQS или DynamoDB), завершать текущую работу и штатно выходить в пределах двух минут. Spot хорошо подходят для CI/CD-исполнителей, узлов EMR и пакетных задач, но не для баз данных и других stateful-сервисов.
 
-**Use Spot with Auto Scaling Groups and multiple instance types.** A `capacity-optimized` allocation strategy picks the pool with the most available capacity, reducing interruption frequency. Never target a single instance type in a single AZ with Spot — you are guaranteed an outage when that pool runs dry.
+**Используйте Spot вместе с Auto Scaling Groups и несколькими типами инстансов.** Стратегия распределения `capacity-optimized` выбирает пул с наибольшей доступной ёмкостью и снижает частоту прерываний. Не привязывайтесь к одному типу инстанса в одной зоне доступности: когда пул исчерпается, простой неизбежен.
 
 ```bash
 # Create a mixed instance policy ASG — baseline On-Demand + Spot for scale
