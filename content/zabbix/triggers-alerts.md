@@ -13,28 +13,28 @@ exercises: 3
 ## Основные понятия
 
 ### Выражения триггеров
-A trigger expression evaluates to 0 (OK) or 1 (PROBLEM). The expression language uses functions applied to item history.
+Выражение триггера принимает значение 0 (OK) или 1 (PROBLEM). Язык выражений использует функции, применяемые к истории элементов данных.
 
-**Basic expression syntax:**
+**Базовый синтаксис выражения:**
 ```
 last(/hostname/item.key) operator threshold
 ```
 
-**Common trigger functions:**
+**Распространённые функции триггеров:**
 
-| Function | Description | Example |
+| Функция | Описание | Пример |
 |----------|-------------|---------|
-| `last()` | Most recent value | `last(/host/agent.ping) = 0` |
-| `avg(,Xs)` | Average over time window | `avg(/host/system.cpu.load,300s) > 5` |
-| `min(,Xs)` | Minimum over window | `min(/host/net.if.in[eth0],60s) < 100` |
-| `max(,Xs)` | Maximum over window | `max(/host/vfs.fs.size[/,pused],3600s) > 90` |
-| `nodata(,Xs)` | True if no data received for X seconds | `nodata(/host/agent.ping,300s) = 1` |
-| `diff()` | True if last value differs from previous | `diff(/host/system.uname) = 1` |
-| `count(,Xs,pattern)` | Count values matching pattern in window | `count(/host/log[/var/log/app.log,ERROR],60s,like,ERROR) > 10` |
-| `change()` | Absolute difference between last two values | `change(/host/system.cpu.load) > 2` |
-| `fuzzytime(,Xs)` | True if host time deviates from server time by > X sec | `fuzzytime(/host/system.localtime,60s) = 0` |
+| `last()` | Последнее значение | `last(/host/agent.ping) = 0` |
+| `avg(,Xs)` | Среднее за временной интервал | `avg(/host/system.cpu.load,300s) > 5` |
+| `min(,Xs)` | Минимум за интервал | `min(/host/net.if.in[eth0],60s) < 100` |
+| `max(,Xs)` | Максимум за интервал | `max(/host/vfs.fs.size[/,pused],3600s) > 90` |
+| `nodata(,Xs)` | Истина, если данные не поступали X секунд | `nodata(/host/agent.ping,300s) = 1` |
+| `diff()` | Истина, если последнее значение отличается от предыдущего | `diff(/host/system.uname) = 1` |
+| `count(,Xs,pattern)` | Число значений, соответствующих шаблону в интервале | `count(/host/log[/var/log/app.log,ERROR],60s,like,ERROR) > 10` |
+| `change()` | Абсолютная разница между двумя последними значениями | `change(/host/system.cpu.load) > 2` |
+| `fuzzytime(,Xs)` | Истина, если время узла отличается от времени сервера более чем на X секунд | `fuzzytime(/host/system.localtime,60s) = 0` |
 
-**Multi-condition expressions:**
+**Выражения с несколькими условиями:**
 ```
 # CPU high AND memory low (compound problem)
 avg(/web-01/system.cpu.util[,user],300s) > 85
@@ -47,60 +47,60 @@ or
 last(/web-01/vfs.fs.size[/,pused]) > 95
 ```
 
-**Best practices for trigger expressions:**
-- Use `avg()` over a window rather than `last()` for CPU/memory to avoid single-sample false positives.
-- Set a **recovery expression** to define when PROBLEM clears — avoids triggers that flip back to OK too quickly.
-- Always test expressions using **Configuration → Hosts → Items → Test** before deploying.
+**Рекомендации по выражениям триггеров:**
+- Для CPU и памяти используйте `avg()` за интервал вместо `last()`, чтобы избежать ложных срабатываний из-за единичного измерения.
+- Задавайте **выражение восстановления**, определяющее, когда PROBLEM сбрасывается: это предотвращает слишком быстрое переключение триггера обратно в OK.
+- Перед внедрением всегда проверяйте выражения через **Configuration → Hosts → Items → Test**.
 
-**Recovery expression example:**
+**Пример выражения восстановления:**
 ```
 Problem:  avg(/host/system.cpu.load[all,avg1],300s) > 5
 Recovery: avg(/host/system.cpu.load[all,avg1],300s) < 3
 ```
-The trigger fires at load > 5 but only clears when load drops below 3. This hysteresis prevents flapping.
+Триггер срабатывает при нагрузке выше 5, но сбрасывается только после падения ниже 3. Такой гистерезис предотвращает частые переключения состояния.
 
-### Severity Levels
-Zabbix has six built-in severity levels used to prioritize and route alerts.
+### Уровни серьёзности
+В Zabbix есть шесть встроенных уровней серьёзности для приоритизации и маршрутизации оповещений.
 
-| Level | Color | Typical Use |
+| Уровень | Цвет | Типичное применение |
 |-------|-------|-------------|
-| Not classified | Grey | Default, unreviewed triggers |
-| Information | Blue | FYI events — config changes, planned reboots |
-| Warning | Yellow | Early indicators — disk at 75%, CPU at 60% |
-| Average | Orange | Actionable issues — service degraded |
-| High | Red | Service impaired — needs immediate attention |
-| Disaster | Dark red | Complete outage — page someone now |
+| Не классифицировано | Серый | По умолчанию, триггеры ещё не рассмотрены |
+| Информация | Синий | Информационные события: изменение конфигурации, плановая перезагрузка |
+| Предупреждение | Жёлтый | Ранние признаки проблемы: диск заполнен на 75%, CPU загружен на 60% |
+| Средний | Оранжевый | Требующие действий проблемы: деградация сервиса |
+| Высокий | Красный | Сервис серьёзно нарушен — требуется немедленное внимание |
+| Авария | Тёмно-красный | Полный отказ — немедленно вызовите дежурного |
 
-Severity filters appear in media type and action configurations, letting you route Disaster-level alerts to PagerDuty while Warning goes only to Slack.
+Фильтры серьёзности доступны в настройках типов каналов и действий. Например, оповещения уровня Disaster можно направлять в PagerDuty, а Warning — только в Slack.
 
-### Trigger Dependencies
-Trigger dependencies prevent downstream alert storms. When a root-cause trigger fires, dependent triggers are suppressed even if their conditions are also true.
+### Зависимости триггеров
+Зависимости триггеров предотвращают лавину вторичных оповещений. Когда срабатывает триггер первопричины, зависимые триггеры подавляются, даже если их условия тоже истинны.
 
-**Example:**
-- Trigger A: "Host unreachable" (network switch is down)
-- Trigger B: "SSH port unavailable on web-01"
-- Trigger C: "HTTP check failing on web-01"
+**Пример:**
+- Триггер A: «Узел недоступен» (не работает сетевой коммутатор)
+- Триггер B: «Порт SSH недоступен на web-01»
+- Триггер C: «HTTP-проверка на web-01 завершается ошибкой»
 
 If A depends on (is blocked by) B and C: when the switch goes down, B and C fire but A does NOT notify if B or C is already in PROBLEM state.
 
-More commonly, reverse the dependency: B and C depend on A. If A fires (host unreachable), B and C are suppressed because the root cause is already known.
+Чаще зависимость настраивают наоборот: B и C зависят от A. Если срабатывает A (узел недоступен), B и C подавляются, поскольку первопричина уже известна.
 
-**Configuring dependencies:**
+**Настройка зависимостей:**
 ```
 Configuration → Triggers → (select trigger) → Dependencies tab → Add
 ```
 
-Add the dependency: "This trigger is suppressed when: [parent trigger]"
+Добавьте зависимость: «Этот триггер подавляется, когда срабатывает: [родительский триггер]»
 
-### Media Types
-A media type defines how Zabbix delivers notifications. It is independent of routing — the same media type is reused across multiple actions.
+### Типы каналов уведомлений
+Тип канала уведомлений определяет, как Zabbix доставляет сообщения. Он не зависит от маршрутизации и может использоваться в нескольких действиях.
 
-**Built-in media types:**
-- Email (SMTP)
-- SMS (via external gateway scripts)
-- Webhook (generic HTTP)
+**Встроенные типы каналов:**
+- Электронная почта (SMTP)
+- SMS (через скрипты внешнего шлюза)
+- Webhook (обычный HTTP)
 
-**Email media type configuration:**
+**Настройка канала электронной почты:**
 ```
 SMTP server:    smtp.gmail.com
 SMTP port:      587
@@ -112,21 +112,21 @@ Username:       zabbix@example.com
 Password:       <app password>
 ```
 
-**Slack webhook media type:**
-Zabbix ships a built-in Slack media type. Configuration:
+**Канал Slack webhook:**
+В Zabbix есть встроенный тип канала Slack. Настройка:
 ```
 Media type: Slack
 bot_token:   xoxb-your-bot-token
 channel:     #alerts
 ```
-Message template uses Zabbix macros:
+В шаблоне сообщения используются макросы Zabbix:
 ```
 {TRIGGER.NAME} on {HOST.NAME}
 Severity: {TRIGGER.SEVERITY}
 Status: {TRIGGER.STATUS}
 ```
 
-**Custom webhook media type (generic HTTP):**
+**Пользовательский канал webhook (обычный HTTP):**
 ```
 Name: PagerDuty
 Type: Webhook
@@ -150,7 +150,7 @@ Parameters:
   }
 ```
 
-**Assigning a media type to a user:**
+**Назначение типа канала пользователю:**
 ```
 Administration → Users → (user) → Media tab → Add
 Type: Slack
@@ -159,16 +159,16 @@ When active: 1-7,00:00-24:00
 Use if severity: Warning, Average, High, Disaster
 ```
 
-### Action Configuration
-Actions define the routing logic: when a trigger fires matching certain criteria, send a notification via a specific media type to specific users.
+### Настройка действий
+Действия определяют логику маршрутизации: когда триггер срабатывает и соответствует заданным условиям, уведомление отправляется выбранным пользователям через определённый канал.
 
-**Action components:**
-1. **Conditions** — filter which events trigger this action (by host group, trigger severity, trigger name regex, etc.)
-2. **Operations** — what to do (send message, run remote command)
-3. **Recovery operations** — what to do when the trigger returns to OK
-4. **Update operations** — what to do when the event is acknowledged
+**Компоненты действия:**
+1. **Условия** — фильтруют события, запускающие действие (по группе узлов, серьёзности триггера, регулярному выражению имени и т. д.)
+2. **Операции** — что выполнить (отправить сообщение, запустить удалённую команду)
+3. **Операции восстановления** — что делать, когда триггер возвращается в OK
+4. **Операции обновления** — что делать, когда событие подтверждено
 
-**Example action — notify on-call for Disaster/High severity:**
+**Пример действия — уведомление дежурного при уровне Disaster/High:**
 ```
 Action name: Notify Platform On-Call
 
@@ -185,8 +185,8 @@ Recovery operations:
     (Uses recovery message template)
 ```
 
-### Escalation Steps
-Zabbix actions support multi-step escalation. If the problem is not acknowledged within the step duration, the next step fires.
+### Этапы эскалации
+Действия Zabbix поддерживают многоэтапную эскалацию. Если проблема не подтверждена в течение заданного интервала, запускается следующий этап.
 
 ```
 Step 1 (0-1h):   Send Slack to #alerts-platform
@@ -195,14 +195,14 @@ Step 3 (2h+):    Send PagerDuty to engineering manager
                  + Run remote command: /usr/local/bin/auto-restart-service.sh
 ```
 
-**Operation step duration:** each step runs for its defined duration. If the event is **acknowledged** before a step triggers, escalation stops (configurable — you can set escalation to continue even after acknowledgment).
+**Длительность этапа операции:** каждый этап действует в течение заданного интервала. Если событие **подтверждено** до запуска следующего этапа, эскалация прекращается. Это можно настроить так, чтобы она продолжалась и после подтверждения.
 
-**Remote command operations** run scripts on Zabbix agents or the server itself. Use with care — remote execution expands the attack surface. Scope with `AllowKey=system.run[*]` in the agent config and only if `EnableRemoteCommands=1`.
+**Операции удалённых команд** запускают скрипты на агентах Zabbix или самом сервере. Используйте их осторожно: удалённое выполнение расширяет поверхность атаки. Ограничьте доступ настройкой `AllowKey=system.run[*]` в конфигурации агента и включайте `EnableRemoteCommands=1` только при необходимости.
 
-### Maintenance Windows
-Maintenance windows suppress alerts for specific hosts or host groups during planned downtime without deleting triggers.
+### Окна обслуживания
+Окна обслуживания подавляют оповещения для выбранных узлов или групп во время плановых работ, не удаляя триггеры.
 
-**Create a maintenance window:**
+**Создание окна обслуживания:**
 ```
 Configuration → Maintenance → Create maintenance
 
@@ -215,36 +215,36 @@ Hosts/Groups: Linux servers → web-tier group
 Schedule type: One time only
 ```
 
-`With data collection` — metrics are still recorded, only notifications are suppressed. Useful for post-maintenance review.
-`No data collection` — items are not polled. Use when the host is powered off.
+`With data collection` — метрики продолжают собираться, подавляются только уведомления. Полезно для анализа после обслуживания.
+`No data collection` — элементы данных не опрашиваются. Используйте, если узел выключен.
 
-**Recurring maintenance:**
-Set `Schedule type: Weekly` or `Monthly` with specific day-of-week offsets for patch cycles.
+**Повторяющееся обслуживание:**
+Задайте `Schedule type: Weekly` или `Monthly` и укажите нужные дни для циклов установки обновлений.
 
 ## Примеры
 
-**Full alert pipeline — disk space warning with escalation:**
+**Полный цикл оповещения — предупреждение о месте на диске с эскалацией:**
 
-1. Item: `vfs.fs.size[/data,pused]` (collected every 5 minutes)
+1. Элемент данных: `vfs.fs.size[/data,pused]` (сбор каждые 5 минут)
 2. Trigger:
    ```
    Problem: last(/web-01/vfs.fs.size[/data,pused]) > 85
    Recovery: last(/web-01/vfs.fs.size[/data,pused]) < 80
    Severity: Warning
    ```
-3. Action conditions: Trigger severity = Warning, Host group = Web Tier
-4. Operations:
-   - Step 1 (0–30m): Slack `#alerts` — "Disk /data at {ITEM.VALUE}% on {HOST.NAME}"
-   - Step 2 (30m–2h): PagerDuty page to on-call
-5. Recovery operations: Slack `#alerts` — "RESOLVED: Disk /data now at {ITEM.VALUE}%"
+3. Условия действия: серьёзность триггера = Warning, группа узлов = Web Tier
+4. Операции:
+   - Этап 1 (0–30 мин): Slack `#alerts` — «Диск /data заполнен на {ITEM.VALUE}% на {HOST.NAME}»
+   - Этап 2 (30 мин – 2 ч): отправить вызов дежурному через PagerDuty
+5. Операции восстановления: Slack `#alerts` — «РЕШЕНО: диск /data теперь заполнен на {ITEM.VALUE}%»
 
-**Test trigger expression without waiting for real data:**
+**Проверка выражения триггера без ожидания реальных данных:**
 ```
 Configuration → Hosts → Items → (select item) → Test
 ```
-Enter a test value and confirm the trigger would fire.
+Введите тестовое значение и проверьте, что триггер сработал бы.
 
-**Check active alerts via API:**
+**Проверка активных оповещений через API:**
 ```bash
 curl -s -X POST http://zabbix-server/api_jsonrpc.php \
   -H "Content-Type: application/json" \
@@ -263,29 +263,29 @@ curl -s -X POST http://zabbix-server/api_jsonrpc.php \
 
 ## Практические задания
 
-1. Write a trigger expression for a host that fires at `Average` severity when the 5-minute CPU load average exceeds 4 for more than 3 consecutive minutes, and recovers only when it drops below 2. Include a recovery expression. Explain why using `avg()` instead of `last()` is important here.
-2. Configure a three-step escalation action: Step 1 sends a Slack message to `#alerts`, Step 2 (after 30 minutes if unacknowledged) sends a PagerDuty alert to on-call, Step 3 (after 1 hour) sends an email to the engineering manager. Set conditions so only `High` or `Disaster` severity triggers from the `Production` host group match.
-3. Create a maintenance window for a host group covering 02:00–04:00 UTC on the first Sunday of each month, using `With data collection` mode. Verify that an active trigger on a host in that group does not generate a notification during the window, but data is still visible in **Monitoring → Latest data**.
+1. Напишите выражение триггера для узла, которое срабатывает с уровнем `Average`, если средняя нагрузка CPU за 5 минут превышает 4 более трёх минут подряд, и восстанавливается только при падении ниже 2. Добавьте выражение восстановления и объясните, почему здесь важно использовать `avg()`, а не `last()`.
+2. Настройте действие с тремя этапами эскалации: этап 1 отправляет сообщение в Slack `#alerts`; этап 2 через 30 минут без подтверждения отправляет оповещение дежурному через PagerDuty; этап 3 через час отправляет письмо руководителю инженерной команды. Установите условия так, чтобы действие срабатывало только для уровней `High` или `Disaster` в группе узлов `Production`.
+3. Создайте окно обслуживания для группы узлов с 02:00 до 04:00 UTC в первое воскресенье каждого месяца, используя режим `With data collection`. Проверьте, что активный триггер узла из этой группы не отправляет уведомления во время окна, но данные по-прежнему видны в **Monitoring → Latest data**.
 
 
 ---
 
 ### Быстрая проверка
 
-4. Evaluate a simple Zabbix trigger threshold. Run: `python3 -c "cpu=85; threshold=80; print('PROBLEM' if cpu > threshold else 'OK')"`
+4. Проверьте простой порог триггера Zabbix. Выполните: `python3 -c "cpu=85; threshold=80; print('PROBLEM' if cpu > threshold else 'OK')"`
 
 ```expected_output
 PROBLEM
 ```
 
-hint: Think about how Python can be used directly from the command line to evaluate conditional logic.
-hint: Use python3 -c to run an inline script that compares a cpu variable against a threshold value using an if/else expression with print().
+Подсказка: Python можно использовать прямо в командной строке для вычисления условия.
+Подсказка: используйте `python3 -c`, чтобы выполнить короткий скрипт, сравнивающий переменную `cpu` с порогом через условие if/else и `print()`.
 
-5. Count Zabbix trigger severity levels. Run: `printf 'Not classified\nInformation\nWarning\nAverage\nHigh\nDisaster\n' | wc -l`
+5. Посчитайте уровни серьёзности триггеров Zabbix. Выполните: `printf 'Not classified\nInformation\nWarning\nAverage\nHigh\nDisaster\n' | wc -l`
 
 ```expected_output
 6
 ```
 
-hint: Think about how you can count the number of lines produced by a command's output.
-hint: Use a pipe to send the printed lines into `wc -l`, which counts the total number of newline-terminated lines.
+Подсказка: посчитайте количество строк в выводе команды.
+Подсказка: передайте строки через конвейер в `wc -l`, который подсчитывает количество строк.
