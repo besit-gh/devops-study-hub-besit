@@ -80,13 +80,13 @@ output "web_private_ip" {
 ```
 
 Наиболее подходящие задачи для Terraform:
-- Creating VPCs, subnets, route tables, security groups
-- Provisioning cloud databases (RDS, CloudSQL, Aurora)
-- Managing DNS records (Route53, Cloudflare)
-- Kubernetes cluster creation (EKS, GKE, AKS) and node group management
-- IAM roles, policies, and cross-account trust relationships
-- Load balancers, target groups, listener rules
-- S3 buckets with policies and lifecycle rules
+- Создание VPC, подсетей, таблиц маршрутизации и групп безопасности.
+- Создание облачных баз данных (RDS, CloudSQL, Aurora).
+- Управление DNS-записями (Route53, Cloudflare).
+- Создание кластеров Kubernetes (EKS, GKE, AKS) и управление группами узлов.
+- Роли и политики IAM, а также отношения доверия между аккаунтами.
+- Балансировщики нагрузки, целевые группы и правила прослушивателей.
+- Бакеты S3 с политиками и правилами жизненного цикла.
 - **Any resource where creation order or circular dependencies matter**
 
 **Главная мысль:** `terraform destroy` корректно удаляет все созданные ресурсы в обратном порядке зависимостей. У Ansible нет полноценного аналога: он не может надёжно отменить выполнение плейбука для облачных ресурсов, поскольку не хранит сведения о том, что именно и в каком порядке было создано. Уже этого различия достаточно, чтобы поручать создание инфраструктуры Terraform.
