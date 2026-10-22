@@ -2,7 +2,7 @@
 
 ## Агент Datadog
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `datadog-agent status` | Полное состояние агента |
 | `datadog-agent check check_name` | Выполнить проверку вручную |
@@ -15,7 +15,7 @@
 
 ## CLI Datadog (dogstatsd / ddtrace)
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `DD_ENV=prod DD_SERVICE=web ddtrace-run python app.py` | Подключить трассировку APM |
 | `DD_AGENT_HOST=localhost ddtrace-run gunicorn app:app` | Удалённый агент |
@@ -25,7 +25,7 @@
 
 ## Метрики DogStatsD из кода
 
-| Type | Pattern | Description |
+| Type | Pattern | Описание |
 |------|---------|-------------|
 | Count | `statsd.increment("requests.count", tags=["env:prod"])` | Increment counter |
 | Gauge | `statsd.gauge("queue.depth", 42)` | Set gauge value |
@@ -35,7 +35,7 @@
 
 ## Query Language (Metrics)
 
-| Query | Description |
+| Query | Описание |
 |-------|-------------|
 | `avg:system.cpu.user{*}` | Average CPU across all hosts |
 | `sum:nginx.net.request_per_s{env:prod}` | Sum by tag filter |
@@ -59,7 +59,7 @@ thresholds:
 
 ## Logs Query Syntax
 
-| Query | Description |
+| Query | Описание |
 |-------|-------------|
 | `service:nginx status:error` | Errors from nginx |
 | `env:prod @http.status_code:[500 TO 599]` | 5xx in production |
