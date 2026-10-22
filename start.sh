@@ -31,14 +31,21 @@ port_busy() {
     return 1
 }
 
+stop_tree() {
+    local pid="$1" child
+    while read -r child; do
+        [[ -n "$child" ]] && stop_tree "$child"
+    done < <(pgrep -P "$pid" 2>/dev/null || true)
+    kill "$pid" 2>/dev/null || true
+}
+
 cleanup() {
     trap - EXIT INT TERM HUP
     echo
     echo "Останавливаю DevOps Study Hub..."
     [[ -n "$MONITOR_PID" ]] && kill "$MONITOR_PID" 2>/dev/null || true
-    [[ -n "$FRONTEND_PID" ]] && kill "$FRONTEND_PID" 2>/dev/null || true
-    [[ -n "$BACKEND_PID" ]] && kill "$BACKEND_PID" 2>/dev/null || true
-    [[ -n "$FRONTEND_PID" ]] && pkill -P "$FRONTEND_PID" 2>/dev/null || true
+    [[ -n "$FRONTEND_PID" ]] && stop_tree "$FRONTEND_PID"
+    [[ -n "$BACKEND_PID" ]] && stop_tree "$BACKEND_PID"
     [[ -n "$BACKEND_PID" ]] && wait "$BACKEND_PID" 2>/dev/null || true
     [[ -n "$FRONTEND_PID" ]] && wait "$FRONTEND_PID" 2>/dev/null || true
 }
