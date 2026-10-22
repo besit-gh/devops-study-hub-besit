@@ -17,9 +17,9 @@ GKE опирается на два принципа: глубокую интег
 
 ## Основные понятия
 
-### Cluster Modes: Autopilot vs Standard
+### Режимы кластера: Autopilot и Standard
 
-The choice between Autopilot and Standard is architectural, not cosmetic. It determines who manages nodes, what workloads you can run, and how you're billed.
+Выбор между Autopilot и Standard — архитектурное решение, а не косметическая настройка. От него зависит, кто управляет узлами, какие нагрузки можно запускать и как будет рассчитываться стоимость.
 
 | Dimension | Autopilot | Standard |
 |---|---|---|
@@ -32,7 +32,7 @@ The choice between Autopilot and Standard is architectural, not cosmetic. It det
 | GPUs | Supported (auto-provisioning) | Supported (explicit pool config) |
 | Best for | Stateless apps, new projects | ML workloads, privileged daemonsets, cost optimization at scale |
 
-**Autopilot** (recommended for new clusters):
+**Autopilot** (рекомендуется для новых кластеров):
 ```bash
 gcloud container clusters create-auto prod-cluster \
   --region us-central1 \
@@ -43,7 +43,7 @@ gcloud container clusters create-auto prod-cluster \
 # Networking: VPC-native (alias IPs) is mandatory
 ```
 
-**Standard** (when you need node-level control):
+**Standard** (когда требуется контроль на уровне узлов):
 ```bash
 gcloud container clusters create prod-cluster \
   --zone us-central1-a \
@@ -58,7 +58,7 @@ gcloud container clusters create prod-cluster \
   --release-channel regular     # automatic minor version upgrades
 ```
 
-**Autopilot gotcha:** Autopilot enforces resource requests on every container. If you omit `requests`, GKE injects defaults. Pods without explicit requests may be billed at higher injected values than you intended. Always set explicit `requests` and `limits` in Autopilot clusters.
+**Особенность Autopilot:** GKE требует задавать запросы ресурсов для каждого контейнера. Если не указать `requests`, GKE подставит значения по умолчанию. Pod без явных запросов могут тарифицироваться по более высоким автоматически заданным значениям, чем вы рассчитывали. В кластерах Autopilot всегда задавайте `requests` и `limits` явно.
 
 **Standard gotcha:** Creating a cluster without `--enable-ip-alias` (routes-based networking) disables Workload Identity, Private Google Access for pods, and several other features. Always use VPC-native (`--enable-ip-alias`) for new Standard clusters.
 
