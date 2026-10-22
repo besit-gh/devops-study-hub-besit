@@ -33,9 +33,9 @@ Git hooks — это shell-скрипты или другие исполняем
 
 Контекст передаётся хуку через аргументы и переменные окружения; их состав зависит от типа хука. Например, `commit-msg` получает путь к файлу сообщения в `$1`, а `pre-push` — имя удалённого репозитория в `$1`, его URL в `$2` и читает отправляемые ссылки из стандартного ввода.
 
-**Execution model:** Git runs the hook synchronously and blocks until it exits. For hooks that can be slow (e.g., running a test suite in `pre-push`), this is intentional — the developer waits, sees the output, and gets feedback before anything is sent.
+**Модель выполнения:** Git запускает hook синхронно и ждёт его завершения. Для потенциально медленных проверок (например, запуска тестов в `pre-push`) это сделано намеренно: разработчик видит результат и получает обратную связь до отправки изменений.
 
-**Required permissions:** the hook file must be executable. Forgetting `chmod +x` is the most common reason a hook silently doesn't run. Git will not error — it just skips a non-executable file.
+**Необходимые права:** файл hook должен быть исполняемым. Чаще всего hook не запускается из-за забытого `chmod +x`. Git не выдаёт ошибку, а просто пропускает неисполняемый файл.
 
 ```bash
 # Verify hook is executable and will actually fire
@@ -46,7 +46,7 @@ ls -la .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
-### Hook Lifecycle and Return Codes
+### Жизненный цикл hook и коды возврата
 
 | Hook | Trigger | Non-zero exit effect | Arguments |
 |------|---------|----------------------|-----------|
@@ -61,9 +61,9 @@ chmod +x .git/hooks/pre-commit
 | `update` | Server-side: once per ref being updated | Aborts that ref's update | `<ref> <old-sha> <new-sha>` |
 | `post-receive` | Server-side: after refs are updated | Ignored | None (reads stdin) |
 
-**Client vs. server hooks:** hooks in `.git/hooks/` are client-side — they run on the developer's machine and can be bypassed with `--no-verify`. Server-side hooks (`pre-receive`, `update`, `post-receive`) run on the hosting infrastructure (GitHub Actions, GitLab server hooks, Gitolite) and cannot be bypassed by the client. For policy enforcement that must be guaranteed, use server-side hooks or branch protection rules.
+**Клиентские и серверные hooks:** hooks в `.git/hooks/` работают на компьютере разработчика, и их можно обойти с помощью `--no-verify`. Серверные hooks (`pre-receive`, `update`, `post-receive`) выполняются на стороне хостинга и не могут быть обойдены клиентом. Для обязательного контроля политик используйте серверные hooks или правила защиты веток.
 
-**`post-*` hooks for side effects:** `post-commit` and `post-merge` have their exit codes ignored, making them safe for notifications or automation like running `npm install` after a dependency file changes. They cannot block the operation.
+**Hooks `post-*` для побочных действий:** коды возврата `post-commit` и `post-merge` игнорируются, поэтому их удобно использовать для уведомлений или автоматизации, например запуска `npm install` после изменения файла зависимостей. Они не могут отменить выполненную операцию.
 
 ### Writing a Hook: Shell Scripting Patterns
 
