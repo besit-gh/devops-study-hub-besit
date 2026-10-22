@@ -13,15 +13,15 @@ Compute Engine — сервис виртуальных машин Infrastructure
 
 Важное структурное отличие GCP от AWS — **иерархия ресурсов**. Каждый ресурс принадлежит Project, проекты входят в Folders, а папки — в Organization. Политики IAM наследуются вниз по этой иерархии. Поэтому управление доступом не плоское: разрешение, выданное на уровне Organization, может распространяться на все VM и бакеты компании. Такая иерархия помогает централизовать безопасность, но становится источником риска при неосторожной выдаче широких прав.
 
-In the DevOps toolchain, Compute Engine and GCS sit at the infrastructure layer beneath Kubernetes, CI/CD pipelines, and application code. A CI system pushes build artifacts to GCS; a Managed Instance Group pulls them during VM startup. Terraform state lives in a GCS backend. Log exports land in GCS for long-term archival. Even if your production workloads run on GKE, you are almost certainly interacting with Compute Engine and GCS constantly.
+В цепочке DevOps Compute Engine и GCS находятся на инфраструктурном уровне под Kubernetes, конвейерами CI/CD и кодом приложений. Система CI отправляет артефакты сборки в GCS, а группа управляемых экземпляров получает их при запуске виртуальных машин. Состояние Terraform хранится в backend на GCS, а экспорт журналов отправляется туда для долгосрочного хранения. Даже если production-нагрузки работают в GKE, вы, скорее всего, постоянно взаимодействуете с Compute Engine и GCS.
 
 ---
 
 ## Основные понятия
 
-### gcloud SDK Setup and Configuration
+### Установка и настройка gcloud SDK
 
-The `gcloud` CLI is the primary interface for all Compute Engine operations. It manages authentication, project context, and default region/zone so you don't have to specify them on every command.
+Интерфейс командной строки `gcloud` — основной инструмент для операций с Compute Engine. Он управляет аутентификацией, выбранным проектом и регионом/зоной по умолчанию, поэтому их не нужно указывать в каждой команде.
 
 ```bash
 # Authenticate your user account (opens browser)
@@ -45,9 +45,9 @@ gcloud config list
 gcloud auth list
 ```
 
-**`gcloud auth login` vs `gcloud auth application-default login`:** The first sets credentials for the CLI itself. The second sets Application Default Credentials, which is what the Python `google-cloud-*` libraries, Terraform, and other tools use. You often need both. If your Terraform runs fine but your Python script gets a 403, this is usually the cause.
+**`gcloud auth login` и `gcloud auth application-default login`:** первая команда настраивает учётные данные для самого CLI. Вторая создаёт Application Default Credentials, которые используют библиотеки Python `google-cloud-*`, Terraform и другие инструменты. Часто нужны обе настройки. Если Terraform работает, а Python-скрипт получает ошибку 403, вероятная причина именно в этом.
 
-**Named configurations tip:** Use `gcloud config configurations list` to see all named configs and their active project. In scripts, always pass `--project` explicitly rather than relying on default config — defaults are mutable state and make scripts non-reproducible across engineers.
+**Совет по именованным конфигурациям:** выполните `gcloud config configurations list`, чтобы увидеть все конфигурации и активный проект каждой из них. В скриптах всегда явно передавайте `--project`, а не полагайтесь на конфигурацию по умолчанию: её состояние может меняться, из-за чего результаты запуска у разных инженеров будут различаться.
 
 ### Compute Engine — Machine Types and Disks
 
