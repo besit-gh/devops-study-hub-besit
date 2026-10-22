@@ -5,7 +5,7 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_DIR"
 
-for command in python3 node npm git; do
+for command in python3 node npm git curl; do
     if ! command -v "$command" >/dev/null 2>&1; then
         echo "Не найдена команда '$command'. Установите её и повторите запуск."
         exit 1
