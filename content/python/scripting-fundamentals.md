@@ -437,7 +437,7 @@ args = parser.parse_args()
 
 ### The `main()` Pattern
 
-All non-trivial scripts should use the `if __name__ == "__main__":` guard. This makes the script importable as a module — other scripts and tests can import its functions without triggering execution.
+Во всех нетривиальных скриптах используйте проверку `if __name__ == "__main__":`. Благодаря ей скрипт можно импортировать как модуль: другие скрипты и тесты смогут использовать его функции, не запуская основной код.
 
 ```python
 import sys
@@ -462,15 +462,15 @@ if __name__ == "__main__":
     main()
 ```
 
-**Why this matters in DevOps:** CI/CD pipelines check exit codes. `sys.exit(0)` signals success; anything non-zero signals failure and halts the pipeline. A script that always exits with `0` regardless of outcome is indistinguishable from a passing step — this is a common and dangerous bug.
+**Почему это важно в DevOps:** CI/CD-конвейеры проверяют коды завершения. `sys.exit(0)` означает успех, любой ненулевой код — ошибку и остановку конвейера. Если скрипт всегда возвращает `0` независимо от результата, конвейер считает шаг успешным. Это распространённая и опасная ошибка.
 
 ---
 
 ## Примеры
 
-### Example 1: Log Error Rate Checker
+### Пример 1. Проверка доли ошибок в журнале
 
-Parses an Nginx access log, counts total requests and 5xx errors, and exits non-zero if the error rate exceeds a threshold. Suitable for use as a CI/CD gate or cron health check.
+Скрипт разбирает журнал доступа Nginx, подсчитывает общее число запросов и ошибок 5xx, а затем завершается с ненулевым кодом, если доля ошибок превышает порог. Его можно использовать как проверочный этап CI/CD или проверку состояния по cron.
 
 ```python
 #!/usr/bin/env python3
@@ -535,7 +535,7 @@ if __name__ == "__main__":
     main()
 ```
 
-**Setup and verification:**
+**Настройка и проверка:**
 ```bash
 # Create a sample log with known content
 cat > /tmp/test_access.log << 'EOF'
@@ -621,7 +621,7 @@ if __name__ == "__main__":
     main()
 ```
 
-**Setup and verification:**
+**Настройка и проверка:**
 ```bash
 # Run with missing and invalid values
 export APP_ENV=production
@@ -714,7 +714,7 @@ if __name__ == "__main__":
     main()
 ```
 
-**Setup and verification:**
+**Настройка и проверка:**
 ```bash
 # Test against a port that isn't listening — should retry and fail
 TARGET_HOST=localhost TARGET_PORT=19999 python3 retry.py
