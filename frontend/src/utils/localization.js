@@ -159,6 +159,10 @@ export function localizeLessonTitle(title) {
   return LESSON_TITLES_RU[title] || title
 }
 
+export function localizeScore(score) {
+  return ({ Strong: 'Сильный', Adequate: 'Достаточный', Weak: 'Слабый' })[score] || score
+}
+
 export function localizeDifficulty(difficulty) {
   return ({ beginner: 'Начальный', intermediate: 'Средний', advanced: 'Продвинутый' })[difficulty] || difficulty
 }
