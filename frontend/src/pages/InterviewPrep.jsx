@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
+import { localizeScore } from '../utils/localization'
 import { fetchInterviewQuestions, evaluateAnswerWithSrs, fetchInterviewReviewQueue, selfGradeInterview } from '../store/curriculumStore'
 
 
@@ -202,7 +203,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-1">Повторение завершено</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {reviewQueue.length} question{reviewQueue.length === 1 ? '' : 's'} reviewed
+            Повторено вопросов: {reviewQueue.length}
           </p>
         </div>
         <div className="flex gap-3 mb-6">
@@ -219,7 +220,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
               <div className="flex items-start justify-between gap-2 mb-1">
                 <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">{r.question}</p>
                 <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full border font-medium ${SCORE_STYLE[r.score]}`}>
-                  {r.score}
+                  {localizeScore(r.score)}
                 </span>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">{r.feedback}</p>
@@ -230,7 +231,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
           onClick={exitReview}
           className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
         >
-          Back to Interview Prep
+          Назад к подготовке к собеседованию
         </button>
       </div>
     )
@@ -244,7 +245,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">{card.module_title} · Due for Review</p>
             <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-              Question {reviewIndex + 1} of {reviewQueue.length}
+              Вопрос {reviewIndex + 1} из {reviewQueue.length}
             </h1>
           </div>
           <div className="flex items-center gap-3">
@@ -279,7 +280,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
               value={reviewAnswer}
               onChange={e => setReviewAnswer(e.target.value)}
               disabled={reviewPhase === 'submitting'}
-              placeholder="Type your answer here…"
+              placeholder="Введите свой ответ…"
               rows={6}
               className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-3"
             />
@@ -289,7 +290,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
               disabled={!reviewAnswer.trim() || reviewPhase === 'submitting'}
               className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors"
             >
-              {reviewPhase === 'submitting' ? 'Evaluating…' : 'Submit Answer'}
+              {reviewPhase === 'submitting' ? 'Оцениваю…' : 'Отправить ответ'}
             </button>
           </>
         )}
@@ -306,12 +307,12 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
             </div>
 
             <div>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Your answer</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Ваш ответ</p>
               <p className="text-sm text-gray-600 dark:text-gray-400 italic leading-relaxed">{reviewAnswer}</p>
             </div>
 
             <div>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Feedback</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Обратная связь</p>
               <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{reviewEval.feedback}</p>
             </div>
 
@@ -320,7 +321,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
                 onClick={() => setReviewModelOpen(o => !o)}
                 className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
               >
-                {reviewModelOpen ? '▼ Hide model answer' : '▶ Show model answer'}
+                {reviewModelOpen ? '▼ Скрыть эталонный ответ' : '▶ Показать эталонный ответ'}
               </button>
               {reviewModelOpen && (
                 <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 leading-relaxed border-l-2 border-emerald-400 pl-3">
@@ -333,7 +334,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
               onClick={advanceReview}
               className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
             >
-              {reviewIndex + 1 >= reviewQueue.length ? 'Finish Review' : 'Next Question'}
+              {reviewIndex + 1 >= reviewQueue.length ? 'Завершить повторение' : 'Следующий вопрос'}
             </button>
           </div>
         )}
@@ -347,33 +348,33 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
     <div className="p-6 max-w-2xl">
       <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-1">Interview Prep</h1>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-        Practice answering real DevOps interview questions. AI grades your answer and shows a model response.
+        Тренируйтесь отвечать на реальные вопросы DevOps-собеседований. ИИ оценит ответ и покажет пример сильного ответа.
       </p>
 
       {reviewQueue !== null && reviewQueue.length > 0 && (
         <div className="mb-6 p-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950">
           <p className="text-sm font-medium text-amber-800 dark:text-amber-300 mb-1">
-            {reviewQueue.length} question{reviewQueue.length === 1 ? '' : 's'} due for review
+            К повторению: {reviewQueue.length} вопросов
           </p>
           <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">
-            Practice these to keep your SRS schedule on track.
+            Повторите их, чтобы не сбить расписание интервального повторения.
           </p>
           <button
             onClick={startReview}
             className="px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors"
           >
-            Practice Due
+            Повторить сейчас
           </button>
         </div>
       )}
 
       {modules.length === 0 ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400">No modules available yet.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Модули пока недоступны.</p>
       ) : (
         <>
           <div className="mb-4">
             <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-              Module
+              Модуль
             </label>
             <select
               value={selectedSlug}
@@ -399,9 +400,9 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
               onClick={() => start('flashcard')}
               disabled={!selectedSlug || phase === 'loading'}
               className="px-4 py-2 rounded-lg border border-emerald-600 text-emerald-600 dark:text-emerald-400 dark:border-emerald-500 text-sm font-medium hover:bg-emerald-50 dark:hover:bg-emerald-950/30 disabled:opacity-50 transition-colors"
-              title="Reveal model answers and self-grade — no AI calls"
+              title="Показать эталонные ответы и оценить себя — без вызова ИИ"
             >
-              Quick Review
+              Быстрое повторение
             </button>
           </div>
         </>
@@ -417,7 +418,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
       <div className="p-6 max-w-2xl">
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-1">
-            {mode === 'flashcard' ? 'Flashcard Session Complete' : 'Session Complete'}
+            {mode === 'flashcard' ? 'Повторение завершено' : 'Сессия завершена'}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">{selectedModule?.title}</p>
         </div>
@@ -463,7 +464,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
         <div>
           <p className="text-xs text-gray-500 dark:text-gray-400">{selectedModule?.title}</p>
           <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-            Question {qIndex + 1} of {questions.length}
+            Вопрос {qIndex + 1} из {questions.length}
           </h1>
         </div>
         <div className="flex items-center gap-3">
@@ -471,7 +472,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
             onClick={reset}
             className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 underline"
           >
-            Exit session
+            Выйти из сессии
           </button>
         </div>
         <div className="flex gap-1.5">
@@ -501,7 +502,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
                 onClick={reveal}
                 className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
               >
-                Reveal Answer
+                Показать ответ
               </button>
             </>
           ) : (
@@ -520,7 +521,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
                 disabled={!answer.trim() || phase === 'evaluating'}
                 className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors"
               >
-                {phase === 'evaluating' ? 'Evaluating…' : 'Submit Answer'}
+                {phase === 'evaluating' ? 'Оцениваю…' : 'Отправить ответ'}
               </button>
             </>
           )}
@@ -530,14 +531,14 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
       {phase === 'reviewed' && mode === 'flashcard' && (
         <div className="space-y-4">
           <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Model Answer</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Эталонный ответ</p>
             <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed border-l-2 border-emerald-400 pl-3">
-              {q.model_answer || <span className="italic text-gray-400">No model answer seeded yet — run seed_interview.py --model-answers</span>}
+              {q.model_answer || <span className="italic text-gray-400">Эталонный ответ пока не добавлен.</span>}
             </p>
           </div>
           {!evaluation ? (
             <>
-              <p className="text-xs text-gray-500 dark:text-gray-400">How well did you know this?</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Насколько хорошо вы знали ответ?</p>
               {error && <p className="text-sm text-red-500 mb-1">{error}</p>}
               <div className="flex gap-2">
                 {(['Strong', 'Adequate', 'Weak']).map(score => (
@@ -546,7 +547,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
                     onClick={() => selfRate(score)}
                     className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${SCORE_STYLE[score]} hover:opacity-80`}
                   >
-                    {score}
+                    {localizeScore(score)}
                   </button>
                 ))}
               </div>
@@ -555,7 +556,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
             <>
               <div className="flex items-center gap-3">
                 <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${SCORE_STYLE[evaluation.score]}`}>
-                  {evaluation.score}
+                  {localizeScore(evaluation.score)}
                 </div>
                 {evaluation.xp_earned > 0 && (
                   <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">+{evaluation.xp_earned} XP</span>
@@ -565,7 +566,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
                 onClick={advance}
                 className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
               >
-                {qIndex + 1 >= questions.length ? 'Finish Session' : 'Next Question'}
+                {qIndex + 1 >= questions.length ? 'Завершить сессию' : 'Следующий вопрос'}
               </button>
             </>
           )}
@@ -585,7 +586,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
               onClick={() => { setEvaluation(null); setPhase('active') }}
               className="ml-auto text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 underline"
             >
-              Edit answer
+              Изменить ответ
             </button>
           </div>
 
@@ -604,7 +605,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
               onClick={() => setModelOpen(o => !o)}
               className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
             >
-              {modelOpen ? '▼ Hide model answer' : '▶ Show model answer'}
+              {modelOpen ? '▼ Скрыть эталонный ответ' : '▶ Показать эталонный ответ'}
             </button>
             {modelOpen && (
               <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 leading-relaxed border-l-2 border-emerald-400 pl-3">
