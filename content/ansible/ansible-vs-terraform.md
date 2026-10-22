@@ -17,7 +17,7 @@ Ansible и Terraform относятся к Infrastructure as Code, но реша
 
 ## Основные понятия
 
-### Core Distinction
+### Ключевое различие
 
 | Attribute | Terraform | Ansible |
 |---|---|---|
@@ -32,7 +32,7 @@ Ansible и Terraform относятся к Infrastructure as Code, но реша
 | **Parallelism** | Native resource graph enables parallel API calls | `forks` setting controls parallel SSH connections |
 | **Destroy / rollback** | `terraform destroy` cleanly removes in reverse order | No destroy equivalent for cloud resources |
 
-The most important row is **state tracking**. Terraform's state file is what allows it to know that `aws_instance.web` already exists and doesn't need to be recreated on the next run. Without state, every apply would try to create duplicate resources. Ansible checks the live system instead — which is perfect for configuration (idempotent modules check current file contents, package versions, service status), but inadequate for cloud provisioning where "does this VPC already exist?" requires a separate API call with no standardized mechanism across providers.
+Самая важная строка таблицы — **отслеживание состояния**. Файл состояния Terraform позволяет определить, что `aws_instance.web` уже существует и его не нужно создавать повторно при следующем запуске. Без state каждая команда `apply` пыталась бы создавать дубликаты ресурсов. Ansible вместо этого проверяет текущую систему. Это отлично подходит для настройки: идемпотентные модули проверяют содержимое файлов, версии пакетов и состояние служб. Но для создания облачной инфраструктуры этого недостаточно: вопрос о существовании VPC требует отдельного API-запроса, а единого стандарта такого поведения у провайдеров нет.
 
 ### Terraform's Strengths
 
@@ -40,9 +40,9 @@ Terraform особенно хорош для задач, в которых ну�
 
 ```hcl
 # terraform/main.tf
-# Terraform understands that the subnet depends on the VPC,
-# and that the EC2 instance depends on both — it builds this
-# dependency graph automatically and provisions in the right order.
+# Terraform учитывает, что подсеть зависит от VPC,
+# а экземпляр EC2 зависит от обоих ресурсов — Terraform автоматически строит
+# граф зависимостей и создаёт ресурсы в правильном порядке.
 
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
@@ -50,7 +50,7 @@ resource "aws_vpc" "main" {
 }
 
 resource "aws_subnet" "public" {
-  vpc_id            = aws_vpc.main.id   # implicit dependency via reference
+  vpc_id            = aws_vpc.main.id   # неявная зависимость через ссылку
   cidr_block        = "10.0.1.0/24"
   availability_zone = "us-east-1a"
 }
@@ -58,7 +58,7 @@ resource "aws_subnet" "public" {
 resource "aws_instance" "web" {
   ami           = "ami-0c55b159cbfafe1f0"
   instance_type = "t3.micro"
-  subnet_id     = aws_subnet.public.id  # waits for subnet to exist
+  subnet_id     = aws_subnet.public.id  # ожидать создания подсети
 }
 
 resource "aws_route53_record" "web" {
@@ -66,10 +66,10 @@ resource "aws_route53_record" "web" {
   name    = "api.example.com"
   type    = "A"
   ttl     = 300
-  records = [aws_instance.web.public_ip]  # waits for EC2, gets its public IP
+  records = [aws_instance.web.public_ip]  # ожидать создания EC2 и получить его публичный IP-адрес
 }
 
-# Outputs used downstream by Ansible
+# Выходные значения для последующего использования в Ansible
 output "web_public_ip" {
   value = aws_instance.web.public_ip
 }
@@ -100,7 +100,7 @@ Ansible особенно хорошо подходит для действий *
 ---
 - name: Configure web servers
   hosts: webservers
-  become: true  # escalate to root via sudo
+  become: true  # повысить привилегии до root через sudo
   vars:
     app_version: "{{ lookup('env', 'APP_VERSION') | default('main') }}"
     app_repo: "https://github.com/myorg/myapp.git"
@@ -120,8 +120,8 @@ Ansible особенно хорошо подходит для действий *
         repo: "{{ app_repo }}"
         version: "{{ app_version }}"
         dest: /opt/myapp
-        force: true  # overwrite local changes; intentional for deploy
-      notify: restart app  # triggers handler only if this task changed something
+        force: true  # перезаписать локальные изменения — это намеренно при развёртывании
+      notify: restart app  # запустить обработчик, только если задача внесла изменения
 
     - name: Write nginx config from template
       ansible.builtin.template:
@@ -142,7 +142,7 @@ Ansible особенно хорошо подходит для действий *
       ansible.builtin.command:
         cmd: /opt/myapp/bin/migrate --env production
         chdir: /opt/myapp
-      run_once: true          # only run on one host even if targeting many
+      run_once: true          # выполнить только на одном узле, даже если целевых узлов несколько
       environment:
         DATABASE_URL: "{{ db_url }}"
       changed_when: true      # migrations always count as a change
@@ -188,7 +188,7 @@ Both tools can technically do what the other does. Neither does it well when use
 | Rolling restart of services | ❌ Not designed for this | ✅ Right tool (`serial`) |
 | Manage Kubernetes manifests | ✅ Via `kubernetes` provider | ✅ Via `kubernetes.core` collection |
 
-**Terraform provisioners (`remote-exec`, `local-exec`) are a trap.** They run scripts after a resource is created, but Terraform does not re-run them on subsequent `terraform apply` calls — only on resource creation. If the script fails midway, Terraform marks the resource as *tainted* and tries to recreate it on the next apply, which may cause data loss or downtime. The Terraform documentation explicitly labels provisioners a "last resort." Any non-trivial configuration work should be handed off to Ansible.
+**Provisioner Terraform (`remote-exec`, `local-exec`) — ловушка.** Они запускают скрипты после создания ресурса, но при последующих вызовах `terraform apply` повторно не выполняются — только при создании ресурса. Если скрипт завершится ошибкой посередине, Terraform пометит ресурс как требующий пересоздания и при следующем применении может создать его заново, что грозит потерей данных или простоем. В документации Terraform provisioner прямо названы крайним средством. Задачи настройки, которые должны регулярно приводить систему к нужному состоянию, следует выполнять в Ansible, а не через provisioner.
 
 **Ansible не хранит состояние облачных ресурсов**, что создаёт реальные операционные проблемы при масштабировании. Если задача Ansible создаёт экземпляр EC2, повторный запуск плейбука может создать второй экземпляр — это зависит от реализации идемпотентности модуля. Если удалить ресурс вручную, Ansible об этом не узнает. Нельзя запустить `ansible-playbook destroy.yml` и ожидать, что он надёжно удалит облачные ресурсы так же, как `terraform destroy`.
 
@@ -234,7 +234,7 @@ WEB_IPS=$(terraform output -json web_private_ips | jq -r '.[]')
 # A production pipeline would use a dynamic inventory plugin instead,
 # but this approach is transparent and easy to debug.
 INVENTORY_FILE=$(mktemp /tmp/inventory.XXXXXX.ini)
-trap "rm -f $INVENTORY_FILE" EXIT  # always clean up temp file
+trap "rm -f $INVENTORY_FILE" EXIT  # всегда удалять временный файл
 
 cat > "$INVENTORY_FILE" << EOF
 [webservers]
@@ -266,7 +266,7 @@ project_path: ../infra/
 # Requires: ansible-galaxy collection install cloud.terraform
 ```
 
-**Why not just use Terraform for everything?** Some teams reach for Terraform's `remote-exec` or `local-exec` provisioners to avoid the two-tool complexity. This almost always causes pain: you lose Ansible's idempotency, retry logic, templating, and the ability to re-run configuration independently of infrastructure lifecycle. The operational cost of maintaining two tools is lower than the debugging cost of misconfigured provisioners at 2 AM.
+**Почему бы не использовать Terraform для всего?** Некоторые команды применяют provisioner `remote-exec` или `local-exec`, чтобы обойтись одним инструментом. Обычно это создаёт проблемы: теряются идемпотентность Ansible, повторные попытки, шаблоны и возможность повторно настраивать систему независимо от жизненного цикла инфраструктуры. Поддерживать два инструмента обычно дешевле, чем в два часа ночи отлаживать неправильно настроенные provisioner.
 
 ### Idempotency: Where Each Tool Stands
 
@@ -321,7 +321,7 @@ The idempotency traps in Ansible all involve `command` and `shell`:
   ansible.builtin.command:
     cmd: kubectl get nodes --no-headers | wc -l
   register: node_count
-  changed_when: false   # this is a read — never a change
+  changed_when: false   # это операция чтения, а не изменение
 ```
 
 **Summary of idempotency approach by tool:**
@@ -353,9 +353,7 @@ Does the task need to be repeated or re-run independently of infrastructure life
 Does the task need to be cleanly reversible with an automated destroy?
   └─ YES → Terraform
 
-Are you managing Kubernetes manifests on an existing cluster?
-  └─ Either works — prefer Helm or kubectl for apps, Terraform for cluster config
-```
+Вы управляете манифестами Kubernetes в уже существующем кластере?
 
 **The "paved road" antipatterns to watch for in interviews and job descriptions:**
 - "We use Terraform to install Docker on our servers" → should be Ansible
@@ -454,7 +452,7 @@ echo "Server ready at: $WEB_IP"
   tasks:
     - name: Wait for SSH to be available
       ansible.builtin.wait_for_connection:
-        timeout: 120  # new instances need time to boot and start sshd
+        timeout: 120  # новым экземплярам нужно время на загрузку и запуск sshd
 
     - name: Install nginx
       ansible.builtin.yum:
@@ -477,7 +475,7 @@ echo "Server ready at: $WEB_IP"
 ```bash
 # Run Ansible against the IP Terraform gave us
 ansible-playbook \
-  -i "${WEB_IP}," \           # trailing comma makes this an inline inventory
+  -i "${WEB_IP}," \           # завершающая запятая означает, что inventory задаётся прямо в командной строке
   -u ec2-user \
   --private-key ~/.ssh/my-key.pem \
   ansible/nginx.yml
@@ -498,8 +496,8 @@ This shows how Ansible handles a fleet update that Terraform cannot — updating
 ---
 - name: Rolling deploy of myapp
   hosts: webservers
-  serial: 1              # update exactly 1 server at a time
-  max_fail_percentage: 0 # abort the entire play if any host fails
+  serial: 1              # обновлять строго один сервер за раз
+  max_fail_percentage: 0 # прервать весь play, если произойдёт сбой хотя бы на одном узле
   become: true
 
   vars:
@@ -512,7 +510,7 @@ This shows how Ansible handles a fleet update that Terraform cannot — updating
         method: DELETE
         headers:
           Authorization: "Bearer {{ lb_token }}"
-      delegate_to: localhost  # run this against the LB API from the control node
+      delegate_to: localhost  # выполнить запрос к API балансировщика с управляющего узла
 
     - name: Wait for in-flight requests to drain
       ansible.builtin.pause:
@@ -637,8 +635,8 @@ production:
         dest: /opt/myapp/config/database.yml
         owner: myapp
         group: myapp
-        mode: "0600"   # credentials file — restrict permissions
-      no_log: true      # prevent db_password from appearing in Ansible output
+        mode: "0600"   # файл с учётными данными — ограничить права доступа
+      no_log: true      # не допустить появления db_password в выводе Ansible
       notify: restart myapp
 
   handlers:
@@ -693,15 +691,15 @@ WEB_IP=$(terraform output -raw web_public_ip)
 ansible-playbook -i "${WEB_IP}," -u ec2-user \
   --private-key ~/.ssh/key.pem playbook.yml
 
-# Second run: no-op if nothing changed, or corrects drift
+# второй запуск: ничего не менять, если состояние не изменилось, либо исправить отклонение
 ansible-playbook -i "${WEB_IP}," -u ec2-user \
   --private-key ~/.ssh/key.pem playbook.yml
-# Output: "changed=0" — this is the goal for a stable system
+# Результат: changed=0 — так и должно быть в стабильной системе
 
-# If someone manually edits nginx.conf on the server (config drift):
+# Если кто-то вручную изменит nginx.conf на сервере (отклонение конфигурации):
 ansible-playbook -i "${WEB_IP}," -u ec2-user \
   --private-key ~/.ssh/key.pem playbook.yml
-# Output: "changed=1" — Ansible corrects it automatically
+# Результат: changed=1 — Ansible автоматически исправляет конфигурацию
 ```
 
 ## Практические задания
