@@ -840,17 +840,17 @@ Requirements:
 - Слой нужно опубликовать с параметром `--compatible-runtimes python3.12`.
 - Подтвердите успех: пусть обработчик выведет `httpx.__version__`, затем проверьте журналы.
 
-**Extension:** check the size of your layer ZIP. What is the maximum compressed size a single layer can be? What would you do if your ML inference dependencies (numpy, scipy, torch) exceeded that limit?
+**Дополнительное задание:** проверьте размер ZIP-архива слоя. Каков максимальный сжатый размер одного слоя? Что делать, если зависимости для ML-инференса (`numpy`, `scipy`, `torch`) превышают этот лимит?
 
 ---
 
-### Exercise 4: End-to-End Async Event Pipeline with DLQ
+### Задание 4. Полный асинхронный конвейер событий с DLQ
 
-Build a pipeline: EventBridge rule (rate 1 minute) → Lambda → intentional failure → DLQ.
+Постройте конвейер: правило EventBridge (период — одна минута) → Lambda → намеренная ошибка → DLQ.
 
-1. Write a Lambda function that always raises an exception (simulating a broken processor).
-2. Configure an SQS DLQ on the function's async failure destination.
-3. Create an EventBridge rule that triggers the function every minute.
+1. Напишите функцию Lambda, которая всегда вызывает исключение (имитация неисправного обработчика).
+2. Настройте SQS DLQ как назначение для неудачных асинхронных вызовов функции.
+3. Создайте правило EventBridge, запускающее функцию каждую минуту.
 4. Wait 10–15 minutes, then inspect the DLQ to confirm failed invocation records are arriving.
 5. Read one DLQ message and decode its body — document what fields Lambda includes in the async failure record.
 
