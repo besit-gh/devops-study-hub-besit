@@ -81,7 +81,7 @@ Recovery: avg(/host/system.cpu.load[all,avg1],300s) < 3
 - Триггер B: «Порт SSH недоступен на web-01»
 - Триггер C: «HTTP-проверка на web-01 завершается ошибкой»
 
-If A depends on (is blocked by) B and C: when the switch goes down, B and C fire but A does NOT notify if B or C is already in PROBLEM state.
+Если A зависит от B и C (то есть заблокирован ими), при отказе коммутатора срабатывают B и C, но A не отправляет уведомление, если B или C уже находятся в состоянии PROBLEM.
 
 Чаще зависимость настраивают наоборот: B и C зависят от A. Если срабатывает A (узел недоступен), B и C подавляются, поскольку первопричина уже известна.
 
