@@ -65,7 +65,7 @@ Zabbix — распределённая система. У каждого ком
 
 ### Поддерживаемые базы данных
 
-The database is the most consequential architectural decision in any Zabbix deployment. All collected data, all configuration, and all event history live there. Poor database choice or configuration is the primary cause of Zabbix performance degradation at scale.
+База данных — одно из самых важных архитектурных решений при развёртывании Zabbix. В ней хранятся все собранные данные, конфигурация и история событий. Неподходящая база или неверная настройка — основная причина падения производительности Zabbix при масштабировании.
 
 | Database | Notes | Recommended For |
 |----------|-------|-----------------|
@@ -74,9 +74,9 @@ The database is the most consequential architectural decision in any Zabbix depl
 | **TimescaleDB** | PostgreSQL extension; stores history in hypertables with automatic time-based partitioning and native compression | High-throughput environments; >5,000 NVPS |
 | **Oracle** | Supported; avoid unless enterprise licensing mandates it | Enterprise-only constraint |
 
-**NVPS** (New Values Per Second) is the standard Zabbix throughput metric. A 1,000-host deployment collecting 60 items per host every 60 seconds produces ~1,000 NVPS. TimescaleDB compression can reduce history table storage by 90%+ and keeps `INSERT` performance flat over years of data accumulation.
+**NVPS** (New Values Per Second — новые значения в секунду) — стандартная метрика пропускной способности Zabbix. Установка на 1000 узлов, собирающая по 60 элементов с каждого узла каждые 60 секунд, создаёт около 1000 NVPS. Сжатие TimescaleDB может сократить объём таблиц истории более чем на 90% и сохранять стабильную производительность `INSERT` при накоплении данных в течение лет.
 
-**The history table problem:** Without TimescaleDB, the `history`, `history_uint`, `history_str`, and `trends` tables grow without bound. A two-year-old MySQL deployment with no partitioning will have hundreds-of-millions-row tables where even housekeeping `DELETE` statements cause lock contention. Plan for TimescaleDB or manual partitioning from day one.
+**Проблема таблиц истории:** без TimescaleDB таблицы `history`, `history_uint`, `history_str` и `trends` бесконтрольно растут. В установке MySQL, работающей два года без секционирования, таблицы могут содержать сотни миллионов строк, а даже служебные команды `DELETE` вызывают конкуренцию за блокировки. Планируйте TimescaleDB или ручное секционирование с самого начала.
 
 ```sql
 -- Check history table row counts to assess DB health
@@ -89,24 +89,24 @@ ORDER BY table_rows DESC;
 
 ---
 
-### Agent vs Agentless Monitoring
+### Мониторинг с агентом и без агента
 
-Zabbix supports both collection modes, and most real deployments use both simultaneously. The choice is determined by what you're monitoring, not a single global setting.
+Zabbix поддерживает оба способа сбора, и в большинстве реальных установок они используются одновременно. Выбор зависит от объекта мониторинга, а не от одной глобальной настройки.
 
-**Agent-based monitoring:**
-- Zabbix Agent daemon runs on the target host.
-- Supports **active** checks (agent initiates connection to server/proxy) and **passive** checks (server polls the agent).
-- Grants access to local metrics not visible remotely: per-process CPU, open file descriptors, log file tailing, custom scripts.
-- Preferred for Linux/Windows servers you control.
+**Мониторинг с агентом:**
+- Демон Zabbix Agent работает на целевом узле.
+- Поддерживает **активные** проверки (агент инициирует соединение с сервером/прокси) и **пассивные** (сервер опрашивает агент).
+- Даёт доступ к локальным метрикам, недоступным удалённо: CPU отдельных процессов, открытые файловые дескрипторы, чтение журналов и собственные скрипты.
+- Предпочтителен для серверов Linux/Windows, которыми вы управляете.
 
-**Active vs Passive checks — a critical distinction:**
+**Активные и пассивные проверки — критически важное различие:**
 
 | Mode | Who initiates | Firewall implication | Best for |
 |------|---------------|---------------------|---------|
 | **Passive** | Server polls agent on TCP 10050 | Server must reach agent | Low-latency polling; server-side control |
 | **Active** | Agent connects to server on TCP 10051 | Agent needs outbound only | NAT environments; agents behind firewalls |
 
-**Agentless check types:**
+**Типы проверок без агента:**
 
 | Check Type | Protocol | Typical Use Case |
 |------------|----------|-----------------|
@@ -119,13 +119,13 @@ Zabbix supports both collection modes, and most real deployments use both simult
 | External check | Shell script on server | Arbitrary custom logic executed by the server process |
 | Database monitor | ODBC | Direct SQL queries against application databases |
 
-**When agentless is not enough:** SNMP can tell you interface traffic and port status on a switch, but it cannot tell you which process is consuming CPU on a Linux host. Agent-based monitoring provides kernel-level visibility that no remote protocol can replicate. Use agentless for infrastructure you cannot install software on; use agents for everything else.
+**Когда мониторинга без агента недостаточно:** SNMP покажет трафик интерфейса и состояние порта коммутатора, но не определит, какой процесс потребляет CPU на Linux-хосте. Агентный мониторинг даёт видимость на уровне ядра, которую нельзя полностью заменить удалённым протоколом. Используйте мониторинг без агента для устройств, на которые нельзя установить ПО, а для остальной инфраструктуры — агенты.
 
 ---
 
 ### Установка: Server, Database, and Frontend
 
-Zabbix provides its own package repositories for all major distributions. Always use the official Zabbix repo rather than distribution-bundled packages — distro packages lag several major versions behind and lack up-to-date templates.
+Zabbix предоставляет собственные репозитории пакетов для основных дистрибутивов. Используйте официальный репозиторий Zabbix, а не пакеты из репозиториев дистрибутива: они могут отставать на несколько крупных версий и не содержать актуальных шаблонов.
 
 ```bash
 # --- Step 1: Add the official Zabbix 7.0 LTS repository (Ubuntu 22.04) ---
@@ -171,13 +171,13 @@ systemctl status zabbix-server   # should show: active (running)
 grep -i "started\|error\|cannot" /var/log/zabbix/zabbix_server.log | tail -20
 ```
 
-**The `log_bin_trust_function_creators` gotcha:** MySQL with binary logging enabled rejects the stored procedure creation in the Zabbix schema unless this flag is set. It must be set before the import and can be disabled immediately after. Forgetting this step produces a cryptic `ERROR 1418` and a partially imported schema.
+**Особенность `log_bin_trust_function_creators`:** MySQL с включённым бинарным журналированием отклоняет создание хранимых процедур в схеме Zabbix, если этот флаг не установлен. Включите его перед импортом и сразу после импорта можете отключить. Если пропустить этот шаг, появится малопонятная ошибка `ERROR 1418`, а схема импортируется частично.
 
 ---
 
-### Zabbix Server Configuration
+### Настройка Zabbix Server
 
-The server is configured via `/etc/zabbix/zabbix_server.conf`. Most parameters have sane defaults for small deployments, but several must be tuned before going to production.
+Сервер настраивается через `/etc/zabbix/zabbix_server.conf`. Для небольшой установки большинство параметров по умолчанию подходит, но перед выходом в production некоторые значения необходимо скорректировать.
 
 ```ini
 # /etc/zabbix/zabbix_server.conf
@@ -217,9 +217,9 @@ HousekeepingFrequency=1  # Hours between history cleanup runs
 MaxHousekeeperDelete=5000 # Rows deleted per housekeeping cycle
 ```
 
-**CacheSize gotcha:** if `CacheSize` is too small, the server logs `cannot allocate memory in configuration cache` and stops accepting new data. This is a hard failure. Start at 64M for mid-size deployments and monitor the `zabbix[rcache,buffer,pused]` internal metric — alert if it exceeds 80%.
+**Важно о CacheSize:** если `CacheSize` слишком мал, сервер записывает `cannot allocate memory in configuration cache` и перестаёт принимать новые данные. Это критический отказ. Для установок среднего размера начните с 64M и следите за внутренней метрикой `zabbix[rcache,buffer,pused]`; настройте оповещение при превышении 80%.
 
-**Thread count and DB connections:** more threads consume more DB connections. Each poller thread holds one connection. `max_connections` on MySQL/PostgreSQL must be set to at least `(StartPollers + StartTrappers + StartPingers + StartDiscoverers + StartHTTPPollers + StartDBSyncers) × 2 + 50` with headroom. Running out of DB connections produces silent data loss, not a visible crash.
+**Число потоков и соединения с БД:** больше потоков означает больше соединений с базой. Каждый поток poller удерживает одно соединение. Задайте `max_connections` в MySQL/PostgreSQL не ниже `(StartPollers + StartTrappers + StartPingers + StartDiscoverers + StartHTTPPollers + StartDBSyncers) × 2 + 50`, оставив запас. Исчерпание соединений приводит к незаметной потере данных, а не обязательно к явному падению.
 
 ```bash
 # Verify internal metrics via zabbix_server -R
@@ -228,9 +228,9 @@ zabbix_server -R diaginfo    # Dumps cache utilization, queue depth, process cou
 
 ---
 
-### Web Frontend and PHP Configuration
+### Веб-интерфейс и настройка PHP
 
-The web frontend is a PHP application that communicates with the database directly and with the server indirectly via the API. It must be served by Nginx or Apache with PHP-FPM.
+Веб-интерфейс — приложение PHP, которое напрямую обращается к базе данных и взаимодействует с сервером через API. Его нужно обслуживать через Nginx или Apache с PHP-FPM.
 
 ```nginx
 # /etc/nginx/conf.d/zabbix.conf
@@ -271,7 +271,7 @@ date.timezone = UTC        # MUST match Zabbix server timezone; mismatches
                            # cause event timestamps to be wrong in the UI
 ```
 
-**Timezone mismatches are a silent failure.** If PHP's `date.timezone`, the server OS timezone, and the Zabbix frontend setting differ, event times and graphs will be offset by the difference. Always set everything to UTC and convert in Grafana or user profile settings.
+**Несовпадение часовых поясов приводит к незаметным ошибкам.** Если `date.timezone` PHP, часовой пояс ОС сервера и настройка интерфейса Zabbix различаются, время событий и графики будут смещены. Всегда задавайте UTC во всех компонентах, а преобразование выполняйте в Grafana или настройках профиля пользователя.
 
 After restarting Nginx and PHP-FPM, navigate to `http://<server-ip>/` to complete the installation wizard. The wizard validates all PHP prerequisites, database connectivity, and server connectivity before writing the final config to `/etc/zabbix/web/zabbix.conf.php`.
 
