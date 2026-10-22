@@ -13,15 +13,15 @@ Git hooks — это shell-скрипты или другие исполняем
 
 Принцип прост: хуки — обычные исполняемые файлы в `.git/hooks/`. Ненулевой код завершения отменяет выполняемую операцию Git. Специальный синтаксис или фреймворк не нужен — даже пятистрочный Bash-скрипт может быть полноценным хуком. Но простота создаёт и ограничение: каталог `.git/` не версионируется, поэтому хуки по умолчанию не попадают в клон. Команде нужно отдельно организовать их распространение.
 
-In the broader DevOps toolchain, hooks occupy the leftmost quality gate — they run on the developer's workstation before code reaches a pull request or CI pipeline. They complement but don't replace CI: hooks are fast and local; CI is authoritative and shared. A healthy workflow uses both: hooks prevent embarrassing pushes, CI enforces policy with full infrastructure access. Understanding how to write, share, and manage hooks is a practical skill interviewers expect from candidates working on developer experience, platform engineering, or any team that owns a CI/CD pipeline.
+В цепочке DevOps хуки Git — первая линия контроля качества: они запускаются на рабочей станции разработчика до того, как код попадёт в pull request или конвейер CI. Они дополняют CI, но не заменяют его: хуки быстрые и локальные, а CI обеспечивает общие обязательные проверки. В хорошем процессе используются оба механизма: хуки предотвращают очевидные ошибки перед отправкой кода, а CI применяет правила с доступом к общей инфраструктуре. Умение создавать, распространять и сопровождать хуки полезно для специалистов по платформенной инженерии и CI/CD.
 
 ---
 
 ## Основные понятия
 
-### How Git Invokes Hooks
+### Как Git запускает хуки
 
-When Git runs a hook, it looks for an executable file with the exact hook name in the `.git/hooks/` directory (or the path configured by `core.hooksPath`). No file extension — a file named `pre-commit.sh` will be silently ignored. Git sets `PATH` and a handful of environment variables before calling the hook, and it waits for the process to exit.
+При запуске хука Git ищет исполняемый файл с точным именем хука в каталоге `.git/hooks/` (или по пути, заданному параметром `core.hooksPath`). Расширение файла не используется: файл `pre-commit.sh` будет молча проигнорирован. Перед запуском Git задаёт `PATH` и несколько переменных окружения, а затем ждёт завершения процесса.
 
 ```
 .git/hooks/
@@ -31,7 +31,7 @@ When Git runs a hook, it looks for an executable file with the exact hook name i
 └── pre-push
 ```
 
-The hook receives context through arguments and environment variables that vary by hook type. For example, `commit-msg` receives the path to the message file as `$1`; `pre-push` receives the remote name as `$1` and the remote URL as `$2` and reads pushed refs from stdin.
+Контекст передаётся хуку через аргументы и переменные окружения; их состав зависит от типа хука. Например, `commit-msg` получает путь к файлу сообщения в `$1`, а `pre-push` — имя удалённого репозитория в `$1`, его URL в `$2` и читает отправляемые ссылки из стандартного ввода.
 
 **Execution model:** Git runs the hook synchronously and blocks until it exits. For hooks that can be slow (e.g., running a test suite in `pre-push`), this is intentional — the developer waits, sees the output, and gets feedback before anything is sent.
 

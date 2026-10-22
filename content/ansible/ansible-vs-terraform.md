@@ -801,14 +801,14 @@ This exercise builds intuition for the state gap between the two tools.
 
 ### Быстрая проверка
 
-7. Identify which tool uses declarative state management. Run: `printf 'ansible:stateless\nterraform:declarative-state\n' | awk -F: '/declarative-state/{print $1}'`
+7. Определите, какой инструмент использует декларативное управление состоянием. Выполните: `printf 'ansible:stateless\nterraform:declarative-state\n' | awk -F: '/declarative-state/{print $1}'`
 
 ```expected_output
 terraform
 ```
 
-hint: Think about how awk can filter lines based on a pattern match and then extract a specific field from those lines.
-hint: Use awk with -F: to set the colon as a field separator, then match lines containing your target pattern inside /.../ and print the first field with {print $1}.
+Подсказка: подумайте, как `awk` может отфильтровать строки по шаблону и извлечь из них определённое поле.
+Подсказка: используйте `awk` с параметром `-F:`, чтобы задать двоеточие разделителем полей. Затем найдите строки с нужным шаблоном внутри `/.../` и выведите первое поле с помощью `{print $1}`.
 
 8. Count YAML playbook files in a directory listing. Run: `printf 'main.yml\ninventory.ini\nplaybook.yml\nrequirements.yml\n' | grep -c '\.yml$'`
 
@@ -816,5 +816,5 @@ hint: Use awk with -F: to set the colon as a field separator, then match lines c
 3
 ```
 
-hint: Think about how grep can be used to filter lines by a file extension pattern and also count matches directly.
+Подсказка: подумайте, как с помощью `grep` отфильтровать строки по шаблону расширения файла и сразу посчитать совпадения.
 hint: Use grep with the -c flag and the regex pattern \.yml$ to count only lines ending in .yml.

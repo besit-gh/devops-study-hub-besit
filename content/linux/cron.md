@@ -106,7 +106,7 @@ Cron намеренно устроен минималистично: кажда�
 
 Это самая частая причина сбоев cron. При запуске задания cron **не** загружает стартовые файлы shell: ни `~/.bashrc`, ни `~/.profile`, ни `/etc/profile`. Окружение почти пустое.
 
-**Default cron environment (approximate):**
+**Окружение cron по умолчанию (примерно):**
 ```
 HOME=/root          (or the user's home)
 LOGNAME=username
@@ -240,7 +240,7 @@ echo "[$(date -Iseconds)] Starting backup..."
 
 ---
 
-### Crontab Management Commands
+### Команды управления crontab
 
 ```bash
 # Edit your crontab (uses $EDITOR or $VISUAL, defaults to vi/nano)
@@ -268,13 +268,13 @@ crontab /path/to/mycrontab.txt
 echo "*/5 * * * * /usr/bin/healthcheck.sh > /dev/null 2>&1" | crontab -
 ```
 
-**`crontab -r` vs `-e` gotcha:** `-r` (remove) and `-e` (edit) are adjacent on the keyboard. Mistyping `-r` instead of `-e` deletes all cron jobs with no confirmation and no undo. Always keep crontabs in version control (an Ansible task, a file in your repo) so recovery is `git checkout` rather than reconstruction from memory.
+**Подводный камень с `crontab -r` и `-e`:** клавиши `r` и `e` расположены рядом. Если вместо `-e` ошибочно ввести `-r`, все задания cron удалятся без подтверждения и возможности отмены. Храните crontab под контролем версий — например, как задачу Ansible или файл в репозитории, — чтобы восстановить его через Git, а не по памяти.
 
 ---
 
-### Verifying That Cron Ran
+### Проверка выполнения заданий cron
 
-A job not producing output is not the same as a job running. Always verify in logs.
+Отсутствие вывода не означает, что задание действительно выполнялось. Всегда проверяйте журналы.
 
 ```bash
 # Ubuntu/Debian — cron logs to syslog

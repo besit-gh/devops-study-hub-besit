@@ -14,7 +14,7 @@ exercises: 3
 
 ### Безопасность X-Pack
 
-X-Pack is the security (and features) plugin bundled with Elasticsearch since version 6.8. In Elasticsearch 8.x it is enabled by default and cannot be disabled in production mode. In 7.x clusters you must enable it:
+X-Pack — это набор функций, включая средства безопасности, поставляемый с Elasticsearch начиная с версии 6.8. В Elasticsearch 8.x он включён по умолчанию и не может быть отключён в production-режиме. В кластерах 7.x его необходимо включить вручную:
 
 ```yaml
 # elasticsearch.yml
@@ -23,7 +23,7 @@ xpack.security.transport.ssl.enabled: true
 xpack.security.http.ssl.enabled: true
 ```
 
-After enabling, run the setup utility to generate certificates and built-in user passwords:
+После включения запустите утилиту настройки, чтобы создать сертификаты и пароли встроенных пользователей:
 
 ```bash
 # Generate CA and node certificates
@@ -34,9 +34,9 @@ After enabling, run the setup utility to generate certificates and built-in user
 ./bin/elasticsearch-setup-passwords auto
 ```
 
-### TLS Setup
+### Настройка TLS
 
-Two distinct TLS channels must be secured independently:
+Необходимо независимо защитить два отдельных TLS-канала:
 
 | Channel | Setting prefix | Purpose |
 |---------|---------------|---------|
@@ -54,7 +54,7 @@ xpack.security.http.ssl.enabled: true
 xpack.security.http.ssl.keystore.path: elastic-http.p12
 ```
 
-For PEM format (common when certs are managed by Vault or cert-manager):
+Для формата PEM (часто используется, когда сертификатами управляют Vault или cert-manager):
 ```yaml
 xpack.security.http.ssl.certificate: /etc/elasticsearch/certs/node.crt
 xpack.security.http.ssl.key: /etc/elasticsearch/certs/node.key

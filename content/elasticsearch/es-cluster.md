@@ -286,18 +286,18 @@ PUT /_cluster/settings
 
 ## Практические задания
 
-1. Simulate a yellow cluster on a local Docker setup (two Elasticsearch nodes, one replica per index). Stop one container. Run `_cat/shards` and `_cluster/allocation/explain` and document every field in the explain output. Bring the node back and observe the recovery sequence using `_cat/recovery?v`.
+1. Смоделируйте жёлтый кластер в локальной среде Docker (два узла Elasticsearch, по одной реплике на индекс). Остановите один контейнер. Выполните `_cat/shards` и `_cluster/allocation/explain`, описав каждое поле вывода explain. Запустите узел снова и проследите последовательность восстановления с помощью `_cat/recovery?v`.
 
-2. Create an index `products-v1` with 2 shards and index 100 documents. Change the mapping by adding a new `sku` (keyword) field — without reindex. Then add a `price_float` field that should have been `float` but was indexed as `keyword`. Perform a reindex to `products-v2` with the corrected mapping. Flip the alias `products` from `products-v1` to `products-v2` atomically with a single `_aliases` call. Verify the old index is no longer the write target.
+2. Создайте индекс `products-v1` с двумя шардами и проиндексируйте 100 документов. Измените mapping, добавив поле `sku` типа `keyword`, без переиндексации. Затем добавьте поле `price_float`, которое должно было иметь тип `float`, но было проиндексировано как `keyword`. Выполните переиндексацию в `products-v2` с исправленным mapping. Одним вызовом `_aliases` атомарно переключите псевдоним `products` с `products-v1` на `products-v2`. Убедитесь, что старый индекс больше не является целью записи.
 
-3. Set up an S3-compatible snapshot repository using MinIO in Docker (or a real S3 bucket). Take a snapshot of all indices, delete one index, then restore only that index using `rename_replacement` to restore it under a different name. Verify document counts match before and after using `_cat/indices`.
+3. Настройте совместимый с S3 репозиторий снимков с помощью MinIO в Docker (или настоящего бакета S3). Создайте снимок всех индексов, удалите один индекс, затем восстановите только его под другим именем с помощью `rename_replacement`. Сравните количество документов до и после через `_cat/indices`.
 
 
 ---
 
 ### Быстрая проверка
 
-4. Calculate the minimum master-eligible nodes for quorum in a 5-node cluster. Run: `python3 -c "nodes=5; print(nodes // 2 + 1)"`
+4. Рассчитайте минимальное число узлов, имеющих право быть master, необходимое для кворума в кластере из пяти узлов. Выполните: `python3 -c "nodes=5; print(nodes // 2 + 1)"`
 
 ```expected_output
 3
@@ -306,7 +306,7 @@ PUT /_cluster/settings
 Подсказка: вспомните математический расчёт кворума в распределённом кластере, предотвращающий split-brain.
 Подсказка: используйте целочисленное деление Python `//` по формуле `(total_nodes // 2 + 1)`, чтобы найти минимальное число узлов, имеющих право быть master.
 
-5. Count green-status clusters in a health summary. Run: `printf 'cluster_1: green\ncluster_2: yellow\ncluster_3: green\ncluster_4: green\n' | awk '{count[$2]++} END{print count["green"]}'`
+5. Посчитайте количество кластеров со статусом green в сводке состояния. Выполните: `printf 'cluster_1: green\ncluster_2: yellow\ncluster_3: green\ncluster_4: green\n' | awk '{count[$2]++} END{print count["green"]}'`
 
 ```expected_output
 3

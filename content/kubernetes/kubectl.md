@@ -21,7 +21,7 @@ kubectl взаимодействует с Kubernetes API server по HTTPS. Ка
 
 ### Контексты и кластеры
 
-A kubeconfig file (default: `~/.kube/config`) holds three types of objects: **clusters** (API server endpoints + CA certs), **users** (credentials), and **contexts** (a named tuple of cluster + user + namespace). Switching context switches all three simultaneously.
+Файл kubeconfig (по умолчанию `~/.kube/config`) содержит три типа объектов: **кластеры** (адреса API-сервера и сертификаты CA), **пользователи** (учётные данные) и **контексты** (именованный набор из кластера, пользователя и пространства имён). При переключении контекста меняются все три параметра одновременно.
 
 ```bash
 # List all configured contexts (cluster + user + namespace combos)
@@ -40,7 +40,7 @@ kubectl config set-context --current --namespace=production
 kubectl cluster-info
 ```
 
-**Multiple kubeconfig files:** Instead of merging everything into one file, you can compose configs using `KUBECONFIG`:
+**Несколько файлов kubeconfig:** вместо объединения всех настроек в один файл можно задать несколько конфигураций через переменную `KUBECONFIG`:
 
 ```bash
 # Merge two configs temporarily
@@ -51,7 +51,7 @@ kubectl config get-contexts   # shows contexts from both files
 kubectl config view --flatten > ~/.kube/merged.yaml
 ```
 
-**kubectx + kubens** reduce context and namespace switching to a single word:
+**kubectx и kubens** позволяют переключать контексты и пространства имён одной короткой командой:
 
 ```bash
 kubectx prod-cluster     # switch context
@@ -59,7 +59,7 @@ kubens production        # switch namespace
 kubectx -                # switch back to previous context (like cd -)
 ```
 
-**Gotcha — namespace persistence:** `kubectl config set-context --current --namespace=production` modifies your kubeconfig on disk. If you forget this is set, every command silently targets the wrong namespace. Always check `kubectl config get-contexts` (the NAMESPACE column) when joining an incident someone else started.
+**Подводный камень — сохранение пространства имён:** команда `kubectl config set-context --current --namespace=production` изменяет kubeconfig на диске. Если забыть об этой настройке, все команды будут незаметно обращаться не к тому пространству имён. Подключаясь к расследованию чужого инцидента, всегда проверяйте столбец NAMESPACE в выводе `kubectl config get-contexts`.
 
 | Field | Where it lives | What it controls |
 |-------|----------------|-----------------|
@@ -70,9 +70,9 @@ kubectx -                # switch back to previous context (like cd -)
 
 ---
 
-### Getting Resources
+### Получение ресурсов
 
-`kubectl get` is your primary read path. Learn its flags deeply — the difference between `-o wide`, `-o yaml`, and `-o jsonpath` determines how fast you can extract what you need.
+`kubectl get` — основная команда для просмотра ресурсов. Хорошо разберитесь с её параметрами: различие между `-o wide`, `-o yaml` и `-o jsonpath` определяет, насколько быстро вы получите нужные данные.
 
 ```bash
 # Basic listing
@@ -99,9 +99,9 @@ kubectl get deployment myapp -o yaml
 kubectl get pod myapp-abc123 -o json
 ```
 
-**`describe` vs `get -o yaml`:** `describe` adds computed fields and the Events list that are not in the stored YAML. Always run `describe` first during debugging — the Events section at the bottom is where Kubernetes explains *why* something failed (e.g., `FailedScheduling`, `BackOff`, `Failed to pull image`).
+**`describe` и `get -o yaml`:** `describe` добавляет вычисляемые поля и список Events, которых нет в сохранённом YAML. При диагностике сначала запускайте `describe`: внизу, в разделе Events, Kubernetes объясняет, *почему* возникла ошибка (например, `FailedScheduling`, `BackOff`, `Failed to pull image`).
 
-**Gotcha — `kubectl get all` is not truly all:** Despite the name, `kubectl get all` does not return every resource type. It omits CRDs, PersistentVolumes, ServiceAccounts, ConfigMaps, Secrets, and more. To enumerate everything in a namespace, use:
+**Важно: `kubectl get all` — это не буквально все ресурсы.** Несмотря на название, команда не выводит все типы ресурсов. В частности, она пропускает CRD, PersistentVolume, ServiceAccount, ConfigMap, Secret и другие объекты. Чтобы перечислить ресурсы пространства имён, используйте:
 
 ```bash
 # List every resource type present in a namespace
@@ -111,9 +111,9 @@ kubectl api-resources --verbs=list --namespaced -o name \
 
 ---
 
-### Filtering and Selecting
+### Фильтрация и выборка
 
-Filtering client-side with `grep` works, but server-side filtering with labels and field selectors is faster and scales better in large clusters.
+Фильтрация на клиенте через `grep` работает, но фильтрация на стороне сервера с помощью меток и селекторов полей быстрее и лучше масштабируется в больших кластерах.
 
 ```bash
 # Label selectors — match pods by label key=value
@@ -133,7 +133,7 @@ kubectl get pods --sort-by='.status.startTime'
 kubectl get events --sort-by='.lastTimestamp'
 ```
 
-**Label vs field selectors:** Labels are arbitrary metadata you define; field selectors query actual object fields. Field selectors have limited support — not every field is indexed server-side. If you get `Error: field label not supported`, that field requires client-side filtering instead.
+**Метки и селекторы полей:** метки — это произвольные метаданные, задаваемые вами; селекторы полей фильтруют реальные поля объекта. Поддержка селекторов полей ограничена: не каждое поле индексируется на сервере. Если возникает `Error: field label not supported`, фильтруйте по этому полю на клиенте.
 
 | Selector type | Syntax | Evaluated where | Performance |
 |--------------|--------|-----------------|-------------|
@@ -144,9 +144,9 @@ kubectl get events --sort-by='.lastTimestamp'
 
 ---
 
-### Output Formatting
+### Форматирование вывода
 
-Raw `kubectl get` output is for humans. Scripts and pipelines need structured data. Master these three formats.
+Обычный вывод `kubectl get` предназначен для человека. Скриптам и конвейерам нужны структурированные данные. Освойте три следующих формата.
 
 ```bash
 # Custom columns — define exactly what to show and what to name it
@@ -175,7 +175,7 @@ kubectl get pods -A -o jsonpath=\
 '{range .items[?(@.spec.nodeName!="ip-10-0-1-5")]}{.metadata.name}{"\n"}{end}'
 ```
 
-JSONPath quick reference:
+Краткая справка по JSONPath:
 
 | Expression | Meaning |
 |-----------|---------|
@@ -187,15 +187,15 @@ JSONPath quick reference:
 | `{range ...}{end}` | Loop construct for lists |
 | `{"\t"}` `{"\n"}` | Literal tab / newline in output |
 
-**Gotcha — JSONPath on lists vs single resources:** When you run `kubectl get pod myapp-abc123 -o jsonpath='{.status.podIP}'`, the root is the Pod object. When you run `kubectl get pods -o jsonpath='{...}'`, the root is a PodList — so you need `.items[*]` to iterate. Forgetting this gives empty output with no error, not an error message.
+**Важно: JSONPath для списка и отдельного ресурса различается.** В команде `kubectl get pod myapp-abc123 -o jsonpath='{.status.podIP}'` корневой объект — сам Pod. В `kubectl get pods -o jsonpath='{...}'` корень — PodList, поэтому для перебора нужен `.items[*]`. Если забыть об этом, вывод будет пустым, но ошибки не появится.
 
-**`-o json | jq` vs `-o jsonpath`:** For simple extractions, JSONPath is faster — no extra tool required. For complex filtering, conditional logic, or pretty-printing nested structures, pipe to `jq`. Both approaches are valid in production scripts; JSONPath is preferred when minimizing external tool dependencies (e.g., inside a minimal CI container).
+**`-o json | jq` и `-o jsonpath`:** для простого извлечения данных быстрее JSONPath — дополнительный инструмент не нужен. Для сложной фильтрации, условий или форматирования вложенных структур передавайте JSON в `jq`. Оба способа подходят для production-скриптов; JSONPath предпочтительнее, когда нужно сократить внешние зависимости, например в минимальном CI-контейнере.
 
 ---
 
-### Applying and Editing
+### Применение и редактирование ресурсов
 
-Kubernetes favors **declarative** management: you describe desired state in YAML, and the control plane reconciles actual state toward it. `kubectl apply` is the primary entry point.
+Kubernetes предпочитает **декларативное** управление: вы описываете желаемое состояние в YAML, а управляющая плоскость приводит фактическое состояние к нему. Основной инструмент для этого — `kubectl apply`.
 
 ```bash
 # Apply a single manifest (create if absent, patch if present)
@@ -235,9 +235,9 @@ kubectl delete deployment myapp
 kubectl delete pod myapp-abc123 --grace-period=0   # skip graceful termination
 ```
 
-**`--dry-run=client` vs `--dry-run=server`:** Client-side dry run only checks YAML syntax and basic structure. Server-side dry run goes through all admission webhooks (OPA Gatekeeper, Kyverno, etc.) and validates against current cluster state — it's the only way to catch policy violations before applying. Use server-side in CI pipelines.
+**`--dry-run=client` и `--dry-run=server`:** клиентский пробный запуск проверяет только синтаксис YAML и базовую структуру. Серверный проходит через все admission-webhook (OPA Gatekeeper, Kyverno и другие) и проверяет манифест с учётом текущего состояния кластера. Это позволяет обнаружить нарушения политик до применения. Используйте серверную проверку в CI-конвейерах.
 
-**Gotcha — `kubectl apply` vs `kubectl create`:** `create` fails if the resource already exists. `apply` is idempotent — safe to run repeatedly. Always use `apply` in pipelines. Use `create` only for one-time bootstrapping or when you want an explicit error on collision.
+**Важно: `kubectl apply` и `kubectl create`:** `create` завершится ошибкой, если ресурс уже существует. `apply` идемпотентен и безопасен при повторном запуске. В конвейерах используйте `apply`; `create` подходит для однократной начальной настройки или когда при конфликте нужна явная ошибка.
 
 | Command | Idempotent | Creates | Updates | Deletes removed fields |
 |---------|-----------|---------|---------|----------------------|
@@ -246,7 +246,7 @@ kubectl delete pod myapp-abc123 --grace-period=0   # skip graceful termination
 | `kubectl replace` | No | No | Yes (full replace) | Yes |
 | `kubectl patch` | Yes | No | Yes (partial) | No |
 
-**Rollout management:** After applying a Deployment change, use `kubectl rollout` to track and control the rollout lifecycle:
+**Управление развёртыванием:** после изменения Deployment используйте `kubectl rollout`, чтобы отслеживать и контролировать процесс обновления:
 
 ```bash
 # Watch rollout progress (blocks until complete or fails)
@@ -268,13 +268,13 @@ kubectl rollout pause deployment/myapp
 kubectl rollout resume deployment/myapp
 ```
 
-**Gotcha — `kubectl rollout undo` is not a substitute for GitOps:** Undo writes the previous ReplicaSet template back to the Deployment, but your Git repo still reflects the broken version. Always follow an undo with a corrected `kubectl apply` from a fixed manifest — otherwise the next pipeline run re-deploys the broken version.
+**Важно: `kubectl rollout undo` не заменяет GitOps.** Команда возвращает в Deployment шаблон предыдущего ReplicaSet, но в Git по-прежнему остаётся сломанная версия. После отката обязательно исправьте манифест и выполните `kubectl apply` из него, иначе следующий запуск конвейера снова развернёт неисправную версию.
 
 ---
 
 ### Debugging
 
-Debugging in Kubernetes means correlating four sources of information: Events (what the control plane tried to do), logs (what the application output), resource state (what fields say about current condition), and network reachability. kubectl gives you direct access to all four.
+Диагностика Kubernetes требует сопоставления четырёх источников: Events (что пыталась сделать управляющая плоскость), журналов (что вывело приложение), состояния ресурсов (что поля говорят о текущем состоянии) и сетевой доступности. `kubectl` даёт прямой доступ ко всем четырём.
 
 ```bash
 # Logs — basic
@@ -309,19 +309,19 @@ kubectl cp ./config.json myapp-abc123:/etc/app/config.json           # local →
 kubectl cp myapp-abc123:/var/log/app.log ./app.log -c sidecar        # specify container
 ```
 
-**Gotcha — `kubectl logs --previous`:** This only works while the pod still exists and has had at least one previous container termination. If the pod was deleted and rescheduled (new pod name), the previous logs are gone unless you have a log aggregation system (Loki, Elasticsearch, CloudWatch, etc.). In production, never rely solely on `kubectl logs` — always ship logs to an aggregator.
+**Важно: `kubectl logs --previous`:** команда работает, пока Pod существует и в нём хотя бы раз завершался предыдущий контейнер. Если Pod удалили и создали заново под другим именем, старые журналы исчезнут, если нет системы агрегации логов (Loki, Elasticsearch, CloudWatch и т. п.). В production не полагайтесь только на `kubectl logs` — всегда отправляйте журналы в агрегатор.
 
-**Gotcha — `kubectl exec` into distroless containers:** Many production images are built `FROM scratch` or `FROM distroless` and contain no shell. `kubectl debug` with an ephemeral container solves this — it shares the pod's network and PID namespace, so you can inspect `/proc`, run `curl` against `localhost`, and examine the filesystem via `/proc/<pid>/root`.
+**Важно: `kubectl exec` в distroless-контейнеры:** во многих production-образах, собранных на основе `scratch` или `distroless`, нет оболочки. Помогает `kubectl debug` с эфемерным контейнером: он использует сетевое пространство имён и PID-пространство Pod, поэтому можно изучать `/proc`, запускать `curl` к `localhost` и просматривать файловую систему через `/proc/<pid>/root`.
 
-**Gotcha — `kubectl cp` requires `tar` in the container:** `kubectl cp` works by running `tar` inside the container. If the image has no `tar` binary (distroless, minimal Alpine), the copy will silently fail or error. Use `kubectl debug` to attach a sidecar with tools, then copy from there.
+**Важно: `kubectl cp` требует `tar` внутри контейнера.** Команда запускает `tar` в контейнере. Если в образе нет этой утилиты (например, distroless или минимальный Alpine), копирование завершится ошибкой или не сработает. Используйте `kubectl debug`, чтобы подключить контейнер с нужными инструментами, и скопируйте файлы оттуда.
 
 ---
 
-### Troubleshooting Patterns
+### Сценарии диагностики
 
-Knowing individual commands is not enough — you need a systematic diagnostic flow for each failure mode.
+Знать отдельные команды недостаточно — для каждого типа отказа нужен систематический алгоритм диагностики.
 
-**Pod stuck in `Pending`:**
+**Pod завис в состоянии `Pending`:**
 ```bash
 kubectl describe pod myapp-abc123 | grep -A 20 "Events:"
 # Common causes in Events:
@@ -364,7 +364,7 @@ kubectl describe pod myapp-abc123 | grep -A5 "Events:"
 kubectl get secret regcred -o jsonpath='{.data.\.dockerconfigjson}' | base64 -d
 ```
 
-**Service not routing traffic:**
+**Service не направляет трафик:**
 ```bash
 # Step 1: check if endpoints exist — empty = selector matches no pods
 kubectl get endpoints myapp-service
@@ -384,7 +384,7 @@ kubectl run curl-test --image=curlimages/curl:8.5.0 --rm -it --restart=Never \
   -- curl -v http://myapp-service.production.svc.cluster.local:80/healthz
 ```
 
-**Node NotReady:**
+**Узел NotReady:**
 ```bash
 # Check node conditions
 kubectl describe node ip-10-0-1-5 | grep -A5 "Conditions:"
@@ -402,13 +402,13 @@ kubectl drain ip-10-0-1-5 --ignore-daemonsets --delete-emptydir-data
 kubectl uncordon ip-10-0-1-5
 ```
 
-**Gotcha — `kubectl drain` and PodDisruptionBudgets:** If a Deployment has a PDB requiring at least 1 pod available and only 1 replica exists, `kubectl drain` will block indefinitely. You'll see `cannot evict pod as it would violate the pod's disruption budget`. Options: scale up the deployment first, or pass `--disable-eviction` (bypasses PDB — use carefully in production).
+**Важно: `kubectl drain` и PodDisruptionBudget.** Если PDB требует доступности хотя бы одного Pod, а у Deployment только одна реплика, `kubectl drain` может надолго заблокироваться. Появится сообщение `cannot evict pod as it would violate the pod's disruption budget`. Можно сначала увеличить число реплик или передать `--disable-eviction` (обходит PDB — в production используйте осторожно).
 
 ---
 
-### Resource Management and Efficiency
+### Управление ресурсами и эффективность
 
-Several kubectl patterns make day-to-day work substantially faster once internalized.
+Освоив несколько приёмов `kubectl`, вы сможете заметно быстрее выполнять повседневные задачи.
 
 ```bash
 # Generate YAML scaffold without applying — great starting point for new manifests
@@ -439,17 +439,17 @@ kubectl top pods -n production --sort-by=memory
 kubectl top pods -n production --containers     # per-container breakdown
 ```
 
-**`kubectl explain` in interviews:** Interviewers often ask about specific YAML fields. `kubectl explain` gives you the authoritative answer without memorizing specs. In a live coding screen where you have terminal access, this command is always available — use it.
+**`kubectl explain` на собеседовании:** интервьюеры часто спрашивают о конкретных полях YAML. `kubectl explain` даёт точный ответ без необходимости запоминать спецификацию. Если во время практического собеседования доступен терминал, используйте эту команду.
 
-**Gotcha — `kubectl top` requires metrics-server:** `kubectl top` does not work on a bare cluster. It requires the `metrics-server` aggregated API. If you get `error: Metrics API not available`, either metrics-server isn't installed or it's not healthy. Check with `kubectl get apiservice v1beta1.metrics.k8s.io`.
+**Важно: `kubectl top` требует metrics-server.** В пустом кластере команда не работает: нужен агрегированный API `metrics-server`. Если получаете `error: Metrics API not available`, сервис не установлен или неисправен. Проверьте его командой `kubectl get apiservice v1beta1.metrics.k8s.io`.
 
 ---
 
 ## Примеры
 
-### Example 1: Full Deploy, Verify, and Rollback Cycle
+### Пример 1. Полный цикл развёртывания, проверки и отката
 
-This demonstrates the complete deployment lifecycle a CI/CD pipeline performs, ending with a controlled rollback.
+Пример показывает полный жизненный цикл развёртывания в CI/CD-конвейере, завершающийся контролируемым откатом.
 
 ```bash
 # 1. Write a deployment manifest
@@ -530,9 +530,9 @@ kubectl get pods -n production -l app=myapp
 
 ---
 
-### Example 2: Debugging a CrashLoopBackOff from Scratch
+### Пример 2. Диагностика CrashLoopBackOff с нуля
 
-Simulates a misconfigured application and walks through the full diagnosis.
+Моделирует неправильно настроенное приложение и демонстрирует полный процесс диагностики.
 
 ```bash
 # 1. Deploy a pod that immediately crashes (bad command)
@@ -577,9 +577,9 @@ kubectl delete pod crasher
 
 ---
 
-### Example 3: Service Connectivity Diagnosis
+### Пример 3. Диагностика сетевой доступности Service
 
-Debugs a Service that appears healthy but receives no traffic.
+Разбирает ситуацию, когда Service выглядит исправным, но не получает трафик.
 
 ```bash
 # 1. Create a deployment and a deliberately misconfigured Service
@@ -634,9 +634,9 @@ kubectl delete svc web-svc -n production
 
 ---
 
-### Example 4: Multi-Cluster JSONPath Report
+### Пример 4. Отчёт JSONPath по нескольким кластерам
 
-Generates a cross-namespace image inventory — useful for auditing image versions before a CVE patch.
+Создаёт инвентаризацию образов в разных пространствах имён. Это полезно для проверки версий перед установкой исправления CVE.
 
 ```bash
 # Report: namespace, deployment name, container name, image — across entire cluster
@@ -664,55 +664,55 @@ kubectl get deployments -A -o json \
 
 ## Практические задания
 
-### Exercise 1: Context and Namespace Safety
+### Задание 1. Безопасная работа с контекстом и пространством имён
 
-**Goal:** Understand how namespace defaults affect every command and practice safe context hygiene.
+**Цель:** понять, как пространство имён по умолчанию влияет на команды, и научиться безопасно работать с контекстами.
 
-1. Run `kubectl config get-contexts` and note which context is active and what namespace is set (if any).
-2. Set the default namespace for your current context to `kube-system` using `kubectl config set-context`.
-3. Run `kubectl get pods` without any `-n` flag. Observe what namespace the results come from.
-4. Switch the default namespace back to `default`.
-5. Write a one-liner that prints the current context name and its configured namespace using only `kubectl config` subcommands — no `grep`, no `awk`.
+1. Выполните `kubectl config get-contexts` и запишите активный контекст и заданное пространство имён, если оно указано.
+2. С помощью `kubectl config set-context` установите `kube-system` как пространство имён по умолчанию для текущего контекста.
+3. Выполните `kubectl get pods` без флага `-n` и проверьте, из какого пространства имён получены результаты.
+4. Верните пространство имён по умолчанию на `default`.
+5. Напишите однострочную команду, которая выводит имя текущего контекста и настроенное пространство имён, используя только подкоманды `kubectl config`, без `grep` и `awk`.
 
-**Challenge:** Without switching context, run a single `kubectl get pods` command that targets the `kube-system` namespace of a *different* context than the one currently active. (Hint: `--context` flag.)
-
----
-
-### Exercise 2: JSONPath Extraction Under Pressure
-
-**Goal:** Build the muscle memory for JSONPath before you need it during an incident.
-
-You have a cluster with several pods running. Answer the following questions using only `kubectl get` with `-o jsonpath` or `-o custom-columns` — no `grep`, no `jq`, no `awk`:
-
-1. Print only the IP addresses of all running pods in the `default` namespace, one per line.
-2. Print the name and image of the *first* container in every pod across all namespaces, formatted as `namespace/pod-name: image`.
-3. Find any pod whose `status.phase` is not `Running` and print its name and phase. (Hint: JSONPath filter expressions support `!=`.)
-4. Print the `nodeName` that each pod in `default` is scheduled on, alongside the pod name.
-
-**Verify:** Each answer should be a single `kubectl` command. If you find yourself reaching for a second command, you're not using JSONPath deeply enough.
+**Задание со звёздочкой:** не переключая текущий контекст, выполните одну команду `kubectl get pods`, обращаясь к пространству имён `kube-system` в *другом* контексте. Подсказка: используйте флаг `--context`.
 
 ---
 
-### Exercise 3: Deployment Rollout and Recovery
+### Задание 2. Извлечение данных через JSONPath в условиях инцидента
 
-**Goal:** Practice the full deploy-break-diagnose-recover cycle without external hints.
+**Цель:** отработать JSONPath до автоматизма, чтобы уверенно применять его во время инцидента.
 
-1. Create a Deployment named `exercise-app` in a namespace called `exercise` using image `nginx:1.25`, with 3 replicas and a `rollingUpdate` strategy of `maxUnavailable: 0, maxSurge: 1`.
-2. Verify all 3 pods are `Running` and `Ready` before proceeding.
-3. Update the image to `nginx:does-not-exist` using `kubectl set image`.
-4. Without being told what's wrong, use `kubectl describe` and `kubectl get` commands to identify the failure reason and which pods are affected.
-5. Roll back to the previous revision and confirm all 3 replicas recover.
-6. Print the rollout history showing both revisions.
+В кластере работает несколько Pod. Ответьте на вопросы, используя только `kubectl get` с `-o jsonpath` или `-o custom-columns`, без `grep`, `jq` и `awk`:
 
-**Cleanup:** Delete the `exercise` namespace when done.
+1. Выведите только IP-адреса всех работающих Pod в пространстве имён `default`, по одному в строке.
+2. Выведите имя и образ *первого* контейнера каждого Pod во всех пространствах имён в формате `namespace/pod-name: image`.
+3. Найдите Pod, у которого `status.phase` не равен `Running`, и выведите его имя и фазу. Подсказка: фильтры JSONPath поддерживают `!=`.
+4. Выведите имя узла `nodeName`, на котором запланирован каждый Pod в `default`, вместе с именем Pod.
+
+**Проверка:** каждый ответ должен быть одной командой `kubectl`. Если требуется вторая команда, значит, вы пока недостаточно освоили JSONPath.
 
 ---
 
-### Exercise 4: Service Debugging Without Hints
+### Задание 3. Обновление Deployment и восстановление
 
-**Goal:** Diagnose a broken service from symptoms to root cause using a structured approach.
+**Цель:** самостоятельно отработать полный цикл «развернуть — сломать — диагностировать — восстановить».
 
-Apply the following manifests to your cluster:
+1. Создайте Deployment `exercise-app` в пространстве имён `exercise` с образом `nginx:1.25`, тремя репликами и стратегией `rollingUpdate`: `maxUnavailable: 0`, `maxSurge: 1`.
+2. Перед продолжением убедитесь, что все три Pod находятся в состоянии `Running` и `Ready`.
+3. Измените образ на `nginx:does-not-exist` с помощью `kubectl set image`.
+4. Самостоятельно найдите причину сбоя и затронутые Pod с помощью команд `kubectl describe` и `kubectl get`.
+5. Откатитесь к предыдущей ревизии и убедитесь, что все три реплики восстановились.
+6. Выведите историю развёртывания, в которой видны обе ревизии.
+
+**Очистка:** по завершении удалите пространство имён `exercise`.
+
+---
+
+### Задание 4. Диагностика Service без подсказок
+
+**Цель:** структурированно диагностировать неисправность сервиса — от симптомов до первопричины.
+
+Примените к кластеру следующие манифесты:
 
 ```yaml
 # Save as broken-scenario.yaml and apply with kubectl apply -f broken-scenario.yaml
@@ -752,32 +752,32 @@ spec:
     targetPort: 5678
 ```
 
-Without reading the YAML above after applying it:
+После применения не перечитывайте YAML выше:
 
-1. Check whether `backend-svc` has any endpoints. Document the command you used.
-2. Identify why the Service has no endpoints by comparing the Service selector against actual pod labels. Document what you found.
-3. Fix the Service using `kubectl patch` — do not re-apply the YAML file.
-4. Confirm connectivity by running a temporary curl pod inside the cluster targeting `backend-svc`.
-5. As a final check, explain in one sentence what would have happened if the Service selector had a label the pods *did* have but with a wrong value (e.g., `tier: frontend` instead of `tier: api`).
+1. Проверьте, есть ли у `backend-svc` конечные точки. Запишите использованную команду.
+2. Сравните селектор Service с фактическими метками Pod и определите, почему у Service нет конечных точек. Запишите результат.
+3. Исправьте Service с помощью `kubectl patch` — не применяйте YAML-файл повторно.
+4. Проверьте соединение, запустив временный Pod с curl внутри кластера и обратившись к `backend-svc`.
+5. В завершение одним предложением объясните, что произошло бы, если бы селектор Service содержал существующую у Pod метку, но с неправильным значением (например, `tier: frontend` вместо `tier: api`).
 
 ---
 
 ### Быстрая проверка
 
-6. Count Running pods from a status list. Run: `printf 'web-1 Running\ndb-0 Pending\nweb-2 Running\ncache-0 Running\n' | awk '$2=="Running"{c++} END{print c}'`
+6. Посчитайте Pod в состоянии Running по списку статусов. Выполните: `printf 'web-1 Running\ndb-0 Pending\nweb-2 Running\ncache-0 Running\n' | awk '$2=="Running"{c++} END{print c}'`
 
 ```expected_output
 3
 ```
 
-hint: Think about how awk can conditionally track a count by checking the value of a specific field in each line.
-hint: Use awk with a condition like '$2=="Running"{c++}' to increment a counter, then print it in the END block.
+Подсказка: `awk` может увеличивать счётчик при выполнении условия для определённого поля каждой строки.
+Подсказка: используйте условие `'$2=="Running"{c++}'`, чтобы увеличивать счётчик, а затем выведите его в блоке `END`.
 
-7. Extract a pod status field using simulated jsonpath. Run: `printf 'name: nginx\nstatus: Running\nready: 1/1\n' | awk '/^status:/{print $2}'`
+7. Извлеките поле статуса Pod с помощью имитации jsonpath. Выполните: `printf 'name: nginx\nstatus: Running\nready: 1/1\n' | awk '/^status:/{print $2}'`
 
 ```expected_output
 Running
 ```
 
-hint: Think about how you can filter lines from text output by matching a pattern at the start of a line.
-hint: Use awk with a regex pattern like /^status:/ to match the status line, then print the second field with {print $2}.
+Подсказка: отфильтруйте текстовые строки по шаблону в начале строки.
+Подсказка: используйте в `awk` регулярное выражение вроде `/^status:/`, чтобы найти строку статуса, и выведите второе поле с помощью `{print $2}`.

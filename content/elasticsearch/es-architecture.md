@@ -13,11 +13,11 @@ Elasticsearch — распределённый RESTful-движок поиска
 
 В DevOps Elasticsearch — основа ELK (Elasticsearch, Logstash, Kibana) и Elastic Stack, где хранятся логи, метрики и трассировки инфраструктуры. Понимание модели данных — организации shards, реплик и индексов в кластере — необходимо для настройки производительности, диагностики split-brain и создания надёжных политик ILM, контролирующих использование диска. A misconfigured shard count you cannot undo without a full reindex, or a dynamic mapping that stores an IP address as `text`, will cost you far more time to fix than getting it right upfront.
 
-From version 8.0 onward, Elasticsearch runs with security enabled by default (TLS + authentication). The examples in this lesson use a single-node Docker container with security disabled so you can focus on the data model itself. The Security lesson covers how to enable and configure authentication properly.
+Начиная с версии 8.0, Elasticsearch по умолчанию запускается с включённой защитой (TLS и аутентификация). В примерах этого урока используется одновузловой контейнер Docker с отключённой защитой, чтобы сосредоточиться на модели данных. В уроке о безопасности рассматривается правильное включение и настройка аутентификации.
 
-## Running Elasticsearch Locally with Docker
+## Локальный запуск Elasticsearch в Docker
 
-All exercises in this lesson use a single-node Elasticsearch container. Run it once before starting:
+Во всех упражнениях используется одновузловой контейнер Elasticsearch. Запустите его один раз перед началом:
 
 ```bash
 docker run -d \
@@ -29,8 +29,8 @@ docker run -d \
   docker.elastic.co/elasticsearch/elasticsearch:8.12.0
 ```
 
-- `discovery.type=single-node` — tells ES not to wait for other nodes; forms a cluster by itself immediately
-- `xpack.security.enabled=false` — disables authentication and TLS; never use this in production
+- `discovery.type=single-node` — указывает Elasticsearch не ждать другие узлы и сразу сформировать кластер из одного узла
+- `xpack.security.enabled=false` — отключает аутентификацию и TLS; никогда не используйте это в production
 - `ES_JAVA_OPTS=-Xms512m -Xmx512m` — caps the JVM heap at 512 MB; without this, ES defaults to half your system RAM
 
 Wait ~30 seconds, then verify:

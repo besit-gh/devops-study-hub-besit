@@ -13,9 +13,9 @@ exercises: 3
 
 Elasticsearch построен на Apache Lucene. Каждый индекс делится на shards; каждый shard представляет собой отдельный индекс Lucene, состоящий из неизменяемых сегментов. При индексации документ попадает в буфер памяти, затем записывается в новый сегмент на диске и позже объединяется с другими сегментами. Поэтому «обновление» документа фактически выполняется как удаление и повторная индексация — изменить существующий сегмент на месте нельзя. Эта модель объясняет дороговизну глубокой пагинации и массового обновления документов, а также эффективность кэширования фильтров и doc values. Она также показывает, почему решения о структуре индекса, принятые при создании, трудно изменить позже.
 
-In the broader DevOps toolchain, Elasticsearch sits at the query layer of the observability stack. Beats and Logstash handle collection and transformation; Elasticsearch handles storage and search; Kibana renders the results. The patterns in this lesson — bulk indexing, bool queries, aggregation pipelines, and cursor-based pagination — are the same patterns Kibana uses internally when it renders a dashboard. Understanding them lets you debug slow queries, optimize ingest pipelines, and build custom tooling that talks directly to the Elasticsearch API.
+В стеке наблюдаемости Elasticsearch отвечает за поиск и выполнение запросов. Beats и Logstash собирают и преобразуют данные, Elasticsearch хранит их и выполняет поиск, а Kibana отображает результаты. Приёмы этого урока — массовая индексация, bool-запросы, агрегации и пагинация по курсору — используются и внутри Kibana при построении панелей. Понимание этих механизмов помогает разбирать медленные запросы, оптимизировать конвейеры приёма данных и создавать инструменты для работы напрямую с API Elasticsearch.
 
-All examples use `curl` commands you can run directly against a local Docker container:
+Во всех примерах используются команды `curl`, которые можно выполнять непосредственно против локального контейнера Docker:
 
 ```bash
 docker run -d \
@@ -30,9 +30,9 @@ docker run -d \
 curl -s http://localhost:9200/ | jq .name
 ```
 
-## Setting Up the Practice Index
+## Подготовка учебного индекса
 
-Run this entire block before working through the Concepts section. It creates an index with an explicit mapping and seeds it with six log documents representing API services.
+Перед изучением раздела «Основные понятия» выполните весь блок целиком. Он создаёт индекс с явно заданной схемой и добавляет шесть документов журналов, представляющих работу API-сервисов.
 
 ```bash
 # Create the index with explicit mappings
@@ -72,7 +72,7 @@ curl -s -X POST http://localhost:9200/_bulk \
 EOF
 ```
 
-Note the `Content-Type: application/x-ndjson` header on the bulk request. The Bulk API requires newline-delimited JSON (NDJSON), not a JSON array. Each line must be a single complete JSON object terminated by `\n`. Sending `application/json` returns a parse error.
+Обратите внимание на заголовок `Content-Type: application/x-ndjson` в массовом запросе. Bulk API требует JSON, разделённый переводами строк (NDJSON), а не JSON-массив. Каждая строка должна содержать один полный JSON-объект и завершаться символом `\n`. Если отправить `application/json`, сервер вернёт ошибку разбора.
 
 ```bash
 # Verify: should return 6

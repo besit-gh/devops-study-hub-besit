@@ -239,9 +239,9 @@ def error(msg):
 
 ---
 
-### Structured Logging with the `logging` Module
+### Структурированное журналирование с модулем `logging`
 
-For tools that run unattended (cron, CI, systemd), `print` statements are insufficient. The `logging` module adds severity levels, timestamps, and the ability to route output to files or external systems — all configurable without changing your code.
+Для инструментов, работающих без оператора (cron, CI, systemd), одних `print` недостаточно. Модуль `logging` добавляет уровни серьёзности, временные метки и возможность направлять вывод в файлы или внешние системы. Всё это настраивается без изменения кода.
 
 ```python
 import logging
@@ -267,7 +267,7 @@ log.warning("Response time %.1fs exceeds threshold", elapsed)
 log.error("Service unreachable: %s", host)
 ```
 
-**Why `getLogger(__name__)`?** It names the logger after the module, so when your tool grows into a package with multiple files, log messages identify their source. Using the root logger directly (`logging.info(...)`) works for single-file tools but doesn't scale.
+**Зачем нужен `getLogger(__name__)`?** Имя журнала совпадает с именем модуля, поэтому при расширении инструмента до пакета из нескольких файлов сообщения указывают источник. Прямое использование корневого журнала (`logging.info(...)`) подходит для одnofайловых инструментов, но плохо масштабируется.
 
 | Level | Numeric value | Use for |
 |---|---|---|
@@ -277,7 +277,7 @@ log.error("Service unreachable: %s", host)
 | `ERROR` | 40 | A failure — the operation did not complete |
 | `CRITICAL` | 50 | The tool cannot continue at all |
 
-**Format for machine parsing:** If your tool's logs are ingested by a log aggregator (Datadog, Loki, Splunk), consider JSON output instead of a human-readable format. Use `python-json-logger` or write a custom formatter:
+**Формат для машинного разбора:** если журналы инструмента поступают в агрегатор (Datadog, Loki, Splunk), рассмотрите вывод JSON вместо формата для чтения человеком. Используйте `python-json-logger` или напишите собственный форматтер:
 
 ```python
 import json, logging
@@ -297,9 +297,9 @@ logging.getLogger().addHandler(handler)
 
 ---
 
-### Config from Environment Variables and CLI Flags
+### Конфигурация через переменные окружения и флаги CLI
 
-The twelve-factor app pattern for configuration: environment variables set the baseline, CLI flags allow per-invocation overrides. This lets the same tool work in CI (where config comes from environment variables) and interactively (where engineers pass flags).
+Подход Twelve-Factor App к конфигурации: переменные окружения задают базовые значения, а флаги CLI позволяют переопределять их для отдельного запуска. Один и тот же инструмент может работать в CI (где конфигурация поступает из окружения) и интерактивно (где инженер передаёт флаги).
 
 ```python
 import os
@@ -325,7 +325,7 @@ if not args.token:
     parser.error("--token is required (or set $API_TOKEN)")
 ```
 
-**`parser.error()`** prints a usage message and exits with code 2 — the standard exit code for argument errors. Use it for validation failures that are conceptually argument problems (missing required config, invalid combinations).
+**`parser.error()`** выводит справку по использованию и завершает работу с кодом 2 — стандартным кодом ошибок аргументов. Используйте его для ошибок проверки аргументов, например отсутствующей обязательной конфигурации или несовместимых параметров.
 
 **Security note:** Never put secrets in CLI flags in production. Flags appear in `ps aux` output and shell history. Environment variables are better, but still visible in `/proc/<pid>/environ` to root. For highest security use file-based secrets: `--token-file /run/secrets/api_token` with `type=argparse.FileType("r")`.
 

@@ -17,11 +17,11 @@ Grafana Unified Alerting (появилась в Grafana 8 и стала стан
 
 ## Основные понятия
 
-### Alert Rule Anatomy
+### Структура правила оповещения
 
-An alert rule defines:
-1. **Data source query** — what metric or log to evaluate.
-2. **Condition** — threshold logic applied to the query result.
+Правило оповещения задаёт:
+1. **Запрос к источнику данных** — какую метрику или запись журнала проверять.
+2. **Условие** — пороговое правило, применяемое к результату запроса.
 3. **Evaluation group** — how frequently and with what grouping the rule runs.
 4. **Folder** — organizational unit used for RBAC permissions.
 5. **Annotations and labels** — metadata attached to the alert when it fires.

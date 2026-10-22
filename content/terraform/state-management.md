@@ -19,7 +19,7 @@ Terraform state — механизм, связывающий конфигура�
 
 ### Что хранит state и как Terraform его использует
 
-The state file is a JSON document. At the top level it records the Terraform version, a serial number (incremented on every successful write), a lineage UUID (a unique ID assigned when the state is first created), and a `resources` array. Each entry in that array maps a configuration address (`aws_s3_bucket.app_assets`) to a provider resource type and a set of instances, each of which holds the full set of attributes as returned by the provider after the last apply.
+Файл состояния — документ JSON. На верхнем уровне он хранит версию Terraform, серийный номер (увеличивается при каждой успешной записи), UUID lineage (уникальный идентификатор, назначаемый при создании состояния) и массив `resources`. Каждый элемент массива связывает адрес ресурса в конфигурации (`aws_s3_bucket.app_assets`) с типом ресурса провайдера и набором экземпляров. Каждый экземпляр содержит атрибуты, возвращённые провайдером после последнего `apply`.
 
 ```bash
 # See a human-readable summary of the entire state
@@ -35,7 +35,7 @@ terraform state list
 terraform state show aws_s3_bucket.app_assets
 ```
 
-Terraform consults state in three phases:
+Terraform обращается к состоянию в три этапа:
 
 | Phase | What state provides |
 |---|---|
@@ -43,15 +43,15 @@ Terraform consults state in three phases:
 | `terraform apply` | Resource IDs needed to make API calls (update/delete) |
 | `terraform destroy` | Complete list of resources to remove, with their provider-assigned IDs |
 
-**The serial number is a consistency guard.** If two operators read the same state and both try to write, the one whose serial is now stale gets rejected at the storage layer. This is the second line of defense — locking is the first.
+**Серийный номер защищает согласованность.** Если два оператора прочитали одно состояние и оба пытаются записать изменения, запись с устаревшим серийным номером будет отклонена на уровне хранилища. Это вторая линия защиты; первая — блокировка.
 
-**The lineage UUID prevents state file mix-ups.** If you accidentally point a backend at the wrong state file, Terraform detects that the lineage doesn't match the local cache and refuses to proceed. This prevents silent corruption from path misconfigurations.
+**UUID lineage предотвращает путаницу между файлами состояния.** Если backend случайно указывает не на тот файл, Terraform обнаруживает несовпадение lineage с локальным кэшем и отказывается продолжать. Это защищает от незаметного повреждения состояния из-за неправильного пути.
 
-**State contains secrets in plaintext.** Database passwords, private keys, and other sensitive attributes written by providers end up in the state file. Marking an output `sensitive = true` in HCL does not prevent the value from appearing in state — it only suppresses it from CLI output. Enable encryption at rest on your backend and treat state access as you would production secret access. Audit who has `s3:GetObject` on your state bucket.
+**Состояние содержит секреты в открытом виде.** Пароли баз данных, приватные ключи и другие чувствительные атрибуты, возвращённые провайдерами, могут попасть в файл состояния. Атрибут `sensitive = true` в HCL не скрывает значение из состояния — он лишь подавляет его вывод в CLI. Включите шифрование данных в хранилище и защищайте доступ к состоянию так же строго, как доступ к production-секретам. Проверьте, у кого есть разрешение `s3:GetObject` для бакета состояния.
 
-### Remote State Backends (S3)
+### Удалённые backend-хранилища состояния (S3)
 
-The `backend` block tells Terraform where to store and lock state. For S3, two locking options exist:
+Блок `backend` указывает Terraform, где хранить и блокировать состояние. Для S3 доступны два варианта блокировки:
 
 ```hcl
 # backend.tf — Option A: DynamoDB locking (all Terraform versions)
@@ -79,7 +79,7 @@ terraform {
 }
 ```
 
-The bootstrap infrastructure for Option A must be created before running `terraform init` on any config that uses it — you cannot manage the state bucket in the same config that uses it as a backend (a chicken-and-egg problem). The conventional approach is a separate `bootstrap` or `terraform-state` configuration applied once:
+Для варианта A инфраструктуру начальной настройки необходимо создать до запуска `terraform init` для конфигурации, которая её использует. Нельзя управлять бакетом состояния в той же конфигурации, где он используется как backend: возникает проблема «курицы и яйца». Обычно для этого один раз применяют отдельную конфигурацию `bootstrap` или `terraform-state`:
 
 ```hcl
 # bootstrap/main.tf — run once, use local backend initially, commit state manually
@@ -125,7 +125,7 @@ resource "aws_dynamodb_table" "tf_lock" {
 }
 ```
 
-After applying the bootstrap config, run `terraform init` in your application config. Terraform detects that the configured backend differs from the current (local) backend and offers to migrate existing state:
+После применения bootstrap-конфигурации выполните `terraform init` в конфигурации приложения. Terraform обнаружит, что настроенный backend отличается от текущего локального, и предложит перенести существующее состояние:
 
 ```bash
 cd myapp/
@@ -135,7 +135,7 @@ terraform init
 # Type "yes" to migrate — Terraform uploads the local state file and deletes the local copy
 ```
 
-**Prefer Option B (native S3 locking) for new projects on Terraform 1.10+.** It eliminates the DynamoDB table, reduces the IAM permissions required, and has no additional cost beyond S3 request pricing. Use Option A when your organization standardizes on older Terraform versions or already has DynamoDB lock tables in place.
+**Для новых проектов на Terraform 1.10+ предпочтителен вариант B (встроенная блокировка S3).** Он устраняет необходимость в таблице DynamoDB, сокращает требуемые разрешения IAM и не добавляет расходов сверх стоимости запросов S3. Используйте вариант A, если организация стандартизировала более старую версию Terraform или уже использует таблицы блокировок DynamoDB.
 
 | Feature | DynamoDB locking | Native S3 locking |
 |---|---|---|
@@ -145,11 +145,11 @@ terraform init
 | Cost | DynamoDB reads/writes | S3 PUT requests only |
 | Lock visibility | DynamoDB item | `.tflock` file in bucket |
 
-### State Locking
+### Блокировка состояния
 
-Whenever Terraform starts an operation that modifies state (`apply`, `destroy`, some `plan` invocations with `-refresh-only`), it acquires a lock before reading state. With DynamoDB, this is an atomic conditional write to the lock table. With native S3 locking, it creates a `.tflock` file using an S3 conditional write (`If-None-Match: *`), which only succeeds if the object does not yet exist. Both approaches are atomic at the storage level.
+Перед операцией, изменяющей состояние (`apply`, `destroy` и некоторые вызовы `plan` с `-refresh-only`), Terraform блокирует его до чтения. В DynamoDB это атомарная условная запись в таблицу блокировок. При встроенной блокировке S3 создаётся файл `.tflock` с условной записью S3 (`If-None-Match: *`), которая проходит только при отсутствии объекта. Оба метода атомарны на уровне хранилища.
 
-If a lock is already held, Terraform errors immediately rather than waiting:
+Если состояние уже заблокировано, Terraform сразу выдаёт ошибку, а не ждёт:
 
 ```
 Error: Error acquiring the state lock
@@ -163,7 +163,7 @@ Error: Error acquiring the state lock
     Created:   2024-03-10 14:22:01.123456789 +0000 UTC
 ```
 
-This message tells you who holds the lock, what operation they are running, and when they started. In most cases the correct response is to wait for that run to finish and retry.
+Это сообщение показывает, кто удерживает блокировку, какую операцию выполняет и когда она началась. Обычно нужно дождаться завершения операции и повторить попытку.
 
 ```bash
 # Force-unlock: releases the lock without running any Terraform operations
@@ -171,9 +171,9 @@ This message tells you who holds the lock, what operation they are running, and 
 terraform force-unlock f4a9b2c1-1234-5678-abcd-ef0123456789
 ```
 
-**Only force-unlock when you are certain the previous process is dead.** Unlocking while an apply is still in progress removes the only protection against concurrent state writes and can corrupt state. Verify in your CI system that the job is no longer running before using `force-unlock`. Common legitimate scenarios: CI runner was killed by a spot interruption mid-apply, engineer's laptop lost network connectivity mid-apply and the process is confirmed dead.
+**Используйте force-unlock только если уверены, что предыдущий процесс завершился.** Снятие блокировки во время выполняющегося `apply` убирает единственную защиту от параллельной записи и может повредить состояние. Перед `force-unlock` убедитесь в CI-системе, что задача больше не выполняется. Допустимые сценарии: CI-исполнитель был остановлен из-за прерывания spot-инстанса во время `apply` или ноутбук инженера потерял сеть, а процесс точно завершился.
 
-### State Organization Patterns
+### Схемы организации состояния
 
 How you partition state across files directly impacts blast radius, plan performance, and team autonomy. A single `terraform apply` can only destroy resources that exist in its state file — so state boundaries are also blast radius boundaries.
 
@@ -184,7 +184,7 @@ How you partition state across files directly impacts blast radius, plan perform
 | One state per microservice or team | Many teams, large org | Maximum isolation; more backends to manage |
 | Monolithic state | Solo projects, tiny infrastructure | Simple to start; slow plans; high blast radius at scale |
 
-A well-structured S3 key hierarchy for a multi-environment, multi-layer setup:
+Пример хорошо организованной иерархии ключей S3 для нескольких окружений и слоёв:
 
 ```
 s3://mycompany-terraform-state/
@@ -206,11 +206,11 @@ s3://mycompany-terraform-state/
       worker/terraform.tfstate
 ```
 
-**Splitting state is effectively a permanent architectural decision.** Merging two state files later requires `terraform state mv` for every resource and careful coordination across teams. Start with the split you expect to need at scale. The cost of splitting too late is higher than the cost of managing an extra state file from the beginning.
+**Разделение состояния фактически является постоянным архитектурным решением.** Для последующего объединения двух файлов состояния потребуется выполнить `terraform state mv` для каждого ресурса и тщательно согласовать работу команд. Сразу выберите структуру, подходящую для будущего масштаба. Цена слишком позднего разделения выше, чем затраты на дополнительный файл состояния с самого начала.
 
-#### Cross-Configuration References with `terraform_remote_state`
+#### Ссылки между конфигурациями через `terraform_remote_state`
 
-When configurations are split across multiple state files, downstream configs need outputs from upstream configs. The `terraform_remote_state` data source reads the `outputs` block of another configuration's state file directly from the backend:
+Когда конфигурации разделены между несколькими файлами состояния, нижестоящим конфигурациям нужны выходные значения вышестоящих. Источник данных `terraform_remote_state` читает блок `outputs` другого файла состояния непосредственно из backend:
 
 ```hcl
 # apps/api/main.tf — consuming outputs from the vpc and eks configurations
@@ -249,7 +249,7 @@ resource "helm_release" "api" {
 }
 ```
 
-The upstream config must explicitly declare outputs for anything downstream consumers reference:
+Вышестоящая конфигурация должна явно объявить outputs для всех значений, на которые ссылаются нижестоящие конфигурации:
 
 ```hcl
 # vpc/outputs.tf
@@ -264,13 +264,13 @@ output "private_subnet_ids" {
 }
 ```
 
-**`terraform_remote_state` creates a hard coupling between configurations.** If the upstream config renames or removes an output, every downstream config that references it breaks at plan time. An alternative is to pass values through a neutral intermediary like AWS SSM Parameter Store — the VPC config writes the VPC ID as a parameter, and the app config reads it with the `aws_ssm_parameter` data source. This decouples the configs at the cost of slightly more infrastructure and an extra IAM permission.
+**`terraform_remote_state` создаёт жёсткую связь между конфигурациями.** Если вышестоящая конфигурация переименует или удалит output, все использующие его конфигурации завершатся ошибкой на этапе plan. Альтернатива — передавать значения через нейтральное промежуточное хранилище, например AWS SSM Parameter Store: конфигурация VPC записывает ID VPC как параметр, а конфигурация приложения читает его через источник `aws_ssm_parameter`. Это ослабляет связь ценой небольшой дополнительной инфраструктуры и ещё одного разрешения IAM.
 
-### Importing Existing Resources
+### Импорт существующих ресурсов
 
-Infrastructure created outside Terraform — manually in the console, by a different tool, or before Terraform was adopted — can be brought under Terraform management by importing it into state. Importing does not modify the real resource; it only creates a state record that allows Terraform to track and manage it going forward.
+Инфраструктуру, созданную вне Terraform — вручную в консоли, другим инструментом или до внедрения Terraform, — можно передать под управление Terraform, импортировав её в состояние. Импорт не изменяет реальный ресурс, а лишь создаёт запись, позволяющую Terraform отслеживать и управлять им в дальнейшем.
 
-**CLI import (all Terraform versions):**
+**Импорт через CLI (все версии Terraform):**
 
 ```bash
 # Syntax: terraform import <resource_address> <provider_resource_id>
@@ -285,9 +285,9 @@ terraform import aws_iam_role_policy_attachment.example "my-role/arn:aws:iam::aw
 terraform state show aws_s3_bucket.legacy
 ```
 
-CLI import only writes to state — it does not generate HCL. You must write the resource block manually and then run `terraform plan` to verify there are no unintended differences. **If your HCL is incomplete or wrong after an import, `terraform plan` will show a diff that may destroy or modify the resource to match your configuration.** Always verify the plan shows zero changes before treating an import as complete.
+Импорт через CLI записывает данные только в состояние и не генерирует HCL. Блок ресурса нужно написать вручную, а затем выполнить `terraform plan`, чтобы проверить отсутствие непреднамеренных изменений. **Если после импорта HCL неполон или неверен, `terraform plan` может показать изменения, которые удалят или изменят ресурс для приведения к конфигурации.** Прежде чем считать импорт завершённым, убедитесь, что план не содержит изменений.
 
-**Import blocks (Terraform 1.5+, declarative and plannable):**
+**Блоки импорта (Terraform 1.5+, декларативный подход с планированием):**
 
 ```hcl
 # import.tf — declare what to import alongside your regular configuration

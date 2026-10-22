@@ -13,15 +13,15 @@ Opsgenie — платформа Atlassian для управления опове
 
 Архитектура основана на разделении ответственности: *расписания* отвечают на вопрос «кто и когда доступен», *политики эскалации* — «что делать, если никто не ответил», а *правила маршрутизации* — «какая команда отвечает за оповещение». Эти три механизма можно комбинировать для организаций любой сложности. A small startup might have one schedule and one escalation policy. A large enterprise might have hundreds, but each is built from the same primitives. This modularity means you can change one piece — swap a rotation type, add an escalation step — without rebuilding everything else.
 
-In the broader DevOps toolchain, Opsgenie is the last mile between detection and response. Prometheus fires an alert; Alertmanager routes it to Opsgenie; Opsgenie determines the on-call engineer and notifies them. It integrates with incident management (Jira, PagerDuty-style incident timelines), communication tools (Slack, Microsoft Teams), and runbook systems so that when an engineer is paged, they receive context alongside the notification. Mastering schedules and escalation policies is the foundation — everything else in Opsgenie assumes you have these configured correctly.
+В общей цепочке DevOps Opsgenie — последнее звено между обнаружением проблемы и реагированием. Prometheus создаёт оповещение, Alertmanager направляет его в Opsgenie, а Opsgenie определяет дежурного инженера и уведомляет его. Система интегрируется с управлением инцидентами (Jira, временные шкалы в стиле PagerDuty), средствами коммуникации (Slack, Microsoft Teams) и runbook-системами, чтобы инженер получал вместе с уведомлением необходимый контекст. Основа работы — правильно настроенные расписания и политики эскалации; остальная функциональность Opsgenie опирается на них.
 
 ---
 
 ## Основные понятия
 
-### Teams and Users
+### Команды и пользователи
 
-**Users** are individuals with an Opsgenie account. Each user has:
+**Пользователи** — люди с учётной записью Opsgenie. У каждого пользователя есть:
 
 | Attribute | Description |
 |-----------|-------------|
@@ -30,22 +30,22 @@ In the broader DevOps toolchain, Opsgenie is the last mile between detection and
 | **Role** | Admin, User, Stakeholder, or Read Only |
 | **Time zone** | Used to display schedule times and apply notification rules correctly |
 
-**Teams** group users around a service or function and are the primary routing unit in Opsgenie. When an alert arrives, it is routed to a team, which then applies that team's escalation policy. A team owns:
+**Команды** объединяют пользователей вокруг сервиса или функции и являются основной единицей маршрутизации Opsgenie. При поступлении оповещение направляется команде, после чего применяется её политика эскалации. У команды есть:
 
-- One or more escalation policies
-- One or more schedules
-- Its own alert queue
-- Integrations (alerts from a specific monitoring source can route directly to a specific team)
+- Одна или несколько политик эскалации
+- Одно или несколько расписаний
+- Собственная очередь оповещений
+- Интеграции (оповещения от конкретного источника мониторинга можно направлять сразу нужной команде)
 
 Navigate to: **Teams → [Team Name] → Members / On-call / Schedules / Escalation Policies**
 
-**Gotcha:** A user can belong to multiple teams, but their notification rules are global — the same rules apply regardless of which team's alert reaches them. If a user wants different notification behavior for different services, the workaround is creating separate Opsgenie accounts, which is rarely worth the overhead. Design notification rules to cover the most critical scenario.
+**Важно:** пользователь может состоять в нескольких командах, но правила его уведомлений глобальны и одинаковы для оповещений всех команд. Разные правила для разных сервисов потребовали бы отдельных учётных записей Opsgenie, что обычно не оправдано. Настраивайте уведомления с учётом наиболее критичного сценария.
 
 ---
 
-### Schedule Structure
+### Структура расписания
 
-A **schedule** is a named object that, at any given moment, resolves to a set of on-call participants. A schedule is made up of one or more **rotations**. Understanding this two-level structure is critical.
+**Расписание** — именованный объект, который в каждый момент времени определяет список дежурных участников. Оно состоит из одной или нескольких **ротаций**. Важно понимать эту двухуровневую структуру.
 
 ```
 Schedule: "Platform Team - Global"
@@ -62,9 +62,9 @@ Schedule: "Platform Team - Global"
       type: weekly
 ```
 
-When Opsgenie evaluates who is on call, it looks at all active rotations at the current moment. If multiple rotations overlap, all matching participants are considered on call simultaneously. The escalation policy then determines which of those participants to notify first.
+Определяя дежурных, Opsgenie проверяет все ротации, активные в данный момент. Если ротации пересекаются, все подходящие участники считаются дежурными одновременно. Политика эскалации определяет, кого из них уведомить первым.
 
-**Key schedule properties:**
+**Основные свойства расписания:**
 
 | Property | What it controls |
 |----------|-----------------|
@@ -74,14 +74,14 @@ When Opsgenie evaluates who is on call, it looks at all active rotations at the 
 | **Start date/time** | When the rotation begins; determines who is "first" in the cycle |
 | **Participants** | Ordered list of users or groups |
 
-**Gotcha:** The start date and time of a rotation directly determines which participant is "slot 1." If you create a weekly rotation starting on a Wednesday, the first participant owns that Wednesday through the following Tuesday. Misaligning the start date is the most common cause of the wrong engineer being on call at the start of a new rotation cycle. Always verify using **Schedules → Timeline** after creation.
+**Важно:** дата и время начала ротации определяют, кто занимает «слот 1». Если недельная ротация начинается в среду, первый участник дежурит с этой среды по следующий вторник. Неверная дата начала — частая причина того, что в начале нового цикла дежурит не тот инженер. После создания всегда проверяйте расписание в **Schedules → Timeline**.
 
 ---
 
-### Rotation Types
+### Типы ротаций
 
-#### Weekly Rotation
-The most common rotation. Each participant is on call for one full week before the cycle advances.
+#### Недельная ротация
+Самый распространённый тип: каждый участник дежурит полную неделю, после чего очередь переходит к следующему.
 
 ```
 Week 1 (Mon 00:00 – Sun 23:59 UTC): Alice
@@ -90,10 +90,10 @@ Week 3 (Mon 00:00 – Sun 23:59 UTC): Carol
 → repeat
 ```
 
-Best for teams with three or more members where a week of on-call is manageable. The fatigue trade-off: less context-switching, but seven consecutive days of responsibility.
+Подходит командам из трёх и более человек, для которых недельное дежурство приемлемо. Компромисс: меньше переключений контекста, но семь дней подряд приходится нести ответственность.
 
-#### Daily Rotation
-Participants rotate every 24 hours. Good for high-traffic services or teams that want to distribute load more evenly.
+#### Суточная ротация
+Участники меняются каждые 24 часа. Подходит для высоконагруженных сервисов и команд, которые хотят равномернее распределить нагрузку.
 
 ```
 Mon: Alice
@@ -104,10 +104,10 @@ Fri: Bob
 ...
 ```
 
-**Gotcha:** Daily rotations create more handoff points. Ensure your runbooks and incident context are well-documented — whoever picks up on Tuesday shouldn't need to phone whoever was on Monday to understand ongoing issues. Pair daily rotations with a mandatory end-of-shift summary in your incident management tool.
+**Важно:** при суточной ротации становится больше передач дежурства. Поддерживайте runbook и контекст инцидентов в актуальном состоянии: человеку, который заступил во вторник, не должно требоваться звонить дежурившему в понедельник, чтобы понять текущие проблемы. Введите обязательную сводку в инструменте управления инцидентами в конце каждой смены.
 
 #### Follow-the-Sun
-Not a distinct rotation type in the UI — it's a *pattern* implemented by combining multiple rotations with time restrictions in a single schedule. Each rotation covers one geographic region's business hours, creating continuous 24/7 coverage with no single engineer working outside their local day.
+Это не отдельный тип ротации в интерфейсе, а *схема*, реализуемая объединением нескольких ротаций с ограничениями по времени в одном расписании. Каждая ротация покрывает рабочие часы своего региона, обеспечивая непрерывное дежурство 24/7 без работы инженеров за пределами их местного дня.
 
 ```
 Rotation 1: EU        (07:00–15:00 UTC) → alice, bob alternate weekly
@@ -115,12 +115,12 @@ Rotation 2: US East   (14:00–22:00 UTC) → carol, dave alternate weekly
 Rotation 3: APAC      (22:00–07:00 UTC) → eve, frank alternate weekly
 ```
 
-The one-hour overlaps (14:00–15:00, 22:00–23:00) are intentional — they create a handoff window where both outgoing and incoming engineers are nominally available.
+Перекрытия в один час (14:00–15:00, 22:00–23:00) предусмотрены специально: они создают окно передачи дежурства, когда доступны и уходящий, и заступающий инженеры.
 
-#### Custom Rotation Length
-Set any duration: 12 hours, 3 days, 2 weeks. Useful for:
-- 12-hour shifts on a small team that wants day/night split
-- 2-week rotations when the on-call load is very low
+#### Произвольная длительность ротации
+Можно задать любую длительность: 12 часов, 3 дня, 2 недели. Это полезно для:
+- 12-часовых смен в небольшой команде с разделением на день и ночь
+- двухнедельных ротаций при очень низкой нагрузке на дежурных
 
 ```
 Custom example — 12-hour split:
@@ -128,7 +128,7 @@ Custom example — 12-hour split:
   Shift B: Mon–Sun 18:00–06:00 UTC → Bob  (night shift)
 ```
 
-**Comparison of rotation types:**
+**Сравнение типов ротаций:**
 
 | Type | Cadence | Best for | Watch out for |
 |------|---------|----------|---------------|
@@ -139,11 +139,11 @@ Custom example — 12-hour split:
 
 ---
 
-### Schedule Gaps
+### Пробелы в расписании
 
-A **gap** occurs when no rotation is active for a time window. Alerts during a gap will not notify anyone. This is a silent failure — Opsgenie will not error; it simply has no one to notify.
+**Пробел** возникает, когда в определённый период не активна ни одна ротация. Оповещения в этот период никого не уведомят. Это незаметный отказ: Opsgenie не выдаёт ошибку, а просто не находит получателя.
 
-**Common gap causes:**
+**Типичные причины пробелов:**
 
 | Cause | Example |
 |-------|---------|
@@ -152,9 +152,9 @@ A **gap** occurs when no rotation is active for a time window. Alerts during a g
 | Rotation end date reached | Rotation was set with an expiry that passed |
 | Override applied but replacement not covering full window | Override ends at 18:00; schedule resumes at 09:00 next day — 15-hour gap |
 
-**How to detect gaps:** Open **Schedules → [Schedule Name] → Timeline view**. Gaps appear as empty (white or greyed-out) periods with no participant label. Opsgenie also displays a warning banner on the schedule if gaps exist within the next 30 days.
+**Как обнаружить пробелы:** откройте **Schedules → [Schedule Name] → Timeline**. Пробелы отображаются пустыми (белыми или серыми) периодами без имени участника. Если пробелы есть в ближайшие 30 дней, Opsgenie также показывает предупреждение.
 
-**Mitigation pattern — fallback rotation:**
+**Способ устранения — резервная ротация:**
 
 ```
 Add a final rotation with:
@@ -164,9 +164,9 @@ Add a final rotation with:
   Purpose: catch-all for any hour not covered by primary rotations
 ```
 
-Because rotations within a schedule are evaluated together, a fallback rotation with no time restriction ensures someone is always on call. The escalation policy's step ordering still controls who is notified first when multiple rotations overlap — the fallback doesn't jump the queue, it just fills the void.
+Поскольку ротации одного расписания оцениваются совместно, резервная ротация без временных ограничений гарантирует наличие дежурного. Если ротации пересекаются, порядок уведомления по-прежнему задаёт политика эскалации: резервная ротация не получает приоритет, а лишь закрывает пустые интервалы.
 
-**API: check for gaps programmatically**
+**API: программная проверка пробелов**
 
 ```bash
 # Retrieve the on-call timeline for the next 7 days
@@ -177,15 +177,15 @@ curl -X GET \
   jq '.data.finalTimeline.rotations[].periods[] | select(.recipient == null) | .startDate, .endDate'
 ```
 
-An empty response means no gaps were found. Any output indicates a gap and the time window it covers.
+Пустой ответ означает, что пробелов не найдено. Любой результат указывает на пробел и охватывающий его временной интервал.
 
 ---
 
-### Override Management
+### Управление переопределениями дежурств
 
-An **override** temporarily replaces a scheduled participant without modifying the underlying rotation. This is the correct mechanism for vacations, shift swaps, and event coverage.
+**Override (переопределение)** временно заменяет участника расписания, не изменяя саму ротацию. Этот механизм подходит для отпусков, обмена сменами и покрытия мероприятий.
 
-**Override fields:**
+**Поля переопределения:**
 
 | Field | Description |
 |-------|-------------|
@@ -196,7 +196,7 @@ An **override** temporarily replaces a scheduled participant without modifying t
 
 Navigate to: **Schedules → [Schedule Name] → Add Override**
 
-Overrides are visible in the schedule timeline (displayed in a distinct color) and are included in on-call analytics — so fairness reporting and compensation calculations remain accurate even when shifts are swapped.
+Переопределения отображаются в расписании отдельным цветом и учитываются в аналитике дежурств. Поэтому отчёты о справедливом распределении нагрузки и расчёты компенсаций остаются корректными даже при обмене сменами.
 
 **API: create an override**
 
@@ -216,7 +216,7 @@ curl -X POST "https://api.opsgenie.com/v2/schedules/platform-global/overrides" \
   }'
 ```
 
-**API: verify who is on call at a future date**
+**API: проверьте, кто будет дежурить в будущем**
 
 ```bash
 # Check who would be on call on Dec 25 at 14:00 UTC
@@ -225,7 +225,7 @@ curl -X GET \
   -H "Authorization: GenieKey YOUR_API_KEY" | jq '.data.onCallParticipants'
 ```
 
-Expected output if override is correctly applied:
+Ожидаемый вывод при корректно применённом переопределении:
 ```json
 [
   {
@@ -235,7 +235,7 @@ Expected output if override is correctly applied:
 ]
 ```
 
-**API: list all active overrides**
+**API: список всех активных переопределений**
 
 ```bash
 # List overrides currently in effect for the schedule
@@ -244,15 +244,15 @@ curl -X GET \
   -H "Authorization: GenieKey YOUR_API_KEY" | jq '.data[] | {alias: .alias, user: .user.username, start: .startDate, end: .endDate}'
 ```
 
-**Gotcha:** Overrides do not cascade through escalation policies. If your escalation policy references "on-call from schedule," it picks up the override correctly. But if your escalation policy hardcodes a specific user's name (e.g., "notify alice@company.com"), the override has no effect — Alice still gets paged even while on vacation. **Always reference schedules in escalation steps, not individual users**, for vacation coverage to work automatically.
+**Важно:** переопределения не распространяются на шаги эскалации, в которых указан конкретный пользователь. Если политика ссылается на «дежурного из расписания», переопределение учитывается. Но если в политике жёстко задан адрес пользователя (например, `alice@company.com`), переопределение не поможет — Алису продолжат вызывать даже во время отпуска. **Для автоматического учёта отпусков указывайте в шагах эскалации расписания, а не отдельных пользователей.**
 
 ---
 
 ### Политики эскалации
 
-An **escalation policy** defines what happens when an alert is not acknowledged within a time window. It is the "if nobody responds, then…" chain. Every alert routed to a team triggers that team's escalation policy.
+**Политика эскалации** определяет, что делать, если оповещение не подтверждено в заданный срок. Это цепочка действий по принципу «если никто не ответил, то…». Для каждого оповещения, направленного команде, запускается её политика эскалации.
 
-**Escalation policy structure:**
+**Структура политики эскалации:**
 
 ```
 Policy: "Platform - P1 Escalation"
@@ -269,7 +269,7 @@ Policy: "Platform - P1 Escalation"
 └─ Repeat policy: 3 times, then keep alert open (never auto-close)
 ```
 
-**Step configuration options:**
+**Параметры настройки шага:**
 
 | Field | Options |
 |-------|---------|
@@ -277,13 +277,13 @@ Policy: "Platform - P1 Escalation"
 | **Via** | Default (user's own notification rules), or override with specific methods |
 | **Wait before next step** | Minutes to wait for acknowledgment before escalating |
 
-**Escalation repeat:** After all steps complete without acknowledgment, the policy can repeat (notify all steps again) up to N times. After repeats are exhausted, the alert remains open but escalation stops. **Never configure auto-close for production services** — a silent unacknowledged alert is worse than an annoying ongoing one.
+**Повтор эскалации:** если все шаги завершились без подтверждения, политика может повторить их до N раз. После исчерпания повторов оповещение остаётся открытым, но эскалация прекращается. **Не настраивайте автоматическое закрытие для production-сервисов:** незамеченное неподтверждённое оповещение опаснее, чем продолжающееся раздражающее уведомление.
 
-**Gotcha:** The wait time in each step is measured from the *previous step firing*, not from alert creation. Step 1 fires at 0 min. Step 2 fires 5 min later (5 min total elapsed). Step 3 fires 10 min after step 2 (15 min total elapsed). Read your policy's cumulative times carefully, especially when you've promised SLA-level commitments like "P1 alert reaches a human within 10 minutes." In the example above, the manager is called at 15 minutes — that violates a 10-minute SLA.
+**Важно:** время ожидания каждого шага отсчитывается от срабатывания *предыдущего шага*, а не от создания оповещения. Шаг 1 срабатывает в 0 минут, шаг 2 — через 5 минут (прошло всего 5 минут), шаг 3 — через 10 минут после шага 2 (всего 15 минут). Внимательно проверяйте суммарное время, особенно если SLA обещает, что человек получит P1 не позднее чем через 10 минут. В этом примере менеджера вызовут через 15 минут, что нарушает SLA в 10 минут.
 
-**Escalation policy per priority (recommended pattern):**
+**Отдельная политика эскалации для каждого приоритета (рекомендуемая схема):**
 
-Rather than a single policy, create one per alert priority:
+Вместо одной общей политики создайте отдельную для каждого приоритета оповещения:
 
 | Policy name | Step 1 wait | Step 2 target | Step 3 target | Repeat |
 |-------------|-------------|---------------|---------------|--------|
@@ -292,15 +292,15 @@ Rather than a single policy, create one per alert priority:
 | P3-Medium | 0 min | On-call (30 min) | — | 1x |
 | P4-Low | 0 min | — | — | 0x (no repeat) |
 
-Wire this up in routing rules: alerts with `priority: P1` route to the P1-Critical policy, and so on. This prevents a disk-space warning from calling your VP of Engineering at 3am.
+Настройте это в правилах маршрутизации: оповещения с `priority: P1` направляйте в политику P1-Critical и так далее. Это не позволит предупреждению о нехватке дискового места разбудить технического директора в три часа ночи.
 
 ---
 
-### Notification Methods and Priority
+### Способы уведомления и приоритет
 
-Each user configures personal notification rules under **Profile → Notification Rules**. These rules are independent of escalation policies — they control *how* an individual is contacted, not *when* or *who*.
+Каждый пользователь настраивает личные правила уведомлений в **Profile → Notification Rules**. Они независимы от политик эскалации и определяют, *как* связаться с человеком, а не *когда* и *кого* уведомлять.
 
-**Typical notification rule setup:**
+**Типичная настройка правил уведомлений:**
 
 ```
 For alerts with priority P1 or P2:
@@ -315,7 +315,7 @@ For alerts with priority P5 (informational):
   Immediately:           email only
 ```
 
-**Alert priority mapping:**
+**Соответствие приоритетов оповещений:**
 
 | Priority | Typical use | Expected response |
 |----------|-------------|-------------------|
@@ -325,20 +325,20 @@ For alerts with priority P5 (informational):
 | P4 | Warning, investigate soon | Best effort |
 | P5 | Informational | No action required |
 
-**Separation of concerns — the key mental model:**
+**Разделение ответственности — главная модель понимания:**
 
-- **Escalation policy** = *who* gets notified and *when* (the chain of responsibility over time)
-- **Notification rules** = *how* each person is reached (phone vs. push vs. email, per priority)
+- **Политика эскалации** = *кого* и *когда* уведомлять (цепочка ответственности во времени)
+- **Правила уведомлений** = *как* связаться с человеком (звонок, push или email в зависимости от приоритета)
 
-This separation means you can update how a person is contacted without touching the escalation policy, and you can restructure team responsibility chains without touching individual notification preferences.
+Такое разделение позволяет менять способы связи с человеком без изменения политики эскалации, а перестраивать цепочку ответственности команды — без изменения личных настроек уведомлений.
 
-**Gotcha:** If an escalation step is configured with an explicit contact method override (e.g., "always phone call regardless of user rules"), it bypasses the user's personal notification rules entirely. Use this sparingly and only for the most critical escalation steps. It removes the user's ability to tune their own experience and can cause alert fatigue if overused — engineers who can't customize notifications are more likely to disable them.
+**Важно:** если для шага эскалации явно задан способ связи (например, «всегда звонить независимо от правил пользователя»), личные правила уведомлений обходятся полностью. Используйте это редко и только для самых критичных шагов. Иначе инженеры теряют возможность настраивать уведомления и могут отключить их из-за усталости от оповещений.
 
 ---
 
-### Routing Rules
+### Правила маршрутизации
 
-**Routing rules** are the bridge between an incoming alert and the team + escalation policy that handles it. They evaluate alert properties (source, priority, tags, message content) and direct the alert accordingly.
+**Правила маршрутизации** связывают входящее оповещение с командой и политикой эскалации, которые будут его обрабатывать. Они анализируют источник, приоритет, теги и текст сообщения и направляют оповещение в соответствии с условиями.
 
 ```
 Routing Rule: "Production Alerts → Platform Team"
@@ -355,15 +355,15 @@ Routing Rule: "Default (catch-all)"
   Route to:   Platform Team → P2-High escalation policy
 ```
 
-**Routing rule evaluation order matters.** Rules are evaluated top-to-bottom and the first match wins. Place the most specific rules at the top and the catch-all at the bottom.
+**Порядок правил маршрутизации важен.** Они проверяются сверху вниз, и применяется первое совпадение. Самые конкретные правила размещайте вверху, а универсальное правило — внизу.
 
-**Gotcha:** If no routing rule matches and there is no catch-all, the alert is routed to the **default team's default escalation policy** — not silently dropped, but potentially misrouted. Always add a catch-all routing rule at the bottom of every team's ruleset so unexpected alerts go somewhere deliberate.
+**Важно:** если ни одно правило не совпало и нет универсального правила, оповещение направляется в **политику эскалации команды по умолчанию**. Оно не теряется бесследно, но может попасть не туда. Добавляйте универсальное правило в конец набора каждой команды, чтобы неожиданные оповещения направлялись предсказуемо.
 
 ---
 
-### On-Call Participant Modes Within Rotations
+### Режимы участия дежурных в ротации
 
-When a rotation has multiple participants and an escalation step targets "on-call from schedule," exactly one participant is on call at any moment (the current rotation slot) by default. However, you can configure the rotation to behave differently:
+Если в ротации несколько участников и шаг эскалации ссылается на «дежурного из расписания», по умолчанию в каждый момент дежурит один участник — тот, чей слот активен. Однако ротацию можно настроить иначе:
 
 | Mode | Behavior | Use case |
 |------|----------|----------|
@@ -371,7 +371,7 @@ When a rotation has multiple participants and an escalation step targets "on-cal
 | **All participants simultaneously** | Everyone in the rotation is on call at once | Broadcast coverage, small critical teams |
 | **Random** | One participant selected randomly each period | Load distribution, unpredictable assignment |
 
-For most production services, use "one at a time." Simultaneous mode is occasionally useful for a small leadership team where any executive should be reachable, but it creates ambiguity about who is *responsible* — when everyone is on call, no one feels fully accountable. If you use simultaneous mode, your escalation policy must be explicit about who acknowledges.
+Для большинства production-сервисов используйте режим «по одному». Одновременный режим иногда полезен небольшой руководящей команде, где должен быть доступен любой руководитель, но он размывает персональную *ответственность*: когда дежурят все, никто не чувствует себя полностью ответственным. При одновременном режиме явно определите в политике эскалации, кто должен подтверждать оповещение.
 
 ---
 
@@ -379,7 +379,7 @@ For most production services, use "one at a time." Simultaneous mode is occasion
 
 ### Example 1: Follow-the-Sun Schedule via API
 
-A platform team with engineers in London (EU) and New York (US East) wants continuous 24/7 weekday coverage. A team lead handles weekends.
+Платформенной команде с инженерами в Лондоне (Европа) и Нью-Йорке (восток США) нужно непрерывное покрытие дежурств 24/7 в будни. Выходные закрывает руководитель команды.
 
 ```bash
 # Step 1: Create the schedule shell
@@ -461,13 +461,13 @@ curl -X GET \
 # Expected: "Team Lead" (fallback rotation, Saturday 02:00 UTC)
 ```
 
-The 14:00–15:00 UTC overlap between EU and US East rotations means both the outgoing EU engineer and the incoming US East engineer are technically on call simultaneously — a deliberate handoff window. The escalation policy should target the schedule (not individual users) so it automatically picks up whoever the current slot owner is.
+Перекрытие ротаций Европы и востока США с 14:00 до 15:00 UTC означает, что уходящий европейский инженер и заступающий инженер из США формально дежурят одновременно. Это специально предусмотренное окно передачи смены. Политика эскалации должна ссылаться на расписание, а не на отдельных пользователей, чтобы автоматически выбирать владельца текущего слота.
 
 ---
 
-### Example 2: Multi-Step Escalation Policy with Priority Tiers
+### Пример 2. Многошаговая политика эскалации с уровнями приоритета
 
-This example creates two escalation policies — one for P1 and one for P3 — and wires them to the schedule from Example 1.
+В этом примере создаются две политики эскалации — для P1 и P3 — и связываются с расписанием из примера 1.
 
 ```bash
 # Create P1 escalation policy: aggressive, short windows
@@ -555,9 +555,9 @@ curl -X GET \
 
 ---
 
-### Example 3: Automated Override for a Holiday Blackout Period
+### Пример 3. Автоматическое переопределение на период праздничных выходных
 
-A script that reads a CSV of planned time-off and creates Opsgenie overrides in bulk. Useful for managing a whole quarter of vacation schedules at once.
+Скрипт читает CSV с запланированными отпусками и массово создаёт переопределения в Opsgenie. Это удобно для одновременного управления графиками отпусков на целый квартал.
 
 ```bash
 #!/usr/bin/env bash
@@ -615,9 +615,9 @@ curl -s "https://api.opsgenie.com/v2/schedules/Platform%20Team%20-%20Global/on-c
 
 ---
 
-### Example 4: Prometheus Alertmanager → Opsgenie Integration
+### Пример 4. Интеграция Prometheus Alertmanager с Opsgenie
 
-Connect an existing Alertmanager deployment to route alerts into Opsgenie with the correct priority mapping.
+Подключите существующий Alertmanager, чтобы направлять оповещения в Opsgenie с правильным соответствием приоритетов.
 
 ```yaml
 # alertmanager.yml
@@ -696,7 +696,7 @@ amtool alert add \
 # Check: Teams → Platform Team → Alert Activity
 ```
 
-**Gotcha:** Alertmanager's `repeat_interval: 12h` means if an alert fires and is not resolved, Alertmanager re-sends it to Opsgenie every 12 hours. If the Opsgenie alert is already acknowledged, the repeat sends create a *new* alert rather than updating the existing one, depending on your deduplication key (`alias` field). Set `alias` in `opsgenie_configs` to a deterministic value based on alert labels to enable deduplication:
+**Важно:** `repeat_interval: 12h` в Alertmanager означает, что неразрешённое оповещение повторно отправляется в Opsgenie каждые 12 часов. В зависимости от ключа дедупликации (`alias`) повтор может создать *новое* оповещение вместо обновления существующего, даже если исходное уже подтверждено. Чтобы включить дедупликацию, задайте в `opsgenie_configs` детерминированный `alias`, основанный на метках оповещения:
 
 ```yaml
 alias: '{{ .GroupLabels.alertname }}-{{ .GroupLabels.cluster }}'
@@ -706,71 +706,71 @@ alias: '{{ .GroupLabels.alertname }}-{{ .GroupLabels.cluster }}'
 
 ## Практические задания
 
-### Exercise 1: Audit a Schedule for Coverage Gaps
+### Задание 1. Проверьте расписание на пробелы в покрытии
 
-**Goal:** Practice identifying and fixing gaps using the API.
+**Цель:** отработать обнаружение и устранение пробелов с помощью API.
 
-1. Create a schedule via the Opsgenie UI with a single weekly rotation restricted to **Monday–Friday, 09:00–17:00 UTC** with two participants. Do not add a fallback rotation.
-2. Use the API to query who is on call on a **Saturday at 14:00 UTC**:
+1. Создайте в интерфейсе Opsgenie расписание с одной недельной ротацией, ограниченной **понедельником–пятницей, 09:00–17:00 UTC**, и двумя участниками. Не добавляйте резервную ротацию.
+2. Используйте API, чтобы узнать, кто дежурит **в субботу в 14:00 UTC**:
    ```bash
    curl -X GET \
      "https://api.opsgenie.com/v2/schedules/YOUR_SCHEDULE_NAME/on-calls?scheduleIdentifierType=name&flat=true&date=2024-06-15T14:00:00Z" \
      -H "Authorization: GenieKey YOUR_API_KEY" | jq '.data.onCallParticipants'
    ```
-3. Observe the empty result (the gap). Now add a fallback rotation via the UI with no time restriction and a single participant (yourself or a test user).
-4. Re-run the same API query and confirm the fallback participant appears.
-5. **Explain in your own words:** Why does having a gap in a schedule result in a silent failure rather than an error? What are the operational consequences of an undetected gap in a production environment?
+3. Убедитесь, что результат пуст (пробел в расписании). Затем добавьте через интерфейс резервную ротацию без временных ограничений и с одним участником (вы сами или тестовый пользователь).
+4. Повторите тот же API-запрос и убедитесь, что резервный участник появился в результате.
+5. **Объясните своими словами:** почему пробел в расписании приводит к незаметному отказу, а не к ошибке? К каким эксплуатационным последствиям может привести необнаруженный пробел в production?
 
 ---
 
-### Exercise 2: Design an Escalation Policy for an SLA Constraint
+### Задание 2. Спроектируйте политику эскалации с учётом SLA
 
-**Goal:** Translate a business requirement into escalation policy configuration.
+**Цель:** преобразовать бизнес-требование в конфигурацию политики эскалации.
 
-Your team has an SLA that states: *"P1 alerts must reach an engineer within 5 minutes and a manager within 15 minutes, 24/7."*
+У вашей команды есть SLA: *«Оповещение P1 должно дойти до инженера в течение 5 минут, а до менеджера — в течение 15 минут, круглосуточно».*
 
-1. Design the escalation policy steps on paper (or in a text file) before touching the UI. Specify:
-   - How many steps the policy needs
-   - The wait time between each step
-   - Who each step notifies (on-call from schedule vs. named user)
-   - Why each choice satisfies or risks violating the SLA
-2. Create the policy in the Opsgenie UI under your team.
-3. Verify the cumulative timing: if step 1 fires at 0 min, what is the total elapsed time when the manager is first contacted?
-4. **Gotcha challenge:** Change your policy so that step 2 has a 12-minute wait. Does this still satisfy the "manager within 15 minutes" SLA? Show your math. If it doesn't, what is the minimum wait you can set at step 2 given a 5-minute step 1 wait?
+1. До настройки интерфейса спроектируйте шаги политики на бумаге или в текстовом файле. Укажите:
+   - Сколько шагов требуется политике.
+   - Время ожидания между шагами.
+   - Кого уведомляет каждый шаг (дежурного из расписания или конкретного пользователя).
+   - Почему выбранная схема соблюдает SLA или создаёт риск его нарушения.
+2. Создайте политику в интерфейсе Opsgenie для своей команды.
+3. Проверьте суммарное время: если шаг 1 срабатывает в момент 0, сколько времени пройдёт до первого уведомления менеджера?
+4. **Задание со звёздочкой:** измените политику так, чтобы ожидание шага 2 составляло 12 минут. Выполняется ли SLA «менеджер в течение 15 минут»? Покажите расчёт. Если нет, какое минимальное ожидание можно задать для шага 2 при пятиминутном ожидании шага 1?
 
 ---
 
-### Exercise 3: Automate a Shift Swap via the API
+### Задание 3. Автоматизируйте обмен сменами через API
 
-**Goal:** Use the Opsgenie override API to handle a real-world shift swap scenario without touching the UI.
+**Цель:** использовать API переопределения Opsgenie для реального сценария обмена сменами без интерфейса.
 
-**Scenario:** Alice is on call this week (weekly rotation). She has a dentist appointment on Wednesday from 10:00–13:00 UTC and has asked Bob to cover. You need to:
+**Сценарий:** на этой неделе дежурит Alice (недельная ротация). В среду с 10:00 до 13:00 UTC у неё приём у стоматолога, и она попросила Bob подменить её. Нужно:
 
-1. Write a `curl` command to create an override replacing Alice with Bob for exactly that window on the next occurring Wednesday.
-2. After creating the override, query the on-call endpoint for **Wednesday at 11:30 UTC** and confirm Bob appears.
-3. Query again for **Wednesday at 14:00 UTC** (after the override ends) and confirm Alice has resumed.
-4. Delete the override using its returned ID:
+1. Написать команду `curl`, создающую переопределение: Bob заменяет Alice ровно на этот интервал в ближайшую среду.
+2. После создания переопределения запросить endpoint дежурств на **среду, 11:30 UTC** и убедиться, что в ответе указан Bob.
+3. Повторить запрос для **среды, 14:00 UTC** (после окончания переопределения) и убедиться, что дежурство вернулось к Alice.
+4. Удалить переопределение по полученному ID:
    ```bash
    curl -X DELETE \
      "https://api.opsgenie.com/v2/schedules/YOUR_SCHEDULE/overrides/OVERRIDE_ALIAS_OR_ID?scheduleIdentifierType=name" \
      -H "Authorization: GenieKey YOUR_API_KEY"
    ```
-5. Query **Wednesday at 11:30 UTC** once more and confirm Alice is back on call (override deleted, rotation restored).
-6. **Reflection question:** If your escalation policy hardcoded `alice@company.com` instead of referencing the schedule, would step 2 have shown Bob? Why or why not? What does this tell you about escalation policy design?
+5. Ещё раз запросить состояние на **среду, 11:30 UTC** и убедиться, что снова дежурит Alice (переопределение удалено, ротация восстановлена).
+6. **Вопрос для размышления:** если бы политика эскалации содержала жёстко заданный `alice@company.com`, а не ссылку на расписание, был бы Bob показан на шаге 2? Почему? Что это говорит о проектировании политик эскалации?
 
 ---
 
-### Exercise 4: Map an Alert Source to the Correct Escalation Policy
+### Задание 4. Направьте оповещение источника в правильную политику эскалации
 
-**Goal:** Understand routing rules by building an end-to-end alert path from source to engineer.
+**Цель:** понять правила маршрутизации, построив полный путь оповещения от источника до инженера.
 
-1. In Opsgenie, create two escalation policies for your team:
-   - `High-Priority` — three steps, 5-minute waits, phone call on step 3
-   - `Low-Priority` — one step, no repeat
-2. Create two routing rules for your team:
-   - Rule 1: If alert tags contain `env:production` → route to `High-Priority`
-   - Rule 2 (catch-all): All other alerts → route to `Low-Priority`
-3. Use the Opsgenie API to create a test alert with the `env:production` tag:
+1. Создайте в Opsgenie две политики эскалации для своей команды:
+   - `High-Priority` — три шага, ожидание по 5 минут, телефонный звонок на третьем шаге.
+   - `Low-Priority` — один шаг без повторов.
+2. Создайте два правила маршрутизации для команды:
+   - Правило 1: если теги оповещения содержат `env:production`, направлять в `High-Priority`.
+   - Правило 2 (универсальное): все остальные оповещения направлять в `Low-Priority`.
+3. Используйте API Opsgenie, чтобы создать тестовое оповещение с тегом `env:production`:
    ```bash
    curl -X POST "https://api.opsgenie.com/v2/alerts" \
      -H "Authorization: GenieKey YOUR_API_KEY" \
@@ -782,28 +782,28 @@ Your team has an SLA that states: *"P1 alerts must reach an engineer within 5 mi
        "details": {"source": "exercise-4"}
      }'
    ```
-4. In the Opsgenie UI, find the alert and confirm it was routed to `High-Priority`. Check the alert's **Activity Log** tab to see which escalation steps fired.
-5. Create a second alert *without* the `env:production` tag and verify it routes to `Low-Priority`.
-6. **Reflection question:** What would happen if you reversed the order of your routing rules (catch-all first, specific rule second)? Test it and explain the result.
+4. Найдите оповещение в интерфейсе Opsgenie и подтвердите, что оно направлено в `High-Priority`. На вкладке **Activity Log** проверьте, какие шаги эскалации сработали.
+5. Создайте второе оповещение *без* тега `env:production` и проверьте, что оно направляется в `Low-Priority`.
+6. **Вопрос для размышления:** что произойдёт, если поменять правила местами (сначала универсальное, затем конкретное)? Проверьте и объясните результат.
 
 ---
 
 ### Быстрая проверка
 
-7. Calculate hours in a 7-day on-call rotation. Run: `python3 -c "print(7 * 24)"`
+7. Рассчитайте количество часов в семидневном дежурстве. Выполните: `python3 -c "print(7 * 24)"`
 
 ```expected_output
 168
 ```
 
-hint: Think about how you can use Python's inline execution flag to evaluate a mathematical expression directly from the terminal.
-hint: Use python3 -c to run a short print statement that multiplies the number of days by the number of hours in a day.
+Подсказка: используйте режим выполнения Python-команды прямо из терминала, чтобы вычислить математическое выражение.
+Подсказка: используйте `python3 -c` и короткую команду `print`, перемножающую количество дней и часов в сутках.
 
-8. Count participants in an on-call schedule stub. Run: `printf 'participants:\n- user: alice\n- user: bob\n- user: carol\n- user: dave\n' | grep -c '^- user:'`
+8. Посчитайте участников в примере расписания дежурств. Выполните: `printf 'participants:\n- user: alice\n- user: bob\n- user: carol\n- user: dave\n' | grep -c '^- user:'`
 
 ```expected_output
 4
 ```
 
-hint: Think about how grep can be used not just to find matches, but also to report the number of matching lines directly.
-hint: Use grep with the -c flag, which counts the number of lines matching a given pattern, such as the line prefix '^- user:'.
+Подсказка: `grep` умеет не только находить совпадения, но и сразу сообщать число подходящих строк.
+Подсказка: используйте флаг `grep -c`, который считает строки по шаблону, например по префиксу `^- user:`.

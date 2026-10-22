@@ -215,7 +215,7 @@ kubectl patch serviceaccount default -n production \
 
 ### Проверка и отладка RBAC
 
-The `kubectl auth can-i` command is the primary debugging tool. It calls the SubjectAccessReview API directly — the same mechanism the API server uses internally to evaluate requests.
+Команда `kubectl auth can-i` — основной инструмент диагностики разрешений. Она напрямую вызывает API SubjectAccessReview — тот же механизм, который API-сервер использует для проверки запросов.
 
 ```bash
 # Check your own permissions
@@ -251,24 +251,24 @@ kubectl create rolebinding test-binding \
   --role=test-role --user=testuser -n staging
 ```
 
-**Forbidden error anatomy:** When a request is denied, the API server returns HTTP 403 with a structured message:
+**Структура ошибки Forbidden:** при отказе в запросе API-сервер возвращает HTTP 403 со структурированным сообщением:
 
 ```
 User "system:serviceaccount:production:ci-deployer" cannot update resource
 "deployments" in API group "apps" in the namespace "production"
 ```
 
-That message contains all three elements you need to fix it: the **subject** (`system:serviceaccount:production:ci-deployer`), the **verb + resource** (`update deployments` in `apps`), and the **namespace** (`production`). Map each field directly to a rule you need to add.
+В сообщении есть все три элемента, необходимые для исправления: **субъект** (`system:serviceaccount:production:ci-deployer`), **действие и ресурс** (`update deployments` в `apps`) и **пространство имён** (`production`). Сопоставьте каждое поле с правилом, которое нужно добавить.
 
-**`roleRef` immutability:** The `roleRef` field on both `RoleBinding` and `ClusterRoleBinding` is immutable after creation. If you need to change which role a binding references, you must delete and recreate the binding. The subjects list is mutable.
+**Неизменяемость `roleRef`:** поле `roleRef` в `RoleBinding` и `ClusterRoleBinding` нельзя изменить после создания. Если нужно привязать другую роль, удалите и создайте привязку заново. Список субъектов при этом можно менять.
 
-**`--as` is not impersonation:** `kubectl auth can-i --as=X` asks the API server "would X be allowed?" It does not give you a kubeconfig that acts as X. To actually impersonate, you need `impersonate` permission on the `users`, `groups`, or `serviceaccounts` resource — a powerful permission that should be restricted to platform admins.
+**`--as` — не полноценная имперсонация:** `kubectl auth can-i --as=X` спрашивает API-сервер, разрешено ли действие пользователю X, но не создаёт kubeconfig, работающий от имени X. Для реальной имперсонации требуется разрешение `impersonate` на ресурсах `users`, `groups` или `serviceaccounts`. Это мощное разрешение, которое следует ограничить администраторами платформы.
 
 ---
 
 ## Примеры
 
-### Example 1: CI/CD Pipeline with Scoped Deploy Permissions
+### Пример 1. CI/CD-конвейер с ограниченными правами на развёртывание
 
 A CI pipeline needs to update Deployments and read ConfigMaps and Secrets in the `production` namespace — nothing else, nowhere else.
 

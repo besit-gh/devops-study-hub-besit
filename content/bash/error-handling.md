@@ -269,9 +269,9 @@ trap cleanup_all EXIT
 
 ---
 
-### Exit Codes
+### Коды завершения
 
-Exit codes are the universal interface between processes in Unix. Every command returns one. Scripts that are called from CI/CD systems, Ansible, Docker, or other scripts must return meaningful exit codes — returning 0 on failure breaks every caller silently.
+Коды завершения — универсальный интерфейс взаимодействия процессов в Unix. Каждая команда возвращает такой код. Скрипты, вызываемые из CI/CD, Ansible, Docker или других скриптов, должны возвращать осмысленные коды: возврат 0 при ошибке незаметно ломает вызывающую сторону.
 
 | Code | Meaning |
 |---|---|
@@ -282,9 +282,9 @@ Exit codes are the universal interface between processes in Unix. Every command 
 | `127` | Command not found |
 | `128+n` | Script terminated by signal `n` (e.g., `130` = Ctrl+C = 128+2) |
 
-Exit codes above 125 are reserved by the shell. **Do not use exit codes above 125 in your own scripts** — they collide with shell-reserved meanings and will confuse callers.
+Коды завершения выше 125 зарезервированы оболочкой. **Не используйте коды выше 125 в собственных скриптах**: они конфликтуют со значениями, зарезервированными оболочкой, и вводят вызывающие процессы в заблуждение.
 
-**Checking exit codes — prefer `if` over `$?`:**
+**Проверка кодов завершения — предпочитайте `if`, а не `$?`:**
 
 ```bash
 # Fragile: $? is overwritten by every command, including [
@@ -304,13 +304,13 @@ fi
 cp file.txt /backup/ && echo "Backup OK" || { echo "Backup failed" >&2; exit 1; }
 ```
 
-**Propagating exit codes:** when your script calls another script, preserve its exit code. Using bare `exit` (with no argument) exits with the code of the last executed command. In trap handlers, always re-exit with the captured code so the calling process sees the real result.
+**Передача кода завершения:** если скрипт вызывает другой скрипт, сохраняйте его код завершения. Команда `exit` без аргумента завершает работу с кодом последней выполненной команды. В обработчиках `trap` завершайтесь с сохранённым кодом, чтобы вызывающий процесс получил настоящий результат.
 
 ---
 
-### Meaningful Error Messages
+### Понятные сообщения об ошибках
 
-Good error messages tell the operator *what failed*, *where*, and ideally *what to do next*. All error output goes to stderr (`>&2`) so it doesn't pollute stdout, can be captured separately, and won't be swallowed when stdout is redirected to a file or pipe.
+Хорошее сообщение об ошибке сообщает оператору, *что* сломалось, *где* и, по возможности, *что делать дальше*. Вывод ошибок направляйте в stderr (`>&2`): он не загрязняет stdout, его можно сохранить отдельно, и он не потеряется при перенаправлении stdout в файл или конвейер.
 
 ```bash
 # Reusable die() helper — include in every production script
@@ -328,7 +328,7 @@ command -v docker     || die 127 "docker not found — install Docker Engine and
 [ "$EUID" -eq 0 ]     || die 1 "This script must be run as root (current UID: $EUID)"
 ```
 
-**Include context in error messages.** A message like `"File not found"` forces the operator to re-read the script to understand what file. A message like `"Expected config at /etc/myapp/config.yml — copy from /etc/myapp/config.example before deploying"` is immediately actionable.
+**Добавляйте контекст в сообщения об ошибках.** Сообщение `"File not found"` заставляет оператора перечитывать скрипт, чтобы понять, о каком файле речь. Сообщение `"Ожидался конфиг /etc/myapp/config.yml — перед развёртыванием скопируйте /etc/myapp/config.example"` сразу подсказывает действие.
 
 ```bash
 # Bad:
@@ -363,7 +363,7 @@ set +x
 echo "rsync completed"
 ```
 
-**`$BASH_SOURCE`, `$LINENO`, and `$FUNCNAME`** are available in trap handlers and error functions, enabling stack-trace-style output that tells you exactly where in a multi-file script system an error occurred:
+**`$BASH_SOURCE`, `$LINENO` и `$FUNCNAME`** доступны в обработчиках `trap` и функциях обработки ошибок. Они позволяют выводить сведения в стиле stack trace и точно определять место ошибки в системе из нескольких скриптов:
 
 ```bash
 err_report() {
@@ -377,7 +377,7 @@ err_report() {
 trap 'err_report $LINENO' ERR
 ```
 
-**`PS4` customization:** the `PS4` variable controls the prefix printed by `set -x`. The default is `+`. Setting it to include the script name and line number makes traces dramatically more useful:
+**Настройка `PS4`:** переменная `PS4` задаёт префикс, который выводит `set -x`. По умолчанию это `+`. Если добавить имя скрипта и номер строки, трассировка станет значительно полезнее:
 
 ```bash
 export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
@@ -388,7 +388,7 @@ set -x
 
 ## Примеры
 
-### Example 1: Robust Deployment Script with Automatic Rollback
+### Пример 1. Надёжный скрипт развёртывания с автоматическим откатом
 
 ```bash
 #!/usr/bin/env bash
@@ -468,7 +468,7 @@ echo "Exit code: $?"   # should be non-zero
 
 ---
 
-### Example 2: Log Processing Pipeline with Full Error Handling
+### Пример 2. Конвейер обработки журналов с полной обработкой ошибок
 
 ```bash
 #!/usr/bin/env bash
@@ -553,7 +553,7 @@ EOF
 
 ---
 
-### Example 3: Infrastructure Preflight Check Script
+### Пример 3. Предварительная проверка инфраструктуры
 
 ```bash
 #!/usr/bin/env bash
@@ -646,9 +646,9 @@ export DB_HOST=db.internal DB_PORT=5432 DEPLOY_ENV=staging AWS_REGION=us-east-1
 
 ## Практические задания
 
-### Exercise 1: Find the Silent Failures
+### Задание 1. Найдите незаметные ошибки
 
-The script below has three error-handling bugs that would cause silent failures in production. Without running it, identify each bug and explain what could go wrong. Then fix the script.
+В приведённом ниже скрипте три ошибки обработки сбоев, которые могут привести к незаметным проблемам в production. Не запуская его, найдите каждую ошибку и объясните последствия. Затем исправьте скрипт.
 
 ```bash
 #!/usr/bin/env bash
@@ -662,15 +662,15 @@ echo "Backup of $DB_NAME complete: $BACKUP_DIR/${DB_NAME}.sql.gz"
 ```
 
 **What to find:**
-1. What happens if this script is called with no arguments?
-2. What happens if `pg_dump` fails mid-stream — for example, if the database doesn't exist?
-3. What happens to the output file if `gzip` fails?
+1. Что произойдёт, если вызвать скрипт без аргументов?
+2. Что произойдёт, если `pg_dump` завершится с ошибкой посреди конвейера, например, если базы данных не существует?
+3. Что произойдёт с выходным файлом, если `gzip` завершится с ошибкой?
 
-After identifying the bugs, rewrite the script with `set -euo pipefail`, a `trap` for cleanup, and a preflight check for the argument. Test it by passing a non-existent database name.
+После обнаружения ошибок перепишите скрипт с `set -euo pipefail`, обработчиком очистки `trap` и предварительной проверкой аргументов. Проверьте его, передав имя несуществующей базы данных.
 
 ---
 
-### Exercise 2: Build a Reusable Error Library
+### Задание 2. Создайте повторно используемую библиотеку обработки ошибок
 
 Create a file called `lib/error.sh` that can be sourced by other scripts. It should provide:
 

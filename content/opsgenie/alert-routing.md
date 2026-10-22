@@ -13,14 +13,14 @@ exercises: 3
 ## Основные понятия
 
 ### REST API Opsgenie
-The Opsgenie API is the integration backbone. Understanding it directly helps when native integrations don't exist or need customisation.
+API Opsgenie — основа интеграций. Понимание его работы особенно полезно, когда готовой интеграции нет или требуется индивидуальная настройка.
 
 Base URL: `https://api.opsgenie.com/v2/`
 
 Authentication: API key in the `Authorization` header.
 
 ```bash
-# Create an alert via REST API
+# Создать оповещение через REST API
 curl -X POST "https://api.opsgenie.com/v2/alerts" \
   -H "Content-Type: application/json" \
   -H "Authorization: GenieKey YOUR_API_KEY" \
@@ -38,29 +38,29 @@ curl -X POST "https://api.opsgenie.com/v2/alerts" \
     }
   }'
 
-# Close (resolve) an alert by alias
+# Закрыть (разрешить) оповещение по псевдониму
 curl -X POST "https://api.opsgenie.com/v2/alerts/web-01-high-cpu/close?identifierType=alias" \
   -H "Authorization: GenieKey YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"note": "CPU usage returned to normal"}'
 
-# Get alert details
+# Получить сведения об оповещениях
 curl -X GET "https://api.opsgenie.com/v2/alerts?query=status:open AND tag:production" \
   -H "Authorization: GenieKey YOUR_API_KEY"
 ```
 
-The `alias` field is the deduplication key — two alerts with the same alias are treated as the same alert.
+Поле `alias` служит ключом дедупликации: два оповещения с одинаковым псевдонимом считаются одним и тем же оповещением.
 
 ### Integrations Overview
 
-Opsgenie integrations are configured per-team and generate an **integration API key** that the external tool sends alerts to.
+Интеграции Opsgenie настраиваются для каждой команды и создают **ключ API интеграции**, на который внешний инструмент отправляет оповещения.
 
-Navigate to: **Teams → [Team] → Integrations → Add Integration**
+Перейдите: **Teams → [Team] → Integrations → Add Integration**.
 
-Each integration has:
-- A unique API key (used by the external tool).
-- Optional **integration rules** for conditional routing and transformation.
-- Assigned team (default responder).
+Каждая интеграция включает:
+- Уникальный ключ API, который использует внешний инструмент.
+- Необязательные **правила интеграции** для условной маршрутизации и преобразования данных.
+- Назначенную команду (ответственного по умолчанию).
 
 | Integration | Type | Notes |
 |---|---|---|
@@ -73,7 +73,7 @@ Each integration has:
 | Generic webhook | Generic API | For anything not natively supported |
 
 ### Prometheus / Alertmanager Integration
-In Prometheus, alert rules fire → Alertmanager routes → Opsgenie.
+В Prometheus срабатывают правила оповещений → Alertmanager выполняет маршрутизацию → Opsgenie.
 
 Alertmanager configuration:
 
@@ -102,24 +102,24 @@ route:
 ```
 
 ### Grafana Integration
-In Grafana, configure Opsgenie as a contact point:
+В Grafana настройте Opsgenie как точку контакта:
 
 **Alerting → Contact Points → Add contact point → Opsgenie**
 
-Fields:
-- **API Key**: Opsgenie team integration key.
-- **Auto close**: resolve the Opsgenie alert when Grafana alert recovers (always enable this).
-- **Override priority**: override the static priority, or use label templating.
-- **Message**: Grafana annotation template: `{{ $labels.alertname }} - {{ $labels.instance }}`
+Поля настройки:
+- **API Key**: ключ интеграции команды Opsgenie.
+- **Auto close**: закрывать оповещение Opsgenie после восстановления оповещения Grafana (эту опцию рекомендуется включать всегда).
+- **Override priority**: переопределять статический приоритет или использовать шаблоны меток.
+- **Message**: шаблон аннотации Grafana: `{{ $labels.alertname }} - {{ $labels.instance }}`
 
 ### Datadog Integration
-Two methods:
+Доступны два способа:
 
-**Method 1 — Datadog webhook to Opsgenie**:
-Datadog → Integrations → Webhooks → add Opsgenie API endpoint as webhook URL with the integration key.
+**Способ 1 — webhook Datadog в Opsgenie:**
+Datadog → Integrations → Webhooks → добавьте конечную точку API Opsgenie как URL webhook с ключом интеграции.
 
-**Method 2 — Opsgenie integration for Datadog**:
-In Opsgenie, add the Datadog integration type, which generates an API key. In Datadog, configure the Opsgenie mention (`@opsgenie-team-name`) in monitor notifications.
+**Способ 2 — интеграция Datadog в Opsgenie:**
+В Opsgenie добавьте интеграцию типа Datadog — она создаст ключ API. В Datadog укажите упоминание Opsgenie (`@opsgenie-team-name`) в уведомлениях монитора.
 
 Datadog → Monitor → Notification message:
 
@@ -129,7 +129,7 @@ Datadog → Monitor → Notification message:
 ```
 
 ### CloudWatch Integration
-CloudWatch alarms → SNS topic → Lambda function → Opsgenie API.
+Сигналы тревоги CloudWatch → тема SNS → функция Lambda → API Opsgenie.
 
 Example Lambda (Python) for CloudWatch → Opsgenie:
 
@@ -167,9 +167,9 @@ def lambda_handler(event, context):
 ```
 
 ### Integration Rules (Conditions and Actions)
-Integration rules allow you to modify, route, or suppress alerts based on incoming alert fields — before the escalation policy fires.
+Правила интеграции позволяют изменять, маршрутизировать или подавлять оповещения по их входящим полям до запуска политики эскалации.
 
-Rules are evaluated in order; first matching rule wins (unless "continue" is checked).
+Правила проверяются по порядку. Применяется первое совпавшее правило, если не включена опция «continue».
 
 **Condition types:**
 
@@ -193,7 +193,7 @@ Rules are evaluated in order; first matching rule wins (unless "continue" is che
 | Suppress | Drop the alert entirely (maintenance windows) |
 | Change message | Normalise alert titles across tools |
 
-Example integration rule: route DB alerts to the database team, override to P1 if severity=critical.
+Пример правила интеграции: направлять оповещения БД команде баз данных и назначать P1, если серьёзность равна `critical`.
 
 ```
 Rule 1: IF tags include "database" AND details.severity == "critical"
@@ -215,24 +215,24 @@ Rule 3 (default): route to platform-team
 | P4 | Low | Minor issue, informational |
 | P5 | Informational | No action required |
 
-Priority determines:
-- Which notification methods fire (users configure per-priority notification rules).
-- Whether the alert is counted in SLA breach metrics.
-- Sorting in the alert list.
+Приоритет определяет:
+- Какие способы уведомления сработают (пользователи настраивают правила уведомлений для каждого приоритета).
+- Будет ли оповещение учитываться в метриках нарушения SLA.
+- Порядок отображения в списке оповещений.
 
-Tags are free-form strings. Convention: `env:production`, `team:platform`, `service:checkout`. Tags are searchable and filterable in the alert list and analytics.
+Теги — произвольные строки. Рекомендуемый формат: `env:production`, `team:platform`, `service:checkout`. По тегам можно искать и фильтровать оповещения в списке и аналитике.
 
 ### Deduplication and Suppression
 
-**Deduplication** prevents creating duplicate alerts for the same condition. Controlled by the `alias` field — two alerts with the same alias merge into one, with subsequent notifications updating the existing alert.
+**Дедупликация** предотвращает создание дубликатов для одного и того же условия. Она управляется полем `alias`: оповещения с одинаковым псевдонимом объединяются, а последующие уведомления обновляют существующее оповещение.
 
-Set alias to a stable identifier: `{service}-{alert_name}-{environment}`.
+Задавайте псевдоним в виде стабильного идентификатора: `{service}-{alert_name}-{environment}`.
 
-If the monitoring tool sends the same alert repeatedly (e.g., Prometheus repeats every 4 hours), Opsgenie adds notes to the existing alert rather than creating new ones.
+Если система мониторинга повторно отправляет одно и то же оповещение (например, Prometheus каждые 4 часа), Opsgenie добавляет заметки к существующему оповещению, а не создаёт новые.
 
 **Suppression rules** (under integration rules or maintenance windows) drop matching alerts before they create Opsgenie notifications.
 
-Maintenance window: **Settings → Maintenance** — during a scheduled maintenance, alerts matching specified filters are suppressed. Essential before planned outages to prevent alert storms.
+Окно обслуживания: **Settings → Maintenance**. Во время запланированных работ оповещения, соответствующие заданным фильтрам, подавляются. Настройте его перед плановыми отключениями, чтобы избежать шквала оповещений.
 
 ```
 Maintenance window:
@@ -244,9 +244,9 @@ Maintenance window:
 ```
 
 ### Heartbeat Monitoring
-A **heartbeat** is a signal that a system is alive — Opsgenie alerts if it stops receiving the signal.
+**Heartbeat (сигнал активности)** подтверждает, что система работает. Если сигналы перестают поступать, Opsgenie создаёт оповещение.
 
-Use case: monitoring cron jobs, batch processes, or agents that don't produce alerts when they fail; they simply go silent.
+Применение: контроль cron-заданий, пакетных процессов и агентов, которые не отправляют оповещение при сбое, а просто перестают работать.
 
 ```bash
 # Send a heartbeat ping (the system runs this on a schedule)
@@ -254,15 +254,15 @@ curl -X GET "https://api.opsgenie.com/v2/heartbeats/my-backup-job/ping" \
   -H "Authorization: GenieKey YOUR_API_KEY"
 ```
 
-If the ping is not received within the heartbeat interval, Opsgenie creates an alert to the configured team.
+Если сигнал не поступил в течение заданного интервала, Opsgenie создаёт оповещение для настроенной команды.
 
 Configure at: **Settings → Heartbeat Monitoring → Add Heartbeat**
 
-Fields: name, interval (e.g., 10 minutes), interval unit, alert message, responder team.
+Поля настройки: name, interval (e.g., 10 minutes), interval unit, alert message, responder team.
 
 ## Примеры
 
-### Full routing logic for a multi-team setup
+### Полная схема маршрутизации для нескольких команд
 
 ```
 Integration: Prometheus (team: platform, default P3)
@@ -276,31 +276,31 @@ Rule 5 (default): route to platform-team, keep priority from source
 
 ## Практические задания
 
-1. Write the complete Alertmanager `receivers` and `route` configuration to send Prometheus alerts to Opsgenie, where: `severity: critical` maps to P1, `severity: warning` maps to P2, all other alerts default to P3. The alert alias must be constructed from `alertname` + `instance` labels to ensure per-host deduplication.
+1. Напишите полную конфигурацию `receivers` и `route` для Alertmanager, отправляющую оповещения Prometheus в Opsgenie: `severity: critical` соответствует P1, `severity: warning` — P2, все остальные оповещения по умолчанию получают P3. Псевдоним оповещения должен состоять из меток `alertname` и `instance`, чтобы дедупликация выполнялась отдельно для каждого узла.
 
-2. Design the integration rules for a scenario where your Opsgenie integration receives alerts from three sources: Prometheus, Datadog, and a custom app. Rules required: (a) any alert tagged `security` goes to the security team at P1 regardless of source; (b) Datadog alerts tagged `staging` are suppressed entirely; (c) custom app alerts with `error_type: transient` are acknowledged automatically. Write each rule as a condition + action pair.
+2. Спроектируйте правила интеграции для ситуации, когда Opsgenie получает оповещения из трёх источников: Prometheus, Datadog и собственного приложения. Требования: (а) любое оповещение с тегом `security` направляется команде безопасности с приоритетом P1 независимо от источника; (б) оповещения Datadog с тегом `staging` полностью подавляются; (в) оповещения собственного приложения с `error_type: transient` автоматически подтверждаются. Запишите каждое правило как пару «условие + действие».
 
-3. A batch job runs every 6 hours and must be monitored for silent failures. The job doesn't emit alerts when it fails — it just stops running. Explain how to use Opsgenie heartbeat monitoring for this: what the job must do, how to configure the heartbeat, what happens when the job fails, and how to test that the alerting works without actually failing the job.
+3. Пакетное задание запускается каждые 6 часов, и нужно обнаруживать его незаметные сбои. При ошибке задание не отправляет оповещение, а просто перестаёт выполняться. Объясните, как использовать heartbeat-мониторинг Opsgenie: что должно делать задание, как настроить heartbeat, что произойдёт при сбое и как проверить оповещения, не вызывая настоящий сбой.
 
 
 ---
 
 ### Быстрая проверка
 
-4. Extract the routing condition field from a policy stub. Run: `printf 'conditions:\n- field: priority\n  operation: equals\n  value: P1\n' | awk '/field:/{print $2}'`
+4. Извлеките поле условия маршрутизации из примера политики. Выполните: `printf 'conditions:\n- field: priority\n  operation: equals\n  value: P1\n' | awk '/field:/{print $2}'`
 
 ```expected_output
 priority
 ```
 
-hint: Think about how awk can be used to match lines containing a specific keyword and then print a particular field from those lines.
-hint: Use awk with a pattern like '/field:/{print $2}' to match lines containing 'field:' and extract the second whitespace-separated token.
+Подсказка: `awk` может находить строки с нужным ключевым словом и выводить выбранное поле.
+Подсказка: используйте шаблон `'/field:/{print $2}'`, чтобы найти строки с `field:` и вывести второй разделённый пробелами элемент.
 
-5. Count routing rules in a policy. Run: `printf 'rules:\n- name: critical-rule\n  priority: P1\n- name: high-rule\n  priority: P2\n- name: default-rule\n  priority: P3\n' | grep -c '^- name:'`
+5. Посчитайте правила маршрутизации в политике. Выполните: `printf 'rules:\n- name: critical-rule\n  priority: P1\n- name: high-rule\n  priority: P2\n- name: default-rule\n  priority: P3\n' | grep -c '^- name:'`
 
 ```expected_output
 3
 ```
 
-hint: Think about how you can count specific patterns within a stream of text using grep.
-hint: Use grep with the -c flag to directly count lines matching the pattern '^- name:' from the piped input.
+Подсказка: `grep` умеет считать количество строк, соответствующих шаблону.
+Подсказка: используйте `grep -c`, чтобы посчитать строки, соответствующие шаблону `^- name:`, в переданном через конвейер тексте.

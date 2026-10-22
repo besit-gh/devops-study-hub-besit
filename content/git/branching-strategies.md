@@ -30,16 +30,16 @@ exercises: 4
 | `hotfix/*` | Emergency production fix | `main` + `develop` | Temporary (hours) |
 | `chore/*` / `ops/*` | Infrastructure, tooling, non-feature work | `develop` or `main` | Short |
 
-**Key principle:** permanent branches are protected. You never push directly to `main` (or `develop` in Gitflow) — you open a pull request. Branch protection rules in GitHub/GitLab enforce this, and CI gates prevent merges when tests fail.
+**Ключевой принцип:** постоянные ветки защищены. В `main` (или `develop` в Gitflow) не отправляют изменения напрямую — для этого создают pull request. Правила защиты веток в GitHub/GitLab обеспечивают это ограничение, а проверки CI блокируют слияние при провале тестов.
 
 ---
 
 ### Gitflow
 
-Gitflow was formalized by Vincent Driessen in 2010. It assumes a world where you ship versioned releases on a schedule — mobile apps, packaged software, APIs with consumers who can't upgrade instantly. It solves the problem of "we need to ship v1.4 while v1.5 is already being developed" with explicit branch structure.
+Gitflow был формализован Винсентом Дриссеном в 2010 году. Эта модель рассчитана на выпуск версионированных релизов по расписанию — например, мобильных приложений, пакетного ПО и API, клиенты которых не могут обновиться мгновенно. Она решает задачу «нужно выпустить v1.4, пока уже разрабатывается v1.5» за счёт чёткой структуры веток.
 
-**The two permanent branches:**
-- `main` — always reflects production. Every commit here is tagged with a version number.
+**Две постоянные ветки:**
+- `main` — всегда соответствует production. Каждый коммит в этой ветке помечается номером версии.
 - `develop` — the integration target for all feature work. Reflects the latest delivered development changes.
 
 **The three temporary branch types:**

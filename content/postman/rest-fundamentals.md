@@ -11,17 +11,17 @@ exercises: 4
 
 REST (Representational State Transfer) — наиболее распространённый стиль API для веб-сервисов, и его понимание необходимо для работы в DevOps. Современные инфраструктурные инструменты — Kubernetes, Vault, Terraform Cloud, GitHub Actions, PagerDuty и Datadog — предоставляют REST API. Автоматизация развёртывания, интеграции IaC, создание runbook и диагностика production-инцидентов требуют умения читать, формировать и анализировать HTTP-запросы и ответы. Если вы не понимаете ответ API и разницу между `403` и `401`, это будет постоянно мешать работе.
 
-REST is not a protocol — it is a set of architectural constraints defined by Roy Fielding in 2000. The key constraints are: statelessness (each request contains all information needed to process it, no server-side session), a uniform interface (resources identified by URLs, manipulated through representations), and client-server separation. In practice, "RESTful" APIs communicate over HTTP, use JSON bodies, identify resources with nouns in paths, and use HTTP methods to express intent. These constraints make APIs predictable and cacheable, which matters when you are scripting against them.
+REST — не протокол, а набор архитектурных ограничений, сформулированных Роем Филдингом в 2000 году. Основные принципы: отсутствие состояния на сервере (каждый запрос содержит всё необходимое для обработки и не зависит от серверной сессии), единый интерфейс (ресурсы идентифицируются URL и изменяются через представления) и разделение клиента и сервера. На практике REST API обмениваются данными по HTTP, используют JSON, обозначают ресурсы существительными в путях, а назначение операции выражают HTTP-методами. Эти ограничения делают API предсказуемыми и удобными для кеширования.
 
-In the DevOps toolchain, REST API knowledge connects directly to several adjacent skills: `curl` for ad-hoc debugging and shell scripting, Postman for manual exploration and writing automated test suites, CI/CD pipelines that call deployment APIs, and observability tooling that queries time-series databases over HTTP. This lesson covers the protocol layer — request anatomy, methods, status codes, headers — and the two primary tools for interacting with it: `curl` and Postman.
+В DevOps знание REST API напрямую связано с другими навыками: `curl` для диагностики и shell-скриптов, Postman для изучения API и создания автоматизированных тестов, конвейеры CI/CD для вызова API развёртывания и инструменты наблюдаемости, обращающиеся к базам временных рядов по HTTP. В уроке рассматриваются структура запроса, методы, коды состояния, заголовки и два основных инструмента взаимодействия — `curl` и Postman.
 
 ---
 
 ## Основные понятия
 
-### HTTP Request Anatomy
+### Структура HTTP-запроса
 
-Every HTTP interaction is a request/response pair. Understanding the structure of both sides lets you construct correct requests and diagnose problems precisely.
+Каждое взаимодействие по HTTP состоит из запроса и ответа. Понимание структуры обеих частей помогает правильно формировать запросы и точно диагностировать проблемы.
 
 ```
 POST /api/users HTTP/1.1
@@ -47,17 +47,17 @@ X-Request-ID: 550e8400-e29b-41d4-a716-446655440000
 | **Body** | After blank line | Data payload — only present on `POST`, `PUT`, `PATCH` |
 | **Query params** | Appended to path | Filters, sorting, pagination (`?role=admin&limit=10`) |
 
-The response mirrors this structure: a status line (`HTTP/1.1 201 Created`), response headers, a blank line, and an optional body.
+Ответ имеет аналогичную структуру: строка статуса (`HTTP/1.1 201 Created`), заголовки ответа, пустая строка и необязательное тело.
 
-**The blank line between headers and body is mandatory.** Servers use it to know where headers end. A missing or malformed `Content-Type` header is one of the most common causes of `400 Bad Request` errors when scripting — the server receives your JSON but does not know to parse it as JSON.
+**Пустая строка между заголовками и телом обязательна.** По ней сервер определяет конец заголовков. Отсутствующий или некорректный `Content-Type` — одна из частых причин `400 Bad Request` в скриптах: сервер получает JSON, но не понимает, что его нужно разбирать как JSON.
 
-**Query parameters vs path segments:** Use path segments to identify a specific resource (`/users/123`). Use query parameters to filter, sort, or paginate a collection (`/users?role=admin&limit=10&page=2`). Mixing these up produces `404` errors when the server's router does not match the pattern you sent.
+**Параметры запроса и сегменты пути:** сегменты пути указывают конкретный ресурс (`/users/123`), а параметры запроса фильтруют, сортируют или разбивают коллекцию на страницы (`/users?role=admin&limit=10&page=2`). Если перепутать их, маршрутизатор сервера может не найти соответствующий путь и вернуть `404`.
 
 ---
 
 ### HTTP-методы
 
-HTTP methods define the intent of the request. REST maps CRUD operations to methods, but the semantics go deeper than just "create/read/update/delete."
+HTTP-методы задают намерение запроса. REST сопоставляет CRUD-операции с методами, но их семантика не сводится только к «создать/прочитать/обновить/удалить».
 
 | Method | Meaning | Has Body | Idempotent | Safe |
 |--------|---------|----------|------------|------|
@@ -71,17 +71,17 @@ HTTP methods define the intent of the request. REST maps CRUD operations to meth
 
 **Idempotent** means calling the operation N times produces the same server state as calling it once. `PUT /users/1` with the same body always results in the same user record — the second call is a no-op. `POST /users` creates a new user on every call, so it is not idempotent. This distinction matters in retry logic: it is safe to auto-retry idempotent methods; retrying `POST` blindly can create duplicate records.
 
-**Safe** means the operation does not modify server state. All safe methods are also idempotent, but not vice versa. `DELETE` is idempotent (deleting an already-deleted resource leaves the same state: absent) but not safe.
+**Безопасный метод** не изменяет состояние сервера. Все безопасные методы идемпотентны, но обратное неверно. `DELETE` идемпотентен (повторное удаление уже удалённого ресурса оставляет то же состояние — ресурс отсутствует), но не является безопасным.
 
-**`PUT` vs `PATCH`:** `PUT` requires sending the complete resource representation. If you `PUT` a user object and omit the `email` field, a correct implementation will set `email` to null. `PATCH` sends only the fields to change. Use `PATCH` for partial updates — it is less error-prone when resources have many fields and reduces the risk of accidentally nulling data you did not intend to touch.
+**`PUT` и `PATCH`:** `PUT` требует передавать полное представление ресурса. Если отправить объект пользователя через `PUT` без поля `email`, корректная реализация может установить `email` в `null`. `PATCH` передаёт только изменяемые поля. Используйте `PATCH` для частичных обновлений: это снижает риск случайно обнулить данные в объектах с большим числом полей.
 
-**`DELETE` returning `404` on a second call:** Some APIs return `404` if you try to delete an already-deleted resource. This technically breaks idempotency. When scripting retry logic, treat `404` on a `DELETE` as a success condition to avoid false failures in your pipelines.
+**`DELETE` возвращает `404` при повторном вызове:** некоторые API отвечают `404`, если ресурс уже удалён. Формально это нарушает идемпотентность. В логике повторных попыток можно считать `404` для `DELETE` успешным результатом, чтобы избежать ложных ошибок в конвейере.
 
 ---
 
-### HTTP Status Codes
+### Коды состояния HTTP
 
-Status codes are the API's machine-readable signal about what happened. Grouping them by class is the fastest way to triage a problem.
+Коды состояния — машиночитаемый сигнал API о результате запроса. Быстрее всего оценить ситуацию можно по классу кода.
 
 ```
 1xx — Informational (rarely seen in practice)
@@ -113,19 +113,19 @@ Status codes are the API's machine-readable signal about what happened. Grouping
   504 Gateway Timeout       — upstream service took too long to respond
 ```
 
-**`401` vs `403`:** This distinction matters for debugging. `401` means the server does not know who you are — check your token, its expiry, and the `Authorization` header format. `403` means the server knows exactly who you are but you do not have permission — check RBAC roles, scopes, or resource ownership. Confusing these two wastes significant debugging time.
+**`401` и `403`:** это различие важно при диагностике. `401` означает, что сервер не распознал вас: проверьте токен, срок его действия и формат заголовка `Authorization`. `403` означает, что сервер знает вашу личность, но у вас нет разрешения: проверьте роли RBAC, области доступа и владение ресурсом. Путаница между этими кодами тратит время на диагностику.
 
-**`502` vs `504`:** Both indicate a problem between a proxy and an upstream service. `502` means the upstream responded with something invalid or closed the connection unexpectedly. `504` means the upstream never responded within the timeout window. In Kubernetes, both often point to a crashing pod (`502`) or an overloaded/unreachable service (`504`).
+**`502` и `504`:** оба кода указывают на проблему между прокси и вышестоящим сервисом. `502` означает, что upstream вернул некорректный ответ или неожиданно закрыл соединение. `504` означает, что ответ не поступил за отведённое время. В Kubernetes они часто указывают на аварийно завершающийся Pod (`502`) или перегруженный/недоступный сервис (`504`).
 
-**`422` vs `400`:** `400` is for structural problems (unparseable JSON, wrong content-type). `422` is for semantic problems (valid JSON, but the value `"age": -5` fails business validation). Not all APIs respect this distinction — many use `400` for both. When writing API clients, handle both codes the same way: surface the error message from the body to the operator.
+**`422` и `400`:** `400` обычно означает структурную проблему (неразбираемый JSON или неверный Content-Type), а `422` — семантическую (JSON корректен, но значение `"age": -5` не проходит бизнес-проверку). Не все API соблюдают это различие и могут использовать `400` для обоих случаев. В API-клиентах обрабатывайте оба кода одинаково: показывайте оператору сообщение из тела ответа.
 
-**`429` handling in automation:** When you receive a `429`, read the `Retry-After` header before retrying. Immediately retrying without backing off will keep triggering the rate limiter and delay your recovery. Implement exponential backoff with jitter in any script that calls APIs in a loop.
+**Обработка `429` в автоматизации:** получив `429`, прочитайте заголовок `Retry-After` перед повторной попыткой. Немедленный повтор без паузы снова активирует ограничитель частоты и задержит восстановление. В скриптах, многократно вызывающих API, используйте экспоненциальную задержку со случайным разбросом.
 
 ---
 
-### Important Headers
+### Важные заголовки
 
-Headers carry metadata that controls authentication, caching, content negotiation, and observability. In DevOps automation, headers are frequently the source of hard-to-diagnose bugs.
+Заголовки передают метаданные для аутентификации, кэширования, согласования формата содержимого и наблюдаемости. В DevOps-автоматизации они часто становятся источником трудно диагностируемых ошибок.
 
 ```
 # Request headers
@@ -147,25 +147,25 @@ Cache-Control: max-age=3600, public    # Cache directives
 Retry-After: 30                        # Seconds to wait before retrying (429, 503)
 ```
 
-**`Authorization: Bearer` vs `Authorization: Token`:** These are different schemes. GitHub uses `token <value>` for personal access tokens and `Bearer <value>` for OAuth tokens. Sending the wrong scheme returns `401` even with a valid credential. Always check the API documentation for the exact format — copying a header from a different API is a common source of auth failures.
+**`Authorization: Bearer` и `Authorization: Token`:** это разные схемы. GitHub использует `token <value>` для персональных токенов доступа и `Bearer <value>` для OAuth-токенов. Неверная схема приведёт к `401`, даже если сам токен действителен. Всегда проверяйте точный формат в документации API: копирование заголовка от другого API часто вызывает ошибки аутентификации.
 
-**`Content-Type` on responses:** If a server returns `Content-Type: text/html` with a `500` error, you may be hitting a load balancer error page, not the application. When parsing API responses in scripts, check `Content-Type` before trying to pipe output to `jq` — `jq` will fail on HTML with a cryptic parse error that obscures the real problem.
+**`Content-Type` в ответах:** если сервер возвращает `Content-Type: text/html` вместе с ошибкой `500`, возможно, вы получили страницу ошибки балансировщика, а не приложения. В скриптах проверяйте `Content-Type` до передачи ответа в `jq`: на HTML `jq` выдаст малопонятную ошибку разбора, скрывающую настоящую проблему.
 
-**ETag-based caching workflow:**
-1. First request returns `ETag: "v1"` in the response headers.
-2. Subsequent request sends `If-None-Match: "v1"`.
-3. If the resource has not changed, server returns `304 Not Modified` — no body transferred.
-4. Client uses its cached copy.
+**Схема кэширования на основе ETag:**
+1. Первый запрос возвращает заголовок `ETag: "v1"`.
+2. Следующий запрос отправляет `If-None-Match: "v1"`.
+3. Если ресурс не изменился, сервер отвечает `304 Not Modified` — тело не передаётся.
+4. Клиент использует сохранённую копию.
 
-This is how CI pipelines avoid re-downloading large artifacts on every run. It is also how tools like `kubectl` avoid unnecessary API server load when polling for resource state.
+Так CI-конвейеры избегают повторной загрузки больших артефактов при каждом запуске. Аналогичный подход помогает инструментам вроде `kubectl` не создавать лишнюю нагрузку на API-сервер при опросе состояния ресурсов.
 
-**`X-Request-ID` and tracing:** Always generate and send a `X-Request-ID` (or `X-Correlation-ID`) in automated scripts that call APIs in production. When something goes wrong, you can grep the API server logs for that UUID and reconstruct the full call chain. Without it, correlating your script's call to a log entry is nearly impossible in a busy system.
+**`X-Request-ID` и трассировка:** всегда создавайте и передавайте `X-Request-ID` (или `X-Correlation-ID`) в автоматизированных скриптах, обращающихся к production API. При сбое можно найти UUID в журналах API-сервера и восстановить цепочку вызовов. Без идентификатора связать запрос скрипта с записью журнала в загруженной системе почти невозможно.
 
 ---
 
-### curl Fundamentals
+### Основы curl
 
-`curl` is the universal HTTP client for shell scripting and debugging. Mastering a small set of flags covers 95% of DevOps use cases.
+`curl` — универсальный HTTP-клиент для shell-скриптов и диагностики. Небольшого набора хорошо освоенных параметров достаточно для большинства задач DevOps.
 
 ```bash
 # Basic GET
@@ -241,7 +241,7 @@ curl -c cookies.txt -b cookies.txt https://api.example.com/session
 | `-L` | Follow redirects |
 | `-f` / `--fail` | Exit non-zero on 4xx/5xx responses |
 
-**`--fail` in CI scripts:** Always use `curl --fail` (or `-f`) in CI pipelines. Without it, `curl` exits `0` even on a `500` error — your pipeline will appear to succeed when it silently failed. Combine with `-s` and `-S` to suppress the progress meter while still printing error messages to stderr.
+**`--fail` в CI-скриптах:** всегда используйте `curl --fail` (или `-f`) в CI-конвейерах. Без него `curl` возвращает `0` даже при ошибке `500`, и конвейер может ошибочно считаться успешным. Сочетайте с `-s` и `-S`, чтобы скрыть индикатор прогресса, но продолжать выводить сообщения об ошибках в stderr.
 
 ```bash
 # CI-safe curl: fail on HTTP error, show errors, silent progress
@@ -253,7 +253,7 @@ curl -fsSL \
   || { echo "ERROR: Deployment API call failed"; exit 1; }
 ```
 
-**Quoting and special characters in `-d`:** When your JSON contains shell-special characters, use single quotes around the entire body or read from a file with `@payload.json`. Variable interpolation inside single quotes does not work — switch to double quotes or use `printf` to build the body when you need to inject shell variables into JSON.
+**Кавычки и специальные символы в `-d`:** если JSON содержит специальные для оболочки символы, заключайте всё тело в одинарные кавычки или читайте его из файла через `@payload.json`. Подстановка переменных внутри одинарных кавычек не работает. Если нужно вставить переменные оболочки в JSON, используйте двойные кавычки или соберите тело с помощью `printf`.
 
 ```bash
 # Wrong — $USER is not expanded inside single quotes on some shells
@@ -269,20 +269,20 @@ curl -d "$BODY" ...
 
 ---
 
-### Postman Basics
+### Основы Postman
 
-Postman provides a GUI for building, saving, and organizing API requests — useful when you are exploring an unfamiliar API or building a shared collection that the whole team uses for testing and documentation.
+Postman предоставляет графический интерфейс для создания, сохранения и организации API-запросов. Он полезен при изучении незнакомого API и создании общей коллекции, которой команда пользуется для тестирования и документации.
 
-#### Making Requests
+#### Выполнение запросов
 
-1. **Method + URL** — select the method from the dropdown; enter the URL in the address bar.
-2. **Params tab** — add query parameters as key-value pairs; Postman appends them to the URL automatically and handles URL encoding.
-3. **Authorization tab** — select the auth type (`Bearer Token`, `Basic Auth`, `API Key`). Postman injects the correct header format automatically — do not also add it manually in the Headers tab or you will send it twice.
-4. **Headers tab** — add custom headers (`X-Request-ID`, `Accept`, custom `Content-Type` overrides).
-5. **Body tab** — for `POST`/`PUT`/`PATCH`, select `raw → JSON`. Postman sets `Content-Type: application/json` automatically when you choose this mode.
-6. **Send** — execute the request; results appear in the lower panel.
+1. **Method + URL** — выберите метод в списке и введите URL в адресную строку.
+2. **Вкладка Params** — добавьте параметры запроса в виде пар «ключ — значение»; Postman автоматически добавит их к URL и выполнит URL-кодирование.
+3. **Вкладка Authorization** — выберите тип аутентификации (`Bearer Token`, `Basic Auth`, `API Key`). Postman автоматически добавит нужный заголовок. Не добавляйте его вручную во вкладке Headers, иначе он будет отправлен дважды.
+4. **Вкладка Headers** — добавьте пользовательские заголовки (`X-Request-ID`, `Accept`, переопределение `Content-Type`).
+5. **Вкладка Body** — для `POST`/`PUT`/`PATCH` выберите `raw → JSON`. В этом режиме Postman автоматически задаёт `Content-Type: application/json`.
+6. **Send** — отправьте запрос; результаты появятся в нижней панели.
 
-#### Reading Responses
+#### Чтение ответов
 
 | Panel | What to look for |
 |-------|-----------------|
@@ -292,9 +292,9 @@ Postman provides a GUI for building, saving, and organizing API requests — use
 | **Headers** | All response headers: `ETag`, `Location`, `X-RateLimit-*`, `Content-Type` |
 | **Test Results** | Pass/fail output of any test scripts attached to the request |
 
-#### Environments and Variables
+#### Окружения и переменные
 
-Environments let you switch between `dev`, `staging`, and `prod` without editing every request. Define a variable once; reference it everywhere with the `{{variable_name}}` syntax.
+Окружения позволяют переключаться между `dev`, `staging` и `prod`, не редактируя каждый запрос. Задайте переменную один раз и ссылайтесь на неё везде через синтаксис `{{variable_name}}`.
 
 ```
 # Define in Environment (Postman → Environments → New):
@@ -308,11 +308,11 @@ Header:  Authorization: Bearer {{token}}
 Body:    {"notify_url": "{{base_url}}/webhooks/callback"}
 ```
 
-Switch environments from the dropdown in the top-right corner of Postman. All requests in all collections instantly use the new values — no find-and-replace needed.
+Переключайте окружения в раскрывающемся списке в правом верхнем углу Postman. Все запросы во всех коллекциях сразу используют новые значения — искать и заменять вручную не нужно.
 
-**Postman environment variables vs global variables:** Use environment variables for values that change between environments (`base_url`, `token`). Use global variables sparingly — they bleed across all workspaces and environments, making them a source of subtle test pollution and inconsistent behavior between team members.
+**Переменные окружения и глобальные переменные Postman:** используйте переменные окружения для значений, меняющихся между средами (`base_url`, `token`). Глобальные переменные применяйте редко: они доступны во всех рабочих пространствах и окружениях и могут незаметно загрязнять тесты и вызывать различия в поведении у участников команды.
 
-**Setting variables dynamically from response data:** After a login request, you often need to store the returned token for subsequent requests. Use a test script to extract it automatically:
+**Динамическое задание переменных из ответа:** после запроса входа часто нужно сохранить полученный токен для следующих запросов. Извлеките его автоматически с помощью тестового скрипта:
 
 ```javascript
 // In the Tests tab of your login request:
@@ -323,15 +323,15 @@ pm.environment.set("token", json.access_token);
 
 #### Collections
 
-A Collection is a saved, organized set of requests grouped into folders. Collections serve three purposes in DevOps workflows:
+Коллекция — это сохранённый набор запросов, организованный по папкам. В DevOps-процессах коллекции решают три задачи:
 
-1. **Team documentation** — a living, runnable record of every API endpoint, with example payloads and expected responses. More reliable than wiki docs that go stale.
-2. **Automated regression testing** — every request can have test scripts (JavaScript) that assert status codes, response shape, and values. Run the whole collection with a single click or via the CLI runner.
-3. **Onboarding** — a new team member imports the collection and environment, sets their token, and can immediately call every API without reading documentation first.
+1. **Документация команды** — актуальное исполняемое описание API-эндпоинтов с примерами тел запросов и ожидаемыми ответами. Оно надёжнее wiki, которая со временем устаревает.
+2. **Автоматизированное регрессионное тестирование** — к каждому запросу можно добавить JavaScript-проверки кодов статуса, структуры ответа и значений. Вся коллекция запускается одним нажатием или через CLI.
+3. **Ввод в работу** — новый участник импортирует коллекцию и окружение, задаёт токен и сразу может обращаться ко всем API, не изучая документацию заранее.
 
-#### Writing Tests in Postman
+#### Написание тестов в Postman
 
-Postman's test scripts run after each response. They use a JavaScript assertion library (`pm.test`, `pm.expect`) built into the Postman sandbox.
+Тестовые скрипты Postman запускаются после каждого ответа. Они используют встроенную в песочницу Postman библиотеку утверждений JavaScript (`pm.test`, `pm.expect`).
 
 ```javascript
 // Assert status code
@@ -357,7 +357,7 @@ pm.test("Response time under 500ms", () => {
 });
 ```
 
-**Running collections in CI:** Export a collection and environment as JSON, then run them with Newman (Postman's CLI runner):
+**Запуск коллекций в CI:** экспортируйте коллекцию и окружение в JSON, а затем запустите их через Newman — CLI-инструмент Postman:
 
 ```bash
 # Install Newman
@@ -370,15 +370,15 @@ newman run my-api-collection.json \
   --reporter-junit-export results.xml
 ```
 
-This integrates Postman collections directly into Jenkins, GitHub Actions, or GitLab CI pipelines — the same requests your team uses for manual testing become your automated API regression suite.
+Так коллекции Postman напрямую интегрируются в Jenkins, GitHub Actions или GitLab CI: запросы, которые команда выполняла вручную, становятся автоматизированным набором регрессионных тестов API.
 
 ---
 
 ## Примеры
 
-### Example 1: Querying the GitHub API with curl
+### Пример 1. Запрос к GitHub API с помощью curl
 
-This example demonstrates authentication, reading response headers for rate-limit awareness, and extracting specific fields with `jq`.
+В примере показаны аутентификация, чтение заголовков ответа для контроля лимитов запросов и извлечение нужных полей с помощью `jq`.
 
 ```bash
 # Store your token in an environment variable — never hardcode tokens
@@ -414,9 +414,9 @@ date -d @1716700000   # Linux
 date -r 1716700000    # macOS
 ```
 
-### Example 2: Creating and Updating a Resource (Full CRUD Cycle)
+### Пример 2. Создание и обновление ресурса (полный цикл CRUD)
 
-This example uses the public JSONPlaceholder API (no auth required) to demonstrate POST, GET, PATCH, and DELETE in sequence.
+В примере используется публичный API JSONPlaceholder (аутентификация не нужна), чтобы последовательно показать POST, GET, PATCH и DELETE.
 
 ```bash
 BASE="https://jsonplaceholder.typicode.com"
@@ -451,9 +451,9 @@ echo "Delete status: $STATUS"
 # Should print: Delete status: 200
 ```
 
-### Example 3: Triggering a GitHub Actions Workflow Dispatch via API
+### Пример 3. Запуск workflow GitHub Actions через API
 
-This is a realistic DevOps scenario: triggering a deployment pipeline from a script, then polling to confirm it started.
+Это реалистичный сценарий DevOps: запуск конвейера развёртывания из скрипта и последующий опрос для подтверждения старта.
 
 ```bash
 export GITHUB_TOKEN="ghp_your_personal_access_token"
@@ -492,9 +492,9 @@ curl -fsS \
 # }
 ```
 
-### Example 4: Using Postman Collection Runner in CI with Newman
+### Пример 4. Запуск коллекции Postman в CI через Newman
 
-This example shows the full setup: a Postman collection that tests a health endpoint and a create-user flow, exported and run in a GitHub Actions pipeline.
+Пример показывает полный процесс: коллекция Postman проверяет эндпоинт состояния и сценарий создания пользователя, экспортируется и запускается в конвейере GitHub Actions.
 
 ```yaml
 # .github/workflows/api-tests.yml
@@ -554,9 +554,9 @@ pm.test("User created with correct role", () => {
 
 ## Практические задания
 
-### Exercise 1: Diagnose a Failing API Call
+### Задание 1. Диагностируйте неработающий вызов API
 
-The following `curl` command is broken in two ways. Without running it first, identify both bugs. Then fix it and confirm it returns a `200` with a JSON body.
+Следующая команда `curl` содержит две ошибки. Не запуская её, найдите обе проблемы, затем исправьте команду и убедитесь, что она возвращает `200` и тело в формате JSON.
 
 ```bash
 curl -X GET https://jsonplaceholder.typicode.com/posts/1
@@ -566,16 +566,16 @@ curl -X GET https://jsonplaceholder.typicode.com/posts/1
 ```
 
 **What to find:**
-- Why is the `Accept` header wrong for a JSON API?
-- Why is a request body on a `GET` semantically incorrect?
-- Why will this command fail before even reaching the server?
-- Write the corrected command and pipe the response through `jq` to extract only the `title` field.
+- Почему заголовок `Accept` неверен для JSON API?
+- Почему тело запроса у `GET` семантически некорректно?
+- Почему команда завершится ошибкой ещё до обращения к серверу?
+- Напишите исправленную команду и передайте ответ в `jq`, чтобы извлечь только поле `title`.
 
 ---
 
-### Exercise 2: Inspect Rate-Limit Headers and Handle `429`
+### Задание 2. Изучите заголовки лимитов и обработайте `429`
 
-Call the GitHub public API in a loop and write a script that gracefully handles rate limiting.
+Многократно вызывайте публичный API GitHub в цикле и напишите скрипт, который корректно обрабатывает ограничение частоты запросов.
 
 ```bash
 # Starting point — run this and observe what happens after many calls
@@ -584,8 +584,8 @@ for i in $(seq 1 10); do
 done
 ```
 
-**Your task:**
-1. Modify the loop to capture the HTTP status code separately from the body.
+**Задача:**
+1. Измените цикл так, чтобы HTTP-код статуса сохранялся отдельно от тела ответа.
 2. If the status code is `429` or `403` (GitHub uses `403` for rate limits on unauthenticated requests), read the `X-RateLimit-Reset` header, calculate how many seconds until reset, sleep that long, then retry the request.
 3. Add a `X-Request-ID` header with a unique UUID to each request (use `uuidgen` or `cat /proc/sys/kernel/random/uuid`).
 
@@ -623,7 +623,7 @@ curl -sI \
   https://api.github.com/orgs/some-private-org/members
 ```
 
-**Your task:**
+**Задача:**
 1. Run all three requests and record the status code and the `WWW-Authenticate` or `X-GitHub-Media-Type` response headers.
 2. Write a one-paragraph explanation of why each request failed differently, referencing the specific HTTP semantics of `401` vs `403`.
 3. Write a `curl` command that correctly authenticates and retrieves your own user profile (`GET /user`), then extracts your `login`, `public_repos`, and `created_at` fields using `jq`.

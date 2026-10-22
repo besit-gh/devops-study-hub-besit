@@ -130,9 +130,9 @@ Client                    Server
 | `SYN_RECV` | Сервер получил SYN, отправил SYN-ACK и ждёт ACK | SYN flood или очень высокая задержка |
 | `FIN_WAIT_2` | Local sent FIN, waiting for remote FIN | Remote app not closing cleanly |
 
-**`TIME_WAIT` gotcha:** a server handling high connection volume can accumulate thousands of `TIME_WAIT` sockets. This is normal and expected — do not "fix" it by disabling `TIME_WAIT`. Doing so can cause data corruption from stale packets arriving on a reused port number. If you're running out of ephemeral ports, tune `net.ipv4.ip_local_port_range` to expand the pool and enable `net.ipv4.tcp_tw_reuse` (not `tcp_tw_recycle`, which was removed in kernel 4.12 and was broken in NAT environments).
+**Подводный камень `TIME_WAIT`:** сервер с большим количеством соединений может накопить тысячи сокетов в состоянии `TIME_WAIT`. Это нормально; не пытайтесь «исправить» ситуацию отключением `TIME_WAIT`. Старые пакеты, пришедшие на повторно использованный порт, могут повредить данные. Если заканчиваются эфемерные порты, расширьте диапазон `net.ipv4.ip_local_port_range` и рассмотрите `net.ipv4.tcp_tw_reuse` (не `tcp_tw_recycle`: этот параметр удалён в ядре 4.12 и некорректно работал в сетях с NAT).
 
-**`CLOSE_WAIT` gotcha:** large numbers of `CLOSE_WAIT` sockets almost always indicate a bug in the application — it received a FIN from the peer but never called `close()` on the socket. This leaks file descriptors and eventually produces "too many open files" errors that crash the process. Check your connection pool shutdown logic.
+**Подводный камень `CLOSE_WAIT`:** большое число сокетов в состоянии `CLOSE_WAIT` почти всегда указывает на ошибку приложения: оно получило FIN от другой стороны, но не вызвало `close()` для сокета. Из-за этого утекают файловые дескрипторы, а затем появляются ошибки «слишком много открытых файлов», способные завершить процесс. Проверьте логику закрытия пула соединений.
 
 ```bash
 # Count sockets by state — quick health check
@@ -149,9 +149,9 @@ watch -n 1 'ss -tan | awk "NR>1 {print \$1}" | sort | uniq -c'
 
 ### Ports
 
-Ports are 16-bit numbers (0–65535) that allow multiple applications to share a single IP address. The kernel routes incoming packets to the correct process based on the `{protocol, local IP, local port, remote IP, remote port}` 5-tuple — each unique 5-tuple is a distinct connection.
+Порты — это 16-битные числа (0–65535), позволяющие нескольким приложениям использовать один IP-адрес. Ядро направляет входящие пакеты нужному процессу по пяти параметрам: `{протокол, локальный IP, локальный порт, удалённый IP, удалённый порт}`. Каждая уникальная комбинация описывает отдельное соединение.
 
-**Port ranges:**
+**Диапазоны портов:**
 
 | Range | Name | Notes |
 |-------|------|-------|

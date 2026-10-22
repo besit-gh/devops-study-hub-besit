@@ -674,7 +674,7 @@ ansible all -m shell -a "grep 'alice@laptop' ~/.ssh/authorized_keys && echo FOUN
 
 ### Быстрая проверка
 
-1. Generate a temporary Ed25519 key pair and print the key type from the public key.
+1. Создайте временную пару ключей Ed25519 и выведите тип ключа из открытого ключа.
 
    ```bash
    ssh-keygen -t ed25519 -f /tmp/sshtest -N "" -q 2>/dev/null; awk '{print $1}' /tmp/sshtest.pub; rm -f /tmp/sshtest /tmp/sshtest.pub
@@ -684,10 +684,10 @@ ansible all -m shell -a "grep 'alice@laptop' ~/.ssh/authorized_keys && echo FOUN
    ssh-ed25519
    ```
 
-Подсказка: используйте входящую в OpenSSH утилиту генерации ключей, поддерживающую современные типы, например Ed25519.
-Подсказка: выполните `ssh-keygen -t ed25519` с временным файлом вывода, затем извлеките первое поле публичного ключа через `awk '{print $1}'`.
+Подсказка: используйте утилиту OpenSSH для генерации ключей; выберите современный тип, например Ed25519.
+Подсказка: выполните `ssh-keygen -t ed25519`, указав временный выходной файл, затем извлеките первое поле открытого ключа командой `awk '{print $1}'`.
 
-2. Parse a `HostName` value from a formatted SSH config block.
+2. Извлеките значение `HostName` из форматированного блока конфигурации SSH.
 
    ```bash
    printf 'Host myserver\n  HostName 10.0.0.1\n  User devops\n' | awk '/HostName/{print $2}'
@@ -696,5 +696,5 @@ ansible all -m shell -a "grep 'alice@laptop' ~/.ssh/authorized_keys && echo FOUN
    ```expected_output
    10.0.0.1
    ```
-Подсказка: найдите нужное ключевое слово в тексте и извлеките значение, которое следует за ним.
+Подсказка: найдите в тексте нужное ключевое слово и извлеките значение после него.
 Подсказка: найдите строку `HostName` с помощью `grep`, затем передайте её в `awk '{print $2}'`, чтобы получить второе поле.

@@ -19,7 +19,7 @@ DAST (Dynamic Application Security Testing) проверяет работающ�
 
 ## Основные понятия
 
-### SAST vs DAST: Core Differences
+### SAST и DAST: основные различия
 
 | Property | SAST | DAST |
 |---|---|---|
@@ -32,15 +32,15 @@ DAST (Dynamic Application Security Testing) проверяет работающ�
 | Speed | Seconds to minutes | Minutes to hours |
 | Typical tools | Bandit, Semgrep, Gitleaks | OWASP ZAP, Nuclei, Burp Suite |
 
-**Key interview point:** SAST false positives are common because the tool cannot trace data flow through all code paths. A variable that looks like user input to the tool might be a hardcoded constant at runtime. DAST false positives are less common because each finding is a real HTTP exchange — but DAST can miss vulnerabilities that require authenticated or multi-step flows if not configured with valid credentials and session handling.
+**Важный вопрос для собеседования:** у SAST часто бывают ложноположительные результаты, поскольку инструмент не всегда может проследить поток данных по всем путям выполнения. Переменная, похожая на пользовательский ввод, на деле может оказаться константой. У DAST ложноположительные результаты встречаются реже, поскольку каждая находка связана с реальным HTTP-обменом. Однако DAST может пропустить уязвимости, для обнаружения которых нужны авторизация или многошаговые сценарии, если не настроены действующие учётные данные и управление сессиями.
 
-**The coverage gap:** neither tool catches business logic flaws. An insecure direct object reference (IDOR) that returns another user's data by changing an ID in the URL requires human understanding of the intended access model. SAST sees no dangerous function call. DAST sees a 200 response and has no way to know the data belonged to a different user. This is why automated tools supplement but never replace manual testing and code review.
+**Пробелы покрытия:** ни один из инструментов не обнаруживает ошибки бизнес-логики. Например, небезопасная прямая ссылка на объект (IDOR), позволяющая получить данные другого пользователя заменой идентификатора в URL, требует понимания модели доступа. SAST не видит опасного вызова функции, а DAST получает ответ 200 и не знает, что данные принадлежат другому пользователю. Поэтому автоматизированные инструменты дополняют ручное тестирование и проверку кода, но не заменяют их.
 
 ---
 
-### SAST with Bandit (Python)
+### SAST с помощью Bandit для Python
 
-Bandit parses Python AST (Abstract Syntax Tree) and runs a set of plugin tests against it. Each test maps to a known insecure pattern. Severity (LOW/MEDIUM/HIGH) and confidence (LOW/MEDIUM/HIGH) are reported independently — a finding can be HIGH severity but LOW confidence if Bandit is unsure whether the code path is reachable. In a CI gate, use both dimensions: fail on HIGH severity + HIGH confidence to minimize noise while catching the most dangerous confirmed findings.
+Bandit разбирает абстрактное синтаксическое дерево Python (AST) и запускает набор проверок-плагинов. Каждая проверка соответствует известному небезопасному шаблону. Серьёзность (LOW/MEDIUM/HIGH) и уверенность (LOW/MEDIUM/HIGH) оцениваются независимо: находка может иметь высокую серьёзность, но низкую уверенность, если Bandit не уверен, что этот участок кода достижим. В CI учитывайте оба параметра: останавливайте конвейер при высокой серьёзности и высокой уверенности, чтобы сократить шум и выявлять подтверждённые опасные проблемы.
 
 ```bash
 pip install bandit
@@ -67,7 +67,7 @@ bandit -r src/ --skip B101,B105
 bandit -r src/ -f json -o bandit.json --exit-zero
 ```
 
-**Common Bandit rule IDs to know for interviews:**
+**Идентификаторы правил Bandit, которые стоит знать к собеседованию:**
 
 | Rule | Issue | Why It Matters |
 |---|---|---|

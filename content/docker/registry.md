@@ -19,9 +19,9 @@ exercises: 4
 
 ## Основные понятия
 
-### Image Naming and the OCI Reference Format
+### Имена образов и формат ссылок OCI
 
-Every image reference follows this structure:
+Каждая ссылка на образ имеет следующую структуру:
 
 ```
 [registry/][namespace/]repository[:tag][@digest]
@@ -33,9 +33,9 @@ ghcr.io/myorg/myapp:sha-abc1234                                       # GitHub C
 europe-docker.pkg.dev/my-project/my-repo/myapp:v1.2.3                # GCP Artifact Registry
 ```
 
-**When fields are omitted:**
-- No registry → Docker assumes `docker.io`
-- No namespace on Docker Hub → assumes `library` (official images)
+**Если часть полей не указана:**
+- Реестр не указан → Docker использует `docker.io`
+- Пространство имён на Docker Hub не указано → используется `library` (официальные образы)
 - No tag → Docker uses `latest`
 - `@digest` pins to an exact image hash (immutable; survives tag reassignment)
 

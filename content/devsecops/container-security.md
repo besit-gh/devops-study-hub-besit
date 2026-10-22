@@ -13,15 +13,15 @@ exercises: 4
 
 Основной принцип безопасности контейнеров — минимальные привилегии: контейнер должен иметь ровно те права, которые нужны для его задачи, и не больше. Это означает запуск не от root, файловые системы только для чтения там, где это возможно, минимальные базовые образы, удаление ненужных Linux capabilities и строго ограниченные сетевые правила. Каждое ограничение уменьшает масштаб последствий компрометации. Глубокоэшелонированная защита должна гарантировать, что даже при эксплуатации CVE в приложении злоумышленник окажется в ограниченной среде без shell, права записи и сетевого доступа к базе данных.
 
-Container security fits into the DevSecOps toolchain as a set of gates at multiple pipeline stages. Image scanning runs in CI alongside tests. Dockerfile linting and `trivy config` catch misconfigurations before the image is built. Kubernetes admission controllers (PodSecurityAdmission, OPA/Gatekeeper, Kyverno) enforce policy at deploy time and prevent non-compliant workloads from ever reaching a node. Network policies are infrastructure-as-code, versioned alongside application manifests. The result is security that is automated, auditable, and hard to bypass accidentally.
+Безопасность контейнеров встраивается в DevSecOps как набор проверок на разных этапах конвейера. Сканирование образов выполняется в CI вместе с тестами. Линтер Dockerfile и команда `trivy config` выявляют неверные настройки ещё до сборки образа. Контроллеры допуска Kubernetes (PodSecurityAdmission, OPA/Gatekeeper, Kyverno) применяют политики при развёртывании и не позволяют несоответствующим требованиям рабочим нагрузкам попасть на узел. Сетевые политики хранятся как код инфраструктуры и версионируются вместе с манифестами приложения. В результате безопасность автоматизирована, проверяема и защищена от случайного обхода.
 
 ## Основные понятия
 
-### Image Scanning
+### Сканирование образов
 
-Image scanning inspects container images for known vulnerabilities (CVEs) in OS packages and language-level dependencies. Scanners work by extracting the image's software bill of materials (SBOM) — every installed package and its version — and matching it against CVE databases like NVD, GitHub Advisory, and OS-specific sources (Debian Security, Alpine secdb, etc.).
+Сканирование образов ищет известные уязвимости (CVE) в пакетах операционной системы и зависимостях языков программирования. Сканер формирует перечень компонентов образа (SBOM) — все установленные пакеты и их версии — и сопоставляет его с базами уязвимостей, например NVD, GitHub Advisory и источниками конкретных ОС (Debian Security, Alpine secdb и другими).
 
-**Trivy** is the most widely used open-source scanner. It handles OCI images, Dockerfiles, Helm charts, Kubernetes manifests, and Terraform configs with a single tool.
+**Trivy** — широко используемый сканер с открытым исходным кодом. Один инструмент проверяет OCI-образы, Dockerfile, чарты Helm, манифесты Kubernetes и конфигурации Terraform.
 
 ```bash
 # Install Trivy
@@ -46,7 +46,7 @@ trivy config ./Dockerfile
 trivy config ./k8s/
 ```
 
-**Docker Scout** is built into Docker Desktop and Docker Hub. It provides continuous monitoring: once an image is pushed, Scout re-evaluates it as new CVEs are published without requiring a re-scan.
+**Docker Scout** встроен в Docker Desktop и Docker Hub. Он обеспечивает непрерывный мониторинг: после отправки образа в реестр Scout повторно оценивает его при публикации новых CVE, не требуя запускать сканирование вручную.
 
 ```bash
 docker scout quickview myapp:latest                     # summary: critical/high/medium/low counts
@@ -54,7 +54,7 @@ docker scout cves myapp:latest                          # full CVE list with fix
 docker scout compare myapp:v1.1 --to myapp:v1.0        # diff vulnerabilities between versions
 ```
 
-#### Integrating Trivy into GitHub Actions CI
+#### Подключение Trivy к CI на GitHub Actions
 
 ```yaml
 - name: Build image
@@ -77,7 +77,7 @@ docker scout compare myapp:v1.1 --to myapp:v1.0        # diff vulnerabilities be
     sarif_file: 'trivy-results.sarif'
 ```
 
-**Gotcha:** `trivy image` on a locally built image scans the image in the Docker daemon. If you push first and scan the registry URL, Trivy pulls and scans the exact digest that will be deployed — these can differ if the push step re-tags or alters the image. In CI, scan the local image immediately after build, before push.
+**Важно:** `trivy image` для локально собранного образа сканирует образ в Docker daemon. Если сначала отправить образ в реестр, а затем сканировать URL реестра, Trivy скачает и проверит конкретный digest, который будет развёрнут. Он может отличаться, если при отправке образ перемаркировали или изменили. В CI сканируйте локальный образ сразу после сборки, до отправки в реестр.
 
 | Scanner | Where it runs | Continuous monitoring | SBOM output | Config scanning |
 |---|---|---|---|---|
@@ -88,13 +88,13 @@ docker scout compare myapp:v1.1 --to myapp:v1.0        # diff vulnerabilities be
 
 ---
 
-### Dockerfile Hardening
+### Усиление безопасности Dockerfile
 
-A hardened Dockerfile reduces the attack surface of the resulting image. The goal is to produce an image that contains only what the application needs to run — nothing that helps an attacker move laterally or escalate privileges.
+Защищённый Dockerfile уменьшает поверхность атаки итогового образа. Цель — оставить в образе только то, что нужно приложению для работы, и ничего, что помогло бы злоумышленнику перемещаться по системе или повышать привилегии.
 
-#### Non-Root User
+#### Пользователь без прав root
 
-Running as root inside a container is dangerous even with namespace isolation. If a container escape vulnerability exists, a root container is far more likely to achieve host root. Always create a dedicated user.
+Запуск от root внутри контейнера опасен даже при изоляции пространствами имён. При наличии уязвимости выхода из контейнера процесс с правами root с большей вероятностью получит root-доступ на хосте. Всегда создавайте отдельного пользователя.
 
 ```dockerfile
 FROM python:3.12-slim
@@ -116,11 +116,11 @@ EXPOSE 8000
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-**Gotcha:** `EXPOSE` does not publish the port — it is documentation only. Ports below 1024 require `CAP_NET_BIND_SERVICE`. If your app binds to port 80 or 443, either change it to 8080/8443 (preferred) or grant the capability explicitly in the SecurityContext — never run the process as root just to bind a privileged port.
+**Важно:** `EXPOSE` не публикует порт, а лишь документирует его. Для портов ниже 1024 требуется `CAP_NET_BIND_SERVICE`. Если приложение слушает порт 80 или 443, предпочтительно перенести его на 8080/8443 либо явно выдать capability в SecurityContext. Не запускайте процесс от root только ради привилегированного порта.
 
-#### Minimal Base Images
+#### Минимальные базовые образы
 
-Every package in a base image is a potential CVE. Distroless images contain only the language runtime and the application — no shell, no package manager, no `curl`.
+Каждый пакет в базовом образе может содержать уязвимость CVE. Образы distroless включают только среду выполнения языка и приложение — без оболочки, менеджера пакетов и `curl`.
 
 ```dockerfile
 # Multi-stage build: build in a full image, copy artifacts into distroless
@@ -138,7 +138,7 @@ COPY --from=builder /app /app
 CMD ["/app/main.py"]
 ```
 
-When distroless is too restrictive (debugging, dynamic dependencies), use `python:3.12-slim` or `alpine`-based images and strip unnecessary packages:
+Если distroless слишком ограничивает работу (например, нужна отладка или динамические зависимости), используйте образы на основе `python:3.12-slim` или Alpine и удалите ненужные пакеты:
 
 ```dockerfile
 FROM python:3.12-slim
@@ -148,11 +148,11 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*   # remove apt cache — don't leave it in the layer
 ```
 
-**Gotcha:** Distroless images have no shell, which means `kubectl exec` and `docker exec` won't give you an interactive session. For debugging in non-production environments, use the `:debug` tag variant (e.g., `gcr.io/distroless/python3-debian12:debug`), which includes BusyBox. Never use `:debug` in production images.
+**Важно:** в образах distroless нет оболочки, поэтому `kubectl exec` и `docker exec` не откроют интерактивную сессию. Для отладки вне production используйте вариант с тегом `:debug` (например, `gcr.io/distroless/python3-debian12:debug`), включающий BusyBox. Не используйте `:debug` в production-образах.
 
 #### .dockerignore
 
-Everything not in `.dockerignore` is sent to the build context and can be copied into the image accidentally.
+Всё, что не указано в `.dockerignore`, попадает в контекст сборки и может случайно оказаться внутри образа.
 
 ```
 # .dockerignore
@@ -169,9 +169,9 @@ node_modules/
 .DS_Store
 ```
 
-**Gotcha:** `.env` files containing secrets are commonly leaked into images via `COPY . .`. Always include `.env*` in `.dockerignore`, and verify with `docker history myapp:latest` that secrets are not present in any layer. You can also use `docker save myapp:latest | tar xO --wildcards '*/layer.tar' | tar t` to inspect layer contents directly.
+**Важно:** файлы `.env` с секретами часто попадают в образ через `COPY . .`. Всегда добавляйте `.env*` в `.dockerignore` и проверяйте командой `docker history myapp:latest`, что секретов нет ни в одном слое. Также содержимое слоёв можно изучить напрямую: `docker save myapp:latest | tar xO --wildcards '*/layer.tar' | tar t`.
 
-#### Build-Time Secrets
+#### Секреты на этапе сборки
 
 Docker layer history is permanent. Deleting a file in a later `RUN` step does not remove it from the layer where it was created — the secret is still extractable from the intermediate layer.
 

@@ -19,13 +19,13 @@ IAM (Identity and Access Management) — уровень авторизации, 
 
 ## Основные понятия
 
-### Principle of Least Privilege
+### Принцип минимальных привилегий
 
-Grant only the permissions needed to perform a specific task — no more. The correct direction is additive: start with zero and add permissions until the job works, not the reverse. Wildcards in actions or resources are a code smell that should require explicit justification in code review.
+Выдавайте только те разрешения, которые нужны для конкретной задачи, и не больше. Правильный подход — добавлять разрешения постепенно: начать с нуля и добавлять их, пока задача не заработает, а не выдавать всё сразу с последующим ограничением. Маски в действиях или ресурсах — тревожный признак, требующий явного обоснования при проверке кода.
 
-**Why it's hard in practice:** developers tend to request broad permissions to unblock themselves, and those permissions never get trimmed. The result is role sprawl where production roles carry permissions that haven't been exercised in months.
+**Почему это трудно на практике:** разработчики часто запрашивают широкие разрешения, чтобы быстрее решить задачу, а затем эти разрешения никто не сокращает. В результате роли разрастаются и получают полномочия, которые не использовались месяцами.
 
-**The operational pattern:** use IAM Access Advisor to see last-used dates per service, then remove what hasn't been touched in 90 days.
+**Практический подход:** используйте IAM Access Advisor, чтобы посмотреть дату последнего обращения к каждому сервису, и удаляйте разрешения, которые не использовались 90 дней.
 
 ```bash
 # Step 1 — generate a report of services accessed by a role
@@ -49,7 +49,7 @@ aws iam list-roles --output json | jq -r '
   ) | .RoleName'
 ```
 
-**Policy scoping — the most common mistake:**
+**Область действия политики — самая частая ошибка:**
 
 ```json
 // ❌ Bad — wildcard action, wildcard resource
@@ -67,7 +67,7 @@ aws iam list-roles --output json | jq -r '
 }
 ```
 
-**Gotcha:** `s3:ListBucket` operates on the bucket ARN (`arn:aws:s3:::bucket-name`), not the object ARN. If you grant only `s3:GetObject` on `arn:aws:s3:::bucket/*`, the SDK will throw `AccessDenied` on list operations even if the user only needs to list — you must add the bucket ARN separately.
+**Подводный камень:** действие `s3:ListBucket` применяется к ARN самого бакета (`arn:aws:s3:::bucket-name`), а не к ARN объектов. Если вы выдадите только `s3:GetObject` для `arn:aws:s3:::bucket/*`, SDK вернёт `AccessDenied` при попытке получить список объектов. Для операций со списком ARN бакета нужно указать отдельно.
 
 ```json
 // Correct pattern for an app that needs to list and read objects
@@ -90,9 +90,9 @@ aws iam list-roles --output json | jq -r '
 
 ---
 
-### Eliminate Long-Lived Credentials
+### Откажитесь от долгоживущих учётных данных
 
-Static access keys (`AKIA...`) are the highest-risk IAM artifact. They don't expire, they travel in environment variables and config files, and they appear in git history. Every AWS workload that runs in a managed compute environment — EC2, ECS, EKS, Lambda — can use short-lived, automatically rotated credentials via the instance metadata service instead.
+Статические ключи доступа (`AKIA...`) — один из наиболее опасных видов данных IAM. Они не истекают, попадают в переменные окружения и конфигурационные файлы, а также остаются в истории Git. Нагрузки AWS в управляемых средах — EC2, ECS, EKS и Lambda — вместо этого могут использовать временные автоматически ротируемые учётные данные через сервис метаданных экземпляра.
 
 | Credential Type | Rotation | Revocation | Recommended Context |
 |---|---|---|---|
@@ -103,7 +103,7 @@ Static access keys (`AKIA...`) are the highest-risk IAM artifact. They don't exp
 | OIDC federated token | ~15 min–1h | Role trust policy | CI/CD pipelines |
 | `aws sts assume-role` | 15 min–12h | Policy revocation | Cross-account, human access |
 
-**Boto3 credential chain — know the order:**
+**Цепочка поиска учётных данных Boto3 — запомните порядок:**
 
 ```python
 # ❌ Never do this — key is plaintext in source code
@@ -124,7 +124,7 @@ s3 = boto3.client('s3',
 s3 = boto3.client('s3')  # works on EC2, Lambda, ECS, EKS with IRSA
 ```
 
-**Gotcha:** on EC2, enforce IMDSv2 (token-required mode) to prevent SSRF attacks from reading instance credentials via the metadata endpoint. IMDSv1 allows a simple `curl http://169.254.169.254/latest/meta-data/iam/security-credentials/` — no auth required.
+**Важно:** на EC2 обязательно используйте IMDSv2 (режим с обязательным токеном), чтобы предотвратить SSRF-атаки, позволяющие читать учётные данные экземпляра через конечную точку метаданных. В IMDSv1 достаточно выполнить `curl http://169.254.169.254/latest/meta-data/iam/security-credentials/` — аутентификация не требуется.
 
 ```bash
 # Enforce IMDSv2 at launch time
@@ -146,7 +146,7 @@ aws ec2 describe-instances \
   --query 'Reservations[0].Instances[0].MetadataOptions'
 ```
 
-**Detecting leaked keys in git history** — run this before any repo goes public:
+**Поиск утёкших ключей в истории Git** — выполните проверку перед тем, как сделать репозиторий публичным:
 
 ```bash
 # Install trufflehog and scan a repo for high-entropy strings and known key patterns
@@ -157,7 +157,7 @@ trufflehog git file://. --only-verified
 trufflehog github --repo https://github.com/myorg/myrepo --only-verified
 ```
 
-**Rotating an existing IAM user key without downtime:**
+**Ротация ключа существующего пользователя IAM без простоя:**
 
 ```bash
 # Step 1 — create a second key (max 2 per user)
@@ -181,9 +181,9 @@ aws iam delete-access-key \
 
 ---
 
-### OIDC for CI/CD — No Stored Secrets
+### OIDC для CI/CD — без сохранённых секретов
 
-The modern standard for CI/CD pipelines is OIDC federation: the pipeline exchanges a short-lived OIDC JWT (issued by GitHub, GitLab, etc.) for temporary AWS credentials via `sts:AssumeRoleWithWebIdentity`. No secrets are stored anywhere.
+Современный стандарт для CI/CD-конвейеров — федерация OIDC: конвейер обменивает краткоживущий OIDC JWT (выданный GitHub, GitLab и т. п.) на временные учётные данные AWS через `sts:AssumeRoleWithWebIdentity`. Постоянные секреты хранить не требуется.
 
 ```yaml
 # .github/workflows/deploy.yml
@@ -237,9 +237,9 @@ jobs:
 }
 ```
 
-**Gotcha:** using `StringLike` with a wildcard (`repo:myorg/*`) instead of `StringEquals` for the `sub` condition allows any repo in your org to assume the role. Scope it to the exact repo and branch unless you deliberately want org-wide access.
+**Важно:** использование `StringLike` с шаблоном (`repo:myorg/*`) вместо `StringEquals` в условии `sub` позволяет любому репозиторию организации принять эту роль. Ограничивайте условие конкретным репозиторием и веткой, если намеренно не предоставляете доступ всей организации.
 
-**Registering the GitHub OIDC provider in AWS** — this is a one-time setup per account:
+**Регистрация провайдера GitHub OIDC в AWS** — это однократная настройка для каждого аккаунта:
 
 ```bash
 # Get the thumbprint of the GitHub OIDC endpoint (required by AWS)
@@ -255,7 +255,7 @@ aws iam create-open-id-connect-provider \
   --thumbprint-list "$THUMBPRINT"
 ```
 
-For GCP, the equivalent is Workload Identity Federation:
+В GCP аналогичный механизм называется Workload Identity Federation:
 
 ```bash
 # Create a Workload Identity Pool for GitHub Actions
@@ -283,9 +283,9 @@ gcloud iam service-accounts add-iam-policy-binding \
 
 ---
 
-### MFA and Root Account Hardening
+### MFA и усиление защиты root-аккаунта
 
-The AWS root account has unconditional access to everything including canceling the account, changing billing, and bypassing SCPs. It must be treated as a break-glass credential: strong hardware MFA, no access keys, and rarely used.
+Root-аккаунт AWS имеет безусловный доступ ко всему, включая закрытие аккаунта, изменение платёжных настроек и обход SCP. Рассматривайте его как аварийную учётную запись: используйте надёжный аппаратный MFA, не создавайте ключи доступа и входите под ним только в исключительных случаях.
 
 | Control | Root Account | IAM Users | IAM Roles |
 |---|---|---|---|

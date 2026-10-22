@@ -13,15 +13,15 @@ GitOps — модель развёртывания, в которой Git явл
 
 Четыре принципа GitOps — декларативность, версионирование, автоматическое применение и постоянное согласование — напрямую отражены в архитектуре Argo CD. Приложения описываются через CRD Kubernetes, а не сохраняются как состояние CLI. Политики синхронизации определяют, происходит ли согласование автоматически или требует одобрения человека. RBAC регулирует, кто может запускать синхронизацию и менять политики. Благодаря этому кластер не уходит в неизвестное состояние, а продвижение между dev, staging и prod выполняется изменениями в Git, а не ручными инструкциями.
 
-In the broader DevOps toolchain, ArgoCD sits at the boundary between CI and the running cluster. CI builds artifacts and updates manifests; ArgoCD deploys them. This separation means your CI system never needs cluster credentials, the cluster's desired state is auditable, and you can reproduce any historical deployment by pointing ArgoCD at a specific commit SHA.
+В общей цепочке DevOps Argo CD находится на границе между CI и работающим кластером. CI собирает артефакты и обновляет манифесты, а Argo CD развёртывает их. Благодаря такому разделению системе CI не нужны учётные данные кластера, желаемое состояние кластера можно проверить по истории, а любое прежнее развёртывание можно воспроизвести, указав Argo CD конкретный SHA коммита.
 
 ---
 
 ## Основные понятия
 
-### GitOps vs. Traditional Push-Based CD
+### GitOps и традиционная модель CD с отправкой изменений
 
-Understanding the distinction between push-based and pull-based delivery is a common interview topic.
+Различие между доставкой по моделям push и pull — частая тема на технических собеседованиях.
 
 | Dimension | Push-Based (e.g., Jenkins → kubectl) | Pull-Based / GitOps (ArgoCD) |
 |---|---|---|
@@ -32,15 +32,15 @@ Understanding the distinction between push-based and pull-based delivery is a co
 | Audit trail | CI logs (often ephemeral) | Git history (permanent, signed) |
 | Multi-cluster | CI needs creds for every cluster | Each cluster runs its own ArgoCD |
 
-**Key security implication:** in a pull model, the cluster initiates outbound connections to Git and the registry. No external system needs inbound access or cluster-admin credentials. This is a meaningful security boundary, especially in regulated environments.
+**Важное следствие для безопасности:** в модели pull кластер сам устанавливает исходящие соединения с Git и реестром образов. Внешним системам не нужен входящий доступ к кластеру или права администратора. Это существенная граница безопасности, особенно в средах с нормативными требованиями.
 
-**Why this matters in interviews:** interviewers often ask "what's the problem with storing cluster credentials in Jenkins?" The answer is blast radius — a compromised CI system gives an attacker write access to every cluster it can reach. In the pull model, credentials never leave the cluster, and the worst-case blast radius is limited to what ArgoCD itself can do, which is controlled by its own RBAC.
+**Почему это важно на собеседовании:** часто спрашивают, чем опасно хранить учётные данные кластера в Jenkins. Главная проблема — масштаб последствий: взломанная система CI даёт атакующему возможность изменять каждый доступный ей кластер. В модели pull учётные данные не покидают кластер, а возможный ущерб ограничен полномочиями самого Argo CD, которые регулируются его RBAC.
 
 ---
 
-### ArgoCD Application Resource
+### Ресурс Application в Argo CD
 
-The `Application` CRD is the core unit of ArgoCD. It binds a Git source to a cluster destination and defines how reconciliation should happen.
+CRD `Application` — основной объект ArgoCD. Он связывает источник в Git с целевым кластером и определяет правила согласования состояния.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -84,15 +84,15 @@ spec:
         maxDuration: 2m
 ```
 
-**`prune: false` is the default.** If you remove a Deployment from Git without enabling prune, the old Deployment keeps running silently. Enable prune deliberately and verify your manifests are complete before turning it on in production.
+**По умолчанию `prune: false`.** Если удалить Deployment из Git и не включить prune, старый Deployment продолжит работать незаметно. Включайте prune осознанно и перед использованием в production убедитесь, что манифесты полны.
 
-**`targetRevision: main` vs. a commit SHA:** Branches are mutable — a force push changes what ArgoCD deploys without any review process. For production, pin to a tag or commit SHA to make deployments fully reproducible and prevent surprise deploys from branch resets.
+**`targetRevision: main` и SHA коммита:** ветки изменяемы — force push меняет то, что развернёт ArgoCD, без дополнительного процесса проверки. В production фиксируйте тег или SHA коммита, чтобы развёртывания были воспроизводимыми и чтобы сброс ветки не вызвал неожиданное обновление.
 
-**`ServerSideApply: true` is recommended for complex resources.** Client-side apply stores a `last-applied-configuration` annotation that grows unbounded on large objects (e.g., CRDs with large schemas) and can exceed the 256KB etcd annotation limit. SSA avoids this entirely and handles field ownership conflicts more gracefully.
+**Для сложных ресурсов рекомендуется `ServerSideApply: true`.** Клиентский apply хранит аннотацию `last-applied-configuration`, которая может разрастись у крупных объектов (например, CRD с большой схемой) и превысить лимит аннотаций etcd в 256 КБ. SSA избегает этой проблемы и лучше обрабатывает конфликты владения полями.
 
 ---
 
-### Installing ArgoCD and the CLI
+### Установка ArgoCD и CLI
 
 ```bash
 # 1. Install ArgoCD into the cluster
@@ -123,7 +123,7 @@ argocd account update-password
 argocd cluster add my-prod-context --name prod
 ```
 
-**Common day-2 CLI operations:**
+**Типовые операции CLI при повседневной эксплуатации:**
 
 ```bash
 # List all applications and their sync/health status
@@ -151,13 +151,13 @@ argocd app rollback myapp 5   # revision 5 from `argocd app history`
 argocd app get myapp --refresh
 ```
 
-**Poll interval:** ArgoCD polls Git every 3 minutes by default. For faster response, configure a Git webhook (GitHub → ArgoCD API server) to push change notifications instantly. This is strongly recommended in production — waiting 3 minutes for a hotfix to appear is unacceptable in most teams.
+**Интервал опроса:** по умолчанию ArgoCD проверяет Git каждые 3 минуты. Чтобы ускорить реакцию, настройте Git webhook (GitHub → API-сервер ArgoCD), который мгновенно передаёт уведомления об изменениях. Для production это настоятельно рекомендуется: ожидание хотфикса в течение трёх минут неприемлемо для большинства команд.
 
 ---
 
-### Sync Status and Health Status
+### Статус синхронизации и состояние приложения
 
-ArgoCD tracks two orthogonal states for every Application. They are independent and must both be understood to diagnose a deployment problem correctly.
+ArgoCD отслеживает для каждого Application два независимых состояния. Для правильной диагностики проблемы развёртывания нужно понимать оба.
 
 | Status Type | Values | Meaning |
 |---|---|---|
@@ -170,11 +170,11 @@ ArgoCD tracks two orthogonal states for every Application. They are independent 
 | | `Missing` | Resource defined in Git but absent from cluster |
 | | `Suspended` | Resource is intentionally paused (e.g., suspended CronJob) |
 
-An Application can be `Synced` but `Degraded` — the cluster matches Git exactly, but what Git describes is broken. This means the problem is in the manifests themselves, not a sync issue. Conversely, `OutOfSync` + `Healthy` means someone manually added or modified a resource that works fine but isn't tracked in Git — a classic drift scenario that `selfHeal: true` would revert.
+Application может иметь состояние `Synced`, но `Degraded`: кластер точно соответствует Git, однако описанное в Git состояние неисправно. Значит, проблема в самих манифестах, а не в синхронизации. И наоборот, `OutOfSync` + `Healthy` означает, что кто-то вручную добавил или изменил работающий ресурс, не отслеживаемый Git. Это типичный дрейф конфигурации, который `selfHeal: true` отменит.
 
-**Health checks are resource-type aware.** ArgoCD ships with built-in health checks for Deployments, StatefulSets, DaemonSets, Jobs, PVCs, and more. A Deployment is `Healthy` only when its desired replica count matches available replicas. You can write custom health checks in Lua for CRDs that ArgoCD doesn't know about natively.
+**Проверки состояния учитывают тип ресурса.** В ArgoCD есть встроенные проверки для Deployment, StatefulSet, DaemonSet, Job, PVC и других ресурсов. Deployment считается `Healthy`, только когда число доступных реплик соответствует желаемому. Для CRD, которые ArgoCD не распознаёт из коробки, можно написать собственные проверки на Lua.
 
-**`argocd app wait` in CI pipelines:**
+**`argocd app wait` в CI-конвейерах:**
 
 ```bash
 argocd app sync myapp
@@ -186,7 +186,7 @@ argocd app wait myapp \
 # Exit code 0 = healthy + synced; non-zero = failure — safe to use as a CI gate
 ```
 
-This pattern is the correct way to integrate ArgoCD into a CI pipeline. Fire the sync, then block on `argocd app wait` — your pipeline knows the deploy actually succeeded, not just that the API accepted the sync request.
+Это правильный способ интегрировать ArgoCD в CI-конвейер. Запустите синхронизацию, затем дождитесь результата через `argocd app wait`: конвейер проверит, что развёртывание действительно завершилось успешно, а не просто получило подтверждение API.
 
 ---
 

@@ -283,7 +283,7 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 ## Примеры
 
-### Example 1: Go REST API to `scratch`
+### Пример 1. REST API на Go в образе `scratch`
 
 Полный пример HTTP-сервера на Go, выполняющего исходящие HTTPS-запросы. Финальный образ занимает около 8 МБ.
 
@@ -346,7 +346,7 @@ docker stop goapi && docker rm goapi
 
 ---
 
-### Example 2: Java / Maven Spring Boot
+### Пример 2. Spring Boot на Java и Maven
 
 Отделяет кэширование зависимостей Maven от компиляции исходников. Значительно сокращает время пересборки CI при изменении только исходного кода.
 
@@ -410,7 +410,7 @@ docker images myapp
 
 ---
 
-### Example 3: Node.js Three-Stage Build (deps / build / production)
+### Пример 3. Трёхэтапная сборка Node.js (зависимости / сборка / production)
 
 Показывает, как разделить установку production-зависимостей, транспиляцию и создание финального runtime-образа, чтобы в production попадало только необходимое.
 
@@ -475,7 +475,7 @@ docker stop nodeapp && docker rm nodeapp
 
 ---
 
-### Example 4: Static Frontend (React) Served by Nginx
+### Пример 4. Статический фронтенд React, обслуживаемый Nginx
 
 Собирает приложение React и отдаёт через Nginx только скомпилированные статические файлы, используя встроенную пользовательскую конфигурацию.
 
@@ -557,8 +557,8 @@ docker stop frontend && docker rm frontend
 
 **Цель:** измерить разницу в размере и содержимом одноэтапного и многоэтапного образов реального приложения.
 
-1. Pick a language you are comfortable with (Node.js, Python, or Go). Write a minimal but working HTTP server that serves a `/healthz` endpoint.
-2. Write a **single-stage Dockerfile** that installs all dependencies (including dev) and runs the server. Build it and record the image size with `docker images`.
+1. Выберите знакомый язык (Node.js, Python или Go). Напишите минимальный, но работающий HTTP-сервер с эндпоинтом `/healthz`.
+2. Напишите **одноэтапный Dockerfile**, который устанавливает все зависимости, включая dev-зависимости, и запускает сервер. Соберите образ и запишите его размер с помощью `docker images`.
 3. Write a **multi-stage Dockerfile** with at least a `builder` stage and a minimal final stage. Build it and record the image size.
 4. Use `docker history <image>` on both images to inspect the layer breakdown.
 5. Run `docker run --rm <image> sh -c "find / -name '*.ts' 2>/dev/null | head -20"` (or equivalent for your language's source extension) on the production image. Confirm no source files are present.

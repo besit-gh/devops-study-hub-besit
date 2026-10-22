@@ -11,9 +11,9 @@ exercises: 4
 
 Расходы AWS могут незаметно расти. Неудалённый NAT Gateway стоит около 32 долларов в месяц, даже если через него не проходит ни одного байта. Забытый простаивающий экземпляр EC2, бакет S3, который накапливает по 10 ГБ в день, или неиспользуемый Elastic IP — типичные проблемы эксплуатации облака. Управление затратами — не только финансовая функция, а операционная дисциплина наравне с надёжностью и безопасностью. От DevOps-инженера ожидают понимания стоимости инфраструктуры, объяснения причин затрат и сокращения потерь без ухудшения сервиса.
 
-The guiding principle of AWS cost management is **visibility before action**: you cannot optimize what you cannot see. The toolchain follows a natural sequence — tag resources so costs are attributable, use Cost Explorer to understand current spending, set Budgets to detect anomalies early, then apply the right pricing model and storage class to each workload. Every step depends on the previous one. An account with no tags produces Cost Explorer reports that are useless for team-level attribution.
+Главный принцип управления затратами AWS — **сначала видимость, затем действия**: невозможно оптимизировать то, чего не видишь. Процесс строится последовательно: помечайте ресурсы тегами, чтобы относить затраты к владельцам; изучайте расходы в Cost Explorer; настраивайте Budgets для раннего обнаружения отклонений; затем подбирайте модель оплаты и класс хранения для каждой нагрузки. Каждый этап зависит от предыдущего. Без тегов отчёты Cost Explorer бесполезны для распределения затрат по командам.
 
-In the broader DevOps toolchain, cost management sits alongside infrastructure provisioning and monitoring. Terraform and CloudFormation enforce tagging at creation time; CloudWatch provides the utilization data needed for right-sizing decisions; CI/CD pipelines are the right place to enforce tag policies before resources are ever created. AWS-native tools (Cost Explorer, Budgets, Trusted Advisor, Compute Optimizer) handle the analysis layer. The skills in this lesson apply directly to reducing cloud spend in production environments and will be tested in interviews through scenario questions like "our AWS bill jumped 40% last month — walk me through how you'd investigate."
+В цепочке DevOps управление затратами дополняет подготовку инфраструктуры и мониторинг. Terraform и CloudFormation обеспечивают проставление тегов при создании ресурсов; CloudWatch предоставляет данные об использовании для выбора подходящего размера; CI/CD-конвейеры позволяют проверять теги до создания ресурсов. Анализ выполняют инструменты AWS: Cost Explorer, Budgets, Trusted Advisor и Compute Optimizer. Эти навыки помогают сокращать расходы на облако в production и часто проверяются на собеседованиях ситуационными вопросами вроде «счёт AWS вырос на 40% за месяц — как будете разбираться?».
 
 ---
 
@@ -21,9 +21,9 @@ In the broader DevOps toolchain, cost management sits alongside infrastructure p
 
 ### Cost Explorer
 
-Cost Explorer is the primary analysis tool for AWS spend. It provides a console UI and a full CLI/API surface. The API is useful for scripting cost reports into Slack, dashboards, or runbooks.
+Cost Explorer — основной инструмент анализа расходов AWS. У него есть веб-интерфейс, CLI и API. API удобно использовать для автоматической отправки отчётов о затратах в Slack, панели мониторинга или runbook.
 
-**Key metrics:**
+**Основные метрики:**
 
 | Metric | What it measures | When to use it |
 |--------|-----------------|----------------|
@@ -32,7 +32,7 @@ Cost Explorer is the primary analysis tool for AWS spend. It provides a console 
 | `AmortizedCost` | Spreads upfront RI and Savings Plan payments across commitment period | Accurate per-day trending |
 | `NetAmortizedCost` | Amortized minus RI/SP discounts and credits | True net cost after all discounts |
 
-Use `AmortizedCost` for day-to-day trending — it smooths out the large upfront spike that `UnblendedCost` shows in the month you purchase a Reserved Instance, giving you a cleaner signal for anomaly detection.
+Для повседневного анализа динамики используйте `AmortizedCost`: он сглаживает крупный первоначальный скачок, который `UnblendedCost` показывает в месяце покупки Reserved Instance, и упрощает обнаружение аномалий.
 
 ```bash
 # Top 5 services by cost last month
@@ -69,19 +69,19 @@ aws ce get-cost-and-usage \
   --output table
 ```
 
-**Cost Explorer has a 24-48 hour data lag.** It does not show real-time spend. For real-time visibility on a specific service, use CloudWatch billing metrics or set a Budget with SNS.
+**Данные Cost Explorer запаздывают на 24–48 часов.** Это не инструмент мониторинга расходов в реальном времени. Для оперативного контроля конкретного сервиса используйте платёжные метрики CloudWatch или настройте Budget с SNS.
 
-**The API costs $0.01 per request.** Running a Cost Explorer query 10,000 times a month in a Lambda loop will add $100 to your bill. Cache results and run queries on a schedule, not per-request.
+**Один запрос API стоит $0,01.** Если вызывать Cost Explorer 10 000 раз в месяц из цикла Lambda, это добавит $100 к счёту. Кэшируйте результаты и выполняйте запросы по расписанию, а не при каждом обращении.
 
-**Activating cost allocation tags is a manual step that most teams forget.** After you add a tag to resources, you must separately go to the Billing console → Cost Allocation Tags and activate it. Tags added to resources today will not appear in Cost Explorer groupings until they are activated, and historical data before activation is not backfilled.
+**Активация тегов распределения затрат — ручной шаг, о котором часто забывают.** После добавления тегов к ресурсам отдельно откройте Billing console → Cost Allocation Tags и активируйте их. Теги не появятся в группировках Cost Explorer до активации, а данные за период до неё задним числом не пересчитываются.
 
 ---
 
 ### Бюджеты и оповещения
 
-Budgets are proactive guardrails. Cost Explorer tells you what happened; Budgets tell you what is about to happen. Set them up before you need them — the notification lag on `ACTUAL` alerts is up to 8 hours, so you are not getting real-time interruption, but you will catch runaway spend within a day.
+Budgets — это превентивные ограничители. Cost Explorer показывает, что уже произошло, а Budgets предупреждает о приближении к лимиту. Настройте их заранее: уведомления `ACTUAL` могут запаздывать до 8 часов, поэтому это не мгновенное оповещение, но оно помогает заметить чрезмерные расходы в течение дня.
 
-**Budget types:**
+**Типы бюджетов:**
 
 | Type | What it tracks |
 |------|---------------|
@@ -159,20 +159,20 @@ aws budgets create-budget \
   ]'
 ```
 
-**Budget coverage strategy:** create budgets at three levels:
-1. **Account total** — catches any unexpected overall growth
-2. **Per service** — EC2, RDS, and data transfer are the usual top spenders; budget them individually
-3. **Per tag** — one budget per team (`Team=platform`, `Team=data`) if you use cost allocation tags
+**Стратегия покрытия бюджетами:** создайте бюджеты на трёх уровнях:
+1. **Весь аккаунт** — выявляет неожиданный общий рост расходов.
+2. **По сервисам** — EC2, RDS и передача данных часто обходятся дороже всего; задайте отдельные бюджеты для каждого.
+3. **По тегам** — отдельный бюджет для каждой команды (`Team=platform`, `Team=data`), если используете теги распределения затрат.
 
-**SNS integration enables automation.** Wire the SNS topic to a Lambda that posts to Slack or creates a PagerDuty incident. Email-only budgets get ignored; SNS-backed ones get actioned.
+**Интеграция с SNS позволяет автоматизировать реакцию.** Подключите тему SNS к Lambda, которая пишет в Slack или создаёт инцидент PagerDuty. Бюджеты с уведомлением только по электронной почте часто игнорируют; автоматические уведомления приводят к действиям.
 
-**`FORECASTED` budgets require at least 5 days of current-month spend data** before AWS has enough signal to generate a forecast. In the first few days of a month, only `ACTUAL` alerts will fire.
+**Для бюджетов `FORECASTED` требуется не менее пяти дней данных о расходах текущего месяца**, чтобы AWS смог построить прогноз. В первые дни месяца будут срабатывать только уведомления `ACTUAL`.
 
 ---
 
-### EC2 Pricing Models
+### Модели оплаты EC2
 
-Understanding EC2 pricing models is one of the highest-leverage cost decisions in AWS. Most interviews will include a scenario question on which model fits which workload.
+Понимание моделей оплаты EC2 — одно из наиболее значимых решений для экономии в AWS. На собеседованиях часто спрашивают, какая модель подходит для той или иной нагрузки.
 
 | Model | Use Case | Savings vs On-Demand | Commitment |
 |-------|----------|---------------------|------------|
@@ -183,11 +183,11 @@ Understanding EC2 pricing models is one of the highest-leverage cost decisions i
 | Reserved Instances (Convertible) | Predictable but may need to change type | up to 54% | 1 or 3 year |
 | Spot | Batch, CI, stateless, fault-tolerant | up to 90% | None — can be reclaimed |
 
-**Do not commit before you have 2-3 months of utilization data.** Buying a 3-year Reserved Instance for an instance type you later right-size is an expensive mistake. Use Compute Optimizer and Cost Explorer RI/Savings Plan recommendations only after your workload is stable.
+**Не берите долгосрочные обязательства, пока не соберёте данные об использовании за 2–3 месяца.** Покупка Reserved Instance на три года для типа инстанса, который позже придётся изменить, может дорого обойтись. Используйте рекомендации Compute Optimizer, а также RI/Savings Plans в Cost Explorer только после стабилизации нагрузки.
 
-#### Spot Instances
+#### Spot-инстансы
 
-Spot instances run on AWS spare capacity. When AWS needs that capacity back, your instance receives a 2-minute interruption notice via instance metadata and EventBridge, then is stopped or terminated depending on your configuration.
+Spot-инстансы используют свободные мощности AWS. Когда AWS требуется вернуть эти мощности, экземпляр получает предупреждение о прерывании за 2 минуты через метаданные экземпляра и EventBridge, после чего останавливается или завершается в зависимости от конфигурации.
 
 ```bash
 # Launch a spot instance with stop-on-interruption behavior
@@ -221,9 +221,9 @@ aws ec2 describe-spot-price-history \
   --output table
 ```
 
-**Interruption handling is mandatory, not optional.** Your application must handle `SIGTERM` gracefully. A termination handler should checkpoint state (write progress to SQS or DynamoDB), drain in-flight work, and exit cleanly within 2 minutes. CI/CD workers, EMR nodes, and batch processing jobs are natural fits. Databases and stateful services are not.
+**Обработка прерывания обязательна.** Приложение должно корректно обрабатывать `SIGTERM`. Обработчик завершения должен сохранять контрольную точку состояния (например, записывать прогресс в SQS или DynamoDB), завершать текущую работу и штатно выходить в пределах двух минут. Spot хорошо подходят для CI/CD-исполнителей, узлов EMR и пакетных задач, но не для баз данных и других stateful-сервисов.
 
-**Use Spot with Auto Scaling Groups and multiple instance types.** A `capacity-optimized` allocation strategy picks the pool with the most available capacity, reducing interruption frequency. Never target a single instance type in a single AZ with Spot — you are guaranteed an outage when that pool runs dry.
+**Используйте Spot вместе с Auto Scaling Groups и несколькими типами инстансов.** Стратегия распределения `capacity-optimized` выбирает пул с наибольшей доступной ёмкостью и снижает частоту прерываний. Не привязывайтесь к одному типу инстанса в одной зоне доступности: когда пул исчерпается, простой неизбежен.
 
 ```bash
 # Create a mixed instance policy ASG — baseline On-Demand + Spot for scale

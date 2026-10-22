@@ -21,7 +21,7 @@ Helm — фактический стандарт пакетного менедж
 
 ### Структура chart
 
-Every Helm chart is a directory with a predictable layout. Knowing what each file does is the foundation for reading and writing any chart.
+Каждый чарт Helm — это каталог с предсказуемой структурой. Понимание назначения каждого файла — основа чтения и создания чартов.
 
 ```
 mychart/
@@ -45,15 +45,15 @@ mychart/
 | `templates/NOTES.txt` | Yes (to stdout only) | Post-install usage instructions |
 | `charts/` | Transitively | Subchart sources |
 
-**`helm create mychart`** scaffolds this entire structure with a working nginx example. Always start here rather than from scratch — the generated `_helpers.tpl` includes battle-tested naming and labeling patterns you should not skip.
+Команда **`helm create mychart`** создаёт всю эту структуру с рабочим примером nginx. Лучше начинать с неё, а не с пустого каталога: сгенерированный `_helpers.tpl` содержит проверенные шаблоны именования и меток, которые не стоит упускать.
 
-**Hidden file behavior:** Helm ignores files beginning with `.` inside `templates/`. This is occasionally useful for keeping scratch files in the directory without accidentally rendering them.
+**Скрытые файлы:** Helm игнорирует файлы, начинающиеся с `.`, внутри `templates/`. Это позволяет хранить в каталоге временные файлы, не допуская их случайного рендеринга.
 
 ---
 
 ### Chart.yaml
 
-`Chart.yaml` is required and must be valid on every chart operation. Missing or malformed fields cause `helm lint` to fail immediately.
+Файл `Chart.yaml` обязателен и должен быть корректным при любой операции с чартом. Отсутствующие или неверно оформленные поля приводят к немедленной ошибке `helm lint`.
 
 ```yaml
 apiVersion: v2          # must be v2 for Helm 3; v1 is Helm 2 legacy

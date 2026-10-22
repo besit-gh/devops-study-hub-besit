@@ -13,7 +13,7 @@ Prometheus опрашивает цели, предоставляющие мет�
 ## Основные понятия
 
 ### node_exporter
-`node_exporter` exposes Linux host metrics: CPU, memory, disk I/O, filesystem, network, load average, and more. It is the standard starting point for host monitoring.
+`node_exporter` предоставляет метрики Linux-хоста: процессор, память, дисковый ввод-вывод, файловые системы, сеть, среднюю нагрузку и многое другое. Это стандартная отправная точка для мониторинга узлов.
 
 ```bash
 # Run node_exporter
@@ -29,7 +29,7 @@ docker run -d \
 curl -s http://localhost:9100/metrics | grep '^node_' | head -20
 ```
 
-**Key node_exporter metric families:**
+**Основные группы метрик node_exporter:**
 
 | Metric | Type | Description |
 |--------|------|-------------|
@@ -43,7 +43,7 @@ curl -s http://localhost:9100/metrics | grep '^node_' | head -20
 | `node_load1` / `node_load5` / `node_load15` | gauge | Load averages |
 | `node_vmstat_pgmajfault` | counter | Major page faults |
 
-**Enabling/disabling collectors:**
+**Включение и отключение сборщиков:**
 ```bash
 # Disable unused collectors to reduce cardinality
 node_exporter \
@@ -57,7 +57,7 @@ node_exporter \
 ```
 
 ### blackbox_exporter
-`blackbox_exporter` performs active probing — it makes requests on behalf of Prometheus and reports availability and latency. Supported modules: HTTP, HTTPS, TCP, ICMP, DNS.
+`blackbox_exporter` выполняет активные проверки: отправляет запросы от имени Prometheus и сообщает о доступности и задержке. Поддерживаются HTTP, HTTPS, TCP, ICMP и DNS.
 
 ```yaml
 # blackbox.yml
@@ -92,7 +92,7 @@ modules:
       preferred_ip_protocol: ip4
 ```
 
-Blackbox exporter is scraped with a `target` parameter — Prometheus passes the URL to probe:
+Prometheus опрашивает blackbox exporter с параметром `target`, передавая URL, который нужно проверить:
 
 ```yaml
 # prometheus.yml
@@ -116,7 +116,7 @@ scrape_configs:
         replacement: blackbox-exporter:9115
 ```
 
-**Key blackbox metrics:**
+**Основные метрики blackbox exporter:**
 
 | Metric | Description |
 |--------|-------------|
@@ -127,10 +127,10 @@ scrape_configs:
 | `probe_ssl_earliest_cert_expiry` | Unix timestamp of earliest cert expiry |
 | `probe_dns_lookup_time_seconds` | DNS resolution time |
 
-### Custom Exporters
-For internal systems with no existing exporter, write one using a Prometheus client library.
+### Собственные экспортёры
+Для внутренних систем, у которых нет готового экспортёра, создайте собственный с помощью клиентской библиотеки Prometheus.
 
-**Python example — exporting application queue depth:**
+**Пример на Python — экспорт глубины очереди приложения:**
 
 ```python
 from prometheus_client import start_http_server, Gauge, Counter, Histogram
@@ -159,13 +159,13 @@ if __name__ == '__main__':
         time.sleep(15)
 ```
 
-**Naming conventions for custom metrics:**
-- Format: `<namespace>_<subsystem>_<name>_<unit>`
-- Units: `_seconds`, `_bytes`, `_total` (counters), `_ratio`, `_info`
-- Example: `myapp_database_query_duration_seconds`
+**Правила именования собственных метрик:**
+- Формат: `<namespace>_<subsystem>_<name>_<unit>`
+- Единицы измерения: `_seconds`, `_bytes`, `_total` (счётчики), `_ratio`, `_info`
+- Пример: `myapp_database_query_duration_seconds`
 
-### Kubernetes Service Discovery
-In Kubernetes, `kubernetes_sd_configs` dynamically discovers targets from the Kubernetes API. Prometheus can discover: nodes, pods, services, endpoints, ingresses.
+### Обнаружение сервисов Kubernetes
+В Kubernetes `kubernetes_sd_configs` динамически обнаруживает цели через API Kubernetes. Prometheus может находить узлы, Pod, сервисы, конечные точки и Ingress.
 
 ```yaml
 scrape_configs:
@@ -237,11 +237,11 @@ scrape_configs:
 | endpoints | `__meta_kubernetes_endpoint_port_name` | Named port |
 
 ### Relabeling — изменение меток
-Relabeling is Prometheus's most powerful (and complex) mechanism. It runs a sequence of rules against the label set of each discovered target, before and after scraping.
+Relabeling — один из самых мощных и сложных механизмов Prometheus. Он последовательно применяет правила к меткам каждой обнаруженной цели до и после сбора метрик.
 
-**Two phases:**
-- `relabel_configs` — runs on targets before scraping. Controls which targets are scraped and what labels they carry.
-- `metric_relabel_configs` — runs on each scraped sample. Controls which metrics are stored and with what labels.
+**Две фазы:**
+- `relabel_configs` — выполняется над целями до сбора метрик. Определяет, какие цели опрашивать и какие метки им назначать.
+- `metric_relabel_configs` — выполняется над каждой полученной выборкой. Определяет, какие метрики сохранять и с какими метками.
 
 **Actions:**
 
@@ -283,8 +283,8 @@ metric_relabel_configs:
     action: drop
 ```
 
-### File-Based Service Discovery
-`file_sd_configs` reads target lists from JSON or YAML files. Prometheus watches the files for changes and reloads without restart. Useful for custom automation or integration with CMDBs.
+### Обнаружение сервисов по файлам
+`file_sd_configs` читает списки целей из файлов JSON или YAML. Prometheus отслеживает изменения и перечитывает файлы без перезапуска. Это удобно для собственной автоматизации и интеграции с CMDB.
 
 ```yaml
 scrape_configs:
@@ -317,7 +317,7 @@ scrape_configs:
 
 ## Примеры
 
-**Deploy node_exporter as a Kubernetes DaemonSet:**
+**Разверните node_exporter в Kubernetes как DaemonSet:**
 
 ```yaml
 apiVersion: apps/v1
@@ -359,7 +359,7 @@ spec:
         - operator: Exists    # run on all nodes including masters
 ```
 
-**Verify service discovery is working:**
+**Проверьте работу обнаружения сервисов:**
 ```bash
 # Check what targets Prometheus discovered and their labels
 curl -s http://localhost:9090/api/v1/targets | \
@@ -371,31 +371,31 @@ curl -s http://localhost:9090/api/v1/targets?state=dropped | jq '.data.droppedTa
 
 ## Практические задания
 
-1. Write a `prometheus.yml` scrape job that uses `kubernetes_sd_configs` with `role: endpoints` to scrape all services in the `production` namespace that have the label `app.kubernetes.io/monitored: "true"`. Include relabeling to: (a) keep only those matching endpoints, (b) set `namespace`, `service`, and `pod` labels from Kubernetes metadata, (c) use the `prometheus.io/port` annotation to override the default port.
+1. Напишите задание сбора метрик в `prometheus.yml`, использующее `kubernetes_sd_configs` с `role: endpoints` для опроса всех сервисов пространства имён `production` с меткой `app.kubernetes.io/monitored: "true"`. Добавьте relabeling, чтобы: (а) оставить только подходящие конечные точки; (б) задать метки `namespace`, `service` и `pod` из метаданных Kubernetes; (в) использовать аннотацию `prometheus.io/port` для переопределения порта по умолчанию.
 
-2. Write a blackbox_exporter probe configuration and matching Prometheus scrape job that checks the HTTPS health endpoint of three services: `api.example.com/health`, `auth.example.com/health`, `payments.example.com/health`. The probe should fail if the SSL certificate is not valid, and the `instance` label should be the probed URL (not the blackbox exporter address). Write an alerting rule that fires if `probe_success == 0` for 2 minutes OR if `probe_ssl_earliest_cert_expiry - time() < 86400 * 14` (cert expires within 14 days).
+2. Напишите конфигурацию проверок blackbox_exporter и соответствующее задание сбора Prometheus для HTTPS-эндпоинтов здоровья трёх сервисов: `api.example.com/health`, `auth.example.com/health`, `payments.example.com/health`. Проверка должна завершаться ошибкой при недействительном SSL-сертификате, а метка `instance` должна содержать проверяемый URL, а не адрес blackbox exporter. Создайте правило оповещения, срабатывающее, если `probe_success == 0` держится 2 минуты ИЛИ если `probe_ssl_earliest_cert_expiry - time() < 86400 * 14` (до истечения сертификата осталось менее 14 дней).
 
-3. Write `metric_relabel_configs` rules to: (a) drop all `go_*` runtime metrics from all targets, (b) drop all metrics where `container="POD"`, (c) for the metric `http_request_duration_seconds_bucket`, drop all buckets where `le` is greater than `10` (the `le` label value is a string; use regex matching). Explain why dropping high-cardinality or unused metrics at the scrape layer is preferable to dropping them in PromQL.
+3. Напишите правила `metric_relabel_configs`, чтобы: (а) отбрасывать все runtime-метрики `go_*` со всех целей; (б) отбрасывать метрики с `container="POD"`; (в) для метрики `http_request_duration_seconds_bucket` отбрасывать все корзины, где `le` больше `10` (значение метки `le` — строка, поэтому используйте регулярное выражение). Объясните, почему лучше отбрасывать метрики с высокой кардинальностью или неиспользуемые метрики на этапе сбора, а не в PromQL.
 
 
 ---
 
 ### Быстрая проверка
 
-4. Identify the Node Exporter's default port. Run: `python3 -c "ports={'node': 9100, 'blackbox': 9115, 'mysqld': 9104}; print(ports['node'])"`
+4. Определите порт Node Exporter по умолчанию. Выполните: `python3 -c "ports={'node': 9100, 'blackbox': 9115, 'mysqld': 9104}; print(ports['node'])"`
 
 ```expected_output
 9100
 ```
 
-hint: Think about how Python dictionaries map exporter names to their default port numbers.
-hint: Use python3 -c to run an inline script that defines a dictionary named ports and prints the value associated with the 'node' key.
+Подсказка: вспомните, как словари Python связывают названия экспортёров с номерами портов.
+Подсказка: используйте `python3 -c`, чтобы выполнить короткий скрипт со словарём `ports` и вывести значение по ключу `node`.
 
-5. Count metric families in a Prometheus `/metrics` stub. Run: `printf '# HELP http_requests_total Total requests\n# TYPE http_requests_total counter\n# HELP process_cpu_seconds_total CPU seconds\n# TYPE process_cpu_seconds_total counter\n' | grep -c '^# HELP'`
+5. Посчитайте группы метрик в примере вывода Prometheus `/metrics`. Выполните: `printf '# HELP http_requests_total Total requests\n# TYPE http_requests_total counter\n# HELP process_cpu_seconds_total CPU seconds\n# TYPE process_cpu_seconds_total counter\n' | grep -c '^# HELP'`
 
 ```expected_output
 2
 ```
 
-hint: Think about how to filter lines that mark the beginning of a metric family and count how many there are.
-hint: Use grep with the -c flag to count lines matching the pattern '^# HELP' from the piped input.
+Подсказка: найдите строки, обозначающие начало группы метрик, и посчитайте их.
+Подсказка: используйте `grep -c`, чтобы посчитать строки, соответствующие шаблону `^# HELP`, в данных, переданных через конвейер.

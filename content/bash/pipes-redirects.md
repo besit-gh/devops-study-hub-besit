@@ -448,9 +448,9 @@ FIFO блокирует операции: писатель ждёт, пока ч
 
 ---
 
-### Combining Redirects in Scripts
+### Комбинирование перенаправлений в скриптах
 
-Real scripts combine multiple redirection techniques. These are the patterns you will encounter and write most often:
+В реальных скриптах сочетаются разные способы перенаправления. Ниже приведены наиболее распространённые схемы, с которыми вы столкнётесь и которые будете использовать:
 
 ```bash
 #!/usr/bin/env bash
@@ -478,15 +478,15 @@ echo "Job running as PID $JOB_PID, output in /tmp/job.out"
 wait "$JOB_PID" && echo "Job succeeded" || echo "Job failed with code $?"
 ```
 
-**Always pair `set -euo pipefail` with deliberate error handling** — the combination of `-e` (exit on error), `-u` (exit on undefined variable), and `-o pipefail` (fail on pipe errors) catches the majority of silent failure modes that plague production scripts.
+**Всегда сочетайте `set -euo pipefail` с продуманной обработкой ошибок.** Комбинация `-e` (завершаться при ошибке), `-u` (завершаться при обращении к неопределённой переменной) и `-o pipefail` (считать ошибку в конвейере ошибкой всего конвейера) обнаруживает большинство незаметных сбоев production-скриптов.
 
 ---
 
 ## Примеры
 
-### Example 1: Parsing Nginx Access Logs During an Incident
+### Пример 1. Разбор журналов доступа Nginx во время инцидента
 
-**Scenario:** An alert fires indicating elevated 5xx error rates. You need to quickly identify which endpoints and client IPs are generating errors from a live log file.
+**Сценарий:** сработало оповещение о росте количества ошибок 5xx. Нужно быстро определить по текущему журналу, какие эндпоинты и IP-адреса клиентов создают ошибки.
 
 ```bash
 #!/usr/bin/env bash
@@ -546,9 +546,9 @@ wc -l /tmp/incident-report-*.txt
 
 ---
 
-### Example 2: Deployment Script with Full Audit Logging
+### Пример 2. Скрипт развёртывания с полным журналированием действий
 
-**Scenario:** A deployment script that logs everything — stdout and stderr — to a timestamped file while still showing output to the operator in real time. On failure, the log file path is printed for post-mortem review.
+**Сценарий:** скрипт развёртывания записывает весь stdout и stderr в файл с временной меткой, одновременно показывая вывод оператору в реальном времени. При сбое путь к журналу выводится для последующего разбора.
 
 ```bash
 #!/usr/bin/env bash
@@ -599,9 +599,9 @@ grep "Error\|error\|failed" /var/log/deploys/my-api-*.log
 
 ---
 
-### Example 3: Feeding Dynamic Configuration into a Running Container
+### Пример 3. Передача динамической конфигурации работающему контейнеру
 
-**Scenario:** You need to apply a SQL schema migration to a MySQL container using a here-document, without writing a temporary SQL file to disk. The schema body contains environment variables that should be expanded at runtime.
+**Сценарий:** нужно применить миграцию SQL-схемы к контейнеру MySQL с помощью here-document, не создавая временный SQL-файл на диске. Тело схемы содержит переменные окружения, которые должны подставляться во время выполнения.
 
 ```bash
 #!/usr/bin/env bash
@@ -649,9 +649,9 @@ mysql -h localhost -u root -psecret myapp -e "SELECT * FROM feature_flags;"
 
 ---
 
-### Example 4: Comparing Live Kubernetes State Against a Declared Baseline
+### Пример 4. Сравнение фактического состояния Kubernetes с эталоном
 
-**Scenario:** During a compliance check, you want to confirm that the set of running pods in a namespace matches a known-good baseline recorded last week, and output only the differences.
+**Сценарий:** во время проверки соответствия нужно убедиться, что набор работающих Pod в пространстве имён совпадает с проверенным эталоном, сохранённым на прошлой неделе, и вывести только различия.
 
 ```bash
 #!/usr/bin/env bash
@@ -707,32 +707,32 @@ echo "fake-pod	registry.example.com/old-image:v0.9" >> baseline-production.txt
 
 ## Практические задания
 
-### Exercise 1: Redirect Ordering and FD Wiring
+### Задание 1. Порядок перенаправлений и настройка файловых дескрипторов
 
-**Goal:** Internalise the left-to-right evaluation of redirects and the difference between `2>&1 > file` and `> file 2>&1`.
+**Цель:** усвоить порядок обработки перенаправлений слева направо и различие между `2>&1 > file` и `> file 2>&1`.
 
-1. Create a script `fd-test.sh` that deliberately writes to both stdout and stderr:
+1. Создайте скрипт `fd-test.sh`, который намеренно пишет и в stdout, и в stderr:
    ```bash
    #!/usr/bin/env bash
    echo "this is stdout"
    echo "this is stderr" >&2
    ```
-2. Run the script three ways and observe where each stream ends up:
+2. Запустите скрипт тремя способами и проследите, куда попадает каждый поток:
    ```bash
    ./fd-test.sh > out.txt 2>&1          # both to file
    ./fd-test.sh 2>&1 > out.txt          # only stdout to file; where does stderr go?
    ./fd-test.sh > stdout.txt 2> stderr.txt  # separated
    ```
-3. After each run, use `cat out.txt`, `cat stdout.txt`, `cat stderr.txt` to confirm your prediction. Write a one-sentence explanation of *why* the second form sends stderr to the terminal.
-4. Modify the script to use `set -euo pipefail` and add a `grep` pipeline that matches nothing. Confirm without `pipefail` vs with `pipefail` whether the script exits non-zero.
+3. После каждого запуска выполните `cat out.txt`, `cat stdout.txt`, `cat stderr.txt` и проверьте свои предположения. Одним предложением объясните, *почему* во втором варианте stderr направляется в терминал.
+4. Измените скрипт, добавив `set -euo pipefail` и конвейер `grep`, который ничего не находит. Сравните, завершается ли скрипт с ненулевым кодом при включённом и выключенном `pipefail`.
 
 ---
 
-### Exercise 2: Log Analysis Pipeline
+### Задание 2. Конвейер анализа журналов
 
-**Goal:** Build a multi-stage pipeline that extracts, transforms, and summarises data from a log file without using any temporary files.
+**Цель:** построить многоэтапный конвейер, который извлекает, преобразует и обобщает данные из журнала без временных файлов.
 
-1. Generate a synthetic access log:
+1. Создайте искусственный журнал доступа:
    ```bash
    for i in $(seq 1 200); do
        STATUS=$(shuf -n1 -e 200 200 200 404 500 502)

@@ -291,9 +291,9 @@ subprocess.run(
 )
 ```
 
-**Streaming + capture is complex:** if you need both real-time display *and* captured output for later analysis, you need `subprocess.Popen` with threads reading pipes simultaneously (see the `Popen` section). For most DevOps scripts, choose one: either stream to terminal for human visibility, or capture for programmatic processing. Attempting both with `subprocess.run()` alone leads to deadlocks.
+**Одновременный вывод и сохранение результата — сложная задача:** если нужно показывать вывод в реальном времени *и* сохранять его для последующего анализа, используйте `subprocess.Popen` с потоками, которые одновременно читают каналы (см. раздел `Popen`). В большинстве DevOps-скриптов выбирайте что-то одно: вывод в терминал для оператора или захват вывода для программной обработки. Попытка сделать и то и другое только через `subprocess.run()` может привести к взаимной блокировке.
 
-**`stdin=DEVNULL` in CI:** always set this when running interactive tools (Ansible, Terraform, some test runners) in CI pipelines. Without it, a tool that accidentally prompts for input will hang indefinitely instead of failing fast.
+**`stdin=DEVNULL` в CI:** всегда задавайте этот параметр при запуске интерактивных инструментов (Ansible, Terraform и некоторых тестовых средств) в CI-конвейерах. Иначе инструмент, случайно запросивший ввод, может зависнуть вместо быстрого завершения с ошибкой.
 
 ---
 
@@ -324,7 +324,7 @@ def find_process(name):
     return result.stdout.strip()
 ```
 
-**Filter in Python instead:** for short outputs, capture the whole thing and filter with Python string operations. It's more readable, avoids exit-code edge cases with `grep`, and runs faster by eliminating extra process launches:
+**Фильтруйте средствами Python:** для короткого вывода захватите результат целиком и обработайте строковыми операциями Python. Это читабельнее, позволяет избежать нюансов кодов завершения `grep` и ускоряет работу за счёт отсутствия дополнительных процессов:
 
 ```python
 def find_process_py(name):
@@ -333,7 +333,7 @@ def find_process_py(name):
     return "\n".join(lines)
 ```
 
-**When to use shell pipes vs Python pipes:** use Python-level chaining when security matters (any user-controlled data in the command) or when you need fine-grained error handling per stage. Use `shell=True` with a shell pipe only for quick throwaway scripts where the entire command is a hardcoded string and you need shell features like `|`, `>`, `&&`, or glob expansion.
+**Когда использовать конвейеры оболочки, а когда Python:** связывайте процессы средствами Python, если важна безопасность (например, команда содержит данные пользователя) или требуется точная обработка ошибок на каждом этапе. Используйте `shell=True` с конвейером оболочки только для коротких одноразовых скриптов с полностью фиксированной командой, когда нужны возможности оболочки вроде `|`, `>`, `&&` или раскрытия glob-шаблонов.
 
 ---
 
@@ -513,7 +513,7 @@ if rc != 0:
 
 ## Примеры
 
-### Example 1: Deployment Health Check Script
+### Пример 1. Проверка состояния развёртывания
 
 Полный скрипт, который развёртывает Docker-контейнер, ждёт, пока проверка состояния станет успешной, и выполняет откат при сбое.
 
@@ -641,7 +641,7 @@ docker ps --filter name=myapp-prod --format "{{.Image}} {{.Status}}"
 
 ---
 
-### Example 2: Git Repository Audit Tool
+### Пример 2. Инструмент аудита Git-репозитория
 
 Просканируйте каталог Git-репозиториев и выведите ветку, последний коммит и наличие незакоммиченных изменений.
 
@@ -738,7 +738,7 @@ python git_audit.py ~/projects
 
 ---
 
-### Example 3: Disk Space Monitor with Alerting
+### Пример 3. Мониторинг дискового пространства с оповещениями
 
 Проверьте использование диска на всех точках монтирования, сохраните результаты в журнал и отправьте оповещение при превышении порога.
 

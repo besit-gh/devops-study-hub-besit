@@ -452,9 +452,9 @@ sed '/^#/d; /^$/d' access.log \          # strip comments and blanks
 
 ---
 
-### In-Place Editing Safety Patterns
+### Безопасное редактирование файлов на месте
 
-In-place editing with `sed -i` is destructive. Production scripts must handle failures gracefully.
+Редактирование на месте с помощью `sed -i` изменяет исходный файл напрямую. Production-скрипты должны корректно обрабатывать ошибки.
 
 ```bash
 # Always create a backup on first use in a script
@@ -476,9 +476,9 @@ sed 's/foo/bar/g' original.conf \
 mv "$tmp" original.conf  # atomic on same filesystem
 ```
 
-**`mv` atomicity:** On the same filesystem, `mv` is a single `rename(2)` syscall — atomic. The target file is never partially written if your pipeline crashes midway. Writing to a temp file then `mv`-ing it over the target is always safer than in-place editing for critical config files.
+**Атомарность `mv`:** в пределах одной файловой системы `mv` выполняет один системный вызов `rename(2)`, который атомарен. Если конвейер аварийно завершится посередине, целевой файл не останется частично записанным. Для критичных конфигураций безопаснее сначала записать временный файл, а затем заменить им целевой, чем редактировать исходник на месте.
 
-**Verify your changes were applied:**
+**Проверьте, что изменения применены:**
 ```bash
 grep -c 'new_value' critical.conf || { echo "Edit failed to apply"; exit 1; }
 ```
@@ -487,9 +487,9 @@ grep -c 'new_value' critical.conf || { echo "Edit failed to apply"; exit 1; }
 
 ## Примеры
 
-### Example 1: nginx Access Log Analysis Script
+### Пример 1. Анализ журнала доступа nginx с помощью скрипта
 
-Parse a standard nginx combined log format and produce an operations summary.
+Разберите стандартный формат combined журнала nginx и сформируйте сводку для эксплуатации.
 
 ```bash
 #!/usr/bin/env bash
@@ -568,9 +568,9 @@ curl -s https://raw.githubusercontent.com/elastic/examples/master/Common%20Data%
 
 ---
 
-### Example 2: Config File Patching Across a Fleet
+### Пример 2. Изменение конфигурационных файлов на группе серверов
 
-A common CI/CD task: update a version string and toggle a feature flag in config files before deployment.
+Типичная задача CI/CD: перед развёртыванием изменить строку версии и переключить feature flag в конфигурационных файлах.
 
 ```bash
 #!/usr/bin/env bash
@@ -629,9 +629,9 @@ fi
 
 ---
 
-### Example 3: Kubernetes Pod Resource Report
+### Пример 3. Отчёт о ресурсах Pod Kubernetes
 
-Extract CPU and memory requests from `kubectl` output and produce a formatted summary.
+Извлеките запросы CPU и памяти из вывода `kubectl` и сформируйте отформатированную сводку.
 
 ```bash
 #!/usr/bin/env bash
@@ -689,9 +689,9 @@ kubectl top pods "${KUBECTL_ARGS[@]}" 2>/dev/null \
 
 ---
 
-### Example 4: Log Anomaly Detection with awk
+### Пример 4. Обнаружение аномалий в журналах с помощью awk
 
-Detect bursts of errors within a rolling time window — a pattern used in alerting scripts before a full monitoring stack is available.
+Обнаруживайте всплески ошибок в скользящем временном окне — этот приём используют в скриптах оповещения, пока полноценный стек мониторинга ещё не развёрнут.
 
 ```bash
 #!/usr/bin/env bash
@@ -746,17 +746,17 @@ function parse_ts(ts,    parts, t) {
 
 ### Exercise 1: Parsing df Output
 
-The command `df -h` prints filesystem usage in human-readable form. Its output includes a header line and columns for filesystem, size, used, available, use%, and mount point.
+Команда `df -h` выводит использование файловых систем в удобном для чтения виде. В выводе есть строка заголовка и столбцы: файловая система, размер, занято, доступно, процент использования и точка монтирования.
 
-**Task:** Write a single `awk` command that:
-1. Skip the header line
-2. Print only filesystems where usage exceeds 80%
-3. Output: `MOUNT_POINT  USE%  AVAILABLE` in a formatted table using `printf`
-4. Add a final `END` block that prints a count of how many filesystems are over the threshold
+**Задача:** напишите одну команду `awk`, которая:
+1. Пропускает строку заголовка.
+2. Выводит только файловые системы с использованием более 80%.
+3. Формирует таблицу `MOUNT_POINT  USE%  AVAILABLE` с помощью `printf`.
+4. Добавляет завершающий блок `END`, выводящий количество файловых систем выше порога.
 
-The use% field contains a `%` character — you will need to strip it before numeric comparison. Use `sub(/%/, "", $5)` or string slicing.
+Поле процента использования содержит символ `%`: перед числовым сравнением удалите его с помощью `sub(/%/, "", $5)` или среза строки.
 
-**Verify:** Run `df -h | your_command` and confirm that only high-usage mounts appear. On a clean system, fake the data: `echo -e "Filesystem Size Used Avail Use% Mount\n/dev/sda1 20G 17G 2G 86% /\ntmpfs 2G 100M 1.9G 5% /tmp" | your_command`
+**Проверка:** выполните `df -h | ваша_команда` и убедитесь, что отображаются только точки монтирования с высоким использованием. На чистой системе смоделируйте данные: `echo -e "Filesystem Size Used Avail Use% Mount\n/dev/sda1 20G 17G 2G 86% /\ntmpfs 2G 100M 1.9G 5% /tmp" | ваша_команда`.
 
 ---
 

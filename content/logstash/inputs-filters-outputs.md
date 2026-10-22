@@ -13,17 +13,17 @@ exercises: 3
 
 В уроке категории плагинов рассматриваются в порядке их использования: сначала inputs (откуда приходят данные), затем filters (как их преобразовать), затем outputs (куда отправить результат). После каждого понятия приведён рабочий пример кода. Для выполнения заданий достаточно материала этого урока и базовых знаний регулярных выражений, объяснённых в разделе о grok.
 
-A key principle throughout: every event that enters Logstash is a hash of key-value pairs. Filters add keys, remove keys, rename keys, or change values. The output serialises that hash and sends it somewhere. There is no magic — just data manipulation at each step.
+Ключевой принцип: каждое событие, поступающее в Logstash, представляет собой набор пар «ключ — значение». Фильтры добавляют, удаляют и переименовывают ключи или меняют значения. Выходной плагин сериализует этот набор и отправляет его дальше. Никакой магии — только преобразование данных на каждом этапе.
 
 ## Основные понятия
 
 ### Inputs — источники данных — источники данных
 
-Inputs define where events come from. Multiple inputs can exist in a single pipeline. All events from all inputs flow into the same filter chain.
+Входные плагины определяют, откуда поступают события. В одном конвейере может быть несколько входов, и все события из них проходят через одну цепочку фильтров.
 
 #### file
 
-Tails a file on disk, tracking read position in a **sincedb** file (a small file that records the inode and byte offset). On restart, Logstash resumes from where it left off.
+Читает файл на диске и сохраняет позицию чтения в файле **sincedb** (небольшом файле с inode и смещением в байтах). После перезапуска Logstash продолжает чтение с прежнего места.
 
 ```ruby
 input {
@@ -42,7 +42,7 @@ input {
 
 #### beats
 
-Receives events from Filebeat, Metricbeat, Heartbeat, etc. over the Beats protocol (Lumberjack v2 — a binary framed TCP protocol with backpressure support).
+Получает события от Filebeat, Metricbeat, Heartbeat и других компонентов по протоколу Beats (Lumberjack v2 — бинарному протоколу поверх TCP с поддержкой обратного давления).
 
 ```ruby
 input {

@@ -13,15 +13,15 @@ exercises: 4
 
 Архитектура намеренно разделена на уровни. Администраторы кластера определяют, *как* выделяется хранилище (StorageClass), а разработчики указывают, *сколько* и *какого типа* хранилища им нужно (PersistentVolumeClaim, PVC). Kubernetes связывает эти требования с реальным томом (PersistentVolume, PV). Разработчику не нужно знать, работает ли кластер в AWS, GCP или на физических серверах: детали скрыты за StorageClass. Это тот же принцип разделения ответственности, который Service применяет к сетям.
 
-In the broader DevOps toolchain, PVs sit at the intersection of infrastructure provisioning and application deployment. They integrate with cloud provider APIs (via CSI drivers), affect backup and disaster recovery strategies, influence pod scheduling, and carry cost implications. Misconfiguring reclaim policies has caused production data loss. Understanding the full PV/PVC/StorageClass lifecycle — including edge cases — is one of the clearest signals of Kubernetes operational maturity in a job interview.
+В цепочке DevOps постоянные тома (PV) связывают подготовку инфраструктуры с развёртыванием приложений. Они взаимодействуют с API облачных провайдеров через драйверы CSI, влияют на резервное копирование и аварийное восстановление, планирование подов и расходы. Ошибки в политике повторного использования томов уже приводили к потере production-данных. Понимание полного жизненного цикла PV/PVC/StorageClass, включая пограничные случаи, показывает зрелость практических навыков Kubernetes.
 
 ---
 
 ## Основные понятия
 
-### The Storage Abstraction Layers
+### Уровни абстракции хранилища
 
-The three-layer model is the most important mental model for this entire topic. Every storage operation in Kubernetes passes through all three layers.
+Модель из трёх уровней — ключ к пониманию этой темы. Каждая операция хранения в Kubernetes проходит через все три уровня.
 
 ```
 StorageClass
@@ -42,9 +42,9 @@ Pod
      the container filesystem at the specified mountPath.
 ```
 
-**Binding rules:** A PVC binds to a PV when the PV satisfies all of the PVC's requirements: capacity ≥ requested, access modes match, StorageClass matches (or both are empty), and no selector mismatch. Once bound, it's a 1:1 exclusive relationship — that PV cannot be claimed by another PVC.
+**Правила связывания:** PVC связывается с PV, если том удовлетворяет всем требованиям заявки: ёмкость не меньше запрошенной, режимы доступа совпадают, StorageClass совпадает (либо оба значения пусты), а селекторы не конфликтуют. После связывания отношение становится эксклюзивным 1:1 — другой PVC не сможет занять этот PV.
 
-**Static vs. dynamic provisioning:**
+**Статическое и динамическое выделение томов:**
 
 | Approach | Who creates the PV | When to use |
 |---|---|---|

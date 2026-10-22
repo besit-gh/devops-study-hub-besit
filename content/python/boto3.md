@@ -21,7 +21,7 @@ boto3 — официальный AWS SDK для Python, поддерживаем
 
 ### Clients vs Resources
 
-boto3 exposes two distinct programming interfaces for interacting with AWS services.
+boto3 предоставляет два разных программных интерфейса для взаимодействия с сервисами AWS.
 
 | | Client | Resource |
 |---|---|---|
@@ -46,17 +46,17 @@ for obj in bucket.objects.all():   # returns ObjectSummary objects, not dicts
     print(obj.key, obj.size)
 ```
 
-**Which to use in practice:** For new code targeting EC2 or S3, resources are more ergonomic. For any other service, use clients — there is no resource interface. For production scripts where you need predictable response shapes and the full API surface, clients are safer. Many teams standardize on clients everywhere to avoid mixing paradigms.
+**Что использовать на практике:** для нового кода, работающего с EC2 или S3, интерфейс resources часто удобнее. Для остальных сервисов используйте clients — интерфейса resources для них нет. В production-скриптах, где важны предсказуемая структура ответов и полный доступ к API, clients надёжнее. Многие команды используют clients повсеместно, чтобы не смешивать подходы.
 
-**Important:** The Resource interface is in maintenance mode. AWS has not extended it to new services and has stated it will not. Don't build new abstractions on top of it.
+**Важно:** интерфейс Resource находится в режиме поддержки. AWS не добавляет его для новых сервисов и заявила, что не будет этого делать. Не создавайте новые абстракции на его основе.
 
 ---
 
-### Authentication and the Credential Chain
+### Аутентификация и цепочка учётных данных
 
-boto3 resolves credentials automatically by walking a chain of providers in order. You almost never need to hardcode credentials — instead, you configure the environment correctly and boto3 finds them.
+boto3 автоматически ищет учётные данные, последовательно проверяя источники в заданном порядке. Почти никогда не нужно жёстко прописывать ключи в коде: достаточно правильно настроить окружение, и boto3 найдёт их самостоятельно.
 
-**Credential resolution order:**
+**Порядок поиска учётных данных:**
 
 | Priority | Source | How to configure |
 |----------|--------|-----------------|
@@ -67,7 +67,7 @@ boto3 resolves credentials automatically by walking a chain of providers in orde
 | 5 | Container credentials | ECS task role, injected via metadata endpoint |
 | 6 | EC2 instance metadata | IAM role attached to the instance |
 
-**Hardcoding credentials in source code is never acceptable.** Use environment variables in CI, instance/task roles in AWS, and named profiles locally.
+**Никогда не прописывайте учётные данные непосредственно в исходном коде.** В CI используйте переменные окружения, в AWS — роли экземпляра или задачи, а локально — именованные профили.
 
 ```python
 # Named profile — for multi-account local development

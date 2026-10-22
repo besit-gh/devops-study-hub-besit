@@ -13,13 +13,13 @@ Logstash — слой обработки данных в Elastic Stack. Он п�
 
 В production Logstash располагается между отправителями логов (Filebeat, Kafka) и Elasticsearch, приводя разнородные форматы к единому виду перед индексацией. Без Logstash исходные строки попадают в Elasticsearch как непрозрачный текст. С ним получаются структурированные документы с типами и корректными временными метками, пригодные для поиска и дашбордов. Упражнения можно выполнять через CLI Logstash без полного стека ELK: вывод `stdout` с codec `rubydebug` показывает, какие события отправлялись бы в Elasticsearch.
 
-Logstash is a JVM application. It starts slowly (10–30 seconds) and uses significant memory, but once running it is highly throughput-capable. Package installs place config at `/etc/logstash/`; tarball/Docker installs use `$LS_HOME/config/`. The default package service name is `logstash`, managed via `systemctl start logstash`.
+Logstash — приложение на JVM. Оно запускается не мгновенно (обычно 10–30 секунд) и потребляет заметный объём памяти, но после запуска способно обрабатывать большой поток данных. При установке пакетом конфигурация находится в `/etc/logstash/`, а при установке из архива или через Docker — в `$LS_HOME/config/`. Имя службы пакетной установки — `logstash`; управление выполняется через `systemctl start logstash`.
 
 ## Основные понятия
 
-### Pipeline Architecture: Input → Filter → Output
+### Архитектура конвейера: вход → фильтр → выход
 
-Every Logstash pipeline has exactly three stages. Plugins at each stage are declared in a `.conf` file using this structure:
+Каждый конвейер Logstash состоит из трёх этапов. Плагины каждого этапа объявляются в файле `.conf` по следующей структуре:
 
 ```ruby
 input {
@@ -41,7 +41,7 @@ output {
 }
 ```
 
-Data flows as **events** — structured objects where each field is a key-value pair. Each event always carries two meta-fields:
+Данные передаются в виде **событий** — структурированных объектов, каждое поле которых является парой «ключ — значение». В каждом событии есть два метаполя:
 - `@timestamp` — the event time (defaults to ingest time; filters should correct this to the log's actual time).
 - `@version` — always `"1"`, used internally.
 

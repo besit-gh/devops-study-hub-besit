@@ -19,9 +19,9 @@ exercises: 4
 
 ## Основные понятия
 
-### What Counts as a Secret
+### Что считается секретом
 
-Not everything sensitive is a secret in the technical sense. Distinguishing the categories helps you apply the right controls.
+Не всякая конфиденциальная информация является секретом в техническом смысле. Различение категорий помогает правильно подобрать меры защиты.
 
 | Category | Examples | Typical Backend |
 |---|---|---|
@@ -31,11 +31,11 @@ Not everything sensitive is a secret in the technical sense. Distinguishing the 
 | **Encryption keys** | AES keys, HMAC secrets | AWS KMS, Vault Transit |
 | **Service tokens** | GitHub App tokens, Slack bot tokens | Vault KV, Secrets Manager |
 
-**Hard rules — never store secrets in:**
-- Source code or git history (even in "private" repos — assume history is permanent)
-- Docker image layers (secrets baked into `RUN` commands survive even `docker history --no-trunc`)
+**Строгие правила — никогда не храните секреты в следующих местах:**
+- Исходный код или история Git (даже в «приватных» репозиториях — считайте, что история останется навсегда)
+- Слои Docker-образа (секреты, добавленные командами `RUN`, могут сохраниться и быть обнаружены даже через `docker history --no-trunc`)
 - `ENV` instructions in Dockerfiles
-- CI/CD pipeline YAML in plaintext (use the platform's native secret store)
+- YAML-файлы конвейеров CI/CD в открытом виде (используйте встроенное хранилище секретов платформы)
 - Kubernetes `ConfigMap` objects (use `Secret` objects, and enable envelope encryption at rest)
 - Log output — even partial values enable brute-force attacks
 

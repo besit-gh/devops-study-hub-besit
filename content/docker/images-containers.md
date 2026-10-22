@@ -30,17 +30,17 @@ Docker решает проблему «у меня на машине работ�
 | State | Immutable | Has a thin, mutable writable layer on top |
 | Shareable | Yes — push/pull from a registry | No — containers are local to a host |
 
-An image is identified by a **name and tag** (`nginx:1.25`) or by a **content-addressed SHA-256 digest** (`nginx@sha256:abc123...`). Tags are mutable pointers; digests are not. In production pipelines, pinning by digest gives you stronger guarantees than pinning by tag — a tag can be silently overwritten by a publisher; a digest cannot.
+Образ обозначается **именем и тегом** (`nginx:1.25`) или **контентным дайджестом SHA-256** (`nginx@sha256:abc123...`). Теги могут указывать на разные образы со временем, а дайджест неизменен для конкретного содержимого. В production-конвейерах фиксация по дайджесту надёжнее фиксации по тегу: издатель может незаметно перезаписать тег, но не может изменить содержимое, соответствующее прежнему дайджесту.
 
-**Gotcha:** `docker run nginx` silently pulls `nginx:latest` if the image is not present locally. `latest` is just a tag — it is not guaranteed to be the most recent published version and it is not updated automatically on the host. Always specify an explicit tag in Dockerfiles and automation.
+**Подводный камень:** если локального образа нет, `docker run nginx` автоматически загрузит `nginx:latest`. `latest` — всего лишь тег: он не гарантирует, что это самая свежая опубликованная версия, и не обновляется автоматически на хосте. Всегда указывайте конкретный тег в Dockerfile и средствах автоматизации.
 
-Multiple containers can run from the same image simultaneously. Each gets its own isolated writable layer; they do not share state unless you deliberately connect them via volumes or networks.
+Несколько контейнеров могут одновременно запускаться из одного образа. Каждый получает собственный изолированный слой для записи; состояние не разделяется, если вы специально не организуете взаимодействие через тома или сети.
 
 ---
 
-### Dockerfile Fundamentals
+### Основы Dockerfile
 
-A Dockerfile is a sequence of instructions that Docker executes top-to-bottom to produce an image. Each instruction that writes to the filesystem creates a new **layer**.
+Dockerfile — это последовательность инструкций, которые Docker выполняет сверху вниз для создания образа. Каждая инструкция, изменяющая файловую систему, создаёт новый **слой**.
 
 ```dockerfile
 # Base image — always start from a known, minimal image

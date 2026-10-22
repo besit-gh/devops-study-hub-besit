@@ -621,7 +621,7 @@ aws dynamodb scan --table-name csv-records --max-items 5
 
 ### Пример 2: обработчик SQS с частичной обработкой ошибок пакета
 
-Process order events from an SQS queue with reliable partial failure semantics.
+Обрабатывайте события заказов из очереди SQS с надёжной обработкой частичных сбоев.
 
 ```python
 # handler.py
@@ -715,9 +715,9 @@ aws sqs get-queue-attributes \
 
 ---
 
-### Example 3: Scheduled Cleanup Job with EventBridge
+### Пример 3. Задание очистки по расписанию с EventBridge
 
-Run a nightly DynamoDB TTL cleanup report using EventBridge Scheduler.
+Ежедневно ночью формируйте отчёт об очистке DynamoDB по TTL с помощью EventBridge Scheduler.
 
 ```python
 # handler.py
@@ -807,38 +807,38 @@ aws events describe-rule --name nightly-cleanup-schedule \
 
 ## Практические задания
 
-### Exercise 1: Deploy and Debug an Intentionally Broken Function
+### Задание 1. Разверните и диагностируйте намеренно сломанную функцию
 
-Write a Lambda function that reads an environment variable `REQUIRED_VAR` and raises a `ValueError` if it is missing. Deploy it twice: first **without** the environment variable set, invoke it, and capture the error output. Then update the configuration to add the variable and confirm the function succeeds.
+Напишите функцию Lambda, которая читает переменную окружения `REQUIRED_VAR` и вызывает `ValueError`, если она отсутствует. Разверните её дважды: сначала **без** этой переменной, вызовите функцию и сохраните вывод ошибки. Затем добавьте переменную в конфигурацию и убедитесь, что функция выполняется успешно.
 
-The goal is to practice the full CLI deploy-invoke-debug loop and to understand why `aws lambda invoke` returning status 0 is not a success signal. Your solution must parse `output.json` to detect the `FunctionError` field programmatically.
+Цель — отработать полный цикл развёртывания, вызова и диагностики через CLI, а также понять, почему код `0` от `aws lambda invoke` сам по себе не означает успех. Решение должно программно разбирать `output.json` и проверять наличие поля `FunctionError`.
 
 **Hints:**
-- Use `--log-type Tail` on the broken invocation and decode the base64 log to see the traceback.
-- Write a small bash `if` block that exits non-zero when `FunctionError` is present.
+- При вызове неисправной функции используйте `--log-type Tail` и декодируйте журнал из base64, чтобы увидеть трассировку ошибки.
+- Напишите небольшой блок `if` в Bash, который возвращает ненулевой код, если присутствует `FunctionError`.
 
 ---
 
-### Exercise 2: SQS Fan-Out with Concurrency Limit
+### Задание 2. Обработка очереди SQS с ограничением параллелизма
 
-Create an SQS queue, deploy an SQS-triggered Lambda that simulates slow processing (use `time.sleep(2)`), and send 50 messages to the queue in a loop. Then:
+Создайте очередь SQS, разверните Lambda, запускаемую очередью и имитирующую медленную обработку (используйте `time.sleep(2)`), затем отправьте в очередь 50 сообщений в цикле. После этого:
 
-1. Observe how many concurrent executions Lambda scales to using CloudWatch metrics (`ConcurrentExecutions`).
-2. Set reserved concurrency to 5 on the function and re-send 50 messages.
-3. Measure how long the queue takes to drain in each scenario and explain the tradeoff.
+1. С помощью метрик CloudWatch (`ConcurrentExecutions`) определите, до какого числа параллельных запусков масштабируется Lambda.
+2. Установите для функции зарезервированный параллелизм 5 и повторно отправьте 50 сообщений.
+3. Измерьте время полного опустошения очереди в обоих сценариях и объясните компромисс.
 
-**What to compare:** total drain time with unrestricted concurrency vs. reserved concurrency of 5. Explain in one paragraph when you would choose to limit concurrency on an SQS consumer.
+**Что сравнить:** общее время обработки очереди без ограничения параллелизма и с лимитом 5. В одном абзаце объясните, в каких случаях стоит ограничивать параллелизм потребителя SQS.
 
 ---
 
-### Exercise 3: Dependency Layer for a Third-Party Package
+### Задание 3. Слой зависимостей для стороннего пакета
 
-Your Lambda function needs the `httpx` package, which is not included in the Python 3.12 runtime. Package `httpx` into a layer, publish it, attach it to a function, and verify the import works at invocation time.
+Функции Lambda нужен пакет `httpx`, которого нет в среде выполнения Python 3.12 по умолчанию. Упакуйте `httpx` в слой, опубликуйте его, подключите к функции и проверьте, что импорт работает при вызове.
 
 Requirements:
-- The function's deployment ZIP must contain **only** your handler code — no `httpx` files.
-- The layer must be published with `--compatible-runtimes python3.12`.
-- Confirm success by having the handler print `httpx.__version__` and checking the log output.
+- ZIP-архив развёртывания функции должен содержать **только** код обработчика, без файлов `httpx`.
+- Слой нужно опубликовать с параметром `--compatible-runtimes python3.12`.
+- Подтвердите успех: пусть обработчик выведет `httpx.__version__`, затем проверьте журналы.
 
 **Extension:** check the size of your layer ZIP. What is the maximum compressed size a single layer can be? What would you do if your ML inference dependencies (numpy, scipy, torch) exceeded that limit?
 
