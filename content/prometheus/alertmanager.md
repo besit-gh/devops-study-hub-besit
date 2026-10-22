@@ -453,18 +453,18 @@ receivers:
 
 ## Практические задания
 
-1. Write a complete `alertmanager.yml` that routes: (a) `severity=critical` alerts to PagerDuty with a 10s group_wait, (b) `severity=warning` alerts to a Slack channel with 5m group_wait, (c) everything else to a "null" receiver (drop). Add an inhibition rule that suppresses warning alerts when a critical alert fires for the same `job`.
+1. Напишите полный `alertmanager.yml`, который направляет: (a) оповещения `severity=critical` в PagerDuty с `group_wait` 10s; (b) `severity=warning` в канал Slack с `group_wait` 5m; (c) все остальные — в приёмник `null` (отбрасывать). Добавьте правило подавления, скрывающее предупреждения, когда для того же `job` срабатывает критическое оповещение.
 
-2. Write three alerting rules in a Prometheus rule file: (a) `InstanceDown` — any target with `up == 0` for 2 minutes, severity critical; (b) `HighMemoryUsage` — `node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.10` for 5 minutes, severity warning; (c) `DiskWillFillIn4Hours` — using `predict_linear`, 10 minute `for`, severity warning. Include meaningful annotations with Go template variable interpolation for `$labels.instance` and `$value | humanizePercentage` where applicable.
+2. Напишите в файле правил Prometheus три правила оповещения: (a) `InstanceDown` — цель с `up == 0` в течение 2 минут, серьёзность critical; (b) `HighMemoryUsage` — `node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.10` в течение 5 минут, серьёзность warning; (c) `DiskWillFillIn4Hours` — использовать `predict_linear`, период `for` 10 минут, серьёзность warning. Добавьте содержательные аннотации с подстановкой переменных шаблона Go `$labels.instance` и `$value | humanizePercentage`, где это уместно.
 
-3. Given a Kubernetes cluster that has an `InstanceDown` alert firing for a node, write the inhibition rule that would suppress `KubePodCrashLooping` and `KubeDeploymentReplicasMismatch` alerts for pods on that same node. Assume the alerts share an `instance` label identifying the node.
+3. Предположим, в кластере Kubernetes для узла сработало оповещение `InstanceDown`. Напишите правило подавления, которое отключит оповещения `KubePodCrashLooping` и `KubeDeploymentReplicasMismatch` для Pod на этом же узле. Считайте, что оба типа оповещений имеют общую метку `instance`, указывающую на узел.
 
 
 ---
 
 ### Быстрая проверка
 
-4. Count receivers in an Alertmanager config stub. Run: `printf 'receivers:\n- name: team-slack\n- name: team-email\n- name: team-pagerduty\n' | grep -c '^- name:'`
+4. Посчитайте приёмники в заготовке конфигурации Alertmanager. Выполните: `printf 'receivers:\n- name: team-slack\n- name: team-email\n- name: team-pagerduty\n' | grep -c '^- name:'`
 
 ```expected_output
 3
@@ -473,7 +473,7 @@ receivers:
 Подсказка: отфильтруйте строки по шаблону и поручите shell посчитать совпадения.
 Подсказка: используйте `grep -c`, чтобы посчитать строки, соответствующие шаблону `^- name:`, в выводе `printf`, переданном через конвейер.
 
-5. Extract the `repeat_interval` from a route config stub. Run: `printf 'route:\n  receiver: team-slack\n  group_wait: 30s\n  repeat_interval: 4h\n' | awk '/repeat_interval:/{print $2}'`
+5. Извлеките `repeat_interval` из заготовки конфигурации маршрута. Выполните: `printf 'route:\n  receiver: team-slack\n  group_wait: 30s\n  repeat_interval: 4h\n' | awk '/repeat_interval:/{print $2}'`
 
 ```expected_output
 4h
