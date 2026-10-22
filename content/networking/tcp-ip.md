@@ -159,7 +159,7 @@ watch -n 1 'ss -tan | awk "NR>1 {print \$1}" | sort | uniq -c'
 | 1024–49151 | Registered | IANA-assigned; unprivileged processes may bind |
 | 49152–65535 | Ephemeral / dynamic | OS-assigned for outbound client connections |
 
-**Common service ports:**
+**Распространённые порты сервисов:**
 
 | Port | Protocol | Service |
 |------|----------|---------|
@@ -204,7 +204,7 @@ timeout 3 bash -c 'cat < /dev/null > /dev/tcp/10.0.0.1/5432' \
   && echo "Port open" || echo "Port closed or filtered"
 ```
 
-**Binding to `0.0.0.0` vs `127.0.0.1`:** when a service binds to `0.0.0.0`, it listens on all interfaces and is reachable from the network. When it binds to `127.0.0.1`, it only accepts local connections. Databases and caches that are only accessed by local application code should bind to loopback. Accidentally exposing them on `0.0.0.0` is one of the most common cloud security misconfigurations — it's how publicly accessible Redis and Elasticsearch instances end up getting wiped by ransomware bots.
+**Привязка к `0.0.0.0` и `127.0.0.1`:** при привязке к `0.0.0.0` сервис слушает все интерфейсы и доступен из сети. При привязке к `127.0.0.1` он принимает только локальные соединения. Базы данных и кэши, к которым обращается лишь локальное приложение, следует привязывать к loopback. Случайная публикация таких сервисов на `0.0.0.0` — одна из частых ошибок облачной безопасности: открытые Redis и Elasticsearch нередко становятся жертвами ботов-вымогателей.
 
 ```bash
 # Good: Redis bound to loopback only
@@ -220,7 +220,7 @@ grep ^bind /etc/redis/redis.conf
 
 ---
 
-### ICMP — The Diagnostic Protocol
+### ICMP — протокол диагностики
 
 ICMP (Internet Control Message Protocol) operates at layer 3 and carries control messages: reachability probes (ping), "destination unreachable," "TTL exceeded," and path MTU discovery. It has no ports — messages are identified by type and code numbers.
 
