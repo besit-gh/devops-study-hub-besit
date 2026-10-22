@@ -192,7 +192,7 @@ function AppLayout({ modules, progress, loadData, loading, xp, streak, interview
             </main>
             {lessonMatch && !readingMode && (
               <>
-              <div onMouseDown={startRightResize} className="w-1 shrink-0 cursor-col-resize hover:bg-emerald-400 dark:hover:bg-emerald-600 bg-transparent transition-colors" title="Drag to resize panel" />
+              <div onMouseDown={startRightResize} className="w-1 shrink-0 cursor-col-resize hover:bg-emerald-400 dark:hover:bg-emerald-600 bg-transparent transition-colors" title="Перетащите, чтобы изменить ширину панели" />
               <aside className="shrink-0 border-l border-gray-200 dark:border-gray-700 flex flex-col bg-stone-200 dark:bg-gray-900" style={{ width: rightWidth }}>
                 <div className="flex shrink-0 border-b border-gray-200 dark:border-gray-700">
                   {['tutor', 'quiz', 'notes'].map(tab => (
