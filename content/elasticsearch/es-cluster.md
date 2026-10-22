@@ -34,22 +34,22 @@ GET /_cluster/health
 }
 ```
 
-| Status | Meaning |
+| Статус | Значение |
 |--------|---------|
-| `green` | All primary and replica shards assigned |
-| `yellow` | All primaries assigned; one or more replicas unassigned |
-| `red` | One or more primary shards unassigned — partial data loss risk |
+| `green` | Все первичные и реплики назначены |
+| `yellow` | Все первичные шарды назначены; одна или несколько реплик не назначены |
+| `red` | Один или несколько первичных шардов не назначены — есть риск частичной потери данных |
 
-**Yellow** on a single-node cluster is normal — there is nowhere to place a replica. In a multi-node cluster, yellow is a warning that you have lost HA. Red means some data is actively unavailable.
+Статус **yellow** в одноузловом кластере — нормальное явление: разместить реплику негде. В многоузловом кластере yellow означает потерю высокой доступности. Red означает, что часть данных сейчас недоступна.
 
-Wait for a specific status (useful in scripts):
+Ожидание определённого статуса (полезно в скриптах):
 ```bash
 GET /_cluster/health?wait_for_status=green&timeout=60s
 ```
 
-### Cat APIs
+### Cat API
 
-The `_cat` APIs return human-readable tabular output. The `?v` flag adds column headers; `?h=col1,col2` selects specific columns; `?s=col` sorts by a column.
+API `_cat` возвращают удобный для чтения табличный вывод. Флаг `?v` добавляет заголовки столбцов; `?h=col1,col2` выбирает нужные столбцы; `?s=col` сортирует по столбцу.
 
 ```bash
 # Cluster-level summary
@@ -68,18 +68,18 @@ GET /_cat/shards?v&h=index,shard,prirep,state,unassigned.reason,node
 GET /_cat/pending_tasks?v
 ```
 
-The `unassigned.reason` column in `_cat/shards` is critical for diagnosis. Common values:
+Столбец `unassigned.reason` в `_cat/shards` крайне важен для диагностики. Распространённые значения:
 
-| Reason | Meaning |
+| Причина | Значение |
 |--------|---------|
-| `NODE_LEFT` | Node that held the shard left the cluster |
-| `ALLOCATION_FAILED` | Shard allocation attempted but failed (check logs) |
-| `INDEX_CREATED` | Freshly created — waiting for a node with space |
-| `CLUSTER_RECOVERED` | Post-restart recovery in progress |
+| `NODE_LEFT` | Узел, на котором находился шард, покинул кластер |
+| `ALLOCATION_FAILED` | Попытка назначить шард завершилась неудачей (проверьте журналы) |
+| `INDEX_CREATED` | Индекс только создан — ожидается узел со свободным местом |
+| `CLUSTER_RECOVERED` | Идёт восстановление после перезапуска |
 
-### Shard Allocation
+### Назначение шардов
 
-**Check allocation explanation:**
+**Проверить причину неназначения:**
 ```bash
 GET /_cluster/allocation/explain
 {
@@ -89,9 +89,9 @@ GET /_cluster/allocation/explain
 }
 ```
 
-This is the first command to run when shards are stuck. The response tells you exactly why allocation failed — disk watermark breached, node attribute mismatch, allocation filter, etc.
+Эту команду стоит запускать первой, если назначение шардов зависло. Ответ точно укажет причину: превышен порог заполнения диска, не совпадают атрибуты узлов, действует фильтр размещения и т. д.
 
-**Manual shard reroute:**
+**Ручное перенаправление шарда:**
 ```bash
 POST /_cluster/reroute
 {
@@ -108,7 +108,7 @@ POST /_cluster/reroute
 }
 ```
 
-**Temporarily disable allocation** (useful before node maintenance):
+**Временно отключить назначение шардов** (полезно перед обслуживанием узла):
 ```bash
 PUT /_cluster/settings
 {
@@ -125,14 +125,14 @@ PUT /_cluster/settings
 }
 ```
 
-Disk watermarks (defaults):
-- Low: 85% — stop allocating new shards to this node
-- High: 90% — start relocating shards away from this node
-- Flood stage: 95% — index becomes read-only
+Пороговые значения заполнения диска (по умолчанию):
+- Low: 85% — прекратить назначение новых шардов на этот узел
+- High: 90% — начать перенос шардов с этого узла
+- Flood stage: 95% — индекс становится доступным только для чтения
 
-### Reindex API
+### API переиндексации
 
-Reindex copies documents from a source index to a destination. Use cases: changing mappings (field types cannot be changed in-place), changing shard count, migrating data.
+Reindex копирует документы из исходного индекса в целевой. Применяется для изменения mapping (тип поля нельзя поменять на месте), количества шардов и миграции данных.
 
 ```bash
 POST /_reindex
@@ -150,7 +150,7 @@ POST /_reindex
 }
 ```
 
-`op_type: create` prevents overwriting existing documents. For large reindexes, run asynchronously:
+`op_type: create` предотвращает перезапись существующих документов. Для больших операций запускайте переиндексацию асинхронно:
 
 ```bash
 POST /_reindex?wait_for_completion=false
@@ -160,9 +160,9 @@ GET /_tasks/<task_id>
 POST /_tasks/<task_id>/_cancel
 ```
 
-### Index Aliases
+### Псевдонимы индексов
 
-An alias is a virtual index name that can point to one or more real indices. They are the standard way to enable zero-downtime reindex and index switching.
+Alias — виртуальное имя индекса, которое может указывать на один или несколько реальных индексов. Это стандартный способ переиндексации и переключения индексов без простоя.
 
 ```bash
 # Create an alias pointing to a new index
@@ -175,7 +175,7 @@ POST /_aliases
 }
 ```
 
-Aliases support **filters** (give different users or apps a restricted view):
+Alias поддерживает **фильтры**, позволяющие предоставлять разным пользователям или приложениям ограниченное представление данных:
 ```bash
 POST /_aliases
 {
@@ -189,13 +189,13 @@ POST /_aliases
 }
 ```
 
-A **write alias** designates which index receives new documents when writing to the alias — exactly one index per alias can have `"is_write_index": true`.
+**Write alias** определяет, в какой индекс попадают новые документы при записи через alias. Для одного alias только один индекс может иметь `"is_write_index": true`.
 
-### Snapshot and Restore
+### Снимки и восстановление
 
-Snapshots are the primary backup mechanism. They are incremental — only segments changed since the last snapshot are written.
+Snapshot — основной механизм резервного копирования. Снимки инкрементальные: записываются только сегменты, изменившиеся после предыдущего snapshot.
 
-**Register a repository** (S3 example):
+**Зарегистрировать репозиторий** (пример с S3):
 ```bash
 PUT /_snapshot/s3-backup
 {
@@ -208,7 +208,7 @@ PUT /_snapshot/s3-backup
 }
 ```
 
-**Create a snapshot:**
+**Создать snapshot:**
 ```bash
 PUT /_snapshot/s3-backup/snapshot-2024-03-15
 {
@@ -218,12 +218,12 @@ PUT /_snapshot/s3-backup/snapshot-2024-03-15
 }
 ```
 
-**Monitor progress:**
+**Отслеживать ход выполнения:**
 ```bash
 GET /_snapshot/s3-backup/snapshot-2024-03-15/_status
 ```
 
-**Restore:**
+**Восстановить:**
 ```bash
 POST /_snapshot/s3-backup/snapshot-2024-03-15/_restore
 {
@@ -236,31 +236,31 @@ POST /_snapshot/s3-backup/snapshot-2024-03-15/_restore
 }
 ```
 
-Restore replicas as 0 initially for speed; scale back up after recovery completes.
+Для ускорения первоначально восстановите реплики с количеством `0`, а после завершения восстановления увеличьте его.
 
-### Rolling Upgrades
+### Последовательные обновления
 
-Elasticsearch supports rolling upgrades within the same major version without downtime. Steps:
+Elasticsearch поддерживает обновление без простоя между версиями в рамках одной основной версии. Порядок действий:
 
-1. Disable shard allocation: `cluster.routing.allocation.enable: none`
-2. Stop one node, upgrade the Elasticsearch binary.
-3. Start the node, wait for it to rejoin: `GET /_cat/nodes`
-4. Re-enable allocation: `cluster.routing.allocation.enable: null`
-5. Wait for cluster to go green: `GET /_cluster/health?wait_for_status=green`
-6. Repeat for the next node.
+1. Отключите назначение шардов: `cluster.routing.allocation.enable: none`
+2. Остановите один узел и обновите бинарный файл Elasticsearch.
+3. Запустите узел и дождитесь его возвращения в кластер: `GET /_cat/nodes`
+4. Повторно включите назначение: `cluster.routing.allocation.enable: null`
+5. Дождитесь статуса green: `GET /_cluster/health?wait_for_status=green`
+6. Повторите действия для следующего узла.
 
-Cross-major-version upgrades (e.g., 7 → 8) require reading the breaking changes docs and may need a full cluster restart or intermediate version hop.
+Для перехода между основными версиями (например, 7 → 8) изучите документацию о несовместимых изменениях. Может потребоваться полный перезапуск кластера или промежуточное обновление.
 
-### Cluster Settings
+### Настройки кластера
 
-Settings have two persistence levels:
+У настроек есть два уровня сохранения:
 
-| Level | Key | Survives restart |
+| Уровень | Ключ | Сохраняется после перезапуска |
 |-------|-----|-----------------|
-| Transient | `transient` | No |
-| Persistent | `persistent` | Yes |
+| Временный | `transient` | Нет |
+| Постоянный | `persistent` | Да |
 
-Persistent settings override `elasticsearch.yml`. Transient are lost on full cluster restart. Prefer transient for temporary operational changes (watermarks, allocation), persistent for long-lived policy.
+Постоянные настройки имеют приоритет над `elasticsearch.yml`. Временные теряются при полном перезапуске кластера. Используйте временные настройки для оперативных изменений (пороги диска, назначение шардов), а постоянные — для долгосрочной политики.
 
 ```bash
 # Temporarily raise flood watermark during disk pressure
@@ -274,15 +274,15 @@ PUT /_cluster/settings
 
 ## Примеры
 
-### Yellow Cluster Runbook
+### Инструкция по диагностике жёлтого кластера
 
-1. `GET /_cluster/health` — confirm yellow and count `unassigned_shards`.
-2. `GET /_cat/shards?v&h=index,shard,prirep,state,unassigned.reason,node` — find which shards are unassigned.
-3. `GET /_cluster/allocation/explain` — get the definitive reason from Elasticsearch.
-4. Common fixes:
-   - **Disk watermark**: free space, or temporarily raise the watermark setting.
-   - **NODE_LEFT**: wait for the node to return, or force-allocate the replica elsewhere.
-   - **Single-node cluster**: set `number_of_replicas: 0` on small dev/test indices.
+1. Выполните `GET /_cluster/health`: подтвердите статус yellow и проверьте `unassigned_shards`.
+2. Выполните `GET /_cat/shards?v&h=index,shard,prirep,state,unassigned.reason,node`, чтобы найти неназначенные шарды.
+3. Выполните `GET /_cluster/allocation/explain`, чтобы получить точную причину от Elasticsearch.
+4. Типичные способы решения:
+   - **Порог диска**: освободите место или временно увеличьте порог.
+   - **NODE_LEFT**: дождитесь возвращения узла или принудительно назначьте реплику в другом месте.
+   - **Одноузловой кластер**: установите `number_of_replicas: 0` для небольших индексов разработки и тестирования.
 
 ## Практические задания
 
@@ -303,8 +303,8 @@ PUT /_cluster/settings
 3
 ```
 
-hint: Think about how quorum is calculated mathematically in a distributed cluster to prevent split-brain scenarios.
-hint: Use Python's integer floor division operator (//) with the formula (total_nodes // 2 + 1) to find the minimum master-eligible node count.
+Подсказка: вспомните математический расчёт кворума в распределённом кластере, предотвращающий split-brain.
+Подсказка: используйте целочисленное деление Python `//` по формуле `(total_nodes // 2 + 1)`, чтобы найти минимальное число узлов, имеющих право быть master.
 
 5. Count green-status clusters in a health summary. Run: `printf 'cluster_1: green\ncluster_2: yellow\ncluster_3: green\ncluster_4: green\n' | awk '{count[$2]++} END{print count["green"]}'`
 
@@ -312,5 +312,5 @@ hint: Use Python's integer floor division operator (//) with the formula (total_
 3
 ```
 
-hint: Think about how you can use awk to build a frequency map by storing counts in an associative array keyed by a field value.
-hint: In awk, use '{count[$2]++}' to tally occurrences of each status word, then access the specific key in the END block with 'count["green"]'.
+Подсказка: с помощью `awk` можно создать таблицу частот, храня счётчики в ассоциативном массиве, где ключом служит значение поля.
+Подсказка: в `awk` используйте `{count[$2]++}` для подсчёта каждого статуса, затем обратитесь к нужному ключу в блоке `END` через `count["green"]`.
