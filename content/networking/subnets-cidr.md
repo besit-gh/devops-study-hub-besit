@@ -102,13 +102,13 @@ IPv4-адрес — 32-битное целое число, записываем�
 ```python
 import ipaddress
 
-# This raises ValueError: host bits set
+# Здесь возникнет ValueError: установлены биты узла
 try:
     ipaddress.ip_network("10.0.1.70/26", strict=True)
 except ValueError as e:
     print(e)  # 10.0.1.70/26 has host bits set
 
-# Correct: strip host bits to get the network address
+# Правильно: сбросить биты узла и получить адрес сети
 net = ipaddress.ip_network("10.0.1.70/26", strict=False)
 print(net)  # 10.0.1.64/26
 ```
@@ -138,21 +138,21 @@ AND:    10.0.1.0    = 00001010.00000000.00000001.00000000
 **Частый вопрос на собеседовании:** «Оба адреса находятся в `10.0.0.0/16`, почему они не общаются напрямую?» Потому что локальную или удалённую сеть определяет *префикс, настроенный на каждом интерфейсе*, а не охватывающая суперсеть. Межсетевое взаимодействие обеспечивает таблица маршрутизации.
 
 ```bash
-# Check your interface's address and prefix length
+# Проверьте адрес интерфейса и длину префикса
 ip addr show eth0
 
-# See the routing table — "scope link" entries are local subnet routes
+# Просмотрите таблицу маршрутизации: записи «scope link» — маршруты локальных подсетей
 ip route show
 
-# Which route would be used to reach a specific address?
+# Какой маршрут будет использован для достижения конкретного адреса?
 ip route get 10.0.2.5
-# output: 10.0.2.5 via 10.0.1.1 dev eth0 src 10.0.1.55
-#         shows gateway is used → off-subnet
+# вывод: 10.0.2.5 через 10.0.1.1, интерфейс eth0, исходный адрес 10.0.1.55
+#         используется шлюз → адрес вне подсети
 
-# Verify two IPs are in the same subnet using ipcalc
+# Проверьте с помощью ipcalc, находятся ли два IP в одной подсети
 ipcalc 10.0.1.55/24
 ipcalc 10.0.1.200/24
-# Compare the "Network:" lines — if they match, same subnet
+# Сравните строки «Network:»: если они совпадают, адреса в одной подсети
 ```
 
 ### Диапазоны частных адресов (RFC 1918)
@@ -162,12 +162,12 @@ ipcalc 10.0.1.200/24
 | Название | Диапазон | CIDR | Размер | Типичное применение |
 |----------|-------------------------------|----------------|---------|---------------------------------|
 | Класс A | 10.0.0.0 – 10.255.255.255 | 10.0.0.0/8 | ~16 млн | Корпоративные VPC и большие кластеры |
-| Class B  | 172.16.0.0 – 172.31.255.255   | 172.16.0.0/12  | ~1M     | Docker default bridge networks  |
-| Class C  | 192.168.0.0 – 192.168.255.255 | 192.168.0.0/16 | ~65K    | Home networks, small offices    |
+| Класс B  | 172.16.0.0 – 172.31.255.255   | 172.16.0.0/12  | ~1M     | Сети моста Docker по умолчанию |
+| Класс C  | 192.168.0.0 – 192.168.255.255 | 192.168.0.0/16 | ~65K    | Домашние сети и небольшие офисы |
 
-**Docker default bridge conflict:** Docker uses `172.17.0.0/16` for its default bridge network. Additional user-defined networks are allocated from `172.18.0.0/16`, `172.19.0.0/16`, etc., stepping through the `172.16.0.0/12` block. If your VPC, VPN, or corporate network uses any address in `172.16.0.0/12`, containers on that host will have routing conflicts — packets destined for your corporate network will be incorrectly sent to the Docker bridge instead of the gateway.
+**Конфликт с мостом Docker по умолчанию:** Docker использует `172.17.0.0/16` для сети моста по умолчанию. Дополнительные пользовательские сети выделяются из `172.18.0.0/16`, `172.19.0.0/16` и далее в пределах блока `172.16.0.0/12`. Если VPC, VPN или корпоративная сеть используют адреса из `172.16.0.0/12`, на этом узле возникнет конфликт маршрутизации: пакеты для корпоративной сети будут ошибочно направляться в мост Docker, а не на шлюз.
 
-Override Docker's address pool in `/etc/docker/daemon.json` and restart the daemon:
+Переопределите пул адресов Docker в `/etc/docker/daemon.json` и перезапустите демон:
 
 ```json
 {
@@ -180,11 +180,11 @@ Override Docker's address pool in `/etc/docker/daemon.json` and restart the daem
 
 ```bash
 sudo systemctl restart docker
-# Verify the new bridge address
+# Проверьте новый адрес моста
 docker network inspect bridge | grep Subnet
 ```
 
-**Kubernetes default CIDRs by CNI plugin:**
+**Диапазоны CIDR Kubernetes по умолчанию для разных CNI-плагинов:**
 
 | CNI         | Default pod CIDR  | Default service CIDR | Notes                               |
 |-------------|-------------------|----------------------|-------------------------------------|
@@ -193,9 +193,9 @@ docker network inspect bridge | grep Subnet
 | Weave       | 10.32.0.0/12      | 10.96.0.0/12         | Large pod range by default          |
 | AWS VPC CNI | Same as node VPC  | 10.100.0.0/16        | Pods get real VPC IPs               |
 
-With AWS VPC CNI, pods get real VPC IP addresses — which means your VPC subnets must be large enough to accommodate pods, not just nodes. A node pool of 10 nodes each running 110 pods needs 1,100+ IP addresses in those subnets. A `/24` per AZ is dangerously small for EKS with VPC CNI; use `/20` or larger.
+При использовании AWS VPC CNI Pod получают реальные IP-адреса VPC. Поэтому подсети VPC должны вмещать не только узлы, но и Pod. Пулу из 10 узлов, на каждом из которых работает по 110 Pod, требуется более 1100 IP-адресов. Подсеть `/24` на зону доступности для EKS с VPC CNI слишком мала; используйте `/20` или крупнее.
 
-**Overlapping CIDRs will silently break routing.** Two peered VPCs with overlapping CIDRs cannot communicate — AWS will reject the peering. VPN split tunneling will misdirect traffic. Always check for overlaps before allocating a new CIDR block.
+**Пересекающиеся диапазоны CIDR незаметно ломают маршрутизацию.** Две VPC с пирингом и пересекающимися CIDR не смогут взаимодействовать — AWS отклонит пиринг. Split tunneling VPN будет направлять трафик неверно. Всегда проверяйте пересечения перед выделением нового блока CIDR.
 
 ```python
 import ipaddress
@@ -210,25 +210,25 @@ print(check_overlap("10.0.0.0/24", "10.0.1.0/24"))  # False — adjacent, no ove
 print(check_overlap("172.16.0.0/12", "172.20.0.0/16"))  # True — 172.20 is inside /12
 ```
 
-### Supernets and Route Aggregation
+### Суперсети и агрегация маршрутов
 
-A supernet (or aggregate) is a larger block that encompasses multiple smaller blocks. Route aggregation reduces routing table size by replacing many specific routes with one summary route — this is critical for BGP scaling and clean security group rule sets.
+Суперсеть (или агрегированный блок) — это крупный диапазон, включающий несколько меньших. Агрегация маршрутов сокращает таблицу маршрутизации: множество конкретных маршрутов заменяются одним суммарным. Это важно для масштабирования BGP и упрощения правил групп безопасности.
 
 `10.0.0.0/16` is the supernet for all of these:
 - `10.0.1.0/24`
 - `10.0.2.0/24`
 - `10.0.128.0/17`
 
-To check whether a CIDR is a valid aggregate, verify that all the specific blocks are contiguous and the supernet's network bits match across all of them.
+Чтобы проверить корректность агрегирования CIDR, убедитесь, что конкретные блоки идут подряд и у всех совпадают сетевые биты суперсети.
 
 ```python
 import ipaddress
 
-# Find the immediate supernet (one prefix bit shorter)
+# Найти ближайшую суперсеть (префикс на один бит короче)
 net = ipaddress.ip_network("10.0.1.0/24")
 print(net.supernet())  # 10.0.0.0/23
 
-# Collapse a list of networks into the minimal set of CIDRs
+# Объединить список сетей в минимальный набор CIDR
 addresses = [
     ipaddress.ip_network("10.0.0.0/25"),
     ipaddress.ip_network("10.0.0.128/25"),
@@ -236,21 +236,21 @@ addresses = [
 collapsed = list(ipaddress.collapse_addresses(addresses))
 print(collapsed)  # [IPv4Network('10.0.0.0/24')]
 
-# Non-contiguous blocks do NOT collapse cleanly
+# Несмежные блоки нельзя корректно объединить
 addresses2 = [
     ipaddress.ip_network("10.0.0.0/24"),
-    ipaddress.ip_network("10.0.2.0/24"),  # gap at 10.0.1.0/24
+    ipaddress.ip_network("10.0.2.0/24"),  # пропущен диапазон 10.0.1.0/24
 ]
 collapsed2 = list(ipaddress.collapse_addresses(addresses2))
 print(collapsed2)  # [IPv4Network('10.0.0.0/24'), IPv4Network('10.0.2.0/24')]
-# Cannot collapse — they don't form a valid supernet without including 10.0.1.0/24
+# Объединить нельзя: корректная суперсеть также включила бы 10.0.1.0/24
 ```
 
-This matters for security group rules and firewall policies — instead of 8 separate rules for 8 adjacent /24s, one /21 rule covers the same space with one rule. It also matters for Transit Gateway route tables: aggregate routes where possible to avoid hitting route table limits.
+Это важно для правил групп безопасности и межсетевых экранов: вместо восьми отдельных правил для восьми соседних сетей `/24` одно правило `/21` покрывает тот же диапазон. Это также важно для таблиц маршрутизации Transit Gateway: по возможности агрегируйте маршруты, чтобы не упереться в ограничения таблицы.
 
-### Subnetting a Block: Splitting CIDRs
+### Разбиение блока на подсети: разделение CIDR
 
-When you receive an address block and need to divide it, you extend the prefix length. Each additional bit splits the space in half.
+Чтобы разделить полученный адресный блок, увеличьте длину префикса. Каждый дополнительный бит делит адресное пространство пополам.
 
 Splitting `10.0.0.0/24` into four `/26` subnets:
 
@@ -266,29 +266,29 @@ import ipaddress
 
 parent = ipaddress.ip_network("10.0.0.0/24")
 
-# Split into /26 subnets
+# Разделить на подсети /26
 for subnet in parent.subnets(new_prefix=26):
     hosts = list(subnet.hosts())
     print(f"{subnet}  first={hosts[0]}  last={hosts[-1]}  count={len(hosts)}")
 
-# Split into exactly 2 halves (/25 each)
+# Разделить ровно пополам (на две подсети /25)
 for subnet in parent.subnets(prefixlen_diff=1):
     print(subnet)
 # 10.0.0.0/25
 # 10.0.0.128/25
 ```
 
-**The new prefix must be longer than the parent prefix.** You can split a `/24` into `/25`, `/26`, `/27` etc. — but not into `/23`. Calling `subnets(new_prefix=23)` on a `/24` raises `ValueError`.
+**Новый префикс должен быть длиннее префикса исходной сети.** Сеть `/24` можно разделить на `/25`, `/26`, `/27` и так далее, но не на `/23`. Вызов `subnets(new_prefix=23)` для сети `/24` вызовет `ValueError`.
 
-**Unequal splits are not directly supported in CIDR.** CIDR blocks are always powers of two. If you need 100 hosts and 50 hosts from a `/24`, you'd allocate a `/25` (126 hosts) and a `/26` (62 hosts), accepting some waste. This is the standard trade-off in VLSM (Variable Length Subnet Masking).
+**CIDR не поддерживает прямое разбиение на неравные части.** Размеры блоков CIDR всегда являются степенями двойки. Если из `/24` нужны подсети на 100 и 50 узлов, выделите `/25` (126 узлов) и `/26` (62 узла), допустив некоторую потерю адресов. Это стандартный компромисс при использовании VLSM (масок подсети переменной длины).
 
-### Designing a VPC Subnet Layout
+### Проектирование структуры подсетей VPC
 
-A production AWS VPC needs subnets that are:
-- Spread across availability zones for resilience
-- Sized for the workloads they'll contain (with growth room)
-- Separated by tier (public / private / data) for security group and NACL control
-- Planned with future expansion in mind — re-CIDRing a running VPC is painful
+Для production-VPC в AWS нужны подсети, которые:
+- Распределены по зонам доступности для отказоустойчивости
+- Имеют размер, соответствующий нагрузке, с запасом на рост
+- Разделены по уровням (public / private / data) для управления группами безопасности и NACL
+- Спроектированы с учётом расширения: изменение CIDR работающей VPC — сложная задача
 
 Example layout for `10.0.0.0/16` across two AZs with three tiers:
 
@@ -537,7 +537,7 @@ EOF
 # Restart Docker — WARNING: this stops all running containers
 sudo systemctl restart docker
 
-# Verify the new bridge address
+# Проверьте новый адрес моста
 docker network inspect bridge | grep Subnet
 # "Subnet": "192.168.200.0/24"   ← no longer conflicts with VPN
 
