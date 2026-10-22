@@ -13,13 +13,13 @@ exercises: 4
 
 Ключевой принцип — **корреляция**. Все три столпа становятся гораздо полезнее, если используют общий идентификатор — trace ID. Тогда инженер может перейти от всплеска метрики на дашборде к логам и распределённой трассировке конкретного запроса. Без корреляции данные остаются разрозненными, и приходится вручную восстанавливать картину по временным меткам. В этом и заключается разница между простым мониторингом и настоящей наблюдаемостью.
 
-In the DevOps toolchain, observability sits between deployment and incident response. After a deploy, metrics tell you immediately if error rates or latency regressed. During an incident, logs and traces tell you why. After the incident, SLOs and error budgets tell you how to prioritize reliability work versus feature work going forward. The dominant tools in this space are Prometheus + Grafana (open source metrics and dashboarding), Loki (open source log aggregation), Jaeger/Tempo (open source tracing), Datadog (SaaS, unified across all three pillars), and the OpenTelemetry project (vendor-neutral instrumentation SDK and wire format that works with any backend).
+В цепочке DevOps наблюдаемость связывает развёртывание с реагированием на инциденты. После релиза метрики быстро показывают рост ошибок или задержек. Во время инцидента журналы и трассировки помогают понять причину. После инцидента SLO и бюджет ошибок помогают расставить приоритеты между повышением надёжности и разработкой функций. Среди основных инструментов — Prometheus и Grafana для метрик и дашбордов, Loki для сбора журналов, Jaeger/Tempo для трассировки, Datadog как единая облачная платформа и OpenTelemetry как независимый от поставщика набор средств инструментирования и формат передачи телеметрии.
 
 ---
 
 ## Основные понятия
 
-### Metric Types
+### Типы метрик
 
 | Type | Semantics | Example use case |
 |------|-----------|-----------------|
@@ -28,10 +28,10 @@ In the DevOps toolchain, observability sits between deployment and incident resp
 | **Histogram** | Samples observations into configurable buckets; stores `_count`, `_sum`, `_bucket` | Request latency, response payload size |
 | **Summary** | Pre-calculated client-side quantiles; stores `_count`, `_sum`, and quantile series | Same as histogram but computed in the application process |
 
-**Counter gotcha:** never use a counter for a value that can decrease — use a gauge instead. Counters are designed to be consumed with `rate()` in PromQL, which detects resets by watching for a value decrease and compensates automatically. If you misuse a counter for something like active connections, `rate()` will produce nonsense.
+**Важный нюанс счётчика:** не используйте counter для величины, которая может уменьшаться, — для неё нужен gauge. Счётчики предназначены для обработки функцией `rate()` в PromQL: она обнаруживает сбросы по уменьшению значения и автоматически учитывает их. Если использовать counter для числа активных соединений, результат `rate()` будет бессмысленным.
 
 **Histogram vs Summary:**
-- **Histograms**: buckets stored server-side; quantiles calculated at query time in PromQL with `histogram_quantile()`. Results can be aggregated across instances (10 pods → one fleet-wide p99).
+- **Гистограммы (histograms):** корзины хранятся на стороне сервера, а квантили вычисляются во время запроса в PromQL с помощью `histogram_quantile()`. Результаты можно агрегировать по экземплярам (например, получить общий p99 для десяти подов).
 - **Summaries**: quantiles computed client-side in the application process. Cannot be aggregated. If you have 10 pods each reporting their own p99, there is no mathematically valid way to combine them into a fleet-wide p99. **Prefer histograms in distributed systems.**
 
 ```python
