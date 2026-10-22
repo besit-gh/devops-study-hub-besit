@@ -321,7 +321,7 @@ kubectl cp myapp-abc123:/var/log/app.log ./app.log -c sidecar        # specify c
 
 Знать отдельные команды недостаточно — для каждого типа отказа нужен систематический алгоритм диагностики.
 
-**Pod stuck in `Pending`:**
+**Pod завис в состоянии `Pending`:**
 ```bash
 kubectl describe pod myapp-abc123 | grep -A 20 "Events:"
 # Common causes in Events:
@@ -364,7 +364,7 @@ kubectl describe pod myapp-abc123 | grep -A5 "Events:"
 kubectl get secret regcred -o jsonpath='{.data.\.dockerconfigjson}' | base64 -d
 ```
 
-**Service not routing traffic:**
+**Service не направляет трафик:**
 ```bash
 # Step 1: check if endpoints exist — empty = selector matches no pods
 kubectl get endpoints myapp-service
@@ -384,7 +384,7 @@ kubectl run curl-test --image=curlimages/curl:8.5.0 --rm -it --restart=Never \
   -- curl -v http://myapp-service.production.svc.cluster.local:80/healthz
 ```
 
-**Node NotReady:**
+**Узел NotReady:**
 ```bash
 # Check node conditions
 kubectl describe node ip-10-0-1-5 | grep -A5 "Conditions:"
@@ -756,28 +756,28 @@ spec:
 
 1. Проверьте, есть ли у `backend-svc` конечные точки. Запишите использованную команду.
 2. Сравните селектор Service с фактическими метками Pod и определите, почему у Service нет конечных точек. Запишите результат.
-3. Fix the Service using `kubectl patch` — do not re-apply the YAML file.
-4. Confirm connectivity by running a temporary curl pod inside the cluster targeting `backend-svc`.
-5. As a final check, explain in one sentence what would have happened if the Service selector had a label the pods *did* have but with a wrong value (e.g., `tier: frontend` instead of `tier: api`).
+3. Исправьте Service с помощью `kubectl patch` — не применяйте YAML-файл повторно.
+4. Проверьте соединение, запустив временный Pod с curl внутри кластера и обратившись к `backend-svc`.
+5. В завершение одним предложением объясните, что произошло бы, если бы селектор Service содержал существующую у Pod метку, но с неправильным значением (например, `tier: frontend` вместо `tier: api`).
 
 ---
 
 ### Быстрая проверка
 
-6. Count Running pods from a status list. Run: `printf 'web-1 Running\ndb-0 Pending\nweb-2 Running\ncache-0 Running\n' | awk '$2=="Running"{c++} END{print c}'`
+6. Посчитайте Pod в состоянии Running по списку статусов. Выполните: `printf 'web-1 Running\ndb-0 Pending\nweb-2 Running\ncache-0 Running\n' | awk '$2=="Running"{c++} END{print c}'`
 
 ```expected_output
 3
 ```
 
-hint: Think about how awk can conditionally track a count by checking the value of a specific field in each line.
-hint: Use awk with a condition like '$2=="Running"{c++}' to increment a counter, then print it in the END block.
+Подсказка: `awk` может увеличивать счётчик при выполнении условия для определённого поля каждой строки.
+Подсказка: используйте условие `'$2=="Running"{c++}'`, чтобы увеличивать счётчик, а затем выведите его в блоке `END`.
 
-7. Extract a pod status field using simulated jsonpath. Run: `printf 'name: nginx\nstatus: Running\nready: 1/1\n' | awk '/^status:/{print $2}'`
+7. Извлеките поле статуса Pod с помощью имитации jsonpath. Выполните: `printf 'name: nginx\nstatus: Running\nready: 1/1\n' | awk '/^status:/{print $2}'`
 
 ```expected_output
 Running
 ```
 
-hint: Think about how you can filter lines from text output by matching a pattern at the start of a line.
-hint: Use awk with a regex pattern like /^status:/ to match the status line, then print the second field with {print $2}.
+Подсказка: отфильтруйте текстовые строки по шаблону в начале строки.
+Подсказка: используйте в `awk` регулярное выражение вроде `/^status:/`, чтобы найти строку статуса, и выведите второе поле с помощью `{print $2}`.
