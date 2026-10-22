@@ -2,7 +2,7 @@
 
 ## Настройка gcloud
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `gcloud init` | Инициализировать SDK и войти в аккаунт |
 | `gcloud auth login` | Пройти аутентификацию |
@@ -15,7 +15,7 @@
 
 ## Compute Engine
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `gcloud compute instances list` | Список виртуальных машин |
 | `gcloud compute instances create name --zone=z --machine-type=e2-micro` | Создать виртуальную машину |
@@ -28,7 +28,7 @@
 
 ## GKE
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `gcloud container clusters list` | List GKE clusters |
 | `gcloud container clusters create name --zone=z --num-nodes=3` | Create cluster |
@@ -38,20 +38,20 @@
 
 ## Cloud Storage
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
-| `gsutil ls` | List buckets |
+| `gsutil ls` | Список бакетов |
 | `gsutil ls gs://bucket/` | List bucket contents |
 | `gsutil cp file gs://bucket/path` | Upload file |
 | `gsutil cp gs://bucket/path file` | Download file |
 | `gsutil rsync -r dir/ gs://bucket/` | Sync directory |
 | `gsutil rm gs://bucket/path` | Delete object |
-| `gsutil mb gs://bucket-name` | Create bucket |
+| `gsutil mb gs://bucket-name` | Создать бакет |
 | `gsutil du -sh gs://bucket/` | Bucket size |
 
 ## IAM
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `gcloud iam service-accounts list` | List service accounts |
 | `gcloud iam service-accounts create name` | Create service account |
@@ -60,17 +60,17 @@
 
 ## Cloud Functions & Run
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
-| `gcloud functions list` | List Cloud Functions |
-| `gcloud functions deploy name --runtime=python39 --trigger-http` | Deploy function |
+| `gcloud functions list` | Список Cloud Functions |
+| `gcloud functions deploy name --runtime=python39 --trigger-http` | Развернуть функцию |
 | `gcloud functions logs read name` | Function logs |
 | `gcloud run services list` | List Cloud Run services |
 | `gcloud run deploy svc --image=img --platform=managed` | Deploy Cloud Run service |
 
 ## Logging
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `gcloud logging read "resource.type=gce_instance"` | Read logs with filter |
 | `gcloud logging read "severity=ERROR" --limit=50` | Recent errors |
