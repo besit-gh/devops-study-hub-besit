@@ -11,17 +11,17 @@ exercises: 3
 
 Система оповещений Kibana позволяет задавать правила, которые по расписанию проверяют данные Elasticsearch и запускают действия через connectors при выполнении условий. Для DevOps это объединяет оповещения по логам, метрикам и ML-аномалиям в том же инструменте, который используется для дашбордов, и избавляет от отдельного слоя оповещений для данных Elastic. Правила — полноценные объекты в индексе `.kibana`, которыми управляют через UI или API; выполняет их фоновый планировщик задач Kibana. Поэтому система оповещений масштабируется вместе с Kibana и не требует внешних компонентов.
 
-The design philosophy centers on three decoupled primitives: **rules** (what to check), **connectors** (how to notify), and **actions** (which connector to call at which lifecycle stage). This separation means you define a Slack webhook once and reference it from dozens of rules. Changing a notification channel is a one-place edit, not a mass rule update. Alert instances are stateful — Kibana tracks whether a condition is currently active or has recovered, enabling auto-resolution workflows in downstream tools like PagerDuty.
+Архитектура строится вокруг трёх независимых сущностей: **правил** (что проверять), **коннекторов** (как отправлять уведомления) и **действий** (какой коннектор вызывать и на каком этапе жизненного цикла). Благодаря этому вебхук Slack можно определить один раз и использовать в десятках правил. При смене канала уведомлений достаточно изменить одну настройку. Экземпляры оповещений сохраняют состояние: Kibana отслеживает, активно ли условие или уже восстановилось, что позволяет автоматически закрывать инциденты в таких системах, как PagerDuty.
 
-In the broader DevOps toolchain, Kibana alerting sits between data ingestion (Beats, Logstash, APM agents pushing into Elasticsearch) and incident management (PagerDuty, OpsGenie, ServiceNow). The Reporting feature extends this by automating scheduled delivery of dashboards and search results as PDF or CSV — bridging the gap between real-time monitoring and asynchronous stakeholder communication like weekly operations reviews or compliance exports.
+В цепочке DevOps оповещения Kibana находятся между сбором данных (Beats, Logstash и APM-агенты отправляют данные в Elasticsearch) и управлением инцидентами (PagerDuty, OpsGenie, ServiceNow). Функция Reporting дополняет этот процесс: по расписанию она отправляет дашборды и результаты поиска в PDF или CSV, связывая мониторинг в реальном времени с периодической отчётностью для заинтересованных сторон, например еженедельными операционными обзорами и отчётами для аудита.
 
 ---
 
 ## Основные понятия
 
-### Alerting Architecture
+### Архитектура оповещений
 
-Three components make up every alert workflow:
+Каждый процесс оповещения состоит из трёх компонентов:
 
 | Component | Role | Where configured |
 |-----------|------|-----------------|
@@ -29,7 +29,7 @@ Three components make up every alert workflow:
 | **Connector** | Reusable notification channel (Slack, email, PagerDuty, webhook) | Stack Management → Connectors |
 | **Action** | Binds a rule lifecycle event to a connector with a templated message | Inside each rule definition |
 
-Rules run inside Kibana's task manager on a configurable schedule. Each execution queries Elasticsearch, evaluates the condition, and updates persisted alert instance state. One rule can produce multiple **alert instances** — for example, a rule grouped by `service.name` creates a separate instance per service that breaches the threshold, so notifications are scoped to the offending service rather than firing a generic global alert.
+Правила выполняются планировщиком задач Kibana по заданному расписанию. При каждом запуске выполняется запрос к Elasticsearch, проверяется условие и обновляется сохранённое состояние экземпляров оповещений. Одно правило может создавать несколько **экземпляров оповещения**. Например, группировка по `service.name` создаёт отдельный экземпляр для каждого сервиса, превысившего порог, поэтому уведомление указывает на конкретный проблемный сервис, а не сообщает об общей ошибке.
 
 **Task manager gotcha:** if Kibana is overloaded or task manager falls behind, rule executions can be delayed. Monitor `kibana_task_manager_run_duration_seconds` and the **Stack Monitoring → Kibana → Task Manager** panel. If `drift` is consistently high, reduce rule frequency or scale Kibana horizontally.
 
