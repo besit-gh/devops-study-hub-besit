@@ -745,24 +745,24 @@ sudo ip netns del host-b
 
 ### Exercise 4: Audit and Resize a Kubernetes Cluster's IP Allocation
 
-You have a kubeadm cluster with the following configuration. Answer the questions and implement the check as a shell script.
+У вас есть кластер kubeadm со следующей конфигурацией. Ответьте на вопросы и реализуйте проверку в виде shell-скрипта.
 
 Given:
-- Node subnet: `192.168.10.0/24`
-- Pod CIDR: `10.244.0.0/16` (Flannel)
-- Service CIDR: `10.96.0.0/12`
-- Current nodes: 5, max planned nodes: 20
-- Flannel allocates one `/24` per node from the pod CIDR
+- Подсеть узлов: `192.168.10.0/24`
+- CIDR Pod: `10.244.0.0/16` (Flannel)
+- CIDR Service: `10.96.0.0/12`
+- Сейчас узлов: 5, планируемый максимум: 20
+- Flannel выделяет каждому узлу одну подсеть `/24` из диапазона CIDR Pod.
 
-1. How many `/24` pod subnets can Flannel allocate from `10.244.0.0/16`?
-2. Is the pod CIDR large enough for 20 nodes?
-3. Does the service CIDR `10.96.0.0/12` overlap with the pod CIDR `10.244.0.0/16`? Show your work.
-4. The node subnet is `192.168.10.0/24` — how many nodes can it support (accounting for 2 reserved addresses)?
+1. Сколько подсетей Pod `/24` Flannel может выделить из `10.244.0.0/16`?
+2. Достаточно ли диапазона CIDR Pod для 20 узлов?
+3. Пересекается ли CIDR Service `10.96.0.0/12` с CIDR Pod `10.244.0.0/16`? Покажите расчёт.
+4. Подсеть узлов — `192.168.10.0/24`. Сколько узлов она поддерживает с учётом двух зарезервированных адресов?
 
-Write a Python script that takes three CIDRs as arguments (node subnet, pod CIDR, service CIDR) and outputs:
-- Whether any two overlap
-- Maximum node count from the node subnet
-- Maximum per-node pod subnets allocatable from the pod CIDR (assuming `/24` per node)
+Напишите скрипт Python, который принимает три CIDR в аргументах (подсеть узлов, CIDR Pod, CIDR Service) и выводит:
+- Есть ли пересечение между любыми двумя диапазонами.
+- Максимальное число узлов в подсети узлов.
+- Максимальное число подсетей Pod, выделяемых по одной на узел из CIDR Pod (при условии `/24` на узел).
 
 ```bash
 python3 audit_cidrs.py 192.168.10.0/24 10.244.0.0/16 10.96.0.0/12
@@ -777,7 +777,7 @@ python3 audit_cidrs.py 192.168.10.0/24 10.244.0.0/16 10.96.0.0/12
 
 ### Быстрая проверка
 
-1. Calculate the number of usable host addresses in a `/20` subnet.
+1. Рассчитайте количество доступных адресов узлов в подсети `/20`.
 
    ```python
    print(2 ** (32 - 20) - 2)
@@ -787,10 +787,10 @@ python3 audit_cidrs.py 192.168.10.0/24 10.244.0.0/16 10.96.0.0/12
    4094
    ```
 
-hint: Think about how the subnet mask's prefix length determines how many bits are left for host addresses.
-hint: With a /20 prefix, calculate 2 raised to the power of (32 minus 20), then subtract 2 to account for the network and broadcast addresses.
+Подсказка: длина префикса маски определяет, сколько бит остаётся для адресов узлов.
+Подсказка: для префикса /20 вычислите 2 в степени (32 − 20), затем вычтите 2 для адреса сети и широковещательного адреса.
 
-2. Check whether two CIDRs overlap — the first step in validating a VPC or Kubernetes network plan.
+2. Проверьте пересечение двух CIDR — это первый шаг при проверке сетевого плана VPC или Kubernetes.
 
    ```python
    import ipaddress; a=ipaddress.ip_network('10.244.0.0/16'); b=ipaddress.ip_network('10.96.0.0/12'); print('overlap' if a.overlaps(b) else 'no overlap')
@@ -799,5 +799,5 @@ hint: With a /20 prefix, calculate 2 raised to the power of (32 minus 20), then 
    ```expected_output
    no overlap
    ```
-hint: Think about how Python or a CLI tool can parse and compare CIDR ranges to determine if their address spaces intersect.
-hint: Use Python's built-in ipaddress module and call network_a.overlaps(network_b) on two IPv4Network objects constructed from your CIDR strings.
+Подсказка: подумайте, как Python или CLI-инструмент может разобрать и сравнить диапазоны CIDR, чтобы определить пересечение адресных пространств.
+Подсказка: используйте встроенный модуль Python `ipaddress` и вызовите `network_a.overlaps(network_b)` для двух объектов `IPv4Network`, созданных из строк CIDR.
