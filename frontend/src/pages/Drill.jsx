@@ -58,33 +58,33 @@ export default function Drill({ onXpEarned }) {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500 text-sm">Loading…</div>
+    <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500 text-sm">Загрузка…</div>
   )
 
   if (phase === 'idle') {
     if (!questions || questions.length === 0) return (
       <div className="flex flex-col items-center justify-center h-full gap-4 px-8 text-center">
-        <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">No weak areas yet</div>
+        <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Слабые темы пока не определены</div>
         <div className="text-xs text-gray-400 dark:text-gray-500 max-w-xs">
-          Complete quizzes on a few lessons — any topics below 70% accuracy (≥ 3 attempts) will appear here.
+          Пройди тесты по нескольким урокам: здесь появятся темы с точностью ниже 70% (не менее 3 попыток).
         </div>
-        <Link to="/stats" className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline mt-2">← Back to Stats</Link>
+        <Link to="/stats" className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline mt-2">← Назад к статистике</Link>
       </div>
     )
     return (
       <div className="flex flex-col items-center justify-center h-full gap-6 px-8 text-center">
         <div>
           <div className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-2">{questions.length}</div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">questions from your weakest lessons</div>
-          <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">Topics below 70% accuracy</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">вопросов из самых сложных для тебя уроков</div>
+          <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">Темы с точностью ниже 70%</div>
         </div>
         <button
           onClick={start}
           className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
         >
-          Start Drill
+          Начать тренировку
         </button>
-        <Link to="/stats" className="text-xs text-gray-400 dark:text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">← Back to Stats</Link>
+        <Link to="/stats" className="text-xs text-gray-400 dark:text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">← Назад к статистике</Link>
       </div>
     )
   }
@@ -94,24 +94,24 @@ export default function Drill({ onXpEarned }) {
     const color = pct >= 80 ? 'text-emerald-500' : pct >= 60 ? 'text-amber-500' : 'text-red-500'
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 px-8 text-center">
-        <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Drill complete</div>
+        <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Тренировка завершена</div>
         <div className={`text-5xl font-bold ${color}`}>{pct}%</div>
-        <div className="text-sm text-gray-500 dark:text-gray-400">{score} / {questions.length} correct</div>
+        <div className="text-sm text-gray-500 dark:text-gray-400">{score} из {questions.length} правильных ответов</div>
         {xpEarned > 0 && (
-          <div className="text-xs font-medium text-amber-600 dark:text-amber-400">+{xpEarned} XP earned</div>
+          <div className="text-xs font-medium text-amber-600 dark:text-amber-400">+{xpEarned} XP получено</div>
         )}
         <div className="flex gap-3 mt-2">
           <button
             onClick={start}
             className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
           >
-            Drill again
+            Повторить тренировку
           </button>
           <Link
             to="/stats"
             className="px-5 py-2 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 text-sm font-medium rounded-lg hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
           >
-            Back to Stats
+            Назад к статистике
           </Link>
         </div>
       </div>
@@ -150,7 +150,7 @@ export default function Drill({ onXpEarned }) {
           onClick={() => setRevealed(true)}
           className="self-start px-5 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
         >
-          Reveal Answer
+          Показать ответ
         </button>
       ) : (
         <div className="flex flex-col gap-2">

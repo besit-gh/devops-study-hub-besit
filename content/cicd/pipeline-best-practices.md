@@ -1,5 +1,5 @@
 ---
-title: Pipeline Best Practices
+title: Лучшие практики CI/CD-пайплайнов
 module: cicd
 duration_min: 20
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [cicd, pipelines, caching, secrets, parallelism, security, shift-left]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-A CI/CD pipeline is the heartbeat of a DevOps team's delivery process — it's the automated system that validates, builds, and ships code on every change. When pipelines are designed well, they act as a safety net: catching bugs within minutes, blocking insecure dependencies, and deploying to production with zero manual steps. When they're designed poorly, they become a bottleneck — slow builds that developers learn to ignore, flaky tests that get bypassed, and secrets scattered across config files waiting to be leaked. The difference between a good pipeline and a bad one is almost never tooling — it's design decisions.
+CI/CD-пайплайн — сердцевина процесса поставки ПО в DevOps-команде: автоматизированная система, которая проверяет, собирает и доставляет код при каждом изменении. Хорошо спроектированный пайплайн служит страховочной сеткой: быстро обнаруживает ошибки, блокирует небезопасные зависимости и развёртывает приложение без ручных шагов. Плохо спроектированный становится узким местом: сборки медленные, нестабильные тесты начинают обходить, а секреты разбросаны по конфигурационным файлам и могут утечь. Разница обычно не в инструментах, а в инженерных решениях.
 
-The guiding principles here are: **fail fast** (surface problems at the earliest, cheapest point), **minimize wall-clock time** (parallelism and caching), **treat secrets as first-class concerns** (not afterthoughts), and **shift quality checks left** (security and correctness checks belong in CI, not post-production). These principles apply regardless of whether you're using GitHub Actions, GitLab CI, Jenkins, CircleCI, or any other platform — the YAML syntax changes, the concepts don't.
+Основные принципы: **fail fast** — обнаруживать проблемы как можно раньше и дешевле; **сокращать реальное время выполнения** с помощью параллелизма и кэширования; **считать секреты первоклассной частью архитектуры**, а не добавлять защиту в последнюю минуту; **сдвигать проверки качества влево** — проверять безопасность и корректность на этапе CI, а не после выхода в production. Эти принципы работают в GitHub Actions, GitLab CI, Jenkins, CircleCI и других платформах: синтаксис YAML меняется, концепции остаются.
 
-In the broader DevOps toolchain, the pipeline is the integration point between source control (Git) and everything downstream: artifact registries, Kubernetes clusters, infrastructure-as-code runners, and monitoring systems. It's also the enforcement point for organizational policies — branch protection, required status checks, and environment-scoped secrets all live here. Understanding pipeline design deeply makes you effective at the intersection of development, operations, and security — which is exactly where senior DevOps engineers spend most of their time.
+В DevOps-процессе пайплайн связывает систему контроля версий Git со следующими этапами: реестрами артефактов, кластерами Kubernetes, средствами запуска Infrastructure as Code и мониторингом. Здесь же обеспечиваются организационные политики: защита веток, обязательные проверки статуса и секреты, ограниченные определёнными окружениями. Понимание проектирования пайплайнов помогает работать на стыке разработки, эксплуатации и безопасности — именно там проходит значительная часть работы опытного DevOps-инженера.
 
-## Concepts
+## Основные понятия
 
-### Fail Fast: Ordering Jobs by Cost
+### Fail fast: порядок задач по стоимости
 
 The fail-fast principle says: **order your pipeline stages so the cheapest, most discriminating checks run first.** A linting error that takes 5 seconds to detect should not sit behind a 10-minute Docker build. Every minute a developer waits for feedback they already know is coming is wasted time — multiplied across every push in a year.
 
@@ -439,7 +439,7 @@ jobs:
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Complete Python Web Service Pipeline
 
@@ -753,7 +753,7 @@ jobs:
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Convert a Sequential Pipeline to a DAG
 
@@ -860,7 +860,7 @@ Tasks:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 7. Count secrets referenced in a workflow environment block. Run: `printf 'env:\n  DB_PASS: ${{ secrets.DB_PASSWORD }}\n  API_KEY: ${{ secrets.API_KEY }}\n  TOKEN: ${{ secrets.DEPLOY_TOKEN }}\n' | grep -c 'secrets\.'`
 

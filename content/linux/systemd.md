@@ -1,5 +1,5 @@
 ---
-title: systemd & Service Management
+title: systemd и управление службами
 module: linux
 duration_min: 20
 difficulty: intermediate
@@ -7,80 +7,80 @@ tags: [systemd, systemctl, journald, services, units]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-systemd is the init system and service manager that ships as PID 1 on every major Linux distribution — Ubuntu, Debian, RHEL, CentOS, Fedora, Arch, and more. Because it is the first process the kernel hands control to after boot, it is responsible for bringing up every other process on the system: mounting filesystems, starting network interfaces, launching daemons, and reaching the login prompt. For DevOps engineers, this means systemd is the layer you interact with whenever you deploy an application, configure automatic restarts, chase down a crashed service, or wire up scheduled tasks on a Linux host — whether that host is a VM, a bare-metal server, or a container running with a full init process.
+systemd — система инициализации и менеджер служб, работающий как PID 1 в основных дистрибутивах Linux: Ubuntu, Debian, RHEL, CentOS, Fedora, Arch и других. После загрузки ядро передаёт ему управление, и systemd запускает остальные процессы: монтирует файловые системы, поднимает сетевые интерфейсы, запускает демоны и подготавливает систему к входу пользователя. Для DevOps-инженера это означает, что с systemd приходится работать при развёртывании приложений, настройке автоматических перезапусков, диагностике упавших служб и создании расписаний — на виртуальной машине, физическом сервере или в контейнере с полноценным init-процессом.
 
-systemd's design philosophy centers on parallelism, dependency declaration, and unified logging. Unlike the sequential SysV init scripts it replaced, systemd builds a dependency graph from unit files and starts units in parallel wherever possible, cutting boot times significantly. All unit configuration lives in declarative INI-style files rather than shell scripts, which makes behavior predictable and auditable. Logging is centralized through journald, which captures stdout, stderr, and kernel messages into a structured binary journal — giving you a single tool (`journalctl`) to query logs for any service with rich filtering.
+В основе systemd лежат параллельный запуск, явное описание зависимостей и единая система журналирования. В отличие от последовательных скриптов SysV init, systemd строит граф зависимостей по unit-файлам и запускает независимые компоненты параллельно, сокращая время загрузки. Конфигурация служб хранится в декларативных файлах формата INI, а не в shell-скриптах, поэтому поведение проще проверять и аудировать. Журналирование централизовано в journald: он собирает stdout, stderr и сообщения ядра в структурированный бинарный журнал, который можно фильтровать одной командой — `journalctl`.
 
-In the broader DevOps toolchain, systemd sits at the infrastructure layer beneath your application orchestration. Even when you run workloads in Docker, Kubernetes, or Ansible-managed environments, the underlying hosts use systemd to run the Docker daemon, the kubelet, the SSH server, and other foundational services. When a node-level issue occurs — a service crashes, a daemon won't start, a dependency cycle breaks boot — systemd is where you diagnose it. Understanding systemd deeply makes you faster at debugging production incidents and more confident writing deployment automation.
+В архитектуре DevOps systemd расположен на инфраструктурном уровне под оркестрацией приложений. Даже если приложения работают в Docker или Kubernetes, а конфигурацией управляет Ansible, хосты используют systemd для запуска Docker daemon, kubelet, SSH-сервера и других базовых служб. Если служба падает, демон не запускается или цикл зависимостей мешает загрузке узла, диагностику начинают с systemd. Его понимание ускоряет разбор производственных инцидентов и помогает надёжнее автоматизировать развёртывание.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### Unit Types and File Locations
+### Типы unit и расположение файлов
 
-Everything systemd manages is called a *unit*. Units are described by plain-text configuration files with a type-specific extension. The six unit types you will encounter most often:
+Всё, чем управляет systemd, называется *unit*. Unit описывается текстовым конфигурационным файлом с расширением, соответствующим типу. Чаще всего встречаются шесть типов:
 
-| Type | Extension | Purpose |
+| Тип | Расширение | Назначение |
 |------|-----------|---------|
-| **Service** | `.service` | A daemon or one-shot process |
-| **Timer** | `.timer` | Cron replacement — triggers a `.service` on a schedule |
-| **Socket** | `.socket` | Socket activation — starts a service on first connection |
-| **Mount** | `.mount` | Filesystem mounts managed by systemd |
-| **Target** | `.target` | Synchronization points / groups of units (like runlevels) |
-| **Path** | `.path` | Triggers a service when a filesystem path changes |
+| **Service** | `.service` | Демон или процесс однократного выполнения |
+| **Timer** | `.timer` | Замена cron — запускает `.service` по расписанию |
+| **Socket** | `.socket` | Активация через сокет — запускает службу при первом подключении |
+| **Mount** | `.mount` | Точки монтирования файловой системы под управлением systemd |
+| **Target** | `.target` | Точки синхронизации и группы unit (аналог уровней запуска) |
+| **Path** | `.path` | Запускает службу при изменении пути в файловой системе |
 
-Unit files are loaded from several directories in priority order (highest to lowest):
+Unit-файлы загружаются из нескольких каталогов в порядке приоритета — от самого высокого к низкому:
 
-| Directory | Purpose |
+| Каталог | Назначение |
 |-----------|---------|
-| `/etc/systemd/system/` | Local admin overrides and custom units — **write here** |
-| `/run/systemd/system/` | Runtime-generated units (transient; lost on reboot) |
-| `/lib/systemd/system/` | Package-installed units — **never edit directly** |
+| `/etc/systemd/system/` | Локальные переопределения и пользовательские unit — **создавайте их здесь** |
+| `/run/systemd/system/` | Unit, созданные во время работы (временные; исчезают после перезагрузки) |
+| `/lib/systemd/system/` | Unit, установленные пакетами — **не редактируйте напрямую** |
 
-When the same filename appears in multiple directories, the highest-priority location wins. A file in `/etc/systemd/system/nginx.service` completely shadows `/lib/systemd/system/nginx.service`.
+Если файл с одним именем есть в нескольких каталогах, используется копия с наивысшим приоритетом. Файл `/etc/systemd/system/nginx.service` полностью перекрывает `/lib/systemd/system/nginx.service`.
 
-**Drop-in directories** are the safer override mechanism. For a unit named `nginx.service`, systemd automatically merges every `.conf` file found in `/etc/systemd/system/nginx.service.d/` on top of the base unit. This lets you change one stanza without copying and maintaining the entire upstream file.
+**Drop-in-каталоги** — более безопасный способ переопределения. Для unit `nginx.service` systemd автоматически объединяет все `.conf`-файлы из `/etc/systemd/system/nginx.service.d/` с основной конфигурацией. Так можно изменить отдельный раздел, не копируя и не поддерживая весь исходный файл.
 
 ```bash
-# List all loaded unit files and their source locations
+# Показать все загруженные unit-файлы и расположение их исходников
 systemctl list-unit-files --type=service
 
-# Show exactly which file systemd is using for a unit
+# Показать, какой именно файл systemd использует для unit
 systemctl cat nginx.service
 
-# Show the final merged configuration after drop-ins are applied
+# Показать итоговую конфигурацию после применения drop-in
 systemctl show nginx.service
 ```
 
-### Service States
+### Состояния служб
 
-A service unit has two orthogonal state dimensions: its *load/enable state* (what happens at boot) and its *active state* (what it's doing right now).
+У службы есть два независимых измерения состояния: *состояние включения* (что произойдёт при загрузке) и *активное состояние* (что служба делает сейчас).
 
-**Active states:**
+**Активные состояния:**
 
-| State | Meaning |
+| Состояние | Значение |
 |-------|---------|
-| `active (running)` | One or more processes are running |
-| `active (exited)` | One-shot service completed successfully; systemd considers it done |
-| `active (waiting)` | Service is waiting for a triggering event |
-| `inactive (dead)` | Not running, no failure |
-| `failed` | Exited with non-zero code, killed by signal, or hit a timeout |
-| `activating` | In the process of starting up |
-| `deactivating` | In the process of shutting down |
+| `active (running)` | Выполняется один или несколько процессов |
+| `active (exited)` | Одноразовая служба успешно завершилась; systemd считает задачу выполненной |
+| `active (waiting)` | Служба ожидает запускающего события |
+| `inactive (dead)` | Не выполняется, ошибки нет |
+| `failed` | Завершилась с ненулевым кодом, была остановлена сигналом или превысила тайм-аут |
+| `activating` | Выполняется запуск |
+| `deactivating` | Выполняется остановка |
 
-**Enable states:**
+**Состояния включения:**
 
-| State | Meaning |
+| Состояние | Значение |
 |-------|---------|
-| `enabled` | Symlink exists in the appropriate `.wants/` or `.requires/` directory — starts at boot |
-| `disabled` | No symlink — won't start at boot, but can be started manually |
-| `static` | No `[Install]` section — cannot be enabled/disabled; started only as a dependency |
-| `masked` | Symlinked to `/dev/null` — cannot be started by any means until unmasked |
+| `enabled` | Символическая ссылка есть в соответствующем каталоге `.wants/` или `.requires/` — служба запускается при загрузке |
+| `disabled` | Ссылки нет — служба не запускается при загрузке, но её можно запустить вручную |
+| `static` | Нет секции `[Install]` — нельзя включить или отключить; запускается только как зависимость |
+| `masked` | Ссылка указывает на `/dev/null` — запуск невозможен, пока маска не снята |
 
-**Masking vs disabling:** `systemctl disable` removes the boot symlink but leaves the unit startable manually. `systemctl mask` makes the unit completely inert — even `systemctl start` will refuse. Use masking for services you want to ensure never run (e.g., a conflicting service installed by a package).
+**Маскирование и отключение:** `systemctl disable` удаляет ссылку автозапуска, но позволяет запускать unit вручную. `systemctl mask` полностью блокирует запуск — даже `systemctl start` завершится отказом. Маскируйте службы, которые не должны запускаться ни при каких обстоятельствах, например конфликтующую службу, установленную пакетом.
 
 ```bash
 # Full status: active state, enable state, recent log lines, PID, memory
@@ -95,34 +95,34 @@ systemctl mask snapd.service
 systemctl unmask snapd.service
 ```
 
-### Unit File Anatomy
+### Структура unit-файла
 
-A `.service` unit file has three sections. Understanding every common directive makes writing and debugging unit files much faster.
+Файл unit типа `.service` состоит из трёх секций. Знание распространённых директив ускоряет создание и диагностику unit-файлов.
 
 ```ini
 [Unit]
-# Human-readable description shown in status output and logs
+# Человекочитаемое описание для статуса и журнала
 Description=My Application Server
 
-# Ordering: start after these units, but don't require them
+# Порядок запуска: после этих unit, но без обязательной зависимости
 After=network-online.target
 
-# Weak dependency: pull in this unit if it exists, but don't fail if it doesn't
+# Мягкая зависимость: подключить unit, если он существует, но не считать отсутствие ошибкой
 Wants=network-online.target
 
-# Hard dependency: if postgresql.service fails to start, this unit fails too
+# Жёсткая зависимость: если postgresql.service не запустится, этот unit тоже завершится с ошибкой
 Requires=postgresql.service
 
-# Restart this unit if another unit restarts (useful for sidecar patterns)
+# Перезапускать этот unit при перезапуске другого (полезно для sidecar-сценариев)
 PartOf=myapp-stack.target
 
 [Service]
-# Type controls how systemd tracks the service as "ready"
-# simple:  ready immediately when ExecStart forks (default; use for most daemons)
-# forking: legacy; ready after the process double-forks (old-style daemons)
-# notify:  ready when the process sends sd_notify(READY=1)
-# oneshot: for scripts; systemd waits for the process to exit before marking active
-# exec:    like simple but waits until the exec() call succeeds
+# Type определяет, как systemd понимает, что служба готова
+# simple: готов сразу после запуска ExecStart (по умолчанию; подходит большинству демонов)
+# forking: устаревший вариант; готов после двойного fork процесса (старые демоны)
+# notify: готов, когда процесс отправляет sd_notify(READY=1)
+# oneshot: для скриптов; systemd ждёт завершения процесса перед отметкой active
+# exec: как simple, но ждёт успешного вызова exec()
 Type=simple
 
 User=myapp
@@ -130,104 +130,104 @@ Group=myapp
 WorkingDirectory=/opt/myapp
 
 ExecStart=/opt/myapp/bin/server --port 8080
-# ExecReload sends SIGHUP to $MAINPID — only use if your app handles it
+# ExecReload отправляет SIGHUP процессу $MAINPID — используйте, только если приложение его обрабатывает
 ExecReload=/bin/kill -HUP $MAINPID
-# ExecStartPre runs before ExecStart; non-zero exit blocks service start
+# ExecStartPre выполняется перед ExecStart; ненулевой код блокирует запуск службы
 ExecStartPre=/usr/bin/myapp-check-config
 
-# Restart policies
+# Политики перезапуска
 Restart=on-failure     # restart if exit code != 0 or killed by signal
 RestartSec=5s          # wait 5s before restarting
 
-# Environment
+# Переменные окружения
 Environment=NODE_ENV=production
 EnvironmentFile=/etc/myapp/env   # key=value pairs, one per line; # comments OK
 
-# Resource limits (overrides /etc/security/limits.conf for this service)
+# Лимиты ресурсов (переопределяют /etc/security/limits.conf для этой службы)
 LimitNOFILE=65536
 
-# Security hardening
+# Усиление безопасности
 NoNewPrivileges=yes
 PrivateTmp=yes         # isolated /tmp — processes can't see each other's temp files
 ProtectSystem=strict   # mounts / and /usr read-only for this service
 ReadWritePaths=/var/lib/myapp /var/log/myapp
 
 [Install]
-# Which target "wants" this service — effectively which runlevel it belongs to
-WantedBy=multi-user.target   # standard for nearly all server daemons
+# Какой target включает эту службу — фактически уровень запуска, к которому она относится
+WantedBy=multi-user.target   # стандарт для большинства серверных демонов
 ```
 
-**`Type=simple` vs `Type=notify` gotcha:** If you use `Type=simple` with a service that takes time to become ready (e.g., loads a large model, runs DB migrations), systemd will consider it "started" the instant the process is exec'd. Any services declared `After=myapp.service` will start immediately, potentially connecting before myapp is ready. If your application uses a library that supports `sd_notify` (Node.js `systemd-notify`, Go `coreos/go-systemd`, Python `sdnotify`), switch to `Type=notify` for correct readiness signaling.
+**Важный нюанс `Type=simple` и `Type=notify`:** если службе нужно время на подготовку (например, загрузить большую модель или выполнить миграции БД), при `Type=simple` systemd считает её запущенной сразу после старта процесса. Службы с `After=myapp.service` могут начать работу до готовности `myapp`. Если приложение поддерживает `sd_notify` (например, через Node.js `systemd-notify`, Go `coreos/go-systemd` или Python `sdnotify`), используйте `Type=notify`, чтобы корректно сообщать о готовности.
 
-**`Requires` vs `Wants`:** `Requires` is a hard dependency — if `postgresql.service` fails, your service fails. `Wants` is soft — postgres failure is ignored. In most real deployments, `Wants` + `After` is the right combination: express ordering without coupling failure modes unnecessarily.
+**`Requires` и `Wants`:** `Requires` задаёт жёсткую зависимость: если `postgresql.service` завершится с ошибкой, зависимая служба тоже не запустится. `Wants` задаёт мягкую зависимость и не блокирует запуск при сбое PostgreSQL. В большинстве случаев подходит сочетание `Wants` и `After`: оно задаёт порядок запуска без излишней связи между отказами.
 
-**`After` does not imply `Wants`:** `After=postgresql.service` alone only orders startup — it does not cause postgres to be started. You must combine `After` with `Wants` or `Requires` to both pull in the dependency and order correctly.
+**`After` не подразумевает `Wants`:** одна директива `After=postgresql.service` задаёт только порядок запуска и не запускает PostgreSQL. Чтобы добавить зависимость и одновременно задать порядок, объедините `After` с `Wants` или `Requires`.
 
-### Restart Policies in Depth
+### Подробно о политиках перезапуска
 
-| Policy | Restarts on clean exit (0)? | Restarts on failure? | Restarts on SIGTERM? |
+| Политика | Перезапуск при успешном завершении (0)? | Перезапуск при ошибке? | Перезапуск при SIGTERM? |
 |--------|----------------------------|---------------------|---------------------|
 | `no` | No | No | No |
-| `on-success` | Yes | No | No |
-| `on-failure` | No | Yes | No |
-| `on-abnormal` | No | Yes (signals, watchdog, timeout) | Yes |
-| `on-abort` | No | Uncaught signals only | No |
-| `always` | Yes | Yes | Yes |
+| `on-success` | Да | Нет | Нет |
+| `on-failure` | Нет | Да | Нет |
+| `on-abnormal` | Нет | Да (сигналы, watchdog, тайм-аут) | Да |
+| `on-abort` | Нет | Только необработанные сигналы | Нет |
+| `always` | Да | Да | Да |
 
-For long-running application servers, `Restart=on-failure` is the standard choice — it recovers from crashes and OOM kills without looping if you do a deliberate `systemctl stop`.
+Для долгоживущих серверных приложений стандартный выбор — `Restart=on-failure`: служба восстановится после аварии или OOM kill, но не будет перезапускаться бесконечно после намеренного `systemctl stop`.
 
-**Restart loop protection:** If a service restarts too frequently, systemd will stop trying. The defaults are 5 restarts within 10 seconds. Configure with:
+**Защита от циклического перезапуска:** если служба перезапускается слишком часто, systemd прекращает попытки. По умолчанию допускается пять перезапусков за десять секунд. Настройте ограничения так:
 
 ```ini
 [Unit]
-StartLimitIntervalSec=60s   # observation window
-StartLimitBurst=5           # max restarts in that window
-StartLimitAction=none       # or reboot-force, reboot, poweroff
+StartLimitIntervalSec=60s   # окно наблюдения
+StartLimitBurst=5           # максимум перезапусков в этом окне
+StartLimitAction=none       # или reboot-force, reboot, poweroff
 ```
 
-**`RestartSec` interacts with `StartLimitBurst`:** A `RestartSec=30s` with `StartLimitBurst=5` means the limit won't be hit unless 5 crashes happen within 60 seconds even with 30s delays — tune both together.
+**`RestartSec` зависит от `StartLimitBurst`:** при `RestartSec=30s` и `StartLimitBurst=5` лимит не будет достигнут, если пять сбоев не произойдут в пределах 60 секунд с учётом задержек. Настраивайте эти параметры совместно.
 
-**Placement gotcha:** `StartLimitIntervalSec` and `StartLimitBurst` belong in the `[Unit]` section in newer systemd versions (≥ 230), not `[Service]`. On older systems they live in `[Service]`. The wrong placement is silently ignored — always verify with `systemctl show myapp.service | grep StartLimit`.
+**Расположение директив:** в новых версиях systemd (≥ 230) `StartLimitIntervalSec` и `StartLimitBurst` указываются в секции `[Unit]`, а не `[Service]`. В старых версиях они размещаются в `[Service]`. Неправильное расположение может быть проигнорировано без явной ошибки; проверяйте через `systemctl show myapp.service | grep StartLimit`.
 
 ```bash
-# After hitting the restart limit, reset the failure counter to allow manual restart
+# После достижения лимита перезапусков сбросьте счётчик ошибок, чтобы разрешить ручной запуск
 systemctl reset-failed myapp.service
 systemctl start myapp.service
 ```
 
-### Targets (Runlevels)
+### Targets (уровни запуска)
 
-Targets are synchronization points — named milestones the boot process passes through. They replace SysV runlevels.
+Targets — точки синхронизации, именованные этапы, через которые проходит процесс загрузки. Они заменяют уровни запуска SysV.
 
-| SysV Runlevel | systemd Target | Meaning |
+| Уровень запуска SysV | Target systemd | Значение |
 |--------------|---------------|---------|
-| 0 | `poweroff.target` | Halt |
-| 1 | `rescue.target` | Single-user / recovery mode |
-| 3 | `multi-user.target` | Multi-user, no GUI (typical server) |
-| 5 | `graphical.target` | Multi-user + display manager |
-| 6 | `reboot.target` | Reboot |
+| 0 | `poweroff.target` | Выключение |
+| 1 | `rescue.target` | Однопользовательский режим / восстановление |
+| 3 | `multi-user.target` | Многопользовательский режим без GUI (типичный сервер) |
+| 5 | `graphical.target` | Многопользовательский режим с графической оболочкой |
+| 6 | `reboot.target` | Перезагрузка |
 
 ```bash
-# Check current default target
+# Проверить target по умолчанию
 systemctl get-default
 
-# Change default target (e.g., headless server)
+# Изменить target по умолчанию (например, для сервера без GUI)
 systemctl set-default multi-user.target
 
-# Switch to rescue mode without rebooting (interactive systems only)
+# Переключиться в rescue-режим без перезагрузки (только для интерактивных систем)
 systemctl isolate rescue.target
 
-# See all units pulled into a target and their dependency relationships
+# Посмотреть все unit, входящие в target, и их зависимости
 systemctl list-dependencies multi-user.target
 ```
 
-When you `systemctl enable myapp.service`, systemd creates a symlink at `/etc/systemd/system/multi-user.target.wants/myapp.service` (assuming `WantedBy=multi-user.target`). The target "wants" the service, so when the system reaches `multi-user.target`, it starts your service.
+При выполнении `systemctl enable myapp.service` systemd создаёт символическую ссылку `/etc/systemd/system/multi-user.target.wants/myapp.service` (если задано `WantedBy=multi-user.target`). Target включает службу в набор запускаемых зависимостей, поэтому при достижении `multi-user.target` systemd запустит её.
 
-**`enable` does not start:** `systemctl enable` only creates the symlink for next boot. Use `systemctl enable --now` to enable and start in a single command. Forgetting `--now` is one of the most common deployment mistakes — the service looks configured but is not actually running.
+**`enable` не запускает службу:** `systemctl enable` только создаёт ссылку для следующей загрузки. Используйте `systemctl enable --now`, чтобы включить автозапуск и запустить службу одной командой. Забытый флаг `--now` — распространённая ошибка развёртывания: конфигурация выглядит готовой, но служба не работает.
 
-### Timers — The Cron Replacement
+### Таймеры — замена cron
 
-systemd timers are two-unit pairs: a `.timer` unit that defines the schedule, and a corresponding `.service` unit that does the actual work. Compared to cron, timers integrate with journald (full log capture), support dependency ordering, have monotonic (boot-relative) and calendar (wall-clock) schedules, and can be inspected with standard `systemctl` tooling.
+Таймеры systemd состоят из пары unit: `.timer`, задающего расписание, и соответствующего `.service`, выполняющего работу. В отличие от cron, таймеры интегрированы с journald и сохраняют полный журнал, поддерживают порядок зависимостей, монотонные расписания (относительно загрузки) и календарные расписания (по часам), а также управляются стандартными командами `systemctl`.
 
 ```ini
 # /etc/systemd/system/db-backup.service
@@ -261,31 +261,31 @@ WantedBy=timers.target
 ```
 
 ```bash
-# Enable and start the timer (not the service directly)
+# Включить таймер и запустить его (не саму службу напрямую)
 systemctl enable --now db-backup.timer
 
-# List all timers, their next/last trigger times
+# Показать таймеры и время следующего/последнего запуска
 systemctl list-timers --all
 
-# Manually trigger the job right now without waiting for the schedule
+# Запустить задачу вручную, не дожидаясь расписания
 systemctl start db-backup.service
 
-# Verify the last run via the journal
+# Проверить последний запуск через журнал
 journalctl -u db-backup.service -n 50
 ```
 
-**`Persistent=true` is the cron equivalent of `@reboot` catch-up:** Without it, a job missed because the system was down is simply skipped. With it, systemd runs the job once on the next boot if the last trigger was missed. Essential for backup and maintenance jobs on systems that aren't always on.
+**`Persistent=true` обеспечивает догоняющий запуск, похожий на catch-up для cron:** без него задача, пропущенная из-за выключенной системы, будет пропущена окончательно. С ним systemd выполнит её один раз после следующей загрузки, если плановый запуск не состоялся. Это важно для резервного копирования и обслуживания систем, которые не работают постоянно.
 
-| Timer Type | Directive | Example | Meaning |
+| Тип таймера | Директива | Пример | Значение |
 |-----------|-----------|---------|---------|
-| Calendar (wall clock) | `OnCalendar` | `Mon *-*-* 09:00:00` | Every Monday at 09:00 |
-| Boot-relative | `OnBootSec` | `OnBootSec=5min` | 5 minutes after boot |
-| Activation-relative | `OnActiveSec` | `OnActiveSec=1h` | 1 hour after timer starts |
-| Unit-active-relative | `OnUnitActiveSec` | `OnUnitActiveSec=30min` | 30 min after last run completes |
+| Календарное время | `OnCalendar` | `Mon *-*-* 09:00:00` | Каждый понедельник в 09:00 |
+| Относительно загрузки | `OnBootSec` | `OnBootSec=5min` | Через 5 минут после загрузки |
+| Относительно активации | `OnActiveSec` | `OnActiveSec=1h` | Через час после запуска таймера |
+| Относительно активности unit | `OnUnitActiveSec` | `OnUnitActiveSec=30min` | Через 30 минут после завершения последнего запуска |
 
-### journalctl — Querying the Journal
+### journalctl — запросы к журналу
 
-journald collects stdout, stderr, syslog messages, kernel messages, and audit records into a structured binary journal stored under `/var/log/journal/` (persistent) or `/run/log/journal/` (volatile — lost on reboot). The binary format allows rich server-side filtering before any data is sent to your terminal.
+journald собирает stdout, stderr, сообщения syslog, сообщения ядра и записи аудита в структурированный бинарный журнал. Он хранится в `/var/log/journal/` (постоянно) или `/run/log/journal/` (временно — теряется после перезагрузки). Бинарный формат позволяет выполнять сложную фильтрацию на стороне сервера до передачи данных в терминал.
 
 ```bash
 # --- Basic service filtering ---
@@ -323,7 +323,7 @@ journalctl --vacuum-size=500M               # trim journal to 500MB
 journalctl --vacuum-time=30d                # remove entries older than 30 days
 ```
 
-**Persistence gotcha:** On a fresh Debian/Ubuntu install, the journal may be volatile (stored in `/run/`) and lost on reboot. To make it persistent:
+**Особенность хранения:** в новой установке Debian/Ubuntu журнал может быть временным (храниться в `/run/`) и теряться после перезагрузки. Чтобы сделать его постоянным:
 
 ```bash
 mkdir -p /var/log/journal
@@ -333,11 +333,11 @@ systemctl restart systemd-journald
 
 Or set `Storage=persistent` in `/etc/systemd/journald.conf`.
 
-**Rate limiting:** journald rate-limits log lines per service by default (`RateLimitIntervalSec=30s`, `RateLimitBurst=10000`). A chatty service that exceeds this will have log lines dropped, and you'll see `Suppressed N messages from myapp.service` in the journal. Raise the limits in `/etc/systemd/journald.conf` for noisy but important services, or fix the application's log verbosity.
+**Ограничение частоты:** по умолчанию journald ограничивает число сообщений от каждой службы (`RateLimitIntervalSec=30s`, `RateLimitBurst=10000`). Если служба превышает лимит, часть записей отбрасывается, а в журнале появляется `Suppressed N messages from myapp.service`. Для важных, но многословных служб увеличьте лимиты в `/etc/systemd/journald.conf` или уменьшите подробность логирования приложения.
 
-**Forwarding to syslog/external systems:** For centralized log shipping (e.g., to Elasticsearch, Loki, Splunk), set `ForwardToSyslog=yes` in `journald.conf` or use `journalctl -o json` piped to your log shipper. Many modern agents (Promtail, Filebeat, Fluentd) can read the journal natively via the journal API without touching files at all.
+**Передача в syslog или внешние системы:** для централизованного сбора журналов (например, в Elasticsearch, Loki или Splunk) задайте `ForwardToSyslog=yes` в `journald.conf` либо передавайте вывод `journalctl -o json` в систему сбора. Многие современные агенты (Promtail, Filebeat, Fluentd) умеют читать журнал напрямую через API, не обращаясь к файлам.
 
-### Overriding Package Unit Files
+### Переопределение unit-файлов пакетов
 
 The correct override workflow is drop-in files, not editing `/lib/systemd/system/` directly (package upgrades will overwrite your changes with no warning).
 
@@ -361,7 +361,7 @@ LimitNOFILE=65536
 LimitCORE=infinity
 ```
 
-**Clearing a directive:** To unset a directive inherited from the base unit, set it to empty first, then set your value. This is mandatory for list-type directives like `ExecStart` — appending a second `ExecStart` without clearing adds a second execution, not a replacement:
+**Сброс директивы:** чтобы отменить директиву из базового unit, сначала задайте ей пустое значение, а затем укажите новое. Это обязательно для списочных директив вроде `ExecStart`: если добавить второй `ExecStart` без сброса, получится второй запуск, а не замена исходного:
 
 ```ini
 [Service]
@@ -377,9 +377,9 @@ systemctl daemon-reload    # re-read all unit files from disk
 systemctl restart nginx    # apply changes to the running service
 ```
 
-**`daemon-reload` is mandatory.** Editing a unit file on disk has zero effect until you reload. Forgetting this step is a very common source of confusion — you change the file, restart the service, and the old behavior persists because systemd is still running from its cached version.
+**`daemon-reload` обязателен.** Изменение unit-файла на диске не действует до перезагрузки конфигурации systemd. Если забыть этот шаг, можно изменить файл и перезапустить службу, но старое поведение сохранится, поскольку systemd использует кэшированную версию.
 
-### Diagnosing Boot and Dependency Problems
+### Диагностика загрузки и проблем зависимостей
 
 When a service fails to start, the debugging sequence follows a predictable path:
 
@@ -406,33 +406,33 @@ systemd-analyze critical-chain    # the critical path that determined total boot
 systemd-analyze verify myapp.service  # static lint check of the unit file
 ```
 
-**`Result` field meanings:** When a service fails, `systemctl show` exposes a `Result` field that tells you *why* it failed:
+**Значения поля `Result`:** при сбое службы `systemctl show` показывает причину в поле `Result`:
 
-| Result | Meaning |
+| Result | Значение |
 |--------|---------|
-| `success` | Exited cleanly |
-| `exit-code` | Non-zero exit status |
-| `signal` | Killed by a signal (check `ExecMainCode`) |
-| `core-dump` | Process dumped core |
-| `watchdog` | Watchdog timeout expired |
-| `start-limit-hit` | Restart loop limit was reached |
-| `oom-kill` | Killed by the OOM killer |
+| `success` | Завершилась успешно |
+| `exit-code` | Ненулевой код завершения |
+| `signal` | Завершена сигналом (проверьте `ExecMainCode`) |
+| `core-dump` | Процесс создал core dump |
+| `watchdog` | Истёк тайм-аут watchdog |
+| `start-limit-hit` | Достигнут лимит перезапусков |
+| `oom-kill` | Завершён механизмом OOM killer |
 
-**`oom-kill` in production:** If you see `Result=oom-kill`, the kernel ran out of memory and killed your process — this is not a systemd restart. Check `journalctl -k | grep oom` for the kernel OOM killer's own log lines, which include memory stats at the time of the kill. The fix is at the application level (memory leak, oversized heap) or the host level (more RAM, cgroups memory limits).
+**`oom-kill` в production:** если видите `Result=oom-kill`, ядру не хватило памяти и оно завершило процесс — это не перезапуск systemd. Проверьте `journalctl -k | grep oom`: сообщения OOM killer содержат статистику памяти на момент завершения. Решение может быть на уровне приложения (утечка памяти, слишком большая heap) или хоста (добавить RAM, настроить лимиты памяти cgroups).
 
 ---
 
-## Examples
+## Примеры
 
-### Example 1: Deploying a Node.js API as a systemd Service
+### Пример 1: развёртывание API на Node.js как службы systemd
 
-**Scenario:** You have a Node.js application at `/opt/api/server.js` that should run as a dedicated user, restart on failure, and start at boot.
+**Сценарий:** приложение Node.js находится в `/opt/api/server.js`; оно должно работать от отдельного пользователя, перезапускаться при сбое и запускаться при загрузке системы.
 
 ```bash
-# Create a dedicated system user (no home directory, no login shell)
+# Создать отдельного системного пользователя без домашнего каталога и login shell
 useradd --system --no-create-home --shell /usr/sbin/nologin apiuser
 
-# Create the environment file (keep secrets out of the unit file)
+# Создать файл окружения (не хранить секреты в unit-файле)
 mkdir -p /etc/api
 cat > /etc/api/env <<'EOF'
 NODE_ENV=production
@@ -450,8 +450,8 @@ Description=My Node.js API Server
 Documentation=https://github.com/myorg/api
 After=network-online.target postgresql.service
 Wants=network-online.target
-# Soft dep on postgres — if it's not running, we'll fail at connection time
-# but systemd won't block our start waiting for it
+# Мягкая зависимость от postgres: если служба не запущена, ошибка возникнет при подключении
+# systemd не будет блокировать запуск в ожидании этой службы
 Requires=postgresql.service
 
 [Service]
@@ -460,28 +460,28 @@ User=apiuser
 Group=apiuser
 WorkingDirectory=/opt/api
 
-# Load secrets from a root-owned file — process inherits them as env vars
+# Загрузить секреты из файла, принадлежащего root; процесс получит их как переменные окружения
 EnvironmentFile=/etc/api/env
 
 ExecStartPre=/usr/bin/node --check /opt/api/server.js   # syntax check before starting
 ExecStart=/usr/bin/node /opt/api/server.js
 
-# Restart on crash, OOM kill, or signal — but NOT on clean exit (systemctl stop)
+# Перезапускать при сбое, OOM kill или сигнале, но НЕ после штатной остановки (systemctl stop)
 Restart=on-failure
 RestartSec=10s
 
-# Restart loop: if it crashes 5 times in 2 minutes, give up
+# Ограничить перезапуски: если за 2 минуты произойдёт 5 сбоев, прекратить попытки
 StartLimitIntervalSec=120s
 StartLimitBurst=5
 
-# Security: drop capabilities and isolate filesystem
+# Безопасность: убрать capabilities и изолировать файловую систему
 NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=strict
 ProtectHome=yes
 ReadWritePaths=/var/log/api /var/lib/api
 
-# Logging: stdout/stderr go directly to journald — no log file needed
+# Журналирование: stdout/stderr направляются прямо в journald, отдельный файл не нужен
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=api-server
@@ -491,27 +491,27 @@ WantedBy=multi-user.target
 ```
 
 ```bash
-# Install and start the service
+# Установить и запустить службу
 systemctl daemon-reload
 systemctl enable --now api.service
 
-# Verify it came up correctly
+# Проверить, что служба успешно запустилась
 systemctl status api.service
 
-# Check startup logs
+# Проверить журналы запуска
 journalctl -u api.service -b -n 50
 
-# Test that it survives a simulated crash
+# Проверить восстановление после имитации сбоя
 kill -9 $(systemctl show api.service --property=MainPID --value)
-# Wait 10 seconds (RestartSec), then check it restarted
+# Подождать 10 секунд (RestartSec) и проверить перезапуск
 sleep 12 && systemctl status api.service
 ```
 
 ---
 
-### Example 2: Replacing a Cron Job with a systemd Timer
+### Пример 2: замена задания cron таймером systemd
 
-**Scenario:** A cron job runs `/usr/local/bin/cleanup-old-logs.sh` every day at 3 AM. Migrate it to a systemd timer so failures appear in `systemctl --failed` and logs are captured in journald.
+**Сценарий:** cron ежедневно запускает `/usr/local/bin/cleanup-old-logs.sh` в 03:00. Перенесите задачу на таймер systemd, чтобы сбои отображались в `systemctl --failed`, а журналы попадали в journald.
 
 ```ini
 # /etc/systemd/system/cleanup-logs.service
@@ -571,9 +571,9 @@ cat /var/run/cleanup-logs-last-run
 
 ---
 
-### Example 3: Overriding a Package-Installed Service with a Drop-In
+### Пример 3: переопределение службы пакета через drop-in
 
-**Scenario:** The package-installed `postgresql.service` uses a default memory configuration. You need to set `POSTGRES_HUGE_PAGES=try` and raise the open file limit without owning the entire unit file.
+**Сценарий:** установленная пакетом служба `postgresql.service` использует настройки памяти по умолчанию. Нужно задать `POSTGRES_HUGE_PAGES=try` и увеличить лимит открытых файлов, не копируя весь unit-файл.
 
 ```bash
 # Inspect what the package provides
@@ -615,28 +615,28 @@ systemctl status postgresql.service
 
 ---
 
-### Example 4: Diagnosing a Service That Fails to Start
+### Пример 4: диагностика службы, которая не запускается
 
-**Scenario:** After a deployment, `myapp.service` shows `failed` state. Walk through the full diagnosis.
+**Сценарий:** после развёртывания `myapp.service` находится в состоянии `failed`. Выполните полную диагностику.
 
 ```bash
-# Step 1: Quick overview — note the exit code and the last few log lines
+# Шаг 1: краткая сводка — проверить код завершения и последние строки журнала
 systemctl status myapp.service
 # Output shows: "code=exited, status=1/FAILURE"
 
-# Step 2: Full logs from this boot to see the complete error
+# Шаг 2: полный журнал текущей загрузки для просмотра ошибки
 journalctl -u myapp.service -b --no-pager
 # Output: "Error: cannot open config file /etc/myapp/config.yaml: no such file"
 
-# Step 3: Confirm the result code programmatically
+# Шаг 3: программно проверить код результата
 systemctl show myapp.service --property=Result,ExecMainStatus
 # Result=exit-code
 # ExecMainStatus=1
 
-# Step 4: Check if ExecStartPre failed (common cause — pre-check exits non-zero)
+# Шаг 4: проверить, не завершился ли с ошибкой ExecStartPre
 journalctl -u myapp.service -b -p err
 
-# Step 5: Verify the binary and config exist where the unit expects them
+# Шаг 5: проверить наличие бинарного файла и конфигурации по ожидаемым путям
 systemctl cat myapp.service | grep Exec
 # ExecStart=/opt/myapp/bin/server --config /etc/myapp/config.yaml
 
@@ -659,29 +659,29 @@ systemctl start myapp.service
 
 ---
 
-## Exercises
+## Практические задания
 
-### Exercise 1: Write and Deploy a Custom Service Unit
+### Задание 1: создать и развернуть собственный unit службы
 
 Create a minimal web server using Python's built-in HTTP server and manage it as a proper systemd service.
 
-1. Create a system user `webdemo` with no login shell.
-2. Write `/etc/systemd/system/webdemo.service` that:
+1. Создайте системного пользователя `webdemo` без login shell.
+2. Создайте `/etc/systemd/system/webdemo.service`, который:
    - Runs `python3 -m http.server 8888` from `/var/www/html` as the `webdemo` user.
    - Sets `Restart=on-failure` and `RestartSec=5s`.
    - Enables with `WantedBy=multi-user.target`.
    - Sets `NoNewPrivileges=yes` and `PrivateTmp=yes`.
-3. Enable and start the service. Verify with `systemctl status` and `curl localhost:8888`.
-4. Simulate a crash by sending `SIGKILL` to the main PID. Confirm the service restarts within 10 seconds.
-5. Check the journal for the restart event. What log lines does systemd emit between the crash and the successful restart?
+3. Включите автозапуск и запустите службу. Проверьте её командами `systemctl status` и `curl localhost:8888`.
+4. Имитируйте сбой, отправив `SIGKILL` основному PID. Убедитесь, что служба перезапускается в течение 10 секунд.
+5. Найдите в журнале событие перезапуска. Какие сообщения systemd записывает между сбоем и успешным запуском?
 
-**What to figure out:** How do you find the MainPID without hardcoding it? What does `systemctl show` expose? Why does `PrivateTmp=yes` not affect `curl` running in your shell?
+**Что нужно выяснить:** как получить MainPID без жёстко заданного значения? Какие сведения показывает `systemctl show`? Почему `PrivateTmp=yes` не влияет на `curl`, запущенный из вашей оболочки?
 
 ---
 
-### Exercise 2: Investigate and Fix a Broken Service
+### Задание 2: исследовать и исправить сломанную службу
 
-**Setup:** Run this to create a broken service:
+**Подготовка:** выполните команды, чтобы создать службу с ошибкой:
 
 ```bash
 cat > /etc/systemd/system/broken.service <<'EOF'
@@ -703,31 +703,31 @@ systemctl daemon-reload
 systemctl start broken.service || true
 ```
 
-**Tasks:**
+**Задания:**
 
-1. Use `systemctl status` and `journalctl` to determine exactly why the service failed. What is the `Result` value?
-2. After the restart loop exhausts itself, what does `systemctl status` show as the final state?
-3. Fix the service by creating `/usr/local/bin/nonexistent-binary` as a script that prints "hello" and exits 0. What additional step is required before systemd will find the fix?
-4. The service is now stuck in the restart limit. How do you clear it and start fresh without rebooting?
-5. Move `StartLimitBurst` and `StartLimitIntervalSec` to the `[Unit]` section. Run `systemd-analyze verify broken.service`. What does this tell you about your unit file?
-
----
-
-### Exercise 3: Build a systemd Timer to Replace a Cron Job
-
-**Scenario:** You have this cron job: `*/5 * * * * /usr/local/bin/health-check.sh >> /var/log/health-check.log 2>&1`
-
-1. Write `health-check.sh` — it should check if port 80 is open on localhost using `nc` or `curl` and exit non-zero if it's not.
-2. Write a `health-check.service` (Type=oneshot) and `health-check.timer` that runs every 5 minutes. Do **not** redirect output to a file — let journald capture it.
-3. Enable the timer and verify `systemctl list-timers` shows the next trigger time.
-4. Deliberately stop nginx (or any service on port 80) and manually trigger `systemctl start health-check.service`. Confirm the failure appears in `systemctl --failed` and in `journalctl -u health-check.service`.
-5. Answer: why is a systemd timer with `Persistent=true` more reliable than cron for a job on a laptop or a spot instance that may not always be running at the scheduled time?
+1. Используйте `systemctl status` и `journalctl`, чтобы точно определить причину сбоя. Какое значение имеет `Result`?
+2. Когда лимит перезапусков будет исчерпан, какое итоговое состояние покажет `systemctl status`?
+3. Исправьте службу, создав `/usr/local/bin/nonexistent-binary` как скрипт, который выводит `hello` и завершается с кодом 0. Какой дополнительный шаг нужен, чтобы systemd увидел исправление?
+4. Служба достигла лимита перезапусков. Как сбросить его и запустить службу заново без перезагрузки?
+5. Перенесите `StartLimitBurst` и `StartLimitIntervalSec` в секцию `[Unit]`. Выполните `systemd-analyze verify broken.service`. Что результат говорит о unit-файле?
 
 ---
 
-### Exercise 4: Practice Drop-In Overrides and Inspect Merged Configuration
+### Задание 3: заменить cron-задачу таймером systemd
 
-1. Find the package-installed unit file for `ssh.service` (or `sshd.service`). Display it with `systemctl cat`.
+**Сценарий:** у вас есть cron-задача: `*/5 * * * * /usr/local/bin/health-check.sh >> /var/log/health-check.log 2>&1`
+
+1. Напишите `health-check.sh`: он должен проверять, открыт ли порт 80 на localhost, используя `nc` или `curl`, и возвращать ненулевой код, если порт закрыт.
+2. Создайте `health-check.service` (`Type=oneshot`) и `health-check.timer`, запускающий задачу каждые 5 минут. **Не** перенаправляйте вывод в файл — пусть его сохраняет journald.
+3. Включите таймер и убедитесь, что `systemctl list-timers` показывает время следующего запуска.
+4. Намеренно остановите nginx (или другую службу на порту 80) и вручную запустите `systemctl start health-check.service`. Убедитесь, что ошибка видна в `systemctl --failed` и `journalctl -u health-check.service`.
+5. Объясните, почему таймер systemd с `Persistent=true` надёжнее cron для задачи на ноутбуке или spot-инстансе, который может быть выключен в запланированное время.
+
+---
+
+### Задание 4: отработать drop-in-переопределения и изучить итоговую конфигурацию
+
+1. Найдите установленный пакетом unit-файл `ssh.service` (или `sshd.service`) и выведите его командой `systemctl cat`.
 2. Use `systemctl edit sshd.service` to add a drop-in that:
    - Sets `RestartSec=10s` and `Restart=always`.
    - Adds `Environment=MY_CUSTOM_VAR=devops-practice`.
@@ -737,7 +737,7 @@ systemctl start broken.service || true
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Extract the `Restart` value from a unit file snippet.
 

@@ -1,5 +1,5 @@
 ---
-title: RBAC
+title: RBAC — управление доступом
 module: kubernetes
 duration_min: 20
 difficulty: advanced
@@ -7,51 +7,51 @@ tags: [kubernetes, rbac, roles, clusterrole, serviceaccount, permissions, securi
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Role-Based Access Control (RBAC) is Kubernetes' authorization mechanism for answering the question: "Is this identity allowed to perform this action on this resource?" It sits between authentication (proving who you are) and the API server's actual execution of a request. Without RBAC, a compromised Pod or misconfigured CI pipeline can read every Secret, delete every Deployment, or exfiltrate cluster state. With it, you enforce least-privilege: each identity gets exactly what it needs and nothing more.
+Role-Based Access Control (RBAC) — механизм авторизации Kubernetes, который отвечает на вопрос: «Разрешено ли этой идентичности выполнить это действие над этим ресурсом?». Он действует после аутентификации, подтверждающей личность, и до выполнения запроса API-сервером. Без RBAC скомпрометированный Pod или неправильно настроенный CI-пайплайн может прочитать все Secret, удалить любой Deployment или извлечь данные кластера. RBAC помогает соблюдать принцип минимальных привилегий: каждая идентичность получает только необходимые права.
 
-RBAC's design is intentionally additive — there are no deny rules. Permissions accumulate across all bindings that apply to a subject. This means you can never use RBAC to explicitly block access to something that would otherwise be allowed; you simply avoid granting it. The model consists of four object types arranged as two independent layers: the *definition layer* (Role, ClusterRole) describes what operations are permitted, and the *binding layer* (RoleBinding, ClusterRoleBinding) attaches those definitions to identities called *subjects*. This separation lets you write a role once and reuse it across teams, namespaces, or automation accounts.
+RBAC намеренно построен по разрешающей модели: правил явного запрета нет. Права суммируются по всем binding-объектам, применимым к субъекту. Поэтому RBAC не может отменить уже выданное разрешение отдельным deny-правилом — нужно просто не предоставлять лишние права. Модель включает четыре типа объектов в двух независимых слоях: слой *определения* (Role, ClusterRole) задаёт разрешённые операции, а слой *привязки* (RoleBinding, ClusterRoleBinding) назначает эти права идентичностям, называемым *subjects*. Благодаря этому роль можно определить один раз и использовать для разных команд, пространств имён и сервисных аккаунтов.
 
-In the broader DevOps toolchain, RBAC sits at the intersection of platform security and developer self-service. Platform teams define roles that describe what CI pipelines, monitoring agents, and application operators need. Developers consume those roles through service accounts without touching raw kubeconfig credentials. Security audits reduce to inspecting bindings, not hunting through application code. Understanding RBAC deeply also makes you effective at diagnosing `Forbidden` errors — the most common Kubernetes access error in production — and at designing multi-tenant clusters where teams share infrastructure without interfering with each other.
+В DevOps RBAC находится на пересечении безопасности платформы и самостоятельной работы разработчиков. Платформенная команда задаёт роли для CI-пайплайнов, агентов мониторинга и операторов приложений. Разработчики используют их через service accounts, не работая напрямую с учётными данными kubeconfig. Аудит безопасности сводится к проверке binding-объектов, а не поиску прав в коде приложений. Понимание RBAC помогает диагностировать `Forbidden` — одну из самых частых ошибок доступа в production Kubernetes, — и проектировать многопользовательские кластеры.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### The Four RBAC Objects
+### Четыре объекта RBAC
 
-Every RBAC configuration is built from exactly four object kinds. Understanding their scope is the key to designing a correct permission model.
+Любая конфигурация RBAC строится ровно на четырёх типах объектов. Понимание области их действия — ключ к правильной модели разрешений.
 
-| Object | Scope | Purpose |
+| Объект | Область действия | Назначение |
 |---|---|---|
-| `Role` | Single namespace | Namespace-scoped resource permissions |
-| `ClusterRole` | Cluster-wide | Cluster-scoped resources, or reusable namespace rules |
-| `RoleBinding` | Single namespace | Grants a Role *or* ClusterRole within one namespace |
-| `ClusterRoleBinding` | Cluster-wide | Grants a ClusterRole across all namespaces |
+| `Role` | Одно пространство имён | Разрешения на ресурсы в пределах пространства имён |
+| `ClusterRole` | Весь кластер | Ресурсы уровня кластера или повторно используемые правила для пространств имён |
+| `RoleBinding` | Одно пространство имён | Назначает Role или ClusterRole в пределах одного пространства имён |
+| `ClusterRoleBinding` | Весь кластер | Назначает ClusterRole во всех пространствах имён |
 
-**Subject types** — the identities that can be bound:
+**Типы субъектов** — идентичности, которым можно назначать права:
 
-| Kind | Example name | Notes |
+| Тип | Пример имени | Примечания |
 |---|---|---|
-| `User` | `alice`, `alice@company.com` | No User object exists in Kubernetes; the name must match the authenticated identity exactly |
-| `Group` | `backend-team`, `system:masters` | External — e.g., OIDC groups or certificate `O=` fields |
-| `ServiceAccount` | `ci-deployer` | Has a real object in the cluster; namespace is required in bindings |
+| `User` | `alice`, `alice@company.com` | В Kubernetes нет объекта User; имя должно точно совпадать с аутентифицированной идентичностью |
+| `Group` | `backend-team`, `system:masters` | Внешняя группа, например группа OIDC или поле `O=` сертификата |
+| `ServiceAccount` | `ci-deployer` | Реальный объект кластера; в binding обязательно указывать namespace |
 
-**Critical scoping rule:** A `RoleBinding` can reference a `ClusterRole`, but the effective scope is still limited to the RoleBinding's namespace. This is the correct pattern for defining a role once and reusing it in many namespaces without granting cluster-wide access.
+**Критически важное правило области действия:** `RoleBinding` может ссылаться на `ClusterRole`, но фактические разрешения всё равно ограничены пространством имён RoleBinding. Так можно определить роль один раз и повторно использовать её в разных пространствах имён, не предоставляя доступ ко всему кластеру.
 
-**The four binding combinations:**
+**Четыре сочетания ролей и binding:**
 
-| Role type | Binding type | Effective scope |
+| Тип роли | Тип binding | Фактическая область действия |
 |---|---|---|
-| `Role` | `RoleBinding` | Resources in the binding's namespace only |
-| `ClusterRole` | `RoleBinding` | Resources in the binding's namespace only (reuse pattern) |
-| `ClusterRole` | `ClusterRoleBinding` | Resources in every namespace + cluster-scoped resources |
-| `Role` | `ClusterRoleBinding` | **Not valid** — ClusterRoleBinding can only reference ClusterRole |
+| `Role` | `RoleBinding` | Только ресурсы пространства имён binding |
+| `ClusterRole` | `RoleBinding` | Только ресурсы пространства имён binding (шаблон повторного использования) |
+| `ClusterRole` | `ClusterRoleBinding` | Ресурсы во всех пространствах имён и ресурсы уровня кластера |
+| `Role` | `ClusterRoleBinding` | **Недопустимо** — ClusterRoleBinding может ссылаться только на ClusterRole |
 
-### Roles and the Rules DSL
+### Роли и язык правил
 
-A `Role` contains one or more rules. Each rule is a combination of API groups, resources, and verbs. All three fields are required.
+`Role` содержит одно или несколько правил. Каждое правило задаёт комбинацию API-групп, ресурсов и действий (verbs). Все три поля обязательны.
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -72,22 +72,22 @@ rules:
     verbs: ["get"]
 ```
 
-**Common verbs and their HTTP equivalents:**
+**Распространённые verbs и соответствующие HTTP-методы:**
 
-| Verb | HTTP method | Notes |
+| Verb | HTTP-метод | Примечания |
 |---|---|---|
-| `get` | GET (single) | Retrieve one named resource |
-| `list` | GET (collection) | List all resources of a type |
-| `watch` | GET + `?watch=true` | Stream change events; required by controllers |
-| `create` | POST | Create a new resource |
-| `update` | PUT | Replace an entire resource |
-| `patch` | PATCH | Partially update a resource |
-| `delete` | DELETE (single) | Delete one named resource |
-| `deletecollection` | DELETE (collection) | Bulk delete; frequently forgotten in audits |
+| `get` | GET (один объект) | Получить ресурс с заданным именем |
+| `list` | GET (коллекция) | Получить список ресурсов определённого типа |
+| `watch` | GET + `?watch=true` | Получать поток событий об изменениях; требуется контроллерам |
+| `create` | POST | Создать ресурс |
+| `update` | PUT | Полностью заменить ресурс |
+| `patch` | PATCH | Частично изменить ресурс |
+| `delete` | DELETE (один объект) | Удалить ресурс с заданным именем |
+| `deletecollection` | DELETE (коллекция) | Массовое удаление; о нём часто забывают при аудите |
 
-**Common API groups:**
+**Распространённые API-группы:**
 
-| Group | Resources |
+| Группа | Ресурсы |
 |---|---|
 | `""` (core) | pods, services, configmaps, secrets, nodes, namespaces, persistentvolumeclaims, serviceaccounts |
 | `apps` | deployments, replicasets, statefulsets, daemonsets |
@@ -97,19 +97,19 @@ rules:
 | `autoscaling` | horizontalpodautoscalers |
 | `policy` | poddisruptionbudgets |
 
-**`resourceNames` gotcha:** `resourceNames` restricts a rule to specific named instances. It **cannot** be used with `list`, `watch`, `create`, or `deletecollection` — those verbs don't operate on a single named resource. Applying `resourceNames` with those verbs silently produces a rule that will never match.
+**Особенность `resourceNames`:** ограничивает правило конкретными именованными объектами. Его **нельзя** использовать с `list`, `watch`, `create` и `deletecollection`, поскольку эти действия не относятся к одному именованному ресурсу. Такое сочетание тихо создаёт правило, которое никогда не сработает.
 
-**Subresource access:** `pods/log`, `pods/exec`, `pods/portforward` are subresources — they must be listed explicitly. Granting access to `pods` does not grant access to `pods/exec`. This is a common least-privilege gap: teams grant `get pods` but forget that `exec` is separate and far more sensitive.
+**Доступ к подресурсам:** `pods/log`, `pods/exec` и `pods/portforward` нужно указывать явно. Разрешение на `pods` не даёт доступ к `pods/exec`. Это частый пробел в модели минимальных привилегий: команде разрешают `get pods`, забывая, что `exec` — отдельное и гораздо более чувствительное право.
 
-**Wildcard permissions:** `resources: ["*"]` and `verbs: ["*"]` are valid YAML but should only appear in admin-level roles. They automatically include any new resource types added by future API versions or installed operators — which makes them silently dangerous as clusters evolve.
+**Разрешения с подстановочным символом:** `resources: ["*"]` и `verbs: ["*"]` допустимы в YAML, но должны применяться только в административных ролях. Они автоматически охватывают новые типы ресурсов из будущих версий API и установленных операторов, поэтому по мере развития кластера становятся скрытым риском.
 
 ### ClusterRole
 
-A `ClusterRole` is syntactically identical to a `Role` but omits the `namespace` field. Use a ClusterRole when you need to:
+`ClusterRole` синтаксически похож на `Role`, но не содержит поля `namespace`. Используйте ClusterRole, когда нужно:
 
-1. Grant access to cluster-scoped resources (nodes, namespaces, persistentvolumes, storageclasses)
-2. Grant access to resources across all namespaces via a `ClusterRoleBinding`
-3. Define a reusable template that multiple namespaces consume via individual `RoleBinding`s
+1. Предоставить доступ к ресурсам уровня кластера (nodes, namespaces, persistentvolumes, storageclasses)
+2. Предоставить доступ к ресурсам во всех пространствах имён через `ClusterRoleBinding`
+3. Определить повторно используемый шаблон, назначаемый разным пространствам имён отдельными `RoleBinding`
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -130,9 +130,9 @@ rules:
     verbs: ["get"]
 ```
 
-**`nonResourceURLs`** are HTTP paths on the API server that don't correspond to Kubernetes objects — `/metrics`, `/healthz`, `/version`. They can only appear in ClusterRoles and only with the `get` verb. Prometheus scrapers commonly need `/metrics` on the API server itself.
+**`nonResourceURLs`** — HTTP-пути API-сервера, не соответствующие объектам Kubernetes, например `/metrics`, `/healthz`, `/version`. Их можно указывать только в ClusterRole и только с verb `get`. Сборщикам Prometheus часто нужен `/metrics` самого API-сервера.
 
-**ClusterRole aggregation:** ClusterRoles can automatically merge permissions from other ClusterRoles using label selectors. Many operators install ClusterRoles that opt into an aggregation target. Be aware that installing a new operator can silently expand the permissions of an existing aggregated ClusterRole if its labels match.
+**Агрегация ClusterRole:** ClusterRole может автоматически объединять разрешения других ClusterRole с помощью селекторов меток. Некоторые операторы устанавливают ClusterRole, участвующие в такой агрегации. Учитывайте, что установка нового оператора может незаметно расширить права существующей агрегированной роли, если совпадают метки.
 
 ```yaml
 # This ClusterRole's rules are auto-populated from any ClusterRole with the matching label
@@ -159,26 +159,26 @@ rules:
     verbs: ["get", "list"]
 ```
 
-### Built-in ClusterRoles
+### Встроенные ClusterRole
 
-Kubernetes ships with several ClusterRoles that cover common access patterns:
+В Kubernetes есть несколько ClusterRole для распространённых сценариев доступа:
 
-| ClusterRole | Effective access | Typical use |
+| ClusterRole | Фактические права | Типичное применение |
 |---|---|---|
-| `cluster-admin` | Full `*` on `*` everywhere | Break-glass only; never for automation |
-| `admin` | Full access within a namespace, including managing RBAC within it | Namespace owner |
-| `edit` | Read/write most resources; cannot manage RBAC or read Secrets in some configs | Developer access |
-| `view` | Read-only on most non-sensitive resources; cannot read Secrets | Auditor, read-only dashboard |
+| `cluster-admin` | Полные права `*` на всё | Только для аварийного доступа; не использовать в автоматизации |
+| `admin` | Полный доступ в пространстве имён, включая управление RBAC | Владелец пространства имён |
+| `edit` | Чтение и запись большинства ресурсов; в некоторых конфигурациях нельзя управлять RBAC и читать Secrets | Доступ разработчика |
+| `view` | Чтение большинства несекретных ресурсов; без доступа к Secrets | Аудитор, дашборд только для чтения |
 | `system:node` | Node-specific access | Kubelets |
 | `system:kube-scheduler` | Scheduler-specific access | Scheduler component |
 
-**`cluster-admin` warning:** Binding a service account or CI pipeline to `cluster-admin` is a critical security misconfiguration. A single compromised token gives full cluster control — including reading all Secrets, modifying RBAC itself, and deleting workloads. Reach for `admin` or a purpose-built ClusterRole instead.
+**Предупреждение о `cluster-admin`:** назначение этой роли сервисному аккаунту или CI-конвейеру — критическая ошибка безопасности. Скомпрометированный токен даёт полный контроль над кластером, включая чтение всех Secret, изменение RBAC и удаление рабочих нагрузок. Вместо этого используйте `admin` или специально созданный ClusterRole.
 
-**`edit` vs `admin`:** `admin` allows managing Roles and RoleBindings within the namespace. `edit` does not. Give developers `edit` unless they explicitly need to manage namespace-level RBAC. Never give developers `admin` cluster-wide.
+**`edit` и `admin`:** `admin` разрешает управлять Role и RoleBinding в пространстве имён, а `edit` — нет. Выдавайте разработчикам `edit`, если им явно не нужно управлять RBAC на уровне пространства имён. Не назначайте разработчикам `admin` на весь кластер.
 
-### ServiceAccounts
+### Сервисные аккаунты
 
-A ServiceAccount (SA) is a namespaced Kubernetes object that provides an identity for processes running inside Pods. Every Pod runs as exactly one SA. If you don't specify one, it defaults to the `default` SA in the Pod's namespace — which should have no permissions in a hardened cluster.
+ServiceAccount (SA) — объект Kubernetes в пространстве имён, предоставляющий идентичность процессам внутри pod. Каждый pod работает ровно с одним SA. Если его не указать, используется `default` SA пространства имён pod; в защищённом кластере у него не должно быть дополнительных разрешений.
 
 ```yaml
 apiVersion: v1
@@ -202,18 +202,18 @@ spec:
       image: myapp:v1.0.0
 ```
 
-When `automountServiceAccountToken` is true (the default), Kubernetes mounts a projected token at `/var/run/secrets/kubernetes.io/serviceaccount/token`. Since Kubernetes 1.24, these are time-limited **bound service account tokens** (not permanent JWTs). They expire, are audience-restricted, and are rotated automatically.
+Если `automountServiceAccountToken` включён (по умолчанию), Kubernetes монтирует токен по пути `/var/run/secrets/kubernetes.io/serviceaccount/token`. Начиная с Kubernetes 1.24 это ограниченные по времени **bound service account tokens**, а не постоянные JWT. Они истекают, ограничены по audience и автоматически обновляются.
 
-**Automount hardening baseline:** The `default` SA in most namespaces has `automountServiceAccountToken: true`. Every Pod that doesn't specify an SA gets a mounted token even if it never uses it. Disable automounting on the `default` SA as a baseline:
+**Базовое усиление безопасности automount:** в большинстве пространств имён у `default` SA задано `automountServiceAccountToken: true`. Каждый pod без явно указанного SA получает смонтированный токен, даже если он никогда его не использует. В качестве базовой меры отключите automount для `default` SA:
 
 ```bash
 kubectl patch serviceaccount default -n production \
   -p '{"automountServiceAccountToken": false}'
 ```
 
-**ServiceAccount token escalation:** A Pod that can create or patch Pods in a namespace can effectively grant itself any SA in that namespace. This is why `create pods`, `patch deployments`, and `create cronjobs` are sensitive verbs — they let a workload escalate to a more privileged SA without any explicit RBAC change.
+**Повышение привилегий через ServiceAccount:** pod, которому разрешено создавать или изменять pod в пространстве имён, фактически может назначить себе любой SA в этом пространстве. Поэтому `create pods`, `patch deployments` и `create cronjobs` — чувствительные разрешения: они позволяют рабочей нагрузке получить более привилегированный SA без явного изменения RBAC.
 
-### Testing and Debugging RBAC
+### Проверка и отладка RBAC
 
 The `kubectl auth can-i` command is the primary debugging tool. It calls the SubjectAccessReview API directly — the same mechanism the API server uses internally to evaluate requests.
 
@@ -266,7 +266,7 @@ That message contains all three elements you need to fix it: the **subject** (`s
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: CI/CD Pipeline with Scoped Deploy Permissions
 
@@ -458,7 +458,7 @@ kubectl get clusterrolebindings,rolebindings -A -o yaml > rbac-audit-$(date +%Y%
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Build a Read-Only Namespace Role
 
@@ -584,7 +584,7 @@ kubectl patch serviceaccount default -n hardened \
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 7. Count verbs in an RBAC rule. Run: `printf 'verbs: ["get", "list", "watch"]\n' | tr ',' '\n' | grep -c '"'`
 

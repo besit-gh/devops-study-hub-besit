@@ -1,5 +1,5 @@
 ---
-title: Automated API Tests
+title: Автоматизированные тесты API
 module: postman
 duration_min: 20
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [postman, newman, testing, assertions, ci, contract-testing, api-testing]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Postman's test scripts turn manual API exploration into automated regression tests. Every request in a collection can carry JavaScript assertions that run after the response arrives — checking status codes, headers, body shape, field types, and latency. Because these scripts live inside the collection JSON, they travel with the collection into version control, into CI pipelines, and onto other developers' machines without any extra tooling setup. The result is a first-class regression safety net that sits closest to the API surface: it validates what the API actually returns, not what the application code thinks it returns.
+Тестовые скрипты Postman превращают ручное исследование API в автоматические регрессионные тесты. Каждый запрос коллекции может содержать JavaScript-проверки, которые выполняются после получения ответа: проверяют статус-код, заголовки, структуру тела, типы полей и задержку. Поскольку скрипты хранятся внутри JSON коллекции, они попадают в систему контроля версий вместе с ней, запускаются в CI-пайплайнах и доступны другим разработчикам без дополнительной настройки инструментов. Так создаётся надёжный регрессионный контроль на уровне API: он проверяет реальный ответ API, а не то, что, по мнению кода приложения, должно вернуться.
 
-Newman is the CLI runner that executes Postman collections outside the GUI — in CI pipelines, on a schedule, or as a deployment gate. A `newman run` command exits with a non-zero code when any test fails, which makes it a natural pipeline step: deploy to staging, run Newman, fail the pipeline if the API has regressed. Newman also supports multiple reporters (CLI, JUnit, HTML) so the same run produces human-readable and machine-readable output simultaneously — one for engineers triaging failures, one for GitHub's test dashboard.
+Newman — CLI-инструмент для запуска коллекций Postman вне графического интерфейса: в CI-пайплайнах, по расписанию или как контрольный этап перед развёртыванием. Команда `newman run` возвращает ненулевой код, если хотя бы один тест завершился ошибкой. Поэтому её удобно включать в пайплайн: развернуть приложение в staging, запустить Newman и остановить выпуск, если API перестал соответствовать ожиданиям. Newman also supports multiple reporters (CLI, JUnit, HTML) so the same run produces human-readable and machine-readable output simultaneously — one for engineers triaging failures, one for GitHub's test dashboard.
 
 In the broader DevOps toolchain, Postman/Newman sits between deployment and promotion. Unit tests and integration tests run during the build; Newman runs after the app is deployed to a real environment. It can act as a smoke-test gate (did the deployment break anything obvious?), a contract-test gate (does the deployed API still match the OpenAPI spec?), or a regression suite (do all the edge cases still pass?). This placement makes it complementary to, not a replacement for, earlier test layers.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### Test Script Basics
 
@@ -467,7 +467,7 @@ pm.test("Response time has not regressed by more than 50%", () => {
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Full CRUD Test Suite for `/api/users`
 
@@ -686,7 +686,7 @@ jobs:
 
 ---
 
-## Exercises
+## Практические задания
 
 **Exercise 1: Write a full test script for `POST /users`**
 
@@ -736,7 +736,7 @@ Push a commit that intentionally fails a test (e.g., assert a field name that do
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 6. Count test assertions in a Postman script stub. Run: `printf 'pm.test("Status 200", fn1);\npm.test("Has id", fn2);\npm.test("Content-Type", fn3);\n' | grep -c 'pm.test'`
 

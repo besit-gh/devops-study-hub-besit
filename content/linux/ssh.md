@@ -1,5 +1,5 @@
 ---
-title: SSH & Key Management
+title: SSH и управление ключами
 module: linux
 duration_min: 15
 difficulty: beginner
@@ -7,26 +7,26 @@ tags: [ssh, scp, keys, authorized_keys, ssh-keygen, agent]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-SSH (Secure Shell) is the standard protocol for encrypted remote access to Linux systems. In DevOps you'll use it constantly — connecting to servers, running remote commands, copying files, and tunneling traffic. Understanding SSH deeply matters because it underpins almost every other tool in the stack: Ansible uses it as its transport layer, CI/CD pipelines authenticate to repos and deployment targets with SSH keys, container registries and cloud providers use key-based auth for automation, and `git push` to GitHub typically goes over SSH. A misconfigured key or a missing `known_hosts` entry can silently break a deployment pipeline at 2 AM.
+SSH (Secure Shell) — стандартный протокол защищённого удалённого доступа к Linux-системам. В DevOps он используется постоянно: для подключения к серверам, выполнения удалённых команд, копирования файлов и туннелирования трафика. SSH лежит в основе множества инструментов: Ansible использует его как транспорт, CI/CD-пайплайны аутентифицируются с помощью SSH-ключей в репозиториях и целевых системах развёртывания, а облачные платформы и реестры контейнеров применяют ключевую аутентификацию для автоматизации. Даже `git push` в GitHub обычно работает через SSH. Неправильно настроенный ключ или отсутствующая запись в `known_hosts` способны незаметно сломать пайплайн развёртывания посреди ночи.
 
-The core design principle of SSH is asymmetric cryptography: a mathematically linked key pair where anything encrypted with one key can only be decrypted by the other. You keep the private key secret and distribute the public key freely. The server never learns your private key — it only ever sees you prove you possess it. This is fundamentally more secure than passwords: no credential is transmitted over the wire, brute-forcing is computationally infeasible, and keys can be revoked per-server without changing a shared password everywhere.
+В основе SSH лежит асимметричная криптография: пара математически связанных ключей, при которой данные, зашифрованные одним ключом, могут быть расшифрованы другим. Приватный ключ хранится в секрете, а публичный можно свободно распространять. Сервер никогда не получает приватный ключ — клиент лишь доказывает, что владеет им. Это безопаснее паролей: учётные данные не передаются по сети, перебор ключа практически нереализуем, а доступ можно отозвать на конкретном сервере, не меняя общий пароль повсюду.
 
-In the DevOps toolchain SSH sits at the infrastructure access layer. Above it you have configuration management (Ansible), secrets management (Vault), and orchestration (Kubernetes). Below it is the network and the OS. Getting SSH right — key hygiene, agent usage, host verification, hardened server config — is table stakes before you touch any of those higher layers.
+В цепочке DevOps SSH находится на уровне доступа к инфраструктуре. Выше располагаются управление конфигурацией (Ansible), управление секретами (Vault) и оркестрация (Kubernetes), ниже — сеть и операционная система. Прежде чем работать с этими уровнями, нужно освоить безопасное хранение ключей, SSH-agent, проверку подлинности хостов и укрепление конфигурации SSH-сервера.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### How Key Authentication Works
+### Как работает аутентификация по ключу
 
-The handshake involves four distinct steps. Understanding them helps you debug failures instead of guessing.
+Установление SSH-соединения состоит из четырёх шагов. Понимание этих шагов помогает диагностировать ошибки, а не гадать об их причине.
 
-1. **TCP connection** — your SSH client opens a connection to port 22 (or custom) on the server. Both sides negotiate a protocol version and agree on symmetric encryption algorithms for the session.
-2. **Host verification** — the server presents its *host key* (its own key pair, stored in `/etc/ssh/ssh_host_*`). Your client checks `~/.ssh/known_hosts` for a matching fingerprint. If none exists, you're prompted to accept it. If it exists but doesn't match, SSH halts — this is the man-in-the-middle protection.
-3. **User authentication** — the server looks up your public key in `~/.ssh/authorized_keys`. It generates a random challenge, encrypts it with your public key, and sends it to you. Your client decrypts it with your private key, combines it with the session ID, hashes the result, and sends it back.
-4. **Session begins** — the server verifies the hash. If correct, you're in. No password, no secret transmitted.
+1. **TCP-соединение** — SSH-клиент подключается к порту 22 (или заданному порту) сервера. Стороны согласуют версию протокола и алгоритмы симметричного шифрования для сессии.
+2. **Проверка хоста** — сервер предъявляет *host key* (собственную пару ключей, хранящуюся в `/etc/ssh/ssh_host_*`). Клиент ищет соответствующий отпечаток в `~/.ssh/known_hosts`. Если записи нет, он предложит подтвердить ключ. Если запись есть, но отпечаток не совпадает, SSH прервёт соединение — это защита от атаки посредника (MITM).
+3. **Аутентификация пользователя** — сервер ищет ваш публичный ключ в `~/.ssh/authorized_keys`. Он создаёт случайный challenge, шифрует его публичным ключом и отправляет клиенту. Клиент расшифровывает challenge приватным ключом, объединяет его с идентификатором сессии, вычисляет хеш и отправляет результат обратно.
+4. **Начало сессии** — сервер проверяет хеш. Если он верен, аутентификация завершена. Пароль и приватный ключ по сети не передаются.
 
 ```
 Client                          Server
@@ -41,64 +41,64 @@ Client                          Server
   |<------ Auth Success --------- |
 ```
 
-**Host key gotcha:** when a server is rebuilt (new AMI, new VM), its host key changes. SSH will refuse to connect and print a scary `REMOTE HOST IDENTIFICATION HAS CHANGED` warning. Fix it by removing the stale entry:
+**Важный нюанс host key:** после пересоздания сервера (новый AMI или VM) его host key меняется. SSH откажется подключаться и покажет предупреждение `REMOTE HOST IDENTIFICATION HAS CHANGED`. Если вы подтвердили, что ключ действительно изменился ожидаемым образом, удалите устаревшую запись:
 
 ```bash
 ssh-keygen -R hostname          # removes all entries for that hostname from known_hosts
 ssh-keygen -R 203.0.113.50      # also works with IP addresses
 ```
 
-Reconnect and accept the new fingerprint. **Never** disable `StrictHostKeyChecking` globally — it defeats MITM protection entirely. In automation where you genuinely cannot pre-populate `known_hosts`, use `ssh-keyscan` to fetch and record fingerprints ahead of time rather than turning off verification.
+Подключитесь повторно и подтвердите новый отпечаток. **Никогда** не отключайте `StrictHostKeyChecking` глобально: это полностью убирает защиту от MITM. Если в автоматизации невозможно заранее заполнить `known_hosts`, используйте `ssh-keyscan`, чтобы получить и записать отпечатки до подключения, а не отключайте проверку.
 
 ```bash
-# Pre-populate known_hosts in a CI pipeline before using the host
+# Заранее заполнить known_hosts в CI-конвейере
 ssh-keyscan -H 203.0.113.50 >> ~/.ssh/known_hosts
 
-# Hash the hostname so the file doesn't leak your infrastructure topology
-# -H hashes entries; the IP/hostname is not readable in plaintext
+# Хешировать имя хоста, чтобы не раскрывать топологию инфраструктуры
+# -H хеширует записи: IP и имя хоста нельзя прочитать напрямую
 ssh-keyscan -H bastion.example.com >> ~/.ssh/known_hosts
 ```
 
 ---
 
-### Key Types
+### Типы ключей
 
-| Type | Flag | Key size | Security | When to use |
+| Тип | Флаг | Размер ключа | Безопасность | Когда использовать |
 |------|------|----------|----------|-------------|
-| **Ed25519** | `-t ed25519` | 256-bit (fixed) | Excellent | Default choice — any modern system |
-| **RSA** | `-t rsa -b 4096` | 4096-bit | Good | Legacy systems, FIPS environments |
-| **ECDSA** | `-t ecdsa -b 521` | 256–521-bit | Good | Rarely needed; Ed25519 is better |
-| **DSA** | `-t dsa` | 1024-bit (fixed) | Broken | Never use — deprecated since OpenSSH 7.0 |
+| **Ed25519** | `-t ed25519` | 256 бит (фиксированный) | Отличная | По умолчанию для современных систем |
+| **RSA** | `-t rsa -b 4096` | 4096 бит | Хорошая | Устаревшие системы, среды с требованиями FIPS |
+| **ECDSA** | `-t ecdsa -b 521` | 256–521 бит | Хорошая | Обычно не нужен; Ed25519 предпочтительнее |
+| **DSA** | `-t dsa` | 1024 бита (фиксированный) | Небезопасный | Не использовать — устарел с OpenSSH 7.0 |
 
-**Ed25519 is the right answer** for any system running OpenSSH 6.5+ (released 2014). The keys are shorter, the math is faster, and the implementation has a smaller attack surface than RSA. RSA at 4096 bits is acceptable when you're dealing with GitHub Enterprise, older network appliances, or FIPS-compliant environments that haven't approved Ed25519 curves.
+**Ed25519 — предпочтительный выбор** для систем с OpenSSH 6.5 и новее (выпущен в 2014 году). Ключи короче, вычисления быстрее, а реализация имеет меньшую поверхность атаки, чем RSA. RSA длиной 4096 бит допустим для GitHub Enterprise, старого сетевого оборудования или сред с требованиями FIPS, где кривые Ed25519 ещё не разрешены.
 
 ```bash
-# Generate an Ed25519 key — preferred
+# Создать ключ Ed25519 — рекомендуемый вариант
 ssh-keygen -t ed25519 -C "user@workstation"
 
-# Generate RSA 4096 for legacy compatibility
+# Создать RSA-ключ длиной 4096 бит для совместимости со старыми системами
 ssh-keygen -t rsa -b 4096 -C "user@workstation"
 
-# Generate a named key for a specific purpose (never clobber your default)
+# Создать отдельный ключ для конкретной задачи (не перезаписывайте ключ по умолчанию)
 ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_github -C "github-personal"
 
-# Change the passphrase on an existing key (does not change the key itself)
+# Изменить парольную фразу существующего ключа (сам ключ не меняется)
 ssh-keygen -p -f ~/.ssh/id_ed25519
 
-# Display the fingerprint of a key — useful for verifying identity before trusting
+# Показать отпечаток ключа — полезно для проверки перед тем, как ему доверять
 ssh-keygen -lf ~/.ssh/id_ed25519.pub
 # 256 SHA256:abc123xyz... user@workstation (ED25519)
 ```
 
-**Key size vs. passphrase:** a 4096-bit RSA key without a passphrase is less secure than a 256-bit Ed25519 key with a strong passphrase. The passphrase encrypts the private key file at rest using AES-256. Without it, anyone who reads the file can impersonate you everywhere that key is authorized. The passphrase never leaves your machine — it only unlocks the local file.
+**Размер ключа и парольная фраза:** ключ RSA длиной 4096 бит без парольной фразы менее защищён, чем ключ Ed25519 длиной 256 бит с надёжной парольной фразой. Она шифрует файл приватного ключа на диске с помощью AES-256. Без неё любой, кто прочитает файл, сможет выдавать себя за вас на всех серверах, где этот ключ разрешён. Парольная фраза не покидает вашу машину — она только разблокирует локальный файл.
 
-**Comment field (`-C`) best practice:** use `user@machine` or a purpose descriptor like `ci-deploy-prod`. The comment appears in `authorized_keys` on every server you add the key to, making audits and revocations tractable. If you have 40 servers and need to rotate a key, the comment is how you find which entries to replace.
+**Рекомендация для комментария (`-C`):** используйте `user@machine` или описание назначения, например `ci-deploy-prod`. Комментарий отображается в `authorized_keys` на каждом сервере, куда добавлен ключ, и упрощает аудит и отзыв доступа. Если у вас 40 серверов и нужно заменить ключ, по комментарию можно найти все записи, которые требуется обновить.
 
 ---
 
-### Key Files and Permissions
+### Файлы ключей и права доступа
 
-SSH is strict about file permissions. Wrong permissions = silent authentication failure. This is one of the most common beginner gotchas and one of the most common interview topics.
+SSH строго проверяет права доступа к файлам. Неверные права приводят к отказу аутентификации, иногда без очевидного объяснения. Это частая ошибка новичков и популярная тема на собеседованиях.
 
 ```
 ~/.ssh/
@@ -111,91 +111,91 @@ SSH is strict about file permissions. Wrong permissions = silent authentication 
 └── config                  # client config       — chmod 600
 ```
 
-The `~/.ssh/` directory itself must be `chmod 700`. If it is group- or world-writable, SSH will refuse to use the keys inside — it treats that as evidence that someone else may have tampered with the files.
+Сам каталог `~/.ssh/` должен иметь права `chmod 700`. Если группа или остальные пользователи могут изменять его содержимое, SSH откажется использовать находящиеся внутри ключи: это считается признаком возможной подмены файлов.
 
 ```bash
-# Fix permissions after copying keys between machines
+# Исправить права доступа после копирования ключей между машинами
 chmod 700 ~/.ssh
 chmod 600 ~/.ssh/id_ed25519
 chmod 644 ~/.ssh/id_ed25519.pub
 chmod 600 ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/config
 
-# Verify with ls -la
+# Проверить командой ls -la
 ls -la ~/.ssh/
 ```
 
-**`authorized_keys` on the server:** this is where you deposit users' public keys to grant access. One public key per line. You can also prefix a key with options that restrict how it may be used — this is powerful for automation:
+**`authorized_keys` на сервере:** здесь хранятся публичные ключи пользователей, которым разрешён доступ. Один ключ на строку. Перед ключом можно указать параметры, ограничивающие способы его использования — это особенно полезно для автоматизации:
 
 ```
-# ~/.ssh/authorized_keys on the server
+# ~/.ssh/authorized_keys на сервере
 
-# Standard entry — unrestricted
+# Стандартная запись без ограничений
 ssh-ed25519 AAAA...base64... user@workstation
 
-# Deployment key — can only run one specific script, no interactive terminal
+# Ключ развёртывания: разрешён только один скрипт, интерактивный терминал запрещён
 command="/usr/local/bin/deploy.sh",no-pty,no-agent-forwarding,no-x11-forwarding ssh-ed25519 AAAA...base64... ci-deploy-key
 
-# Restrict to specific source IP range — access denied from anywhere else
+# Ограничить определённым диапазоном исходных IP; из остальных сетей доступ запрещён
 from="203.0.113.0/24" ssh-ed25519 AAAA...base64... restricted-user
 
-# Restrict to a single command AND a single IP — belt and suspenders for sensitive automation
+# Ограничить одной командой и одним IP — дополнительная защита для чувствительной автоматизации
 from="10.0.0.5",command="/usr/bin/rsync --server -vlogDtpre.iLsfxC . /var/www/",no-pty ssh-ed25519 AAAA...base64... rsync-deploy
 ```
 
-**Adding a public key to a remote server safely:**
+**Безопасное добавление публичного ключа на удалённый сервер:**
 
 ```bash
-# ssh-copy-id handles permissions automatically — prefer this over manual pasting
+# ssh-copy-id автоматически задаёт права; предпочтительнее ручного копирования ключа
 ssh-copy-id -i ~/.ssh/id_ed25519.pub user@server
 
-# If the server uses a non-standard port
+# Если сервер использует нестандартный порт
 ssh-copy-id -i ~/.ssh/id_ed25519.pub -p 2222 user@server
 
-# Manual equivalent when ssh-copy-id is unavailable
+# Ручной вариант, если ssh-copy-id недоступен
 cat ~/.ssh/id_ed25519.pub | ssh user@server \
   "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 ```
 
-**Ownership matters too:** if `~/.ssh/authorized_keys` is owned by root on a non-root account, or vice versa, SSH ignores it entirely. After copying keys as a different user (e.g., via `sudo`), always verify ownership with `ls -la ~/.ssh/` and fix with `chown` if needed.
+**Важен и владелец файлов:** если `~/.ssh/authorized_keys` принадлежит root, хотя используется обычной учётной записью (или наоборот), SSH полностью проигнорирует файл. После копирования ключей от имени другого пользователя, например через `sudo`, проверьте владельца командой `ls -la ~/.ssh/` и при необходимости исправьте его через `chown`.
 
 ---
 
-### SSH Config File
+### Конфигурационный файл SSH
 
-`~/.ssh/config` is one of the highest-leverage files in a DevOps engineer's toolkit. Every `ssh`, `scp`, `rsync`, and `git` command reads it automatically. A well-built config eliminates long command lines, documents your infrastructure topology, and makes bastion-hop setups completely transparent.
+`~/.ssh/config` — один из самых полезных файлов в арсенале DevOps-инженера. Команды `ssh`, `scp`, `rsync` и `git` читают его автоматически. Хорошо настроенный файл избавляет от длинных команд, документирует топологию инфраструктуры и делает подключения через bastion прозрачными.
 
 ```
 # ~/.ssh/config
 
-# ── Global defaults ─────────────────────────────────────────────────────────
+# ── Глобальные значения по умолчанию ───────────────────────────────────────
 Host *
     ServerAliveInterval 60        # keepalive every 60s — prevents idle connection drops
     ServerAliveCountMax 3         # drop connection after 3 missed keepalives
     AddKeysToAgent yes            # auto-add to agent on first use
     IdentitiesOnly yes            # only offer keys listed in this file; don't dump entire agent
 
-# ── Production web server ────────────────────────────────────────────────────
+# ── Production-веб-сервер ───────────────────────────────────────────────────
 Host prod-web
     HostName 203.0.113.50
     User ubuntu
     IdentityFile ~/.ssh/id_ed25519_prod
     Port 22
 
-# ── AWS bastion host ─────────────────────────────────────────────────────────
+# ── Bastion-хост AWS ────────────────────────────────────────────────────────
 Host bastion
     HostName 203.0.113.10
     User ec2-user
     IdentityFile ~/.ssh/id_ed25519_aws
 
-# ── Private DB reachable only through bastion ────────────────────────────────
+# ── Приватная БД, доступная только через bastion ────────────────────────────
 Host prod-db
     HostName 10.0.1.20
     User ubuntu
     IdentityFile ~/.ssh/id_ed25519_aws
     ProxyJump bastion             # SSH opens bastion first, then forwards to this host
 
-# ── GitHub (useful when managing multiple GitHub accounts) ───────────────────
+# ── GitHub (полезно при работе с несколькими аккаунтами) ────────────────────
 Host github-work
     HostName github.com
     User git
@@ -207,235 +207,235 @@ Host github-personal
     IdentityFile ~/.ssh/id_ed25519_github_personal
 ```
 
-With this config in place:
-- `ssh prod-web` — full connection with correct user, key, and host
-- `ssh prod-db` — automatically tunnels through bastion transparently
-- `git clone github-work:myorg/repo.git` — uses the work key without any flags
+С такой конфигурацией:
+- `ssh prod-web` — подключение с нужным пользователем, ключом и адресом хоста
+- `ssh prod-db` — автоматическое подключение через bastion
+- `git clone github-work:myorg/repo.git` — использует рабочий ключ без дополнительных флагов
 
-**`IdentitiesOnly yes` gotcha:** without this directive, SSH offers *every* key loaded in your agent plus all default key filenames (`id_rsa`, `id_ed25519`, etc.) in sequence. Many servers lock the connection after a small number of failed auth attempts (`MaxAuthTries 3` is a common hardening setting). With 5+ keys loaded, you may be locked out before SSH even tries the right one. Set `IdentitiesOnly yes` globally and specify `IdentityFile` per host to prevent this.
+**Важный нюанс `IdentitiesOnly yes`:** без этой директивы SSH по очереди предлагает все ключи из agent и все стандартные файлы ключей (`id_rsa`, `id_ed25519` и другие). Многие серверы закрывают соединение после нескольких неудачных попыток аутентификации (`MaxAuthTries 3` — распространённая настройка усиления безопасности). Если загружено пять и более ключей, сервер может заблокировать соединение ещё до проверки нужного ключа. Установите `IdentitiesOnly yes` глобально и задавайте `IdentityFile` для каждого хоста.
 
-**Config file precedence:** SSH reads `~/.ssh/config` first, then `/etc/ssh/ssh_config`. The first matching `Host` block wins for each directive — more specific entries should appear before broader `Host *` blocks. This is the opposite of how most people expect it to work.
+**Порядок чтения конфигурации:** SSH сначала читает `~/.ssh/config`, затем `/etc/ssh/ssh_config`. Для каждой директивы действует первое совпавшее правило `Host`, поэтому более конкретные записи нужно располагать перед общими блоками `Host *`. Это работает не так, как многие ожидают.
 
 ---
 
-### SSH Agent
+### SSH-agent
 
-The agent is a background process that holds your decrypted private keys in memory. You type your passphrase once when you add the key; thereafter every tool that uses SSH — `ssh`, `scp`, `git`, Ansible, Terraform — authenticates without prompting.
+SSH-agent — фоновый процесс, который хранит расшифрованные приватные ключи в памяти. Парольную фразу нужно ввести один раз при добавлении ключа; после этого инструменты SSH — `ssh`, `scp`, `git`, Ansible и Terraform — выполняют аутентификацию без повторного запроса.
 
 ```bash
-# Start the agent (desktop environments usually start it automatically at login)
+# Запустить agent (графические окружения обычно запускают его при входе)
 eval "$(ssh-agent -s)"
-# Output: Agent pid 12345
+# Вывод: Agent pid 12345
 
-# Add default key — prompts for passphrase once
+# Добавить основной ключ — парольная фраза запрашивается один раз
 ssh-add ~/.ssh/id_ed25519
 
-# Add with a time limit — auto-removed after 4 hours
-# Useful for production keys you don't want resident all day
+# Добавить с ограничением времени — удалить автоматически через 4 часа
+# Полезно для production-ключей, которые не должны оставаться загруженными весь день
 ssh-add -t 4h ~/.ssh/id_ed25519_prod
 
-# List keys currently loaded in the agent
+# Показать ключи, загруженные в agent
 ssh-add -l
 # 256 SHA256:abc123... user@workstation (ED25519)
 # 3072 SHA256:def456... user@workstation (RSA)
 
-# Show full public key of a loaded key (useful for adding to authorized_keys)
+# Показать полный публичный ключ из agent (например, для добавления в authorized_keys)
 ssh-add -L
 
-# Remove one key from the agent
+# Удалить один ключ из agent
 ssh-add -d ~/.ssh/id_ed25519_github
 
-# Remove all keys
+# Удалить все ключи
 ssh-add -D
 ```
 
-**Agent forwarding vs. ProxyJump:** when you SSH into a bastion and then need to reach an internal host, you have two options. Understand the difference — this is a common interview topic.
+**Перенаправление agent и ProxyJump:** при подключении к bastion с последующим доступом к внутреннему хосту есть два варианта. Важно понимать различия — это частая тема на собеседованиях.
 
-| Feature | `ProxyJump` | `ForwardAgent` |
+| Возможность | `ProxyJump` | `ForwardAgent` |
 |---------|-------------|----------------|
-| Your private key stays on your machine | ✅ | ✅ |
-| Agent socket exposed on the relay host | ❌ | ✅ ← security risk |
-| Root on relay host can abuse your agent | ❌ | ✅ |
-| Works without shell on relay host | ✅ (TCP only) | ❌ |
-| Requires explicit trust in relay host | No | Yes |
-| Recommended default | ✅ | Only for fully trusted hosts |
+| Приватный ключ остаётся на вашей машине | ✅ | ✅ |
+| Сокет agent доступен на промежуточном хосте | ❌ | ✅ ← security risk |
+| Root на промежуточном хосте может злоупотребить agent | ❌ | ✅ |
+| Работает без shell на промежуточном хосте | ✅ (TCP only) | ❌ |
+| Требует явного доверия промежуточному хосту | No | Yes |
+| Рекомендуемый вариант по умолчанию | ✅ | Only for fully trusted hosts |
 
-**`ForwardAgent` security warning:** with `ForwardAgent yes`, any user with root on the bastion can attach to your agent's Unix socket (`SSH_AUTH_SOCK`) and authenticate as you to every server your key is authorized on — for the duration of your session. Use `ProxyJump` by default. Reserve `ForwardAgent` for hosts you fully control.
+**Предупреждение о безопасности `ForwardAgent`:** при `ForwardAgent yes` пользователь с правами root на bastion может подключиться к Unix-сокету agent (`SSH_AUTH_SOCK`) и аутентифицироваться от вашего имени на всех серверах, где разрешён ваш ключ, пока действует сессия. По умолчанию используйте `ProxyJump`. `ForwardAgent` оставляйте только для полностью доверенных хостов.
 
 ```bash
-# Agent forwarding — explicit per-session (never set globally)
+# Перенаправление agent — только для отдельной сессии (не задавайте глобально)
 ssh -A user@bastion
 
-# ProxyJump — preferred; key never leaves your machine
+# ProxyJump — предпочтительный вариант; ключ не покидает вашу машину
 ssh -J ec2-user@bastion ubuntu@10.0.1.20
 
-# Multi-hop ProxyJump
+# Многоступенчатый ProxyJump
 ssh -J user@jump1,user@jump2 user@final-destination
 ```
 
-**The `SSH_AUTH_SOCK` environment variable** points to the Unix socket the agent listens on. When you `sudo` or switch users, this variable often doesn't carry over — which is why `sudo ansible-playbook` sometimes fails with key errors even though your agent is running. Fix with `sudo SSH_AUTH_SOCK=$SSH_AUTH_SOCK ansible-playbook ...` or configure `Defaults env_keep += "SSH_AUTH_SOCK"` in `/etc/sudoers`.
+**Переменная окружения `SSH_AUTH_SOCK`** указывает на Unix-сокет SSH-agent. При использовании `sudo` или переключении пользователя переменная часто не сохраняется. Поэтому `sudo ansible-playbook` иногда не находит ключи, хотя agent запущен. Передайте переменную явно: `sudo SSH_AUTH_SOCK=$SSH_AUTH_SOCK ansible-playbook ...` или добавьте `Defaults env_keep += "SSH_AUTH_SOCK"` в `/etc/sudoers`.
 
 ---
 
-### Port Forwarding and Tunneling
+### Перенаправление портов и туннелирование
 
-SSH can forward TCP ports between your machine and remote networks. This is how you reach private services (databases, internal dashboards, admin UIs) without exposing them to the internet.
+SSH умеет перенаправлять TCP-порты между локальной машиной и удалёнными сетями. Так можно обращаться к приватным сервисам (базам данных, внутренним дашбордам и административным интерфейсам), не открывая их в интернет.
 
-| Tunnel type | Flag | Direction | Typical use |
+| Тип туннеля | Флаг | Направление | Типичный сценарий |
 |-------------|------|-----------|-------------|
-| **Local** | `-L` | Remote service → local port | Access private DB from your laptop |
-| **Remote** | `-R` | Local service → remote port | Expose local dev server to a remote machine |
-| **Dynamic** | `-D` | SOCKS5 proxy on local port | Route browser traffic through a server |
+| **Локальный** | `-L` | Удалённый сервис → локальный порт | Доступ к приватной БД с ноутбука |
+| **Удалённый** | `-R` | Локальный сервис → удалённый порт | Открыть локальный dev-сервер для удалённой машины |
+| **Динамический** | `-D` | SOCKS5-прокси на локальном порту | Направить трафик браузера через сервер |
 
 ```bash
-# ── Local forwarding ─────────────────────────────────────────────────────────
-# Access RDS (port 5432) in a private VPC via localhost:5433
-# Syntax: -L local_port:target_host:target_port jump_host
+# ── Локальное перенаправление ─────────────────────────────────────────────────────────
+# Доступ к RDS (порт 5432) в приватной VPC через localhost:5433
+# Синтаксис: -L локальный_порт:целевой_хост:целевой_порт jump_host
 ssh -L 5433:my-rds.cluster-xyz.us-east-1.rds.amazonaws.com:5432 ec2-user@bastion
-# Now connect your DB client to localhost:5433
+# Теперь подключите клиент БД к localhost:5433
 
-# ── Remote forwarding ────────────────────────────────────────────────────────
-# Expose your local dev server (port 3000) on the remote server's port 8080
-# Useful for sharing dev work or testing webhooks from GitHub
+# ── Удалённое перенаправление ────────────────────────────────────────────────────────
+# Открыть локальный dev-сервер (порт 3000) на порту 8080 удалённого сервера
+# Полезно для совместной работы и проверки webhook от GitHub
 ssh -R 8080:localhost:3000 user@remote-server
 
-# ── Dynamic (SOCKS5) ─────────────────────────────────────────────────────────
-# Create a SOCKS5 proxy — configure your browser to use localhost:1080
+# ── Динамический режим (SOCKS5) ─────────────────────────────────────────────────────────
+# Создать SOCKS5-прокси — настройте браузер на localhost:1080
 ssh -D 1080 user@server
 
-# ── Background persistent tunnel ─────────────────────────────────────────────
-# -N: don't start a shell   -f: fork to background
+# ── Постоянный туннель в фоне ─────────────────────────────────────────────
+# -N: не запускать shell; -f: перейти в фон
 ssh -fN -L 5432:my-rds.cluster-xyz.us-east-1.rds.amazonaws.com:5432 ec2-user@bastion
 
-# Find and kill the background tunnel when done
+# Найти и завершить фоновый туннель после использования
 ps aux | grep ssh
 kill <pid>
 ```
 
-**`-N` vs. interactive:** omitting `-N` opens a shell on the jump host in addition to establishing the tunnel. Adding `-N` means SSH connects, sets up the port forward, and does nothing else — no shell prompt, no resource waste on the remote side. Always use `-N` for pure tunneling.
+**`-N` и интерактивная сессия:** без `-N` SSH помимо туннеля открывает shell на промежуточном хосте. С `-N` SSH только подключается и настраивает перенаправление порта — без приглашения shell и лишней нагрузки на удалённой стороне. Для туннелирования используйте `-N`.
 
-**`GatewayPorts` for remote forwarding:** by default, `-R` only binds on `127.0.0.1` of the remote server — only processes on that host can use it. To bind on `0.0.0.0` (all interfaces) so external clients can reach it, the server needs `GatewayPorts yes` in `/etc/ssh/sshd_config`. This is disabled by default for security reasons.
+**`GatewayPorts` для удалённого перенаправления:** по умолчанию `-R` привязывается только к `127.0.0.1` удалённого сервера, поэтому порт доступен лишь процессам на этом хосте. Чтобы слушать `0.0.0.0` (все интерфейсы) и принимать внешние подключения, в `/etc/ssh/sshd_config` нужна директива `GatewayPorts yes`. По соображениям безопасности она отключена по умолчанию.
 
 ---
 
-### Hardening the SSH Server
+### Усиление безопасности SSH-сервера
 
-A default `sshd` installation is functional but not hardened. Changing these settings in `/etc/ssh/sshd_config` is standard practice for any production host. After edits, always validate config before reloading — a typo can lock you out.
+Стандартная установка `sshd` работает, но не усилена с точки зрения безопасности. Изменение настроек в `/etc/ssh/sshd_config` — обычная практика для production-хостов. После правок всегда проверяйте конфигурацию перед перезагрузкой службы: опечатка может лишить вас доступа.
 
 ```bash
-# ── /etc/ssh/sshd_config — production hardening ───────────────────────────
+# ── /etc/ssh/sshd_config — усиление безопасности production ───────────────────────────
 
-# Disable password login entirely — keys only
+# Полностью отключить вход по паролю — только ключи
 PasswordAuthentication no
 ChallengeResponseAuthentication no
 
-# Disable root login — use a named user, escalate with sudo
+# Запретить вход root — использовать именованного пользователя и sudo
 PermitRootLogin no
 
-# Restrict which users may log in at all
+# Ограничить список пользователей, которым разрешён вход
 AllowUsers ubuntu deploy-user
 
-# Reduce the window for unauthenticated connections (default is 120s)
+# Уменьшить время ожидания неаутентифицированного подключения (по умолчанию 120 с)
 LoginGraceTime 30
 
-# Limit auth attempts per connection — important against key-stuffing
+# Ограничить число попыток аутентификации в одном подключении
 MaxAuthTries 3
 
-# Disable unused features that expand attack surface
+# Отключить неиспользуемые функции, увеличивающие поверхность атаки
 X11Forwarding no
-AllowAgentForwarding no        # re-enable per-user if needed
+AllowAgentForwarding no        # при необходимости включать отдельно для пользователя
 AllowTcpForwarding no          # re-enable if you use tunnels intentionally
 
-# Only listen on specific interface if the host is multi-homed
+# Слушать только заданный интерфейс, если у хоста несколько сетевых интерфейсов
 ListenAddress 0.0.0.0
 
-# Use only modern key exchange and cipher algorithms
+# Использовать только современные алгоритмы обмена ключами и шифрования
 KexAlgorithms curve25519-sha256,diffie-hellman-group16-sha512
 Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com
 MACs hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com
 ```
 
 ```bash
-# Validate sshd_config syntax before reloading — catches typos that would lock you out
+# Проверить синтаксис sshd_config перед перезагрузкой — это обнаружит опечатки, которые могут лишить вас доступа
 sshd -t
 
-# Reload without dropping existing sessions
+# Перезагрузить конфигурацию без разрыва существующих сессий
 systemctl reload sshd
 
-# Verify the daemon is running after reload
+# Проверить, что после перезагрузки демон работает
 systemctl status sshd
 ```
 
-**Lock-out prevention:** always keep one active SSH session open while testing a new `sshd_config`. If your reload produces an error or the config is wrong, your existing session stays alive and you can fix it. Opening a fresh connection to verify access before closing the old one is a hard-won rule in production ops.
+**Как не потерять доступ:** всегда держите открытой одну SSH-сессию, пока проверяете новый `sshd_config`. Если перезагрузка завершится ошибкой или конфигурация окажется неверной, существующая сессия останется активной и позволит исправить проблему. Сначала откройте новое соединение и убедитесь, что доступ работает, и только потом закрывайте старую сессию — это важное правило production-эксплуатации.
 
-**Port 22 vs. non-standard port:** changing SSH to a non-standard port (e.g., 2222) reduces noise from automated scanners but provides no real security — port scans find it in seconds. It's a minor operational inconvenience for attackers and a regular inconvenience for your team. Prefer `AllowUsers`, key-only auth, and a firewall over security-through-obscurity port changes.
+**Порт 22 и нестандартный порт:** перенос SSH на другой порт, например 2222, уменьшает количество шума от автоматических сканеров, но не обеспечивает реальную защиту — сканирование обнаружит порт за секунды. Для атакующего это небольшое неудобство, а для команды — постоянное. Вместо смены порта ради сокрытия используйте `AllowUsers`, вход только по ключам и firewall.
 
 ---
 
-### Copying Files with SCP and Rsync over SSH
+### Копирование файлов через SCP и Rsync по SSH
 
-Both tools use SSH as the transport layer and respect your `~/.ssh/config` aliases.
+Оба инструмента используют SSH в качестве транспорта и учитывают алиасы из `~/.ssh/config`.
 
 ```bash
 # ── scp — simple file copy ────────────────────────────────────────────────────
-# Local → remote
+# Локальная машина → удалённая
 scp ./app.tar.gz ubuntu@prod-web:/tmp/
 
-# Remote → local
+# Удалённая машина → локальная
 scp ubuntu@prod-web:/var/log/app.log ./
 
-# Recursive directory copy
+# Рекурсивное копирование каталога
 scp -r ./dist/ ubuntu@prod-web:/var/www/html/
 
-# Use a non-default key
+# Использовать нестандартный ключ
 scp -i ~/.ssh/id_ed25519_prod ./config.yml ubuntu@prod-web:/etc/app/
 
 # ── rsync — efficient incremental sync ───────────────────────────────────────
-# -a: archive mode (preserves permissions, timestamps, symlinks)
-# -v: verbose   -z: compress in transit   --delete: remove files deleted locally
+# -a: режим архива (сохраняет права, временные метки и символические ссылки)
+# -v: подробный вывод   -z: сжатие при передаче   --delete: удалять файлы, удалённые локально
 rsync -avz --delete ./dist/ ubuntu@prod-web:/var/www/html/
 
-# rsync over a custom SSH port
+# rsync через нестандартный SSH-порт
 rsync -avz -e "ssh -p 2222" ./dist/ ubuntu@prod-web:/var/www/html/
 
-# Dry run first — shows what would change without doing it
+# Сначала пробный запуск — показывает изменения, не применяя их
 rsync -avz --dry-run --delete ./dist/ ubuntu@prod-web:/var/www/html/
 
-# Use your ssh config alias — rsync reads it automatically
+# Используйте алиас из ssh config — rsync прочитает его автоматически
 rsync -avz ./dist/ prod-web:/var/www/html/
 ```
 
-**scp vs. rsync:** use `scp` for quick one-off transfers of individual files. Use `rsync` for directories, deployments, or anything you run repeatedly — it sends only changed bytes after the first transfer. On a slow link or large codebase, `rsync` can be 100x faster than `scp` for incremental updates.
+**scp и rsync:** используйте `scp` для разовой передачи отдельных файлов. Для каталогов, развёртываний и повторяющихся передач выбирайте `rsync`: после первой передачи он отправляет только изменившиеся данные. На медленном канале или при большом коде инкрементальное обновление через `rsync` может быть в 100 раз быстрее `scp`.
 
-**`scp` deprecation note:** OpenSSH 9.0+ deprecated the legacy `scp` protocol by default, switching to SFTP internally. The command still works but you may see warnings on older servers. For scripted transfers, `rsync` or `sftp` are preferable.
+**Устаревший протокол `scp`:** начиная с OpenSSH 9.0 по умолчанию используется SFTP вместо старого протокола scp. Команда продолжает работать, но при подключении к старым серверам могут появляться предупреждения. Для скриптовой передачи предпочтительнее `rsync` или `sftp`.
 
 ---
 
-## Examples
+## Примеры
 
-### Example 1: Set Up Key-Based Access to a New Server from Scratch
+### Пример 1: настройка доступа к новому серверу по ключу с нуля
 
-**Scenario:** you've just launched a fresh Ubuntu EC2 instance. AWS gave you a `.pem` file. You want to convert to your standard Ed25519 workflow and disable password auth.
+**Сценарий:** вы только что запустили новый экземпляр Ubuntu EC2. AWS выдал файл `.pem`. Нужно перейти на стандартную схему с Ed25519 и отключить парольную аутентификацию.
 
 ```bash
-# Step 1 — Connect with the AWS-provided PEM key (RSA format)
+# Шаг 1 — подключиться с PEM-ключом AWS (формат RSA)
 chmod 400 ~/Downloads/my-instance.pem
 ssh -i ~/Downloads/my-instance.pem ubuntu@203.0.113.50
 
-# Step 2 — On the server, add your Ed25519 public key
-# (run this from your laptop, not the server)
+# Шаг 2 — добавить публичный ключ Ed25519 на сервер
+# (выполните на ноутбуке, а не на сервере)
 ssh-copy-id -i ~/.ssh/id_ed25519.pub -o "IdentityFile=~/Downloads/my-instance.pem" ubuntu@203.0.113.50
 
-# Step 3 — Verify the new key works BEFORE disabling password/pem access
+# Шаг 3 — проверить новый ключ ДО отключения пароля и PEM-доступа
 ssh -i ~/.ssh/id_ed25519 ubuntu@203.0.113.50
-# Confirm you get a shell
+# Убедиться, что открылась оболочка
 
-# Step 4 — Harden sshd (on the server)
+# Шаг 4 — усилить настройки sshd на сервере
 sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
 sudo sed -i 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
 sudo sshd -t && sudo systemctl reload sshd
 
-# Step 5 — Add to your local ~/.ssh/config for convenience
+# Шаг 5 — добавить настройки в локальный ~/.ssh/config
 cat >> ~/.ssh/config <<'EOF'
 
 Host my-ec2
@@ -444,17 +444,17 @@ Host my-ec2
     IdentityFile ~/.ssh/id_ed25519
 EOF
 
-# Step 6 — Verify the alias works
+# Шаг 6 — проверить работу алиаса
 ssh my-ec2
 ```
 
-**Verification:** `ssh my-ec2` connects without a password prompt. Attempting `ssh -o PasswordAuthentication=yes ubuntu@203.0.113.50` should return `Permission denied`.
+**Проверка:** `ssh my-ec2` подключается без запроса пароля. Команда `ssh -o PasswordAuthentication=yes ubuntu@203.0.113.50` должна вернуть `Permission denied`.
 
 ---
 
-### Example 2: Reach a Private Database Through a Bastion Host
+### Пример 2: доступ к приватной базе данных через bastion
 
-**Scenario:** your PostgreSQL database lives in a private subnet (10.0.1.50:5432). It has no public IP. A bastion host at 203.0.113.10 is the only way in.
+**Сценарий:** база PostgreSQL находится в приватной подсети (`10.0.1.50:5432`) и не имеет публичного IP. Единственный путь доступа — bastion с адресом `203.0.113.10`.
 
 ```bash
 # Step 1 — Add both hosts to ~/.ssh/config
@@ -493,13 +493,13 @@ ss -tlnp | grep 5433
 pkill -f "ssh.*5433"
 ```
 
-**Why `ProxyJump` here instead of `ForwardAgent`:** the bastion never sees your private key. SSH on your laptop opens a raw TCP channel to 10.0.1.50 through the bastion, then performs the full key authentication handshake directly with the destination. The bastion is just a pipe.
+**Почему здесь `ProxyJump`, а не `ForwardAgent`:** bastion никогда не получает ваш приватный ключ. SSH на ноутбуке открывает TCP-канал к `10.0.1.50` через bastion, а затем выполняет полную аутентификацию ключом непосредственно с целевым узлом. Bastion служит лишь каналом передачи.
 
 ---
 
-### Example 3: Deploy a Web App via CI/CD Using a Restricted Deploy Key
+### Пример 3: развёртывание веб-приложения через CI/CD с ограниченным ключом
 
-**Scenario:** your GitHub Actions pipeline needs to `rsync` built assets to a production server. You want to scope the key so it can only run the deploy script — nothing else.
+**Сценарий:** pipeline GitHub Actions должен передать собранные файлы на production-сервер через `rsync`. Ключ должен позволять запускать только скрипт развёртывания и ничего больше.
 
 ```bash
 # Step 1 — Generate a dedicated deploy key with no passphrase
@@ -566,13 +566,13 @@ jobs:
         run: rm -f ~/.ssh/id_ed25519_deploy
 ```
 
-**Verification:** SSHing manually with the deploy key should run the script and exit — no shell prompt, no other commands possible. Attempt `ssh -i ~/.ssh/id_ed25519_ci_deploy ubuntu@203.0.113.50 "cat /etc/passwd"` — the server ignores the argument and runs `deploy.sh` instead.
+**Проверка:** при ручном подключении deploy-ключом должен выполниться скрипт и завершиться без shell-приглашения и возможности запускать другие команды. Попробуйте `ssh -i ~/.ssh/id_ed25519_ci_deploy ubuntu@203.0.113.50 "cat /etc/passwd"`: сервер проигнорирует переданную команду и вместо неё запустит `deploy.sh`.
 
 ---
 
-### Example 4: Audit and Rotate Keys Across Multiple Servers
+### Пример 4: аудит и ротация ключей на нескольких серверах
 
-**Scenario:** a team member left. You need to remove their key from all servers and verify no access remains.
+**Сценарий:** сотрудник покинул команду. Нужно удалить его ключ со всех серверов и убедиться, что доступ отозван.
 
 ```bash
 # Step 1 — Identify the key to remove (get the fingerprint or comment)
@@ -601,15 +601,15 @@ ansible all -m shell -a "grep 'alice@laptop' ~/.ssh/authorized_keys && echo FOUN
   -i inventory/production
 ```
 
-**Key rotation vs. key revocation:** SSH has no built-in certificate revocation like TLS. Revocation means manually removing the public key from every `authorized_keys` file on every server. This is why key hygiene (one key per person per purpose, meaningful comments, centralised inventory) matters — and why larger organisations move toward SSH Certificate Authorities (OpenSSH has `ssh-keygen -s` for this) or tools like HashiCorp Vault's SSH secrets engine, which issue short-lived certificates instead of long-lived keys.
+**Ротация и отзыв ключей:** в SSH нет встроенного отзыва сертификатов, как в TLS. Отзыв означает ручное удаление публичного ключа из каждого `authorized_keys` на каждом сервере. Поэтому важны правила хранения ключей: отдельный ключ на человека и назначение, осмысленные комментарии и централизованный реестр. Крупные организации переходят к SSH Certificate Authority (в OpenSSH для этого есть `ssh-keygen -s`) или к инструментам вроде SSH secrets engine в HashiCorp Vault, выдающим короткоживущие сертификаты вместо долгоживущих ключей.
 
 ---
 
-## Exercises
+## Практические задания
 
-### Exercise 1: Generate, Deploy, and Restrict a Key
+### Задание 1: создать, установить и ограничить ключ
 
-**Goal:** practice the full key lifecycle with server-side restrictions.
+**Цель:** отработать полный жизненный цикл ключа и ограничения на стороне сервера.
 
 1. Generate a new Ed25519 key pair named `id_ed25519_exercise` with the comment `exercise-key`. Give it a passphrase.
 2. Add the public key to a test server (or a second user account on your local machine via `ssh localhost`) using `ssh-copy-id`.
@@ -618,15 +618,15 @@ ansible all -m shell -a "grep 'alice@laptop' ~/.ssh/authorized_keys && echo FOUN
 5. SSH again with the same command. Confirm it prints `hello-from-restricted-key` and immediately exits instead of giving a shell.
 6. Try running `ssh -i ~/.ssh/id_ed25519_exercise user@host "cat /etc/hostname"` — observe that the server ignores your command and runs the forced command instead.
 
-**What to understand:** `authorized_keys` command restrictions override whatever the client requests. This is the mechanism that makes deploy keys safe.
+**Что нужно понять:** ограничения команд в `authorized_keys` имеют приоритет над запросами клиента. Благодаря этому deploy keys можно использовать безопасно.
 
 ---
 
-### Exercise 2: Build a Multi-Host SSH Config with a Bastion Jump
+### Задание 2: настроить SSH для нескольких хостов через bastion
 
-**Goal:** configure transparent multi-hop SSH entirely through `~/.ssh/config`.
+**Цель:** настроить прозрачное многоступенчатое SSH-подключение только через `~/.ssh/config`.
 
-You need access to two hosts: a "bastion" at one IP and a "private" host that is only reachable through the bastion. You can simulate this locally with Docker or two VMs, or use any two servers you have access to where one can reach the other but your laptop cannot reach the second directly.
+Вам понадобятся два хоста: `bastion` с одним IP и приватный хост, доступный только через bastion. Их можно смоделировать локально с помощью Docker или двух виртуальных машин либо использовать два доступных сервера, где первый видит второй, а ваш ноутбук не может подключиться ко второму напрямую.
 
 1. Add both hosts to `~/.ssh/config` — one as `Host lab-bastion`, one as `Host lab-private` with `ProxyJump lab-bastion`.
 2. Set `IdentitiesOnly yes` globally and specify `IdentityFile` for each host.
@@ -635,30 +635,30 @@ You need access to two hosts: a "bastion" at one IP and a "private" host that is
 5. Run `ssh -v lab-private 2>&1 | grep -E "proxy|jump|connect"` to observe in the verbose output that SSH is making a proxied connection.
 6. Without modifying the command, run `scp /etc/hostname lab-private:/tmp/from-laptop.txt` — verify the file appears on the private host, demonstrating that `scp` reads your config automatically.
 
-**What to understand:** `ProxyJump` is transparent to all tools that invoke SSH under the hood. The config file is the central place to encode your infrastructure topology.
+**Что нужно понять:** `ProxyJump` прозрачен для всех инструментов, которые используют SSH внутри себя. Конфигурационный файл — центральное место для описания топологии инфраструктуры.
 
 ---
 
-### Exercise 3: Diagnose and Fix a Broken SSH Setup
+### Задание 3: диагностировать и исправить сломанную настройку SSH
 
-**Goal:** develop the debugging instincts needed to fix SSH failures fast.
+**Цель:** научиться быстро диагностировать и устранять ошибки SSH.
 
-Set up a working SSH key login to a test host, then intentionally break it in the following ways — one at a time — and practice diagnosing each without looking at this lesson:
+Настройте вход на тестовый хост по SSH-ключу, затем по очереди намеренно сломайте конфигурацию перечисленными способами и попробуйте диагностировать каждый сбой без подсказок из урока:
 
 1. **Permissions break:** run `chmod 644 ~/.ssh/id_ed25519` (private key world-readable). Attempt to connect. Read the error. Fix it. Understand why SSH refuses.
 2. **Wrong authorized_keys permissions:** on the server, run `chmod 644 ~/.ssh/authorized_keys`. Attempt to connect. SSH will fall back to password auth (or fail if passwords are disabled). Fix it.
 3. **Stale known_hosts:** delete the server's entry from `known_hosts` and regenerate the server's host key with `sudo ssh-keygen -A && sudo systemctl restart sshd`. Attempt to connect — read the MITM warning. Use `ssh-keyscan` to correctly update `known_hosts` rather than deleting the entry.
 4. **Key not in agent:** run `ssh-add -D` to clear the agent. Then attempt `ssh -o IdentitiesOnly=yes user@host` *without* specifying `-i` and without any `IdentityFile` in config. Observe the failure. Add the key with `ssh-add` and retry.
 
-For each failure, run `ssh -v user@host` before fixing it and identify the exact log line that indicates the cause. `-v` (verbose), `-vv`, and `-vvv` are your primary SSH debugging tools.
+Перед исправлением каждого сбоя выполните `ssh -v user@host` и найдите точную строку журнала, указывающую на причину. Флаги `-v`, `-vv` и `-vvv` — основные инструменты диагностики SSH.
 
-**What to understand:** SSH fails silently or with generic `Permission denied` messages. The verbose flag reveals exactly which step failed — host verification, key offer, auth method negotiation. Real-world SSH debugging is almost always about reading `-v` output carefully.
+**Что нужно понять:** SSH может завершаться без подробностей или показывать общее `Permission denied`. Подробный режим показывает, на каком шаге произошёл сбой: проверка хоста, предложение ключа или согласование метода аутентификации. Практическая диагностика SSH в основном сводится к внимательному чтению вывода `-v`.
 
 ---
 
-### Exercise 4: Set Up a Persistent Local Port Tunnel and Connect Through It
+### Задание 4: создать постоянный локальный туннель и подключиться через него
 
-**Goal:** practice SSH tunneling for database access — a daily task in many DevOps roles.
+**Цель:** отработать SSH-туннелирование для доступа к базе данных — обычную задачу DevOps-инженера.
 
 1. Choose a service running on a remote host that listens on a non-default port — for example, a web server on port 8080, or start a simple one with `python3 -m http.server 8080` on the remote host.
 2. Open a background tunnel: `ssh -fN -L 9090:localhost:8080 user@remote-host`
@@ -668,11 +668,11 @@ For each failure, run `ssh -v user@host` before fixing it and identify the exact
 6. Verify the tunnel is gone: `ss -tlnp | grep 9090` should return nothing. Confirm `curl http://localhost:9090` now fails.
 7. **Bonus:** add a `LocalForward 9090 localhost:8080` directive under the host in `~/.ssh/config`, then use `ssh -fN remote-host` and confirm the same tunnel opens without `-L` on the command line.
 
-**What to understand:** port forwarding is how you safely expose private services for local tooling — database GUIs, internal dashboards, admin panels — without opening firewall rules. The pattern is identical whether the target is a local port on the jump host or a hostname in a private VPC.
+**Что нужно понять:** перенаправление портов позволяет безопасно подключаться к приватным сервисам из локальных инструментов — GUI баз данных, внутренних дашбордов и административных панелей — без изменения правил firewall. Принцип одинаков, обращаетесь ли вы к локальному порту jump-хоста или к имени хоста в приватной VPC.
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Generate a temporary Ed25519 key pair and print the key type from the public key.
 
@@ -684,8 +684,8 @@ For each failure, run `ssh -v user@host` before fixing it and identify the exact
    ssh-ed25519
    ```
 
-hint: Look into the SSH key generation tool that comes with OpenSSH and supports modern key types like Ed25519.
-hint: Use ssh-keygen -t ed25519 with a temporary output file, then extract the first field from the public key file using awk '{print $1}'.
+Подсказка: используйте входящую в OpenSSH утилиту генерации ключей, поддерживающую современные типы, например Ed25519.
+Подсказка: выполните `ssh-keygen -t ed25519` с временным файлом вывода, затем извлеките первое поле публичного ключа через `awk '{print $1}'`.
 
 2. Parse a `HostName` value from a formatted SSH config block.
 
@@ -696,5 +696,5 @@ hint: Use ssh-keygen -t ed25519 with a temporary output file, then extract the f
    ```expected_output
    10.0.0.1
    ```
-hint: Think about how you can search for a specific keyword in a file and then isolate just the value that follows it.
-hint: Use grep to find the HostName line, then pipe it to awk '{print $2}' to extract the second field.
+Подсказка: найдите нужное ключевое слово в тексте и извлеките значение, которое следует за ним.
+Подсказка: найдите строку `HostName` с помощью `grep`, затем передайте её в `awk '{print $2}'`, чтобы получить второе поле.

@@ -1,5 +1,5 @@
 ---
-title: Subprocess & Automation
+title: Subprocess и автоматизация
 module: python
 duration_min: 20
 difficulty: intermediate
@@ -7,21 +7,21 @@ tags: [python, subprocess, automation, shell, os, shlex]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-DevOps scripts constantly need to reach outside Python and talk to the operating system: restart a service, invoke `kubectl`, check disk usage, call `git`, compress a tarball. Python's `subprocess` module is the standard, correct way to do this. It captures stdout and stderr separately, surfaces exit codes, enforces timeouts, and avoids the shell injection vulnerabilities that come with older alternatives like `os.system()` or `commands.getoutput()`. Every production automation script you write will use it.
+DevOps-скриптам постоянно приходится выходить за пределы Python и обращаться к операционной системе: перезапускать службу, запускать `kubectl`, проверять использование диска, вызывать `git` или сжимать архив. Стандартный способ делать это — модуль Python `subprocess`. Он раздельно собирает stdout и stderr, предоставляет коды завершения, поддерживает тайм-ауты и помогает избежать shell injection, возможного при использовании устаревших альтернатив вроде `os.system()` или `commands.getoutput()`. Этот модуль пригодится почти в каждом production-скрипте автоматизации.
 
-The design philosophy of `subprocess` is explicit control. You construct the command as a list of strings — no shell interpolation, no implicit `/bin/sh` wrapper unless you ask for one. This mirrors how the kernel actually executes programs (`execve`), which means there are no surprises with quoting, globbing, or variable expansion. When you do need shell features (pipes, redirects, globs), you opt in deliberately and handle the security implications yourself.
+Философия `subprocess` — явный контроль. Команда задаётся списком строк: без интерполяции shell и без неявного запуска `/bin/sh`, если вы сами этого не запросили. Такой подход соответствует тому, как ядро запускает программы через `execve`, и избавляет от неожиданных эффектов кавычек, glob-шаблонов и раскрытия переменных. Если нужны возможности shell (конвейеры, перенаправления, glob), их следует включать осознанно и учитывать последствия для безопасности.
 
-In the broader DevOps toolchain, `subprocess` is the glue layer between your Python logic and every other CLI tool in your environment. It sits below high-level libraries like `boto3` or `kubernetes-client` (which have their own HTTP transports) but above raw `os.fork()`/`os.execve()` calls. When a dedicated SDK doesn't exist — or when you're wrapping an existing CLI tool for consistency — `subprocess` is the right abstraction. Understanding it deeply means you can reliably automate deployments, health checks, infrastructure queries, and build pipelines from a single Python process.
+В цепочке DevOps-инструментов `subprocess` связывает логику Python с любыми CLI-инструментами окружения. Он находится ниже высокоуровневых библиотек вроде `boto3` и `kubernetes-client` (у которых есть собственные HTTP-транспорты), но выше низкоуровневых вызовов `os.fork()` и `os.execve()`. Если отдельного SDK нет или нужно единообразно обернуть существующий CLI-инструмент, используйте `subprocess`. Глубокое понимание модуля позволяет надёжно автоматизировать развёртывания, проверки состояния, запросы к инфраструктуре и конвейеры сборки из одного процесса Python.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### subprocess.run — The Right Default
+### subprocess.run — рекомендуемый вариант по умолчанию
 
-`subprocess.run()` is the high-level entry point introduced in Python 3.5. It blocks until the command completes and returns a `CompletedProcess` object. Use it for the vast majority of automation tasks.
+`subprocess.run()` — высокоуровневая функция, появившаяся в Python 3.5. Она ждёт завершения команды и возвращает объект `CompletedProcess`. Используйте её для большинства задач автоматизации.
 
 ```python
 import subprocess
@@ -38,20 +38,20 @@ print(result.stderr)          # captured standard error
 print(result.returncode)      # integer: 0 = success, anything else = failure
 ```
 
-| Parameter | Effect | When to use |
+| Параметр | Эффект | Когда использовать |
 |-----------|--------|-------------|
-| `capture_output=True` | Captures stdout and stderr separately into strings | Almost always — lets you inspect output |
-| `text=True` | Decodes bytes to str using locale encoding | Whenever you're parsing text output |
-| `check=True` | Raises `CalledProcessError` on non-zero exit | When failure should abort the script |
-| `timeout=N` | Raises `TimeoutExpired` after N seconds | Network calls, long builds |
-| `cwd="/path"` | Sets working directory for the subprocess | Running `git`, `make`, `npm` in a project dir |
-| `env=dict` | Replaces (not merges) the environment | Passing secrets, controlling PATH |
-| `input="string"` | Sends string to the subprocess's stdin | Piping data between commands without a shell |
-| `stdin=DEVNULL` | Closes stdin so the process can't prompt | Non-interactive scripts, CI pipelines |
+| `capture_output=True` | Сохраняет stdout и stderr отдельно в строках | Почти всегда — позволяет анализировать вывод |
+| `text=True` | Декодирует байты в str с кодировкой локали | При разборе текстового вывода |
+| `check=True` | Вызывает `CalledProcessError` при ненулевом коде завершения | Когда ошибка должна остановить скрипт |
+| `timeout=N` | Вызывает `TimeoutExpired` через N секунд | Сетевые запросы, долгие сборки |
+| `cwd="/path"` | Задаёт рабочий каталог подпроцесса | Запуск `git`, `make`, `npm` в каталоге проекта |
+| `env=dict` | Заменяет окружение, а не дополняет его | Передача секретов, настройка PATH |
+| `input="string"` | Передаёт строку в stdin подпроцесса | Передача данных между командами без shell |
+| `stdin=DEVNULL` | Закрывает stdin, не позволяя процессу запросить ввод | Неинтерактивные скрипты и CI-конвейеры |
 
-**`shell=True` warning:** Setting `shell=True` passes your command to `/bin/sh -c`. This enables injection if any part of the command comes from user input or an external source. It also silently misbehaves with list arguments — only the first element is used as the command; the rest become positional parameters `$0`, `$1`, etc. inside the shell, which is almost never what you want. Use a list argument and `shell=False` (the default) unless you have a specific, documented reason otherwise.
+**Предупреждение о `shell=True`:** команда передаётся в `/bin/sh -c`. Если часть команды получена от пользователя или из внешнего источника, возникает риск command injection. Со списком аргументов режим также работает неожиданно: первый элемент становится командой, остальные — позиционными параметрами `$0`, `$1` и т. д. Обычно это не требуется. Используйте список аргументов и `shell=False` (значение по умолчанию), если нет конкретной документированной причины поступить иначе.
 
-**`env` replaces, not extends:** If you pass `env={"MY_VAR": "value"}`, the subprocess inherits *only* that variable — `PATH`, `HOME`, `USER`, and everything else vanishes. Commands like `git` or `kubectl` will fail because they can't find their own dependencies. To extend the current environment safely:
+**`env` заменяет окружение, а не дополняет его:** если передать `env={"MY_VAR": "value"}`, подпроцесс получит только эту переменную. `PATH`, `HOME`, `USER` и остальные переменные исчезнут. Команды `git` или `kubectl` могут перестать находиться. Чтобы безопасно дополнить текущее окружение:
 
 ```python
 import os
@@ -66,9 +66,9 @@ subprocess.run(["my-tool"], env=env, check=True)
 
 ---
 
-### Checking Exit Codes
+### Проверка кодов завершения
 
-Unix programs signal success or failure through their exit code. Zero means success; non-zero means something went wrong. Ignoring exit codes is one of the most common bugs in automation scripts — your script happily continues after a failed `kubectl apply` and leaves the cluster in a broken state.
+Программы Unix сообщают об успехе или ошибке через код завершения: ноль означает успех, ненулевое значение — ошибку. Игнорирование кодов завершения — одна из самых частых ошибок в скриптах автоматизации: скрипт продолжает работу после неудачного `kubectl apply` и оставляет кластер в некорректном состоянии.
 
 ```python
 import subprocess
@@ -100,26 +100,26 @@ else:
     print(f"Host unreachable (exit {result.returncode})")
 ```
 
-**`CalledProcessError` attributes:** when `check=True` raises, `e.stdout` and `e.stderr` are populated only if you also passed `capture_output=True`. Without capture, they are `None`, which means you lose the error message entirely. Always pair `check=True` with `capture_output=True` in production scripts so you can log exactly what went wrong.
+**Атрибуты `CalledProcessError`:** при `check=True` поля `e.stdout` и `e.stderr` заполняются только при использовании `capture_output=True`. Без захвата они равны `None`, и сообщение об ошибке теряется. В production-скриптах сочетайте `check=True` с `capture_output=True`, чтобы точно записывать причину сбоя.
 
-**Exit code conventions to know:**
+**Полезно знать соглашения о кодах завершения:**
 
-| Tool | Exit 0 | Exit 1 | Exit 2+ |
+| Инструмент | Exit 0 | Exit 1 | Exit 2+ |
 |------|--------|--------|---------|
-| Most Unix tools | Success | Generic error | Tool-specific |
-| `grep` | Match found | No match found | Error (bad args) |
-| `diff` | Files identical | Files differ | Error |
-| `curl` | Success | Protocol error | — |
-| `kubectl` | Success | API/auth error | — |
-| `ansible-playbook` | All tasks OK | One or more failures | — |
+| Большинство Unix-инструментов | Успех | Общая ошибка | Зависит от инструмента |
+| `grep` | Совпадение найдено | Совпадений нет | Ошибка (неверные аргументы) |
+| `diff` | Файлы одинаковы | Файлы различаются | Ошибка |
+| `curl` | Успех | Ошибка протокола | — |
+| `kubectl` | Успех | Ошибка API или аутентификации | — |
+| `ansible-playbook` | Все задачи успешны | Одна или несколько задач завершились с ошибкой | — |
 
-**`grep` exit 1 is not an error:** a common bug is using `check=True` when running `grep` to test for a pattern. If the pattern isn't found, `CalledProcessError` fires — not because something is broken, but because there's no match. Use `check=False` and test `result.returncode` yourself.
+**Код завершения `grep` равный 1 — не обязательно ошибка:** распространённая проблема — запускать `grep` с `check=True` для проверки наличия шаблона. Если совпадений нет, возникает `CalledProcessError`, хотя ничего не сломано. Используйте `check=False` и проверяйте `result.returncode` самостоятельно.
 
 ---
 
-### Capturing and Parsing Output
+### Захват и разбор вывода
 
-The real power of `subprocess` in DevOps automation is turning CLI output into structured Python data. The pattern is: run the command, capture stdout, parse it with Python string operations or `json.loads`.
+Главное преимущество `subprocess` в DevOps-автоматизации — преобразование вывода CLI в структурированные данные Python. Типовой процесс: выполнить команду, захватить stdout и разобрать его средствами Python или через `json.loads`.
 
 ```python
 import subprocess
@@ -189,7 +189,7 @@ def git_current_branch(repo_path="."):
     return result.stdout.strip()
 ```
 
-**Prefer machine-friendly output flags:** many tools produce human-readable tables by default. Look for flags that disable decoration and produce stable, parseable output:
+**Предпочитайте форматы для машинной обработки:** многие инструменты по умолчанию выводят таблицы для человека. Ищите флаги, отключающие оформление и создающие стабильный вывод для разбора:
 
 | Tool | Human output | Machine-friendly flag |
 |------|-------------|----------------------|
@@ -200,13 +200,13 @@ def git_current_branch(repo_path="."):
 | `git log` | Pretty log | `--format="%H %s"` or `--porcelain` |
 | `aws cli` | Text table | `--output json` |
 
-**Parsing tip:** if a tool supports `--output json` or equivalent, use it and parse with `json.loads(result.stdout)`. JSON parsing is robust to whitespace changes, column reordering, and tool version differences. String splitting breaks silently when upstream output format changes.
+**Совет по разбору:** если инструмент поддерживает `--output json` или аналогичный параметр, используйте его и разбирайте результат через `json.loads(result.stdout)`. JSON устойчив к изменениям пробелов, порядка столбцов и версий инструмента. Разбор строк по разделителям может незаметно сломаться при изменении формата вывода.
 
 ---
 
-### Timeouts
+### Тайм-ауты
 
-Without a timeout, a subprocess that hangs (network unreachable, deadlock, interactive prompt waiting for input) will hang your entire automation script indefinitely. In CI/CD pipelines, this means a stuck job that blocks your deployment queue until someone manually cancels it.
+Без тайм-аута зависший подпроцесс (недоступная сеть, взаимная блокировка или интерактивный запрос ввода) может остановить весь скрипт автоматизации навсегда. В CI/CD это блокирует очередь развёртывания, пока кто-нибудь не отменит задание вручную.
 
 ```python
 import subprocess
@@ -251,15 +251,15 @@ def run_with_timeout(cmd, timeout_sec=30):
         return False, "", f"Command timed out after {timeout_sec}s"
 ```
 
-**Two-level timeout pattern:** set both a tool-level timeout (e.g., `curl --max-time`, `ssh -o ConnectTimeout=`) *and* Python's `timeout=`. The tool-level timeout is graceful — the tool exits with an error code, stderr contains a message, and you get structured failure. The Python-level timeout is a hard `SIGKILL` for cases where the tool itself hangs and ignores signals. Set Python's timeout a few seconds higher than the tool's to give it time to exit cleanly first.
+**Двухуровневый тайм-аут:** задавайте тайм-аут и самому инструменту (например, `curl --max-time`, `ssh -o ConnectTimeout=`), и Python через `timeout=`. Тайм-аут инструмента завершает его штатно с кодом ошибки и сообщением в stderr. Тайм-аут Python принудительно завершает процесс через `SIGKILL`, если сам инструмент завис и игнорирует сигналы. Задайте тайм-аут Python на несколько секунд больше, чтобы инструмент успел завершиться корректно.
 
-**After `TimeoutExpired`:** the child process is killed by Python. Any output buffered before the kill is available in `e.stdout` and `e.stderr` — inspect these when debugging why a command hung.
+**После `TimeoutExpired`:** Python завершает дочерний процесс. Вывод, накопленный до завершения, доступен в `e.stdout` и `e.stderr`; изучайте его при диагностике зависания.
 
 ---
 
-### Streaming Output (No Capture)
+### Потоковый вывод без захвата
 
-When you want real-time output — long builds, test runs, deployment scripts — don't capture. Let stdout and stderr pass directly to the terminal. This is the default behavior: omit `capture_output` entirely.
+Для вывода в реальном времени — долгих сборок, тестов и скриптов развёртывания — не захватывайте вывод. Направьте stdout и stderr прямо в терминал. Это поведение по умолчанию: просто не указывайте `capture_output`.
 
 ```python
 import subprocess
@@ -297,9 +297,9 @@ subprocess.run(
 
 ---
 
-### Piping Between Commands
+### Передача данных между командами
 
-Python's `subprocess` models Unix pipes explicitly: the output of one command becomes the input of the next via the `input=` parameter. This is safer than `shell=True` with a shell pipe because each stage is a separate, auditable process with no shell involved.
+`subprocess` позволяет явно организовать Unix-конвейер: вывод одной команды становится входом следующей через параметр `input=`. Это безопаснее, чем `shell=True` с shell-конвейером, поскольку каждый этап — отдельный проверяемый процесс, а shell не используется.
 
 ```python
 import subprocess
@@ -337,9 +337,9 @@ def find_process_py(name):
 
 ---
 
-### shlex — Safe Command Construction from Strings
+### shlex — безопасное формирование команды из строки
 
-Sometimes a command comes in as a string — from a config file, environment variable, or user input. `shlex.split()` tokenizes it the way a POSIX shell would, handling quotes and escaping correctly, without invoking a shell.
+Иногда команда поступает в виде строки — из файла конфигурации, переменной окружения или пользовательского ввода. `shlex.split()` разбивает её на аргументы по правилам POSIX shell, корректно обрабатывая кавычки и экранирование, но не запускает сам shell.
 
 ```python
 import shlex
@@ -371,7 +371,7 @@ for name, cmd_str in config.items():
     subprocess.run(cmd, check=True)
 ```
 
-**`shlex.split` vs `str.split()`:** `str.split()` breaks on every whitespace, mangling quoted arguments.
+**`shlex.split` и `str.split()`:** `str.split()` разбивает строку по любому пробельному символу и портит аргументы в кавычках.
 
 ```python
 cmd = 'kubectl exec pod-123 -- sh -c "echo hello world"'
@@ -383,13 +383,13 @@ shlex.split(cmd)   # ['kubectl', 'exec', 'pod-123', '--', 'sh', '-c', 'echo hell
                    # 7 tokens — quoted string preserved correctly, quotes stripped
 ```
 
-**Security note:** `shlex.split()` makes the tokenization safe, but it does not make the *content* safe. If `cmd_str` comes from untrusted input, an attacker can still inject arbitrary commands. Use `shlex.split()` only when the source of the string is trusted (your own config files, your own environment variables).
+**Безопасность:** `shlex.split()` безопасно разбивает строку на аргументы, но не делает безопасным само её содержимое. Если `cmd_str` получен из недоверенного источника, злоумышленник всё ещё может внедрить произвольные команды. Используйте `shlex.split()` только для строк из доверенных источников — собственных конфигураций и переменных окружения.
 
 ---
 
-### os.path and pathlib — File System Operations
+### os.path и pathlib — операции с файловой системой
 
-Subprocess handles process execution; `os.path` and `pathlib` handle the file system. In practice you use both together: locate files with pathlib, then pass their paths to subprocess commands.
+`subprocess` отвечает за запуск процессов, а `os.path` и `pathlib` — за файловую систему. На практике их часто используют вместе: находят файлы через pathlib, а затем передают пути командам subprocess.
 
 ```python
 import os
@@ -431,27 +431,27 @@ subprocess.run(
 )
 ```
 
-| Task | `os.path` | `pathlib` |
+| Задача | `os.path` | `pathlib` |
 |------|-----------|-----------|
-| Join paths | `os.path.join(a, b, c)` | `Path(a) / b / c` |
-| Check existence | `os.path.exists(p)` | `Path(p).exists()` |
-| Is it a file? | `os.path.isfile(p)` | `Path(p).is_file()` |
-| Read file | `open(p).read()` | `Path(p).read_text()` |
-| Write file | `open(p, "w").write(s)` | `Path(p).write_text(s)` |
-| List directory | `os.listdir(p)` | `Path(p).iterdir()` |
-| Recursive glob | `os.walk()` + manual filter | `Path(p).rglob("*.log")` |
-| File size | `os.stat(p).st_size` | `Path(p).stat().st_size` |
-| Make directories | `os.makedirs(p, exist_ok=True)` | `Path(p).mkdir(parents=True, exist_ok=True)` |
+| Объединить пути | `os.path.join(a, b, c)` | `Path(a) / b / c` |
+| Проверить существование | `os.path.exists(p)` | `Path(p).exists()` |
+| Это файл? | `os.path.isfile(p)` | `Path(p).is_file()` |
+| Прочитать файл | `open(p).read()` | `Path(p).read_text()` |
+| Записать файл | `open(p, "w").write(s)` | `Path(p).write_text(s)` |
+| Список каталога | `os.listdir(p)` | `Path(p).iterdir()` |
+| Рекурсивный поиск по шаблону | `os.walk()` + ручной фильтр | `Path(p).rglob("*.log")` |
+| Размер файла | `os.stat(p).st_size` | `Path(p).stat().st_size` |
+| Создать каталоги | `os.makedirs(p, exist_ok=True)` | `Path(p).mkdir(parents=True, exist_ok=True)` |
 
-**`pathlib` with subprocess:** `subprocess.run()` accepts `Path` objects anywhere a string path is expected in Python 3.6+. You don't need to call `str(p)` explicitly. For Python 3.5 and below, always convert with `str(p)`.
+**`pathlib` вместе с subprocess:** в Python 3.6+ `subprocess.run()` принимает объекты `Path` там, где ожидается строковый путь. Явно вызывать `str(p)` не нужно. Для Python 3.5 и ниже преобразуйте путь через `str(p)`.
 
-**`exist_ok=True` is your friend:** when creating directories in automation scripts, always pass `exist_ok=True` to `mkdir()`. Without it, your script crashes on the second run because the directory already exists.
+**Используйте `exist_ok=True`:** при создании каталогов в скриптах автоматизации передавайте этот параметр в `mkdir()`. Иначе при повторном запуске скрипт завершится с ошибкой, потому что каталог уже существует.
 
 ---
 
-### subprocess.Popen — Low-Level Control
+### subprocess.Popen — низкоуровневое управление
 
-`subprocess.run()` covers 90% of automation cases. `Popen` is the lower-level class that `run()` is built on. Use it when you need to interact with a running process: feed it input incrementally, read its output in real time while it's running, or do something else concurrently while it executes.
+`subprocess.run()` покрывает большинство задач автоматизации. `Popen` — более низкоуровневый класс, на котором построен `run()`. Используйте его, когда нужно взаимодействовать с работающим процессом: постепенно передавать входные данные, читать вывод в реальном времени или выполнять параллельную работу.
 
 ```python
 import subprocess
@@ -505,17 +505,17 @@ if rc != 0:
     send_alert(f"Build failed:\n{output[-2000:]}")   # last 2000 chars
 ```
 
-**Popen context manager:** always use `Popen` as a context manager (`with subprocess.Popen(...) as proc:`) or call `proc.wait()` / `proc.communicate()` explicitly. Failing to wait for the process creates a zombie process that persists until your script exits.
+**Контекстный менеджер Popen:** всегда используйте `Popen` через `with subprocess.Popen(...) as proc:` либо явно вызывайте `proc.wait()` или `proc.communicate()`. Если не дождаться завершения процесса, он может остаться зомби до завершения скрипта.
 
-**`communicate()` vs manual reading:** `proc.communicate()` reads all of stdout and stderr at once and waits for the process to finish — it's equivalent to `subprocess.run()` with `capture_output=True`. Use it when you don't need real-time output. If you read `proc.stdout` manually in a loop without also reading `proc.stderr`, the process can deadlock when its stderr buffer fills up and it blocks waiting for you to read it. The threading pattern above avoids this by merging stderr into stdout first.
+**`communicate()` и ручное чтение:** `proc.communicate()` читает stdout и stderr целиком и ждёт завершения процесса — это аналог `subprocess.run(capture_output=True)`. Используйте его, если вывод в реальном времени не нужен. Если читать `proc.stdout` в цикле и не читать `proc.stderr`, процесс может зависнуть после заполнения буфера stderr. Пример с потоками выше избегает этого, предварительно объединяя stderr со stdout.
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Deployment Health Check Script
 
-A complete script that deploys a Docker container, waits for it to be healthy, and rolls back on failure.
+Полный скрипт, который развёртывает Docker-контейнер, ждёт, пока проверка состояния станет успешной, и выполняет откат при сбое.
 
 ```python
 #!/usr/bin/env python3
@@ -643,7 +643,7 @@ docker ps --filter name=myapp-prod --format "{{.Image}} {{.Status}}"
 
 ### Example 2: Git Repository Audit Tool
 
-Scan a directory of git repositories and report branch, last commit, and whether there are uncommitted changes.
+Просканируйте каталог Git-репозиториев и выведите ветку, последний коммит и наличие незакоммиченных изменений.
 
 ```python
 #!/usr/bin/env python3
@@ -740,7 +740,7 @@ python git_audit.py ~/projects
 
 ### Example 3: Disk Space Monitor with Alerting
 
-Check disk usage across mounts, log results, and alert when thresholds are exceeded.
+Проверьте использование диска на всех точках монтирования, сохраните результаты в журнал и отправьте оповещение при превышении порога.
 
 ```python
 #!/usr/bin/env python3
@@ -850,65 +850,65 @@ jq 'select(.used_pct > 50)' /var/log/disk_monitor.json
 
 ---
 
-## Exercises
+## Практические задания
 
-### Exercise 1: Service Restart with Idempotency Check
+### Задание 1: перезапуск службы с проверкой идемпотентности
 
-Write a Python function `ensure_service_running(service_name)` that:
-1. Check whether the systemd service is currently active using `systemctl is-active`
-2. If it's already running, print a message and return without doing anything
-3. If it's stopped or failed, attempt to start it with `systemctl start`
-4. After starting, verify the service is now active and raise an exception if it still isn't
+Напишите функцию Python `ensure_service_running(service_name)`, которая:
+1. Проверяет, активна ли служба systemd, командой `systemctl is-active`
+2. Если служба уже работает, выводит сообщение и завершает функцию без изменений
+3. Если служба остановлена или завершилась с ошибкой, пытается запустить её через `systemctl start`
+4. После запуска повторно проверяет состояние и вызывает исключение, если служба не стала активной
 
-**Constraints:** use `check=False` for the status check (the command exits non-zero when the service is not active). Use `check=True` for the start command. Handle `CalledProcessError` and print the stderr output in your error message.
+**Ограничения:** для проверки состояния используйте `check=False` (если служба неактивна, команда возвращает ненулевой код). Для запуска используйте `check=True`. Обработайте `CalledProcessError` и включите stderr в сообщение об ошибке.
 
-**Test it:** run `ensure_service_running("cron")` (or `crond` on RHEL-based systems). Then test it against a non-existent service name to verify the error path works.
-
----
-
-### Exercise 2: Find and Report Processes Over a Memory Threshold
-
-Write a script that:
-1. Run `ps aux` and capture the output
-2. Parse each line to extract the process name and RSS memory usage (column 6 in `ps aux` output is RSS in KB)
-3. Filter for processes using more than 100 MB of RAM
-4. Print a sorted table (highest memory first) showing PID, process name, and memory in MB
-
-**Constraints:** do all filtering and sorting in Python — do not pipe through `grep`, `awk`, or `sort`. Handle the header line (`USER PID ...`) without crashing.
-
-**Extension:** add a `--kill` flag that sends `SIGTERM` to any process matching a name you pass on the command line, using `subprocess.run(["kill", pid])`.
+**Проверка:** вызовите `ensure_service_running("cron")` (или `crond` в системах на базе RHEL). Затем передайте несуществующее имя службы и проверьте обработку ошибки.
 
 ---
 
-### Exercise 3: Safe Config File Backup Before Edit
+### Задание 2: поиск процессов, превышающих порог памяти
 
-Write a function `safe_edit(config_path, new_content)` that:
-1. Use `pathlib` to check the file exists before touching it
-2. Create a timestamped backup by running `cp` via subprocess (e.g., `nginx.conf.bak.20240115-143022`)
-3. Write `new_content` to the original file using `pathlib`'s `write_text()`
-4. Verify the new content was written correctly by reading the file back and comparing
-5. If the verification fails, restores the backup using subprocess and raises an exception
+Напишите скрипт, который:
+1. Запускает `ps aux` и захватывает вывод
+2. Разбирает строки, извлекая имя процесса и RSS (в выводе `ps aux` это шестой столбец, значение в КБ)
+3. Отбирает процессы, использующие более 100 МБ ОЗУ
+4. Выводит отсортированную таблицу (сначала самое большое потребление) с PID, именем процесса и памятью в МБ
 
-**Constraints:** build the backup filename in Python using `datetime.now()` and `pathlib` path manipulation. The `cp` command should use `check=True`. Test by pointing it at a throwaway file in `/tmp`.
+**Ограничения:** выполняйте фильтрацию и сортировку средствами Python, не используйте `grep`, `awk` или `sort` через конвейер. Обработайте строку заголовка (`USER PID ...`), чтобы скрипт не падал.
 
----
-
-### Exercise 4: Multi-Repo Git Pull Script with Timeout and Error Summary
-
-Write a script that:
-1. Accept a directory path as a command-line argument
-2. Find all git repositories under that path (directories containing `.git/`)
-3. Run `git pull --ff-only` in each repo with a 30-second timeout
-4. Collect results: success, failure (non-zero exit), or timeout
-5. Print a final summary table showing each repo and its outcome
-
-**Constraints:** use `subprocess.run()` with `capture_output=True` and `timeout=30`. Catch both `CalledProcessError` and `TimeoutExpired` separately — they should produce different status labels in your summary. Do not use `check=True`; handle the return code manually. Run all pulls sequentially (no threading required).
-
-**Extension:** modify the script to run all pulls in parallel using `subprocess.Popen`, collecting all process handles first and then waiting on each one.
+**Дополнительное задание:** добавьте флаг `--kill`, отправляющий `SIGTERM` процессу с именем, указанным в командной строке, с помощью `subprocess.run(["kill", pid])`.
 
 ---
 
-### Quick Checks
+### Задание 3: резервная копия конфигурации перед изменением
+
+Напишите функцию `safe_edit(config_path, new_content)`, которая:
+1. Проверяет через `pathlib`, что файл существует, прежде чем изменять его
+2. Создаёт резервную копию с временной меткой, запуская `cp` через subprocess (например, `nginx.conf.bak.20240115-143022`)
+3. Записывает `new_content` в исходный файл с помощью `pathlib.write_text()`
+4. Повторно читает файл и сравнивает содержимое, проверяя успешную запись
+5. При ошибке проверки восстанавливает резервную копию через subprocess и вызывает исключение
+
+**Ограничения:** сформируйте имя резервной копии в Python с помощью `datetime.now()` и операций `pathlib`. Для команды `cp` задайте `check=True`. Проверьте функцию на временном файле в `/tmp`.
+
+---
+
+### Задание 4: обновление нескольких Git-репозиториев с тайм-аутом и сводкой ошибок
+
+Напишите скрипт, который:
+1. Принимает путь к каталогу как аргумент командной строки
+2. Находит все Git-репозитории внутри каталога (директории с `.git/`)
+3. Выполняет `git pull --ff-only` в каждом репозитории с тайм-аутом 30 секунд
+4. Собирает результаты: успех, ошибка (ненулевой код) или тайм-аут
+5. Выводит итоговую таблицу с репозиторием и результатом
+
+**Ограничения:** используйте `subprocess.run()` с `capture_output=True` и `timeout=30`. Отдельно обрабатывайте `CalledProcessError` и `TimeoutExpired`, обозначая их разными статусами. Не используйте `check=True`; проверяйте код возврата вручную. Выполняйте обновления последовательно, без потоков.
+
+**Дополнительное задание:** измените скрипт, чтобы запускать все `git pull` параллельно через `subprocess.Popen`: сначала соберите дескрипторы всех процессов, затем дождитесь каждого.
+
+---
+
+### Быстрая проверка
 
 1. Run a command with `subprocess.run` and capture its output.
 
@@ -920,8 +920,8 @@ Write a script that:
    hello
    ```
 
-hint: Think about how subprocess.run can be told to capture what a command prints to the terminal instead of letting it go directly to the screen.
-hint: Use the capture_output=True argument (or stdout=subprocess.PIPE) and access the result via the .stdout attribute, decoding it with .decode() if needed.
+Подсказка: `subprocess.run` может захватывать вывод команды вместо прямой печати в терминал.
+Подсказка: задайте `capture_output=True` (или `stdout=subprocess.PIPE`), затем используйте атрибут `.stdout` и при необходимости вызовите `.decode()`.
 
 2. Capture the exit code of a failing command.
 
@@ -932,5 +932,5 @@ hint: Use the capture_output=True argument (or stdout=subprocess.PIPE) and acces
    ```expected_output
    42
    ```
-hint: Think about how Python's subprocess module can run a command and give you access to its return code.
-hint: Use subprocess.run() and check the .returncode attribute on the result object to capture what the process exited with.
+Подсказка: модуль `subprocess` запускает команду и предоставляет её код возврата.
+Подсказка: вызовите `subprocess.run()` и прочитайте атрибут `.returncode` объекта результата.

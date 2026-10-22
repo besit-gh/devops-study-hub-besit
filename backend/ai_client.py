@@ -1,79 +1,75 @@
-"""
-ai_client.py — Thin wrapper over the Anthropic SDK.
-
-All Claude API calls in this project go through here. To swap providers,
-change only this file.
-
-Public API:
-    generate(prompt, *, max_tokens, timeout) -> str
-    stream_text(system, messages, *, max_tokens) -> AsyncGenerator[str, None]
-    AITimeoutError — raised by generate() on timeout
-    AINotConfiguredError — raised when ANTHROPIC_API_KEY is not set
-"""
+"""OpenAI client wrapper used by all AI-powered features."""
 import os
-from anthropic import Anthropic, AsyncAnthropic
-from anthropic import APITimeoutError as _SDKTimeoutError
+from openai import OpenAI, AsyncOpenAI
+from openai import APITimeoutError as _SDKTimeoutError
 
-_sync_client: Anthropic | None = None
-_async_client: AsyncAnthropic | None = None
+_sync_client: OpenAI | None = None
+_async_client: AsyncOpenAI | None = None
 
-_NO_KEY_MSG = "AI features require ANTHROPIC_API_KEY — add it to backend/.env to enable"
+_NO_KEY_MSG = "Для функций ИИ задайте OPENAI_API_KEY в backend/.env."
 
 
 class AITimeoutError(Exception):
-    pass
+    """Provider-agnostic timeout exception."""
 
 
 class AINotConfiguredError(Exception):
-    pass
+    """Raised when the OpenAI API key is missing."""
 
 
 def _check_key() -> None:
-    if not os.getenv("ANTHROPIC_API_KEY"):
+    if not os.getenv("OPENAI_API_KEY"):
         raise AINotConfiguredError(_NO_KEY_MSG)
 
 
-def _sync() -> Anthropic:
+def _sync() -> OpenAI:
     global _sync_client
     if _sync_client is None:
-        _sync_client = Anthropic()
+        _sync_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
     return _sync_client
 
 
-def _async() -> AsyncAnthropic:
+def _async() -> AsyncOpenAI:
     global _async_client
     if _async_client is None:
-        _async_client = AsyncAnthropic()
+        _async_client = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
     return _async_client
 
 
 def _model() -> str:
-    return os.getenv('CLAUDE_MODEL', 'claude-sonnet-4-6')
+    return os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 
 
 def generate(prompt: str, *, max_tokens: int = 1024, timeout: float = 60.0) -> str:
-    """Single-turn prompt → response text. Raises AITimeoutError on timeout, AINotConfiguredError if key absent."""
+    """Generate one response. Raises AITimeoutError on timeout."""
     _check_key()
     try:
-        response = _sync().messages.create(
+        response = _sync().chat.completions.create(
             model=_model(),
             max_tokens=max_tokens,
             messages=[{"role": "user", "content": prompt}],
             timeout=timeout,
         )
     except _SDKTimeoutError as exc:
-        raise AITimeoutError("Claude request timed out") from exc
-    return response.content[0].text.strip()
+        raise AITimeoutError("Запрос к OpenAI превысил время ожидания") from exc
+    return (response.choices[0].message.content or "").strip()
 
 
 async def stream_text(system: str, messages: list[dict], *, max_tokens: int = 1024):
-    """Yield text chunks from a streaming multi-turn response. Raises AINotConfiguredError if key absent."""
+    """Stream response text chunks from OpenAI."""
     _check_key()
-    async with _async().messages.stream(
-        model=_model(),
-        max_tokens=max_tokens,
-        system=system,
-        messages=messages,
-    ) as stream:
-        async for chunk in stream.text_stream:
-            yield chunk
+    try:
+        stream = await _async().chat.completions.create(
+            model=_model(),
+            max_tokens=max_tokens,
+            stream=True,
+            messages=[{"role": "system", "content": system}, *messages],
+        )
+        async for chunk in stream:
+            if not chunk.choices:
+                continue
+            delta = chunk.choices[0].delta.content
+            if delta:
+                yield delta
+    except _SDKTimeoutError as exc:
+        raise AITimeoutError("Запрос к OpenAI превысил время ожидания") from exc

@@ -1,5 +1,5 @@
 ---
-title: Alerting & Reporting
+title: Оповещения и отчёты Kibana
 module: kibana
 duration_min: 20
 difficulty: intermediate
@@ -7,9 +7,9 @@ tags: [kibana, alerting, rules, connectors, reporting, elk]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Kibana's alerting system lets you define rules that run on a schedule against Elasticsearch data and fire actions through connectors when conditions are met. For DevOps, this consolidates alerting on logs, metrics, and ML anomalies into the same tool you already use for dashboards — eliminating a separate alerting tier for Elasticsearch-backed observability data. Rules are first-class objects stored in the `.kibana` index, managed through the UI or API, and executed by Kibana's background task manager, which means alerting scales with your Kibana deployment rather than requiring external components.
+Система оповещений Kibana позволяет задавать правила, которые по расписанию проверяют данные Elasticsearch и запускают действия через connectors при выполнении условий. Для DevOps это объединяет оповещения по логам, метрикам и ML-аномалиям в том же инструменте, который используется для дашбордов, и избавляет от отдельного слоя оповещений для данных Elastic. Правила — полноценные объекты в индексе `.kibana`, которыми управляют через UI или API; выполняет их фоновый планировщик задач Kibana. Поэтому система оповещений масштабируется вместе с Kibana и не требует внешних компонентов.
 
 The design philosophy centers on three decoupled primitives: **rules** (what to check), **connectors** (how to notify), and **actions** (which connector to call at which lifecycle stage). This separation means you define a Slack webhook once and reference it from dozens of rules. Changing a notification channel is a one-place edit, not a mass rule update. Alert instances are stateful — Kibana tracks whether a condition is currently active or has recovered, enabling auto-resolution workflows in downstream tools like PagerDuty.
 
@@ -17,7 +17,7 @@ In the broader DevOps toolchain, Kibana alerting sits between data ingestion (Be
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### Alerting Architecture
 
@@ -140,7 +140,7 @@ Actions are bound to **action groups**, which map to lifecycle events:
 
 ---
 
-### Connectors
+### Connectors — каналы уведомлений — каналы уведомлений
 
 Connectors are reusable, credentials-stored notification channels. Configure once, reference from many rules. Credentials (webhook URLs, API keys, SMTP passwords) are stored encrypted in Elasticsearch.
 
@@ -373,7 +373,7 @@ echo "Report saved to weekly-ops-report.pdf"
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: High Error Rate Alert with Slack Notification
 
@@ -653,7 +653,7 @@ curl -s "https://alertmanager.internal:9093/api/v2/alerts" | \
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Create a Log Error Spike Rule and Validate Execution
 
@@ -713,7 +713,7 @@ curl -s "https://alertmanager.internal:9093/api/v2/alerts" | \
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 6. Extract the alert threshold value from a rule stub. Run: `printf 'threshold:\n  comparator: ">"\n  value: 100\n' | awk '/^  value:/{print $2}'`
 

@@ -1,5 +1,5 @@
 ---
-title: Security & Access Control
+title: Безопасность и управление доступом Elasticsearch
 module: elasticsearch
 duration_min: 20
 difficulty: intermediate
@@ -7,12 +7,12 @@ tags: [elasticsearch, security, tls, rbac, api-keys, audit-logging]
 exercises: 3
 ---
 
-## Overview
-Elasticsearch ships with all security features disabled by default in older versions (pre-8.0). From 8.0 onward, security is on by default — but understanding how to configure it correctly is non-negotiable in any production deployment. Exposed Elasticsearch clusters have repeatedly appeared in breach reports because default installs listen on 0.0.0.0 with no authentication. This lesson covers TLS, authentication, role-based access control, API keys, and fine-grained document- and field-level security — the full security stack used in enterprise environments.
+## Обзор
+В старых версиях Elasticsearch (до 8.0) функции безопасности по умолчанию были отключены. Начиная с 8.0 безопасность включена из коробки, но корректная настройка всё равно обязательна для production. Открытые кластеры Elasticsearch неоднократно фигурировали в отчётах об утечках, потому что стандартные установки могли слушать `0.0.0.0` без аутентификации. В уроке рассматриваются TLS, аутентификация, ролевое управление доступом, API-ключи и детальная защита на уровне документов и полей — полный набор механизмов для корпоративной среды.
 
-## Concepts
+## Основные понятия
 
-### X-Pack Security
+### Безопасность X-Pack
 
 X-Pack is the security (and features) plugin bundled with Elasticsearch since version 6.8. In Elasticsearch 8.x it is enabled by default and cannot be disabled in production mode. In 7.x clusters you must enable it:
 
@@ -282,7 +282,7 @@ Audit logs are written to `logs/audit.json` by default. In production, ship them
 
 Key audit event fields: `event.action`, `user.name`, `user.roles`, `request.id`, `url.path`, `network.client.ip`.
 
-## Examples
+## Примеры
 
 ### Least-Privilege Service Account Setup for Logstash
 
@@ -321,7 +321,7 @@ POST /_security/api_key
 
 If the API key is rotated or the Logstash instance is compromised, you invalidate the key without touching user passwords.
 
-## Exercises
+## Практические задания
 
 1. On a local Elasticsearch 8.x instance (Docker), create a role `app-readonly` with read-only access to `app-*` indices and `monitor` cluster privilege. Create a user `app-monitor` with this role. Authenticate as `app-monitor` and confirm you can run `GET /app-*/_search` but receive a 403 when attempting `DELETE /app-test`.
 
@@ -332,7 +332,7 @@ If the API key is rotated or the Logstash instance is compromised, you invalidat
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 4. Verify transport TLS is enabled from a config stub. Run: `printf 'xpack.security.enabled: true\nxpack.security.transport.ssl.enabled: true\n' | awk '/transport.ssl.enabled:/{print $2}'`
 

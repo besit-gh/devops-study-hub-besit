@@ -1,5 +1,5 @@
 ---
-title: Jenkins Pipelines
+title: Пайплайны Jenkins
 module: cicd
 duration_min: 25
 difficulty: intermediate
@@ -7,12 +7,12 @@ tags: [cicd, jenkins, pipeline, jenkinsfile, declarative, groovy, credentials]
 exercises: 4
 ---
 
-## Overview
-Jenkins is the most widely deployed open-source CI/CD server. It powers pipelines via `Jenkinsfile` — a Groovy-based DSL checked into your repo. The declarative pipeline syntax (introduced in Jenkins 2.x) is the modern standard: structured, readable, and portable. Understanding Jenkinsfiles, agents, credentials, and shared libraries is enough for most enterprise environments.
+## Обзор
+Jenkins — один из наиболее распространённых open-source серверов CI/CD. Пайплайны описываются в `Jenkinsfile` на основе DSL языка Groovy и хранятся в репозитории. Декларативный синтаксис pipeline, появившийся в Jenkins 2.x, стал современным стандартом: он структурирован, читаем и переносим. Для большинства корпоративных сценариев достаточно понимать Jenkinsfile, агентов, учётные данные и shared libraries.
 
-## Concepts
+## Основные понятия
 
-### Declarative Pipeline Structure
+### Структура декларативного pipeline
 ```groovy
 // Jenkinsfile
 pipeline {
@@ -80,7 +80,7 @@ pipeline {
 }
 ```
 
-### Agents
+### Агенты
 ```groovy
 // Any available agent
 agent any
@@ -116,7 +116,7 @@ spec:
 }
 ```
 
-### Credentials
+### Учётные данные
 ```groovy
 // Bind credentials to environment variables
 withCredentials([
@@ -143,9 +143,9 @@ withCredentials([string(credentialsId: 'slack-token', variable: 'SLACK_TOKEN')])
 }
 ```
 
-Credentials are stored in **Manage Jenkins → Credentials**, never in the Jenkinsfile.
+Учётные данные хранятся в **Manage Jenkins → Credentials**, а не в Jenkinsfile.
 
-### Parallel Stages
+### Параллельные этапы
 ```groovy
 stage('Test and Lint') {
     parallel {
@@ -168,7 +168,7 @@ stage('Test and Lint') {
 }
 ```
 
-### Conditional Execution
+### Условное выполнение
 ```groovy
 stage('Deploy to Prod') {
     when {
@@ -184,10 +184,10 @@ stage('Deploy to Prod') {
 }
 ```
 
-`input` pauses the pipeline for manual approval — the build waits until someone clicks "Deploy" or "Abort" in the UI.
+Шаг `input` приостанавливает конвейер для ручного подтверждения: сборка ждёт, пока кто-нибудь не нажмёт в интерфейсе «Deploy» или «Abort».
 
-### Shared Libraries
-Shared libraries let you extract common logic into a reusable Groovy library stored in a separate repo.
+### Общие библиотеки
+Общие библиотеки позволяют вынести повторно используемую логику в библиотеку Groovy, хранящуюся в отдельном репозитории.
 
 ```groovy
 // In your Jenkinsfile:
@@ -214,12 +214,12 @@ def call(Map args) {
 }
 ```
 
-### Multibranch Pipeline
-A Multibranch Pipeline job scans a repo and creates a pipeline for each branch automatically. Push to a new branch → Jenkins creates a new job for it. Delete the branch → Jenkins deletes the job.
+### Многоветочный pipeline
+Задание Multibranch Pipeline сканирует репозиторий и автоматически создаёт pipeline для каждой ветки. При push новой ветки Jenkins создаёт для неё задание; при удалении ветки — удаляет и задание.
 
-Configure in the UI: **New Item → Multibranch Pipeline**, point it at your repo. Jenkins uses the `Jenkinsfile` in each branch.
+Настройте задание в интерфейсе: **New Item → Multibranch Pipeline**, затем укажите репозиторий. Jenkins будет использовать `Jenkinsfile` из каждой ветки.
 
-### Environment Variables
+### Переменные окружения
 ```groovy
 // Built-in Jenkins variables
 env.BUILD_NUMBER       // "42"
@@ -230,9 +230,9 @@ env.GIT_BRANCH         // "origin/main"
 env.WORKSPACE          // path to the build workspace
 ```
 
-## Examples
+## Примеры
 
-### Docker Build + ECR Push
+### Сборка Docker-образа и отправка в ECR
 ```groovy
 pipeline {
     agent any
@@ -281,32 +281,32 @@ pipeline {
 }
 ```
 
-## Exercises
+## Практические задания
 
-1. Write a declarative Jenkinsfile that: checks out code, runs `pytest` in a `python:3.12-slim` Docker agent, publishes JUnit results, and sends a failure email in the `post` block.
-2. Add parallel stages to run unit tests and linting simultaneously. Verify both run in parallel by checking the Blue Ocean UI timeline.
-3. Configure a `Deploy to Prod` stage that only runs on the `main` branch and requires a manual `input` approval. Use `withCredentials` to inject a deploy SSH key.
-4. Create a shared library function `notifySlack(message)` that POSTs to a Slack webhook. Call it from `post { failure { ... } }` in a Jenkinsfile.
+1. Напишите декларативный Jenkinsfile, который получает исходный код, запускает `pytest` в Docker-агенте `python:3.12-slim`, публикует результаты JUnit и отправляет письмо при сбое в блоке `post`.
+2. Добавьте параллельные этапы для одновременного запуска модульных тестов и линтера. Проверьте параллельное выполнение на временной шкале интерфейса Blue Ocean.
+3. Настройте этап `Deploy to Prod`, который запускается только в ветке `main` и требует ручного подтверждения через `input`. Используйте `withCredentials`, чтобы передать SSH-ключ для развёртывания.
+4. Создайте функцию общей библиотеки `notifySlack(message)`, отправляющую POST-запрос в Slack webhook. Вызовите её из блока `post { failure { ... } }` в Jenkinsfile.
 
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
-5. Count pipeline stages in a Jenkinsfile stub. Run: `printf 'stage("Build") {}\nstage("Test") {}\nstage("Deploy") {}\n' | grep -c 'stage('`
-
-```expected_output
-3
-```
-
-hint: Think about how you can search for a pattern in text and have the tool report the number of matching lines directly.
-hint: Use grep with the -c flag to count occurrences of the pattern stage( in the piped input.
-
-6. Count `post` condition blocks in a Jenkinsfile. Run: `printf 'post {\n  always {}\n  success {}\n  failure {}\n}\n' | grep -c '  [a-z]* {}'`
+5. Посчитайте этапы pipeline в примере Jenkinsfile. Выполните: `printf 'stage("Build") {}\nstage("Test") {}\nstage("Deploy") {}\n' | grep -c 'stage('`
 
 ```expected_output
 3
 ```
 
-hint: Think about how you can use grep not just to find matches, but to count how many lines match a pattern.
-hint: Use grep with the -c flag and a regex pattern like '  [a-z]* {}' to count lines that match indented condition block syntax.
+Подсказка: найдите заданный шаблон в тексте и попросите инструмент сразу вывести число совпавших строк.
+Подсказка: используйте `grep -c`, чтобы посчитать в переданном потоке вхождения шаблона `stage(`.
+
+6. Посчитайте блоки условий `post` в Jenkinsfile. Выполните: `printf 'post {\n  always {}\n  success {}\n  failure {}\n}\n' | grep -c '  [a-z]* {}'`
+
+```expected_output
+3
+```
+
+Подсказка: `grep` может не только находить совпадения, но и подсчитывать число подходящих строк.
+Подсказка: используйте `grep -c` с регулярным выражением вроде `'  [a-z]* {}'`, чтобы посчитать строки с синтаксисом блока условия и отступом.

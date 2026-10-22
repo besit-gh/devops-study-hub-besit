@@ -1,5 +1,5 @@
 ---
-title: Registry Management
+title: Управление реестром контейнеров
 module: docker
 duration_min: 10
 difficulty: beginner
@@ -7,17 +7,17 @@ tags: [docker, registry, ecr, gcr, dockerhub, push, pull, tagging]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-A container registry is a content-addressable storage system for OCI-compliant images. When you run `docker push`, the Docker daemon uploads each layer of the image separately — layers already present in the registry are skipped, which is why layer caching matters for push speed. When you run `docker pull`, the daemon downloads only the layers not already present in its local cache. Every CI/CD pipeline ends with a push to a registry, and every deployment starts with a pull. Mastering registries means mastering the handoff point between build and deploy.
+Реестр контейнеров — хранилище образов, совместимых со стандартом OCI, с адресацией по содержимому. При `docker push` демон Docker отправляет каждый слой образа отдельно и пропускает слои, уже имеющиеся в реестре, поэтому кэширование слоёв влияет на скорость отправки. При `docker pull` скачиваются только слои, которых ещё нет в локальном кэше. Каждый CI/CD-пайплайн отправляет образ в реестр, а каждое развёртывание начинается с его загрузки. Умение работать с реестрами означает понимание передачи артефактов от сборки к развёртыванию.
 
-The core design principle of registries is immutability by convention, not enforcement. Nothing stops you from overwriting `latest` with a broken image five minutes before a production deploy. The guardrails are your tagging strategy and your access policies — both of which you control. This is why tagging discipline and lifecycle management are first-class DevOps concerns, not afterthoughts. A registry without a retention policy is a growing liability: storage costs accumulate, scan times increase, and the blast radius of a compromised image tag grows.
+Неизменяемость образов в реестрах чаще обеспечивается соглашениями, а не техническими ограничениями. Ничто не мешает перезаписать `latest` сломанным образом за пять минут до production-деплоя. Защитой служат стратегия тегирования и политики доступа, которые определяете вы. Поэтому дисциплина тегирования и управление жизненным циклом образов — важные задачи DevOps, а не второстепенные детали. Реестр без политики хранения со временем становится проблемой: растут расходы на хранилище, длительность сканирования и последствия компрометации тега.
 
-In the broader toolchain, a registry sits between CI (which builds and pushes) and CD (which pulls and deploys). Your CI system authenticates to the registry, your orchestrator (Kubernetes, ECS, Nomad) pulls from it, and your security team scans images in it. Choosing the right registry and configuring it correctly affects build speed, security posture, cost, and deployment reliability. For teams already invested in AWS, ECR is the natural choice; for GitHub-native workflows, GHCR reduces credential management overhead; for polyglot cloud environments, a self-hosted registry like Harbor gives maximum control.
+В цепочке поставки реестр расположен между CI, который собирает и отправляет образы, и CD, который загружает и развёртывает их. CI-система аутентифицируется в реестре, оркестратор (Kubernetes, ECS, Nomad) скачивает из него образы, а команда безопасности сканирует их на уязвимости. Выбор и правильная настройка реестра влияют на скорость сборки, уровень безопасности, стоимость и надёжность развёртывания. For teams already invested in AWS, ECR is the natural choice; for GitHub-native workflows, GHCR reduces credential management overhead; for polyglot cloud environments, a self-hosted registry like Harbor gives maximum control.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### Image Naming and the OCI Reference Format
 
@@ -498,7 +498,7 @@ trivy image \
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Full CI Push Pipeline to ECR (GitHub Actions)
 
@@ -738,7 +738,7 @@ echo "GHCR: ${GHCR_DIGEST}"
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Implement a Production Tagging Pipeline
 
@@ -792,7 +792,7 @@ Test your script against a known vulnerable image (e.g., `python:3.6-slim`) to v
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Extract the registry hostname from a fully qualified image reference. Run: `echo "ghcr.io/myorg/myapp:v1.2.3" | cut -d/ -f1`
 

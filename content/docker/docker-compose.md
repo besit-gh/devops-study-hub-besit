@@ -7,14 +7,14 @@ tags: [docker, compose, multi-container, networking, volumes, services]
 exercises: 4
 ---
 
-## Overview
-Docker Compose defines and runs multi-container applications from a single YAML file. Instead of running five `docker run` commands with the right flags memorized, you declare the entire stack — app, database, cache, reverse proxy — and bring it up with one command. It's the standard tool for local development environments and simple production deployments.
+## Обзор
+Docker Compose описывает и запускает приложения из нескольких контейнеров с помощью одного YAML-файла. Вместо запоминания множества команд `docker run` вы декларативно описываете весь стек — приложение, базу данных, кэш и reverse proxy — и запускаете его одной командой. Это стандартный инструмент для локальной разработки и несложных production-развёртываний.
 
-## Concepts
+## Основные понятия
 
-### compose.yaml Structure
+### Структура compose.yaml
 ```yaml
-# compose.yaml (formerly docker-compose.yml — both names work)
+# compose.yaml (ранее docker-compose.yml; допустимы оба имени)
 services:
   web:
     image: nginx:1.25
@@ -54,58 +54,58 @@ volumes:
   postgres_data:   # named volumes persist across container restarts
 ```
 
-### Core Commands
+### Основные команды
 ```bash
-# Start all services (detached)
+# Запустить все сервисы в фоне
 docker compose up -d
 
-# Start and rebuild images first
+# Сначала пересобрать образы и запустить сервисы
 docker compose up -d --build
 
-# Stop all services (containers stay, data preserved)
+# Остановить сервисы (контейнеры останутся, данные сохранятся)
 docker compose stop
 
-# Stop and remove containers (data preserved in named volumes)
+# Остановить и удалить контейнеры (данные в именованных томах сохранятся)
 docker compose down
 
-# Stop, remove containers AND named volumes (wipes data)
+# Остановить и удалить контейнеры И именованные тома (данные будут удалены)
 docker compose down -v
 
-# View running services
+# Показать запущенные сервисы
 docker compose ps
 
-# Follow logs for all services
+# Следить за журналами всех сервисов
 docker compose logs -f
 
-# Follow logs for one service
+# Следить за журналом одного сервиса
 docker compose logs -f app
 
-# Run a one-off command in a service
+# Выполнить разовую команду внутри сервиса
 docker compose exec app bash
 docker compose exec db psql -U myuser myapp
 
-# Restart a single service
+# Перезапустить один сервис
 docker compose restart app
 
-# Pull latest images
+# Загрузить последние версии образов
 docker compose pull
 
-# Scale a service (run multiple replicas)
+# Масштабировать сервис (запустить несколько реплик)
 docker compose up -d --scale app=3
 ```
 
-### Networking
-Compose creates a default network named `<project>_default`. All services on this network can reach each other by **service name**:
+### Сетевое взаимодействие
+Compose создаёт сеть по умолчанию с именем `<project>_default`. Все сервисы в этой сети могут обращаться друг к другу по **имени сервиса**:
 
 ```python
-# In your app code, connect to the database by service name:
+# В коде приложения подключайтесь к базе данных по имени сервиса:
 import psycopg2
 conn = psycopg2.connect(host="db", port=5432, dbname="myapp")
 ```
 
-No IPs needed. DNS resolution is handled automatically within the Compose network.
+IP-адреса указывать не нужно: Compose автоматически обеспечивает DNS-разрешение имён внутри своей сети.
 
-Custom networks for isolation:
+Пользовательские сети для изоляции сервисов:
 ```yaml
 services:
   web:
@@ -121,58 +121,58 @@ networks:
     internal: true   # no internet access
 ```
 
-### Volumes
+### Тома
 ```yaml
 services:
   app:
     volumes:
-      # Named volume (managed by Docker, persists across down/up)
+      # Именованный том (управляется Docker и сохраняется между down/up)
       - app_data:/var/app/data
 
-      # Bind mount (host path : container path)
+      # Bind mount (путь на хосте : путь в контейнере)
       - ./src:/app/src
 
-      # Read-only bind mount
+      # Bind mount только для чтения
       - ./config:/etc/app/config:ro
 
 volumes:
   app_data:
-    # external: true  ← use a pre-existing volume (not created by Compose)
+    # external: true ← использовать существующий том (Compose его не создаёт)
 ```
 
-**Bind mounts** are ideal for development — code changes on your host are reflected immediately in the container without rebuilding.
+**Bind mount** удобен для разработки: изменения кода на хосте сразу видны в контейнере, пересобирать образ не требуется.
 
-### Environment Variables
+### Переменные окружения
 ```yaml
-# Method 1: inline list
+# Способ 1: список в строке
 environment:
   - DB_HOST=db
   - APP_ENV=development
 
-# Method 2: mapping (clearer)
+# Способ 2: отображение (нагляднее)
 environment:
   DB_HOST: db
   APP_ENV: development
 
-# Method 3: from shell environment (no value = pass through from shell)
+# Способ 3: из окружения shell (без значения — взять его из shell)
 environment:
   - SECRET_KEY
 
-# Method 4: env_file (load from a file)
+# Способ 4: env_file (загрузить из файла)
 env_file:
   - .env
   - .env.local   # overrides .env
 ```
 
-`.env` file (automatically loaded if present in the same directory as `compose.yaml`):
+Файл `.env` (загружается автоматически, если находится в том же каталоге, что и `compose.yaml`):
 ```
 DB_PASSWORD=supersecret
 APP_ENV=development
 ```
 
-### Profiles
+### Профили
 ```yaml
-# Mark services with profiles to start them selectively
+# Назначить сервисам профили, чтобы запускать их выборочно
 services:
   app:
     image: myapp:latest
@@ -190,7 +190,7 @@ docker compose up -d                    # starts app + db only
 docker compose up -d --profile tools   # starts all including pgadmin
 ```
 
-### Healthchecks and Dependencies
+### Проверки состояния и зависимости
 ```yaml
 db:
   image: postgres:17
@@ -208,9 +208,9 @@ app:
       restart: true                # restart app if db restarts (Compose 2.17+)
 ```
 
-## Examples
+## Примеры
 
-### Full Dev Stack
+### Полный стек разработки
 ```yaml
 # compose.yaml
 services:
@@ -259,31 +259,31 @@ volumes:
   redisdata:
 ```
 
-## Exercises
+## Практические задания
 
-1. Write a `compose.yaml` that runs a FastAPI app (build from a local Dockerfile) and a PostgreSQL database. The app should connect to the DB by service name. Start the stack and verify both containers are running.
-2. Add a Redis service to the stack above. Use `depends_on` with `condition: service_started` for Redis and `condition: service_healthy` for the database.
-3. Add a healthcheck to the PostgreSQL service using `pg_isready`. Verify it works by running `docker compose ps` and checking the health status column.
-4. Use an `.env` file to store the database password and reference it in `compose.yaml` with `${DB_PASSWORD}`. Confirm the container receives it by running `docker compose exec db env | grep POSTGRES_PASSWORD`.
+1. Создайте `compose.yaml`, запускающий приложение FastAPI (сборка из локального Dockerfile) и базу данных PostgreSQL. Приложение должно подключаться к БД по имени сервиса. Запустите стек и убедитесь, что оба контейнера работают.
+2. Добавьте в стек сервис Redis. Для Redis укажите в `depends_on` условие `service_started`, а для базы данных — `service_healthy`.
+3. Добавьте сервису PostgreSQL проверку состояния с помощью `pg_isready`. Проверьте её, выполнив `docker compose ps` и изучив столбец состояния.
+4. Сохраните пароль базы данных в файле `.env` и укажите в `compose.yaml` ссылку `${DB_PASSWORD}`. Убедитесь, что переменная попала в контейнер: `docker compose exec db env | grep POSTGRES_PASSWORD`.
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
-5. Count service definitions in a Compose YAML stub. Run: `printf 'services:\n  web:\n    image: nginx\n  db:\n    image: postgres\n  cache:\n    image: redis\n' | awk '/^  [a-z]/ && !/^    /{c++} END{print c}'`
+5. Посчитайте определения сервисов в примере Compose YAML. Выполните: `printf 'services:\n  web:\n    image: nginx\n  db:\n    image: postgres\n  cache:\n    image: redis\n' | awk '/^  [a-z]/ && !/^    /{c++} END{print c}'`
 
 ```expected_output
 3
 ```
 
-hint: Think about how to filter lines by indentation level to identify top-level service names, then count those matches.
-hint: Use awk with a regex pattern like /^  [a-z]/ combined with a negation of deeper indentation !/^    / to increment a counter, printing it in the END block.
+Подсказка: отфильтруйте строки по уровню отступа, чтобы найти имена сервисов верхнего уровня, затем посчитайте совпадения.
+Подсказка: используйте `awk` с шаблоном `/^  [a-z]/` и исключите более глубокий отступ через `!/^    /`. Увеличивайте счётчик и выводите его в блоке `END`.
 
-6. Extract the container port from a port mapping string. Run: `echo "8080:80" | cut -d: -f2`
+6. Извлеките порт контейнера из строки сопоставления портов. Выполните: `echo "8080:80" | cut -d: -f2`
 
 ```expected_output
 80
 ```
 
-hint: Think about how you can split a string by a delimiter to isolate a specific field.
-hint: Use the cut command with the -d flag to set ':' as the delimiter and the -f flag to select the second field.
+Подсказка: разделите строку по разделителю, чтобы извлечь нужное поле.
+Подсказка: используйте `cut`, задайте `:` разделителем через `-d`, а второе поле выберите флагом `-f2`.

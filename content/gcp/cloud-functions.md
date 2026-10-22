@@ -7,18 +7,18 @@ tags: [gcp, cloud-functions, serverless, triggers, pubsub, eventarc, python, gcl
 exercises: 4
 ---
 
-## Overview
-Cloud Functions is GCP's serverless function platform. 2nd generation functions (now the default) are built on Cloud Run under the hood, giving you longer timeouts (60 minutes), higher concurrency (up to 1000 concurrent requests per instance), and more memory. The programming model is identical to Lambda: write a handler function, configure a trigger, deploy. Cloud Functions 2nd gen runs on Cloud Run behind the scenes — if you need more control, use Cloud Run directly.
+## Обзор
+Cloud Functions — serverless-платформа функций в GCP. Функции второго поколения (теперь это вариант по умолчанию) работают на базе Cloud Run, обеспечивая более длительные тайм-ауты (до 60 минут), большую параллельность (до 1000 одновременных запросов на экземпляр) и больший объём памяти. Модель программирования похожа на Lambda: напишите обработчик, настройте триггер и выполните развёртывание. Поскольку Cloud Functions 2nd gen работает поверх Cloud Run, для более тонкого контроля можно использовать Cloud Run напрямую.
 
-## Concepts
+## Основные понятия
 
-### Function Types
+### Типы функций
 ```
 HTTP functions   — invoked by HTTP requests (GET, POST, etc.)
 Event functions  — triggered by Pub/Sub, Cloud Storage, Eventarc, Firestore
 ```
 
-### HTTP Function (Python)
+### HTTP-функция на Python
 ```python
 # main.py
 import functions_framework
@@ -38,10 +38,10 @@ functions-framework==3.*
 ```
 
 ```bash
-# Local testing
+# Локальное тестирование
 functions-framework --target hello_http --debug
 
-# Deploy (2nd gen)
+# Развернуть функцию второго поколения
 gcloud functions deploy hello-http \
   --gen2 \
   --runtime python312 \
@@ -55,13 +55,13 @@ gcloud functions deploy hello-http \
   --min-instances 0 \
   --max-instances 10
 
-# Invoke
+# Вызвать функцию
 gcloud functions call hello-http \
   --region us-central1 \
   --data '{"name": "Alice"}'
 ```
 
-### Pub/Sub Event Function
+### Функция, запускаемая событием Pub/Sub
 ```python
 import functions_framework
 import base64
@@ -70,15 +70,15 @@ import json
 @functions_framework.cloud_event
 def process_message(cloud_event):
     """Triggered by a Pub/Sub message."""
-    # Pub/Sub message data is base64-encoded
+    # Данные сообщения Pub/Sub закодированы в Base64
     data = base64.b64decode(cloud_event.data["message"]["data"]).decode("utf-8")
     message = json.loads(data)
     print(f"Processing: {message}")
-    # Return None (Pub/Sub functions don't return a response)
+    # Вернуть None (функции Pub/Sub не возвращают ответ)
 ```
 
 ```bash
-# Deploy with Pub/Sub trigger
+# Развернуть функцию с триггером Pub/Sub
 gcloud functions deploy process-message \
   --gen2 \
   --runtime python312 \
@@ -88,12 +88,12 @@ gcloud functions deploy process-message \
   --trigger-topic my-topic \
   --memory 512Mi
 
-# Send a test message
+# Отправить тестовое сообщение
 gcloud pubsub topics publish my-topic \
   --message '{"key": "value"}'
 ```
 
-### Cloud Storage Event Function
+### Функция, запускаемая событием Cloud Storage
 ```python
 import functions_framework
 from google.cloud import storage
@@ -107,7 +107,7 @@ def on_file_upload(cloud_event):
 
     print(f"File uploaded: gs://{bucket_name}/{file_name}")
 
-    # Process the file
+    # Обработать файл
     client = storage.Client()
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(file_name)
@@ -116,7 +116,7 @@ def on_file_upload(cloud_event):
 ```
 
 ```bash
-# Deploy with Cloud Storage trigger via Eventarc
+# Развернуть функцию с триггером Cloud Storage через Eventarc
 gcloud functions deploy on-file-upload \
   --gen2 \
   --runtime python312 \
@@ -128,13 +128,13 @@ gcloud functions deploy on-file-upload \
   --trigger-location us-central1
 ```
 
-### Environment Variables and Secrets
+### Переменные окружения и секреты
 ```bash
-# Set environment variables at deploy time
+# Задать переменные окружения при развёртывании
 gcloud functions deploy myfunction \
   --set-env-vars API_URL=https://api.example.com,APP_ENV=production
 
-# Reference Secret Manager secrets (recommended for sensitive values)
+# Подключить секреты Secret Manager (рекомендуется для чувствительных данных)
 gcloud functions deploy myfunction \
   --set-secrets DB_PASSWORD=projects/my-project/secrets/db-password:latest
 ```
@@ -149,20 +149,20 @@ def handler(request):
     db_password = os.environ['DB_PASSWORD']   # injected from Secret Manager
 ```
 
-### Service Account and IAM
+### Сервисные аккаунты и IAM
 ```bash
-# Deploy with a specific service account
+# Развернуть с определённым сервисным аккаунтом
 gcloud functions deploy myfunction \
   --service-account myfunction-sa@my-project.iam.gserviceaccount.com \
   ...
 
-# Grant the function's SA access to GCS
+# Предоставить сервисному аккаунту функции доступ к GCS
 gcloud projects add-iam-policy-binding my-project \
   --member serviceAccount:myfunction-sa@my-project.iam.gserviceaccount.com \
   --role roles/storage.objectAdmin
 ```
 
-### Authenticated HTTP Functions
+### HTTP-функции с аутентификацией
 ```bash
 # Deploy without --allow-unauthenticated (requires Identity Token to call)
 gcloud functions deploy secure-function \
@@ -171,13 +171,13 @@ gcloud functions deploy secure-function \
   --trigger-http
   # no --allow-unauthenticated
 
-# Call with an identity token
+# Вызвать с identity token
 TOKEN=$(gcloud auth print-identity-token)
 curl -H "Authorization: Bearer $TOKEN" \
   https://us-central1-my-project.cloudfunctions.net/secure-function
 ```
 
-### Concurrency (2nd gen only)
+### Параллельная обработка (только 2-е поколение)
 ```bash
 # 2nd gen: one instance can handle multiple requests simultaneously
 gcloud functions deploy myfunction \
@@ -187,50 +187,50 @@ gcloud functions deploy myfunction \
   --memory 512Mi
 ```
 
-Unlike Lambda (one request per instance), 2nd gen functions share an instance across concurrent requests. This dramatically reduces cold starts for moderate traffic — the same instance handles multiple requests.
+В отличие от Lambda, где один экземпляр обрабатывает один запрос за раз, функции второго поколения могут обрабатывать несколько запросов параллельно на одном экземпляре. При умеренной нагрузке это значительно сокращает количество холодных запусков.
 
-### Logs and Monitoring
+### Журналы и мониторинг
 ```bash
-# View function logs
+# Просмотреть журналы функции
 gcloud functions logs read hello-http \
   --region us-central1 \
   --limit 50
 
-# Stream logs (follow)
+# Следить за журналами в реальном времени
 gcloud functions logs read hello-http \
   --region us-central1 \
   --limit 50 \
   --format json | jq '.[]'
 
-# View via gcloud logging
+# Просмотреть через gcloud logging
 gcloud logging read 'resource.type=cloud_function AND resource.labels.function_name=hello-http' \
   --limit 20 \
   --format 'value(timestamp, textPayload)'
 ```
 
-### Local Development
+### Локальная разработка
 ```bash
-# Install the Functions Framework
+# Установить Functions Framework
 pip install functions-framework
 
-# Test HTTP function locally
+# Локально протестировать HTTP-функцию
 functions-framework --target hello_http --port 8080
 
-# Send test request
+# Отправить тестовый запрос
 curl -X POST http://localhost:8080 \
   -H "Content-Type: application/json" \
   -d '{"name": "test"}'
 
-# Test event function locally
+# Локально протестировать функцию обработки событий
 functions-framework --target process_message \
   --signature-type cloudevent
 ```
 
-## Examples
+## Примеры
 
-### Image Processing Pipeline
+### Конвейер обработки изображений
 ```python
-# main.py — triggered when an image is uploaded to a raw bucket
+# main.py — запускается при загрузке изображения в исходный бакет
 import functions_framework
 from google.cloud import storage
 from PIL import Image
@@ -261,7 +261,7 @@ def resize_image(cloud_event):
     print(f"Resized {source_blob}")
 ```
 
-## Exercises
+## Практические задания
 
 1. Write and deploy an HTTP Cloud Function (2nd gen, Python) that accepts a JSON body with a `text` field and returns the text reversed. Test with `gcloud functions call` and with `curl`.
 2. Create a Pub/Sub topic and deploy a Cloud Function triggered by it. The function should log the decoded message content. Publish 5 test messages and verify all appear in the function logs.
@@ -271,22 +271,22 @@ def resize_image(cloud_event):
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
-5. Extract the trigger type from a Cloud Function config stub. Run: `printf 'trigger:\n  type: http\n  allowUnauthenticated: true\n' | awk '/^  type:/{print $2}'`
+5. Извлеките тип триггера из примера конфигурации Cloud Function. Выполните: `printf 'trigger:\n  type: http\n  allowUnauthenticated: true\n' | awk '/^  type:/{print $2}'`
 
 ```expected_output
 http
 ```
 
-hint: Think about how you can filter lines from structured text by matching a specific pattern and then extracting a particular field.
-hint: Use awk with a regex pattern like /^  type:/ to match the indented 'type:' line, then print the second whitespace-delimited field using {print $2}.
+Подсказка: найдите нужную строку в структурированном тексте по шаблону и извлеките определённое поле.
+Подсказка: используйте `awk` с шаблоном `/^  type:/`, чтобы найти строку `type:` с отступом, а затем выведите второе поле через `{print $2}`.
 
-6. Calculate the maximum function timeout (9 minutes) in seconds. Run: `python3 -c "print(9 * 60)"`
+6. Переведите максимальный тайм-аут функции (9 минут) в секунды. Выполните: `python3 -c "print(9 * 60)"`
 
 ```expected_output
 540
 ```
 
-hint: Think about how you can use Python's command-line evaluation flag to perform a quick arithmetic calculation directly in your terminal.
-hint: Use python3 -c with a print statement that multiplies two integers together using the * operator.
+Подсказка: используйте параметр Python для выполнения короткого арифметического выражения прямо в терминале.
+Подсказка: используйте `python3 -c` и `print`, чтобы перемножить два целых числа оператором `*`.

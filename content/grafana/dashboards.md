@@ -1,5 +1,5 @@
 ---
-title: Dashboards & Visualizations
+title: Дашборды и визуализация Grafana
 module: grafana
 duration_min: 30
 difficulty: beginner
@@ -7,17 +7,17 @@ tags: [grafana, dashboards, visualization, panels, provisioning, thresholds, ann
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Grafana dashboards are the primary interface for visualizing time-series and structured data from monitoring systems. A dashboard is a collection of panels, each bound to a data source query. The output of monitoring work — whether that's Prometheus metrics, Loki logs, or CloudWatch data — only becomes actionable when it's presented in a way that allows engineers to make fast decisions. A raw metric like `node_cpu_seconds_total` is useless to an on-call engineer at 3am; a time-series panel showing CPU utilization with a red threshold line and a linked runbook is not.
+Дашборды Grafana — основной интерфейс визуализации временных рядов и структурированных данных мониторинга. Дашборд состоит из панелей, каждая из которых связана с запросом к источнику данных. Результаты мониторинга — метрики Prometheus, логи Loki или данные CloudWatch — становятся полезными, когда представлены так, чтобы инженер мог быстро принять решение. Сырая метрика `node_cpu_seconds_total` мало помогает дежурному ночью, а график загрузки CPU с пороговой линией и ссылкой на runbook — помогает.
 
-For a DevOps engineer, mastering dashboards means translating raw metrics — CPU, latency, error rates, deploy events — into visual context teams can act on without digging into CLI output. It also means building dashboards that survive team turnover: dashboards as code, stored in Git, deployed by CI, not hand-crafted in the UI and forgotten. The two concerns (visual design + operational reproducibility) both matter in production and in interviews.
+Для DevOps-инженера умение строить дашборды означает превращать сырые метрики — CPU, задержки, частоту ошибок и события развёртывания — в наглядную картину, по которой команда может действовать без ручного изучения CLI-вывода. Важно и сохранять дашборды как код: хранить в Git и развёртывать через CI, а не создавать вручную в интерфейсе и забывать. И визуальный дизайн, и воспроизводимость важны как в production, так и на собеседованиях.
 
 Grafana's dashboard model is built around a 24-column grid. Every panel occupies a rectangular region of the grid (`gridPos`). Understanding this model lets you build dashboards programmatically — as JSON — and version them alongside the infrastructure they monitor.
 
-## Concepts
+## Основные понятия
 
-### Panel Types
+### Типы панелей
 
 Grafana ships several panel types out of the box. Choosing the right one determines whether data is legible or misleading.
 
@@ -87,7 +87,7 @@ To place a Stat panel and a Time series panel side-by-side for the same metric:
 **Using the same query for both panels without duplicating logic:**
 - Write the query once. To reuse it, copy the panel (`...` menu → Duplicate), then change the panel type on the copy.
 
-### Dashboard Variables and Templates
+### Переменные дашборда and Templates
 
 Variables make a dashboard reusable across environments, clusters, or services. They appear as dropdowns at the top of the dashboard and are interpolated into panel queries.
 
@@ -382,7 +382,7 @@ curl -s http://admin:admin@localhost:3000/api/dashboards/uid/service-overview-v1
 jq 'del(.version, .id)' service-overview.json > service-overview-clean.json
 ```
 
-## Examples
+## Примеры
 
 **Full workflow — create a CPU dashboard provisioned via file:**
 
@@ -463,7 +463,7 @@ curl -s http://admin:admin@localhost:3000/api/search?query= | jq '.[].title'
 
 The `${datasource}` placeholder works with the `Export for sharing externally` flag — Grafana prompts for the data source when importing.
 
-## Exercises
+## Практические задания
 
 1. Create a dashboard with a **Stat** panel showing the current error rate for a service, and a **Time series** panel showing the last 24h of that same metric side-by-side. Set the Stat panel to turn red when the error rate exceeds 5% using the **Thresholds** sidebar option (base color green, add threshold at value 5 with color red). Set the Time series panel to show a red threshold reference line at y=5. Confirm that duplicating one panel and changing its type is faster than creating both from scratch.
 
@@ -474,7 +474,7 @@ The `${datasource}` placeholder works with the `Export for sharing externally` f
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 4. Count panels in a dashboard stub. Run: `printf 'panels:\n- title: CPU\n  type: gauge\n- title: Memory\n  type: gauge\n- title: Requests\n  type: graph\n- title: Errors\n  type: stat\n' | grep -c '^- title:'`
 

@@ -7,17 +7,17 @@ tags: [aws, eks, kubernetes, eksctl, node-groups, irsa, alb, fargate]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Amazon EKS (Elastic Kubernetes Service) is AWS's managed Kubernetes offering. AWS owns and operates the control plane — the API server, etcd, scheduler, and controller manager run in AWS-managed infrastructure across multiple availability zones, with automatic backups and a 99.95% SLA. You never SSH into a control plane node, pay per-instance for it, or worry about etcd compaction. Your responsibility begins at the worker nodes: EC2 instances (or Fargate) that run your pods, joined to the cluster via the AWS VPC CNI plugin.
+Amazon EKS (Elastic Kubernetes Service) — управляемый AWS-сервис Kubernetes. AWS отвечает за control plane: API server, etcd, scheduler и controller manager работают в инфраструктуре AWS в нескольких зонах доступности, с автоматическими резервными копиями и SLA 99,95%. Вам не нужно подключаться по SSH к узлам control plane, оплачивать их как отдельные экземпляры или управлять compaction etcd. Ваша ответственность начинается с worker-узлов — экземпляров EC2 или Fargate, на которых работают Pod и которые подключаются к кластеру через плагин AWS VPC CNI.
 
-The two dominant reasons teams choose EKS over self-managed Kubernetes are: automatic control plane upgrades (a historically painful operation) and native integration with the AWS service ecosystem — IAM for pod-level credentials, ALB for ingress, EBS/EFS for persistent storage, and CloudWatch for observability. These integrations are not cosmetic; IAM Roles for Service Accounts (IRSA) in particular solves a fundamental security problem in cloud-native workloads: how do pods get AWS credentials without hardcoding secrets or inheriting overly broad node-level permissions.
+Две основные причины выбирать EKS вместо самостоятельно управляемого Kubernetes — автоматические обновления control plane и встроенная интеграция с экосистемой AWS: IAM для учётных данных Pod, ALB для Ingress, EBS/EFS для постоянного хранения и CloudWatch для наблюдаемости. Эти интеграции не просто удобство: IAM Roles for Service Accounts (IRSA) решает важную задачу безопасности — как предоставить Pod учётные данные AWS без жёстко заданных секретов и чрезмерных прав на уровне узла.
 
 In the DevOps toolchain, EKS sits at the intersection of infrastructure provisioning (Terraform or eksctl to create the cluster), CI/CD (GitHub Actions or CodePipeline pushing images and applying manifests), and platform engineering (managing addons, autoscaling, and upgrade cadence). Understanding EKS means understanding Kubernetes itself *plus* the AWS-specific surface area: IAM trust policies, VPC networking, and the addon lifecycle. Both halves matter for production operations.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### Control Plane vs. Data Plane
 
@@ -484,7 +484,7 @@ aws eks associate-access-policy \
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Deploy a Web Application with ALB Ingress and IRSA
 
@@ -806,7 +806,7 @@ kubectl drain $NODE --ignore-daemonsets --delete-emptydir-data --grace-period=90
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Create a Cluster and Validate IRSA End-to-End
 
@@ -847,7 +847,7 @@ Deploy the AWS Load Balancer Controller to your cluster, create an Ingress resou
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Extract the node group name from a config stub. Run: `printf 'nodeGroups:\n- name: workers\n  instanceType: t3.medium\n- name: spot-workers\n  instanceType: t3.large\n' | awk '/name:/{print $2; exit}'`
 

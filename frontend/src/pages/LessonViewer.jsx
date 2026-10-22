@@ -6,6 +6,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { fetchLesson, markLessonComplete, resetLessonProgress, addRecentLesson, addBookmark, removeBookmark, isBookmarked } from '../store/curriculumStore'
 import CodePlayground from '../components/CodePlayground'
+import { localizeLessonTitle } from '../utils/localization'
 
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -16,7 +17,7 @@ function HintBox({ hints }) {
     <div className="px-4 py-2 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 space-y-2">
       {hints.slice(0, hintCount).map((hint, i) => (
         <div key={i} className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
-          <span className="font-semibold">Hint {i + 1}:</span> {hint}
+          <span className="font-semibold">Подсказка {i + 1}:</span> {hint}
         </div>
       ))}
       <button
@@ -281,17 +282,17 @@ export default function LessonViewer({ modules, progress, onProgressUpdate }) {
 
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-          {lesson.title}
+          {localizeLessonTitle(lesson.title)}
         </h1>
         <div className="flex items-center gap-3">
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${DIFFICULTY_COLOR[lesson.difficulty] ?? DIFFICULTY_COLOR.beginner}`}>
             {lesson.difficulty}
           </span>
           <span className="text-xs text-gray-400 dark:text-gray-500">~{lesson.duration_min} min read</span>
-          {done && <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Complete</span>}
+          {done && <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Завершено</span>}
           <button
             onClick={toggleBookmark}
-            title={bookmarked ? 'Remove bookmark' : 'Bookmark this lesson'}
+            title={bookmarked ? 'Убрать из закладок' : 'Добавить урок в закладки'}
             className={`ml-auto text-base leading-none transition-colors ${bookmarked ? 'text-amber-500' : 'text-gray-300 dark:text-gray-600 hover:text-amber-400 dark:hover:text-amber-400'}`}
           >
             {bookmarked ? '★' : '☆'}
@@ -301,7 +302,7 @@ export default function LessonViewer({ modules, progress, onProgressUpdate }) {
 
       {headings.length >= 3 && (
         <nav className="mb-6 px-4 py-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Contents</div>
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Содержание</div>
           <ol className="space-y-1">
             {headings.map((h, i) => (
               <li key={h.id}>
@@ -334,7 +335,7 @@ export default function LessonViewer({ modules, progress, onProgressUpdate }) {
 
       {lesson.exercises?.length > 0 ? (
         <div className="mt-10">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Exercises</h2>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Практические задания</h2>
           <div className="space-y-3">
             {lesson.exercises.map((ex, i) => (
               <div key={i} data-exercise-index={i} className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -390,8 +391,8 @@ export default function LessonViewer({ modules, progress, onProgressUpdate }) {
         {moduleBanner && (
           <div className="flex items-start justify-between gap-4 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-800">
             <div>
-              <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Module complete!</div>
-              <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">+50 XP module bonus earned.</div>
+              <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Модуль завершён!div>
+              <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">Получен бонус за модуль: +50 XP.</div>
             </div>
             <button
               onClick={() => setModuleBanner(false)}
@@ -403,7 +404,7 @@ export default function LessonViewer({ modules, progress, onProgressUpdate }) {
         )}
         {done ? (
           <div className="flex items-center gap-3">
-            <span className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">✓ Lesson complete</span>
+            <span className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">✓ Урок завершён</span>
             <button
               onClick={handleReset}
               className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"

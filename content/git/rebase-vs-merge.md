@@ -1,5 +1,5 @@
 ---
-title: Rebase vs Merge
+title: Rebase и merge: сравнение
 module: git
 duration_min: 15
 difficulty: intermediate
@@ -7,21 +7,21 @@ tags: [git, rebase, merge, history, squash, interactive-rebase]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Merge and rebase both integrate changes from one branch into another, but they produce fundamentally different histories and carry different tradeoffs. `git merge` preserves the full truth of what happened: when branches diverged, who worked in parallel, and when the work was brought together. `git rebase` rewrites history to look as if development happened linearly, producing a cleaner log at the cost of replacing original commits with new ones. The choice between them is not just aesthetic — it affects how readable your `git log` is, how useful `git bisect` and `git blame` are when debugging, and how much pain colleagues experience when your commits land on a shared branch.
+И `merge`, и `rebase` интегрируют изменения из одной ветки в другую, но формируют разную историю и имеют разные компромиссы. `git merge` сохраняет реальную картину: когда ветки разошлись, кто работал параллельно и когда изменения объединили. `git rebase` переписывает историю так, будто разработка шла линейно, делая журнал чище, но заменяя исходные коммиты новыми. Это не только вопрос эстетики: выбор влияет на читаемость `git log`, полезность `git bisect` и `git blame` при отладке и на то, насколько сложно коллегам интегрировать ваши коммиты в общую ветку.
 
-In a DevOps context, understanding this distinction is operationally important. CI/CD pipelines, automated changelogs, and release tooling all read commit history. A `main` branch full of merge commits from dozens of short-lived feature branches is harder to `bisect` than a linear history. Conversely, a team that rebases carelessly on shared branches can corrupt colleagues' working trees and break pipelines mid-flight. Most teams settle on a hybrid: free-form commits during development, squash or rebase on merge, strict no-rebase rules for long-lived shared branches.
+В DevOps это различие имеет практическое значение. CI/CD-пайплайны, автоматические changelog и инструменты релизов анализируют историю коммитов. В `main`, заполненной merge-коммитами из множества короткоживущих feature-веток, сложнее использовать `bisect`, чем при линейной истории. Но неосторожный rebase общей ветки может нарушить рабочие копии коллег и сломать пайплайн. Многие команды выбирают гибридный подход: свободные коммиты во время разработки, squash или rebase при слиянии и запрет на переписывание истории долгоживущих общих веток.
 
-Both strategies fit into the broader Git workflow regardless of whether you use GitHub Flow, GitLab Flow, or trunk-based development. Merge is the default and the safest; rebase is the power tool. Knowing when each is appropriate — and what the failure modes look like — is a baseline expectation for a DevOps engineer who touches release pipelines, reviews PRs, or maintains shared infrastructure repositories.
+Обе стратегии подходят для Git-процесса независимо от того, используете ли вы GitHub Flow, GitLab Flow или trunk-based development. Merge — вариант по умолчанию и самый безопасный; rebase — более мощный инструмент. DevOps-инженер, работающий с релизными конвейерами, проверкой PR и общими репозиториями инфраструктуры, должен понимать, когда применять каждый подход и какие ошибки возможны.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### How Merge Works
+### Как работает merge
 
-`git merge` joins two branch tips by creating a new **merge commit** that has two parents. The original commits on both branches are left entirely intact — their SHAs, timestamps, and messages do not change.
+`git merge` объединяет вершины двух веток, создавая новый **merge-коммит** с двумя родителями. Исходные коммиты обеих веток остаются без изменений: их SHA, временные метки и сообщения сохраняются.
 
 ```
 Before:
@@ -42,20 +42,20 @@ git merge --squash feature/add-auth  # collapse feature into staged changes; you
 git merge --abort                    # bail out during a conflicted merge
 ```
 
-**Fast-forward merge:** if `main` has not diverged from the branch tip, Git simply moves the `main` pointer forward — no merge commit is created, and the history looks linear. This loses the information that a branch existed at all. Use `--no-ff` when branch context matters (e.g., a hotfix or a release branch).
+**Fast-forward merge:** если `main` не разошлась с вершиной ветки, Git просто перемещает указатель `main` вперёд — merge-коммит не создаётся, история выглядит линейной. Информация о существовании отдельной ветки теряется. Используйте `--no-ff`, когда важно сохранить контекст ветки (например, для hotfix или релизной ветки).
 
-**`--squash` is not a merge:** `git merge --squash` stages all the changes from the feature branch as a single diff but does not create a merge commit or any branch relationship. You must `git commit` manually. The feature branch is not recorded as merged — `git branch --merged` will not show it.
+**`--squash` — не обычное слияние:** `git merge --squash` помещает все изменения feature-ветки в индекс как один diff, но не создаёт merge-коммит и связь между ветками. Коммит нужно создать вручную. Ветка не отмечается как слитая — `git branch --merged` её не покажет.
 
-| Flag | Merge commit created | Branch history visible | Use case |
+| Флаг | Создаётся merge-коммит | История ветки видна | Применение |
 |------|---------------------|----------------------|----------|
-| (none) | Only if diverged | Yes | Default — preserve context |
-| `--no-ff` | Always | Yes | Hotfixes, release branches |
-| `--squash` | No (you commit manually) | No | Clean main, PR workflow |
-| `--ff-only` | Never (fails if not possible) | No | Enforce linear, abort otherwise |
+| (нет) | Только если ветки разошлись | Да | По умолчанию — сохранить контекст |
+| `--no-ff` | Всегда | Да | Hotfix и релизные ветки |
+| `--squash` | Нет (коммит создаётся вручную) | Нет | Чистая main, процесс с PR |
+| `--ff-only` | Нет (завершится ошибкой, если невозможно) | Нет | Принудительно линейная история |
 
-### How Rebase Works
+### Как работает rebase
 
-`git rebase` takes the commits on your current branch that are not in the target branch, and **replays** them one by one on top of the target. Each replayed commit gets a new SHA — it has the same diff and message as the original, but a different parent, so it is technically a new object.
+`git rebase` берёт коммиты текущей ветки, которых нет в целевой ветке, и **повторно применяет** их по одному поверх целевой. Каждый такой коммит получает новый SHA: diff и сообщение остаются прежними, но меняется родитель, поэтому технически это новый объект.
 
 ```
 Before:
@@ -83,20 +83,20 @@ git rebase --skip               # discard this commit's changes and continue
 git rebase --abort              # restore original branch state, cancel entirely
 ```
 
-**Rebase replays commits one at a time.** If your branch has five commits and the first one conflicts with `main`, you fix it, continue, and might hit another conflict in the second commit. Each commit is applied independently — you may need to resolve conflicts multiple times during a single rebase.
+**Rebase повторно применяет коммиты по одному.** Если в ветке пять коммитов и первый конфликтует с `main`, после его исправления и продолжения конфликты могут возникнуть и на втором коммите. Каждый коммит применяется независимо, поэтому за один rebase может потребоваться несколько раз разрешать конфликты.
 
-**`git rebase` does not touch `main`.** It only moves your current branch. After rebasing, you still need to `git checkout main && git merge feature` (which will now be a fast-forward).
+**`git rebase` не изменяет `main`.** Он перемещает только текущую ветку. После rebase всё равно нужно выполнить `git checkout main && git merge feature` — теперь это будет fast-forward.
 
-### Interactive Rebase — Rewriting History
+### Интерактивный rebase — переписывание истории
 
-`git rebase -i` (interactive rebase) opens an editor listing every commit to be replayed. You can reorder, edit, squash, or delete commits before they land anywhere permanent. This is the standard tool for cleaning up messy development history before opening a PR.
+`git rebase -i` открывает редактор со списком коммитов, которые будут применены повторно. До публикации можно менять порядок коммитов, редактировать их, объединять или удалять. Это стандартный способ привести в порядок историю разработки перед открытием PR.
 
 ```bash
 git rebase -i HEAD~4          # edit the last 4 commits on current branch
 git rebase -i origin/main     # edit all commits not yet in origin/main
 ```
 
-The editor opens with a file like this:
+В редакторе откроется файл примерно такого вида:
 
 ```
 pick a1b2c3 feat: add login endpoint
@@ -105,7 +105,7 @@ pick g7h8i9 fix: add error handling
 pick j0k1l2 fix typo in comment
 ```
 
-Modify the commands to reshape history:
+Измените команды, чтобы преобразовать историю:
 
 ```
 pick   a1b2c3 feat: add login endpoint
@@ -114,27 +114,27 @@ fixup  g7h8i9 fix: add error handling      # folds into a1b2c3, discards this me
 drop   j0k1l2 fix typo in comment          # removes commit entirely
 ```
 
-**Full command reference:**
+**Полный список команд:**
 
-| Command | Effect |
+| Команда | Действие |
 |---------|--------|
-| `pick` | Use commit as-is |
-| `reword` | Use commit, but open editor to change message |
-| `edit` | Pause rebase here; lets you `git commit --amend` or split the commit |
-| `squash` | Fold into previous commit; opens editor to combine messages |
-| `fixup` | Fold into previous commit; silently discard this message |
-| `drop` | Remove the commit entirely |
-| `exec` | Run a shell command after this commit (useful for CI checks mid-rebase) |
+| `pick` | Оставить коммит без изменений |
+| `reword` | Оставить коммит, но открыть редактор для изменения сообщения |
+| `edit` | Приостановить rebase здесь; можно выполнить `git commit --amend` или разделить коммит |
+| `squash` | Объединить с предыдущим коммитом и отредактировать общее сообщение |
+| `fixup` | Объединить с предыдущим коммитом, отбросив сообщение |
+| `drop` | Полностью удалить коммит |
+| `exec` | Выполнить shell-команду после этого коммита (например, для CI-проверки во время rebase) |
 
-**`squash` vs `fixup`:** use `squash` when the folded commit message contains useful detail to keep. Use `fixup` for "WIP", "oops", "typo" commits where the message adds no value.
+**`squash` и `fixup`:** используйте `squash`, если в сообщении объединяемого коммита есть полезные сведения. `fixup` подходит для коммитов «WIP», «oops» или «typo», сообщение которых не имеет ценности.
 
-**Order matters:** commits are listed oldest-first. Reordering lines reorders the commits. If two commits touch the same lines in opposite order, reordering them will cause a conflict.
+**Порядок важен:** коммиты перечислены от старых к новым. Перестановка строк меняет порядок коммитов. Если два коммита изменяют одни и те же строки в разном порядке, перестановка может вызвать конфликт.
 
-### The Golden Rule of Rebase
+### Главное правило rebase
 
-**Never rebase commits that have already been pushed to a branch shared with other people.**
+**Никогда не делайте rebase коммитов, уже отправленных в общую ветку, с которой работают другие люди.**
 
-When you rebase, original commits are abandoned and replaced with new commits that have different SHAs. Anyone who pulled the original commits now has a diverged history. They cannot fast-forward — they must force-merge or reset. In a CI/CD environment this is worse: pipelines triggered against the original SHAs may still be running or reporting status against commits that no longer exist on the branch.
+При rebase исходные коммиты заменяются новыми с другими SHA. У тех, кто получил старые коммиты, история расходится; fast-forward уже невозможен, приходится делать принудительное слияние или reset. В CI/CD проблема серьёзнее: конвейеры, запущенные для исходных SHA, могут продолжать работу или публиковать статусы коммитов, которых больше нет в ветке.
 
 ```
 # You pushed D and E to origin/feature
@@ -146,26 +146,26 @@ When you rebase, original commits are abandoned and replaced with new commits th
 # Git sees D and E as unrelated to D' and E' — total divergence
 ```
 
-**Safe to rebase:**
-- Local commits not yet pushed anywhere
-- Your own feature branch before anyone else has pulled it
-- A feature branch you own before opening a PR (force-push is acceptable here with team agreement)
+**Можно безопасно делать rebase:**
+- Локальные коммиты, которые ещё никуда не отправлялись
+- Собственную feature-ветку, которую ещё никто не забирал
+- Свою feature-ветку до открытия PR (при согласовании с командой допустим force-push)
 
-**Never rebase:**
-- `main`, `master`, `develop`, or any integration branch
-- Any branch that is a merge target for CI
-- Any branch another engineer has told you they're based on
+**Не делайте rebase:**
+- `main`, `master`, `develop` и любые интеграционные ветки
+- Любую ветку, в которую выполняется слияние через CI
+- Любую ветку, от которой уже ответвился другой инженер
 
-**`--force-with-lease` vs `--force`:** if you have rebased your own feature branch and need to update the remote, always prefer `--force-with-lease`. It checks that the remote tip matches what you last fetched — it will refuse to push if someone else has pushed to that branch since your last fetch. Plain `--force` overwrites unconditionally.
+**`--force-with-lease` и `--force`:** после rebase собственной feature-ветки для обновления удалённой версии предпочитайте `--force-with-lease`. Он проверяет, совпадает ли вершина удалённой ветки с последней полученной версией, и откажется отправлять изменения, если кто-то успел обновить ветку. Обычный `--force` перезаписывает её безусловно.
 
 ```bash
 git push --force-with-lease origin feature/add-auth  # safe force-push
 git push --force origin feature/add-auth             # dangerous: overwrites unknown changes
 ```
 
-### Squash on Merge
+### Squash при слиянии
 
-Many teams configure their Git host (GitHub, GitLab, Bitbucket) to **squash and merge** PRs. Every PR becomes exactly one commit on `main`, regardless of how many commits the developer made. This gives a clean, navigable main branch while allowing developers to commit freely during development.
+Многие команды настраивают Git-хостинг (GitHub, GitLab, Bitbucket) так, чтобы PR сливались через **squash and merge**. Каждый PR становится одним коммитом в `main`, сколько бы коммитов ни создал разработчик. История `main` остаётся компактной, а разработчики могут свободно коммитить во время работы.
 
 ```bash
 # GitHub "Squash and merge" button is equivalent to:
@@ -177,25 +177,25 @@ git branch -d feature/add-auth               # delete local branch
 git push origin --delete feature/add-auth    # delete remote branch
 ```
 
-**The tradeoff:** squash commits lose granular attribution. `git blame` on a line shows the squash commit, not the individual commit where that line was introduced. For small features this is fine. For large refactors spanning thousands of lines, the loss of granularity can make debugging harder.
+**Компромисс:** при squash теряется детализация авторства. `git blame` показывает squash-коммит, а не отдельный коммит, в котором строка появилась. Для небольших функций это нормально, но при масштабном рефакторинге затрудняет отладку.
 
-**Squash and merge is irreversible from the remote perspective.** The individual commits still exist locally until garbage collected, but they are no longer reachable from any ref on the remote. If the developer deletes their local branch, those commits are gone.
+**С точки зрения удалённого репозитория squash and merge необратим.** Отдельные коммиты остаются локально до очистки Git, но больше не доступны ни по одной ссылке на сервере. Если разработчик удалит локальную ветку, эти коммиты будут потеряны.
 
-### Merge Conflicts: Merge vs Rebase
+### Конфликты слияния: merge и rebase
 
-Both merge and rebase can produce conflicts, but they present differently.
+И merge, и rebase могут приводить к конфликтам, но проявляются они по-разному.
 
-| Aspect | Merge conflict | Rebase conflict |
+| Аспект | Конфликт при merge | Конфликт при rebase |
 |--------|---------------|-----------------|
-| When it occurs | Once, during the merge | Once per conflicting commit being replayed |
-| Conflict markers | Between your branch tip and the merge base | Between the commit being replayed and the current HEAD |
-| Resolution | `git add` + `git commit` | `git add` + `git rebase --continue` |
-| Abort | `git merge --abort` | `git rebase --abort` |
-| History after resolution | Merge commit records the resolution | Resolution is baked into the replayed commit |
+| Когда возникает | Один раз во время слияния | Для каждого конфликтующего повторно применяемого коммита |
+| Маркеры конфликта | Между вершиной ветки и базой слияния | Между повторно применяемым коммитом и текущим HEAD |
+| Разрешение | `git add` + `git commit` | `git add` + `git rebase --continue` |
+| Отмена | `git merge --abort` | `git rebase --abort` |
+| История после разрешения | Merge-коммит фиксирует разрешение конфликта | Разрешение включается в повторно применённый коммит |
 
-**Rebase can create more conflict resolution work.** If your branch has ten commits and three of them conflict with changes in `main`, you resolve conflicts three separate times. With merge, you resolve all conflicts once in the final merge commit. For long-running branches with many conflicting commits, merge is often less painful.
+**При rebase может потребоваться больше работы с конфликтами.** Если в ветке десять коммитов и три из них конфликтуют с изменениями `main`, конфликт придётся разрешать три раза. При merge все конфликты разрешаются один раз в итоговом merge-коммите. Для долгоживущих веток с большим количеством конфликтов merge часто проще.
 
-**`rerere` (reuse recorded resolution):** Git has a built-in mechanism to record conflict resolutions and replay them automatically. Enable it with `git config --global rerere.enabled true`. When the same conflict appears again during a rebase — for example, if you rebase multiple times as `main` advances — Git resolves it automatically using the stored resolution. Particularly useful on long-running feature branches.
+**`rerere` (повторное использование записанного разрешения):** Git умеет сохранять решения конфликтов и автоматически применять их повторно. Включите его командой `git config --global rerere.enabled true`. Если тот же конфликт появится при следующем rebase, например после обновления `main`, Git применит сохранённое решение. Особенно полезно для долгоживущих feature-веток.
 
 ```bash
 git config --global rerere.enabled true
@@ -205,9 +205,9 @@ git config --global rerere.enabled true
 # "Resolved 'path/to/file' using previous resolution."
 ```
 
-### Reading History: `git log` Differences
+### Просмотр истории: различия в `git log`
 
-The practical impact of your merge strategy is visible in `git log`.
+Практические последствия выбранной стратегии видны в `git log`.
 
 ```bash
 # After a standard merge (--no-ff):
@@ -228,7 +228,7 @@ git log --oneline --graph
 # * b9a5a7c feat: initial setup
 ```
 
-Linear history makes `git bisect` faster and more intuitive — there is only one path through the history. Merge-heavy history requires bisect to navigate merge commits, which it handles correctly but which can be confusing when reviewing.
+Линейная история делает `git bisect` быстрее и понятнее: путь по истории только один. При большом количестве merge-коммитов bisect тоже работает корректно, но разбор результатов может быть сложнее.
 
 ```bash
 git log --oneline --graph --all        # full picture including all branches
@@ -238,25 +238,25 @@ git shortlog -sn                       # commit count by author (useful for attr
 git log --follow -p -- path/to/file    # full patch history for a specific file, across renames
 ```
 
-### Choosing a Strategy: Decision Guide
+### Выбор стратегии: руководство
 
-There is no universally correct answer. The right strategy depends on team size, branch lifetime, and how much history auditability matters in your context.
+Универсально правильного ответа нет. Выбор зависит от размера команды, длительности жизни веток и важности аудита истории.
 
-| Scenario | Recommended strategy | Reason |
+| Сценарий | Рекомендуемая стратегия | Причина |
 |----------|---------------------|--------|
-| Short-lived feature branch, solo author | Rebase + fast-forward | Linear history, no noise |
-| PR-based workflow, team repo | Squash and merge | One commit per feature on main |
-| Long-running release branch | Merge (no-ff) | Preserves branch context, safer |
-| Hotfix to production | Merge --no-ff | Explicit record of the hotfix branch |
-| Shared integration branch (`develop`) | Merge | Rebase risk too high |
-| Infrastructure-as-code repo, audit required | Merge --no-ff | Full audit trail of who changed what and when |
-| OSS contribution, upstream rebase policy | Rebase on upstream/main | Clean patch series for review |
+| Короткоживущая feature-ветка, один автор | Rebase + fast-forward | Линейная история без лишнего шума |
+| Командный репозиторий с PR | Squash and merge | Один коммит на функцию в main |
+| Долгоживущая релизная ветка | Merge (`--no-ff`) | Сохраняет контекст ветки и безопаснее |
+| Hotfix в production | Merge `--no-ff` | Явно фиксирует hotfix-ветку |
+| Общая интеграционная ветка (`develop`) | Merge | Слишком высок риск rebase |
+| Репозиторий Infrastructure as Code с обязательным аудитом | Merge `--no-ff` | Полная история того, кто, что и когда изменил |
+| Вклад в OSS с политикой rebase upstream | Rebase на upstream/main | Чистая последовательность патчей для проверки |
 
 **Consistency matters more than the specific choice.** A team that always squashes is in a better position than a team that sometimes squashes, sometimes merges, and sometimes rebases — because inconsistency makes automation (changelogs, release notes, bisect) unreliable.
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Update a Feature Branch with Latest Main
 
@@ -412,7 +412,7 @@ git push --force-with-lease origin feature/pipeline-overhaul
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Compare Merge and Rebase Side by Side
 
@@ -530,7 +530,7 @@ git commit --allow-empty -m "chore: main advanced again"
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Demonstrate a fast-forward merge on a linear branch history.
 

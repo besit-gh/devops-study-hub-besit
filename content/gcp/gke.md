@@ -7,15 +7,15 @@ tags: [gcp, gke, kubernetes, autopilot, workload-identity, ingress, node-pools]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Google Kubernetes Engine (GKE) is GCP's fully managed Kubernetes service and one of the most mature managed Kubernetes offerings in the industry. For DevOps engineers, GKE removes the hardest operational work — etcd management, control plane upgrades, certificate rotation — while preserving the full Kubernetes API. This means you can focus on deploying workloads rather than babysitting the cluster infrastructure. GKE is the default choice for running containerized workloads on GCP, from microservices to ML training jobs to internal tooling.
+Google Kubernetes Engine (GKE) — полностью управляемый сервис Kubernetes в GCP и одно из наиболее зрелых управляемых решений на рынке. Для DevOps-инженера GKE снимает самые сложные операционные задачи — обслуживание etcd, обновление control plane и ротацию сертификатов — сохраняя полноценный Kubernetes API. Это позволяет сосредоточиться на развёртывании приложений, а не на постоянном обслуживании инфраструктуры кластера. GKE подходит для контейнерных нагрузок в GCP: микросервисов, ML-задач и внутренних инструментов.
 
-GKE is built around two guiding principles: deep integration with GCP primitives and progressive operational responsibility. On the integration side, GKE hooks directly into Cloud IAM (Workload Identity), Cloud Load Balancing (GKE Ingress), Artifact Registry, Cloud Monitoring, and Cloud Logging — these aren't bolt-ons, they're first-class. On the responsibility side, GKE offers a spectrum from Autopilot (GCP owns nodes, scaling, security hardening) to Standard (you control node configuration, pool topology, and OS choices). Neither mode requires you to manage the control plane.
+GKE опирается на два принципа: глубокую интеграцию с сервисами GCP и гибкий уровень операционной ответственности. GKE напрямую интегрируется с Cloud IAM (Workload Identity), Cloud Load Balancing (GKE Ingress), Artifact Registry, Cloud Monitoring и Cloud Logging — это встроенные возможности платформы. По уровню контроля доступны режимы от Autopilot, где GCP управляет узлами, масштабированием и усилением безопасности, до Standard, где вы сами контролируете конфигурацию узлов, топологию пулов и выбор ОС.
 
-In the DevOps toolchain, GKE sits at the runtime layer: CI pipelines build images and push to Artifact Registry, GKE pulls and runs them, Cloud Monitoring/Logging provides observability, and tools like Helm or Config Connector manage configuration. Understanding GKE means understanding not just `kubectl` commands but also how Kubernetes abstractions map to GCP infrastructure — how an Ingress becomes a load balancer, how a ServiceAccount becomes an IAM principal, and how a node pool maps to a Managed Instance Group.
+В DevOps GKE находится на уровне выполнения рабочих нагрузок: CI-пайплайны собирают образы и отправляют их в Artifact Registry, GKE загружает и запускает их, Cloud Monitoring и Cloud Logging обеспечивают наблюдаемость, а Helm или Config Connector управляют конфигурацией. Для работы с GKE важно понимать не только команды `kubectl`, но и то, как абстракции Kubernetes отображаются на инфраструктуру GCP: как Ingress превращается в балансировщик, ServiceAccount — в IAM principal, а node pool — в Managed Instance Group.
 
-## Concepts
+## Основные понятия
 
 ### Cluster Modes: Autopilot vs Standard
 
@@ -477,7 +477,7 @@ spec:
 
 **Cluster Autoscaler gotcha:** CA will not scale down a node if any pod on it lacks a controller (bare pods), has a restrictive PodDisruptionBudget, or uses `local-storage`. Long-running Jobs and DaemonSet pods are also never evicted during scale-down. Check the CA status ConfigMap for the exact reason a node isn't being removed.
 
-## Examples
+## Примеры
 
 ### Example 1: Deploy a Web Application with Workload Identity and Ingress
 
@@ -772,7 +772,7 @@ kubectl describe nodes | grep -A 5 "Allocated resources"
 kubectl get events -n production --sort-by='.lastTimestamp' | tail -20
 ```
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Workload Identity End-to-End
 
@@ -822,7 +822,7 @@ Observe the Cluster Autoscaler scaling up and down in response to load.
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 6. Extract the cluster name from a GKE kubectl context string. Run: `echo "gke_my-project_us-central1_my-cluster" | cut -d_ -f4`
 

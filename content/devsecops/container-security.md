@@ -1,5 +1,5 @@
 ---
-title: Container Security
+title: Безопасность контейнеров
 module: devsecops
 duration_min: 25
 difficulty: intermediate
@@ -7,15 +7,15 @@ tags: [devsecops, container-security, docker, kubernetes, trivy, securitycontext
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Container security is not a single control — it is a layered defense across the full container lifecycle. At build time, you control what goes into the image: the base OS, installed packages, secrets handling, and user context. At deploy time, Kubernetes security controls determine what the container is allowed to do on the host: what Linux capabilities it holds, whether it can write to the filesystem, and whether it can escalate privileges. At runtime, network policies determine what traffic is allowed between workloads. Failing to address any one of these layers creates exploitable gaps; a vulnerability in a package combined with a privileged runtime context and no network segmentation is the recipe for full cluster compromise from a single exploited pod.
+Безопасность контейнеров — не одна настройка, а многоуровневая защита на протяжении всего жизненного цикла. На этапе сборки вы контролируете содержимое образа: базовую ОС, установленные пакеты, работу с секретами и пользователя. При развёртывании механизмы безопасности Kubernetes определяют, что контейнеру разрешено делать на хосте: какие Linux capabilities доступны, разрешена ли запись в файловую систему и можно ли повышать привилегии. Во время работы NetworkPolicy ограничивает трафик между рабочими нагрузками. Пропуск любого уровня создаёт уязвимость: ошибка в пакете в сочетании с привилегированным контейнером и отсутствием сетевой сегментации может привести к компрометации всего кластера через один Pod.
 
-The guiding principle behind container security is the principle of least privilege: every container should have exactly the permissions it needs to do its job — no more. This means non-root users, read-only filesystems where possible, minimal base images, dropped Linux capabilities, and tightly scoped network rules. Each restriction reduces the blast radius if a container is compromised. Defense in depth means that even if an attacker exploits a CVE in your application, they are dropped into a locked-down environment with no shell, no write access, and no network path to your database.
+Основной принцип безопасности контейнеров — минимальные привилегии: контейнер должен иметь ровно те права, которые нужны для его задачи, и не больше. Это означает запуск не от root, файловые системы только для чтения там, где это возможно, минимальные базовые образы, удаление ненужных Linux capabilities и строго ограниченные сетевые правила. Каждое ограничение уменьшает масштаб последствий компрометации. Глубокоэшелонированная защита должна гарантировать, что даже при эксплуатации CVE в приложении злоумышленник окажется в ограниченной среде без shell, права записи и сетевого доступа к базе данных.
 
 Container security fits into the DevSecOps toolchain as a set of gates at multiple pipeline stages. Image scanning runs in CI alongside tests. Dockerfile linting and `trivy config` catch misconfigurations before the image is built. Kubernetes admission controllers (PodSecurityAdmission, OPA/Gatekeeper, Kyverno) enforce policy at deploy time and prevent non-compliant workloads from ever reaching a node. Network policies are infrastructure-as-code, versioned alongside application manifests. The result is security that is automated, auditable, and hard to bypass accidentally.
 
-## Concepts
+## Основные понятия
 
 ### Image Scanning
 
@@ -428,7 +428,7 @@ from:
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Hardened Python API — Full Build and Scan
 
@@ -703,7 +703,7 @@ trivy config --format json --output misconfig-report.json ./k8s/
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Harden a Vulnerable Dockerfile
 
@@ -798,7 +798,7 @@ spec:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 7. Count how many `USER` instructions appear in this Dockerfile snippet. A secure image should have at least one non-root user switch.
 

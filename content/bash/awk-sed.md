@@ -1,5 +1,5 @@
 ---
-title: awk & sed
+title: Обработка текста с awk и sed
 module: bash
 duration_min: 20
 difficulty: intermediate
@@ -7,23 +7,23 @@ tags: [bash, awk, sed, text-processing, pipelines]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-`awk` and `sed` are the workhorses of Unix text processing, and for a DevOps engineer they are as fundamental as knowing how to write a loop. Almost every system you operate emits text: log files, config files, command output, CSV exports, YAML fragments. The ability to reshape that text on the fly — without writing a Python script, without installing a dependency, without leaving the terminal — is what separates engineers who can debug production incidents in minutes from those who need to set up a notebook first.
+`awk` и `sed` — основные инструменты обработки текста в Unix, для DevOps-инженера столь же важные, как умение писать циклы. Почти каждая система выдаёт текст: журналы, конфигурации, вывод команд, CSV-экспорты и фрагменты YAML. Умение преобразовать текст на месте — без отдельного скрипта Python, установки зависимостей и выхода из терминала — помогает разбирать production-инциденты за минуты.
 
-`sed` (stream editor) applies editing commands to a stream of text line by line. Its sweet spot is substitution, deletion, and insertion: patching a config value across a fleet, stripping comment lines before piping output, or toggling a flag from `true` to `false` across a directory of files. `awk` is a full programming language disguised as a field processor. It splits each line into columns, lets you filter on field values, accumulate totals, and format reports — making it the right tool for anything involving structured text: access logs, `ps` output, CSV data, or the output of any command that prints in columns.
+`sed` (stream editor) применяет команды редактирования к текстовому потоку построчно. Он особенно удобен для замены, удаления и вставки: изменения значения в конфигурациях на множестве серверов, удаления комментариев перед конвейером или переключения флага с `true` на `false` в каталоге файлов. `awk` — полноценный язык программирования, замаскированный под обработчик полей. Он разбивает строки на столбцы, фильтрует их по значениям, суммирует данные и форматирует отчёты, поэтому подходит для структурированного текста: access-логов, вывода `ps`, CSV и других табличных результатов.
 
-In the DevOps toolchain these two tools appear constantly in CI/CD pipeline scripts, Dockerfile `RUN` layers, Ansible tasks, Kubernetes init containers, and monitoring dashboards generated from log data. They run everywhere without installation, execute in microseconds on files that would choke a naive Python script, and compose naturally with `sort`, `uniq`, `grep`, and `xargs` in pipelines. Mastering them means you can solve the majority of text-manipulation problems with a single line rather than a dedicated script.
+В DevOps эти инструменты постоянно встречаются в CI/CD-скриптах, слоях `RUN` Dockerfile, задачах Ansible, init-контейнерах Kubernetes и дашбордах мониторинга, построенных по журналам. Они доступны почти везде без установки и быстро обрабатывают файлы, на которых простой Python-скрипт мог бы работать медленно. В конвейерах они естественно сочетаются с `sort`, `uniq`, `grep` и `xargs`. Освоив их, вы сможете решать большинство задач обработки текста одной строкой вместо отдельного скрипта.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### sed — Stream Editor
+### sed — потоковый редактор
 
-#### How sed Processes Input
+#### Как sed обрабатывает входные данные
 
-`sed` reads input one line at a time into a **pattern space**, applies your commands to that space, then prints the result (unless you suppress output with `-n`). Understanding this model explains several non-obvious behaviors: commands operate on the already-modified pattern space, so two substitutions on the same line are cumulative.
+`sed` читает входные данные построчно в **пространство шаблона (pattern space)**, применяет к нему команды и выводит результат (если вывод не отключён флагом `-n`). Эта модель объясняет некоторые неочевидные особенности: команды работают с уже изменённым пространством шаблона, поэтому две замены одной строки накапливают эффект.
 
 ```bash
 echo "foo foo foo" | sed 's/foo/bar/; s/bar/baz/'
@@ -32,22 +32,22 @@ echo "foo foo foo" | sed 's/foo/bar/; s/bar/baz/'
 # then the second s// changes the first "bar" to "baz".
 ```
 
-**Key flags:**
+**Основные флаги:**
 
-| Flag | Meaning |
+| Флаг | Значение |
 |------|---------|
-| `-n` | Suppress automatic print; only print explicitly with `p` |
-| `-e` | Add an expression (allows multiple commands inline) |
-| `-i` | Edit file in place |
-| `-i.bak` | Edit in place, save original with `.bak` suffix |
-| `-E` / `-r` | Use extended regex (ERE) — allows `+`, `?`, `\|`, `()` without backslash |
-| `-f script` | Read commands from a file instead of inline |
+| `-n` | Отключить автоматический вывод; печатать только явно через `p` |
+| `-e` | Добавить выражение (позволяет указывать несколько команд в строке) |
+| `-i` | Изменить файл на месте |
+| `-i.bak` | Изменить файл на месте, сохранив оригинал с суффиксом `.bak` |
+| `-E` / `-r` | Использовать расширенные регулярные выражения (ERE), позволяющие писать `+`, `?`, `\|`, `()` без обратной косой черты |
+| `-f script` | Читать команды из файла, а не из строки запуска |
 
-**macOS vs Linux gotcha:** On macOS (BSD sed), `-i` *requires* a suffix argument — even an empty one: `sed -i '' 's/a/b/' file`. On GNU sed (Linux), `-i` alone works. For portable scripts, always provide a suffix or detect the OS. Omitting the suffix on macOS produces a cryptic error about a missing input file, not a helpful message about the flag.
+**Различие macOS и Linux:** в macOS (BSD sed) флаг `-i` *требует* аргумент суффикса, даже пустой: `sed -i '' 's/a/b/' file`. В GNU sed на Linux достаточно `-i`. Для переносимых скриптов указывайте суффикс или определяйте ОС. Если в macOS опустить суффикс, появится неочевидная ошибка об отсутствующем входном файле.
 
-#### Substitution
+#### Замена
 
-The `s` command is the one you will use 80% of the time.
+Команду `s` вы будете использовать в большинстве случаев.
 
 ```bash
 # Basic form: s/PATTERN/REPLACEMENT/FLAGS
@@ -68,7 +68,7 @@ sed -i.bak 's/debug: true/debug: false/' config.yaml
 sed -i 's/localhost/db.prod.internal/g' app.conf
 ```
 
-**Backreference tip:** `&` in the replacement refers to the entire matched text, saving you a capture group when you just want to wrap or prefix something.
+**Совет по обратным ссылкам:** символ `&` в строке замены обозначает весь найденный фрагмент. Это позволяет обойтись без группы захвата, если нужно лишь обернуть или дополнить совпадение.
 
 ```bash
 echo "192.168.1.1" | sed 's/[0-9.]*/[&]/'
@@ -78,20 +78,108 @@ echo "192.168.1.1" | sed 's/[0-9.]*/[&]/'
 sed '/./s/^/2024-01-01 /' file.txt
 ```
 
-#### Addressing — Targeting Specific Lines
+#### Адресация — выбор нужных строк
 
-Without an address, a sed command applies to every line. Addresses let you narrow scope.
+Без адреса команда sed применяется ко всем строкам. Адреса позволяют ограничить область действия.
 
-| Address syntax | Meaning |
+| Синтаксис адреса | Значение |
 |----------------|---------|
-| `5` | Line 5 only |
-| `3,7` | Lines 3 through 7 |
-| `$` | Last line |
-| `/pattern/` | Lines matching regex |
-| `/start/,/end/` | From first line matching `start` to next matching `end` |
-| `0,/pattern/` (GNU) | From line 0 to first match — matches line 1 if it matches |
-| `~N` (GNU) | Every Nth line: `0~2` = even lines, `1~2` = odd lines |
-| `addr!` | Negation: apply to lines that do NOT match addr |
+| `5` | Только строка 5 |
+| `3,7` | Строки с 3-й по 7-ю |
+| `---
+title: Обработка текста с awk и sed
+module: bash
+duration_min: 20
+difficulty: intermediate
+tags: [bash, awk, sed, text-processing, pipelines]
+exercises: 4
+---
+
+## Обзор
+
+`awk` и `sed` — основные инструменты обработки текста в Unix, для DevOps-инженера столь же важные, как умение писать циклы. Почти каждая система выдаёт текст: журналы, конфигурации, вывод команд, CSV-экспорты и фрагменты YAML. Умение преобразовать текст на месте — без отдельного скрипта Python, установки зависимостей и выхода из терминала — помогает разбирать production-инциденты за минуты.
+
+`sed` (stream editor) применяет команды редактирования к текстовому потоку построчно. Он особенно удобен для замены, удаления и вставки: изменения значения в конфигурациях на множестве серверов, удаления комментариев перед конвейером или переключения флага с `true` на `false` в каталоге файлов. `awk` — полноценный язык программирования, замаскированный под обработчик полей. Он разбивает строки на столбцы, фильтрует их по значениям, суммирует данные и форматирует отчёты, поэтому подходит для структурированного текста: access-логов, вывода `ps`, CSV и других табличных результатов.
+
+В DevOps эти инструменты постоянно встречаются в CI/CD-скриптах, слоях `RUN` Dockerfile, задачах Ansible, init-контейнерах Kubernetes и дашбордах мониторинга, построенных по журналам. Они доступны почти везде без установки и быстро обрабатывают файлы, на которых простой Python-скрипт мог бы работать медленно. В конвейерах они естественно сочетаются с `sort`, `uniq`, `grep` и `xargs`. Освоив их, вы сможете решать большинство задач обработки текста одной строкой вместо отдельного скрипта.
+
+---
+
+## Основные понятия
+
+### sed — потоковый редактор
+
+#### Как sed обрабатывает входные данные
+
+`sed` читает входные данные построчно в **пространство шаблона (pattern space)**, применяет к нему команды и выводит результат (если вывод не отключён флагом `-n`). Эта модель объясняет некоторые неочевидные особенности: команды работают с уже изменённым пространством шаблона, поэтому две замены одной строки накапливают эффект.
+
+```bash
+echo "foo foo foo" | sed 's/foo/bar/; s/bar/baz/'
+# Output: baz bar bar
+# The first s// changes the first "foo" to "bar",
+# then the second s// changes the first "bar" to "baz".
+```
+
+**Основные флаги:**
+
+| Флаг | Значение |
+|------|---------|
+| `-n` | Отключить автоматический вывод; печатать только явно через `p` |
+| `-e` | Добавить выражение (позволяет указывать несколько команд в строке) |
+| `-i` | Изменить файл на месте |
+| `-i.bak` | Изменить файл на месте, сохранив оригинал с суффиксом `.bak` |
+| `-E` / `-r` | Использовать расширенные регулярные выражения (ERE), позволяющие писать `+`, `?`, `\|`, `()` без обратной косой черты |
+| `-f script` | Читать команды из файла, а не из строки запуска |
+
+**Различие macOS и Linux:** в macOS (BSD sed) флаг `-i` *требует* аргумент суффикса, даже пустой: `sed -i '' 's/a/b/' file`. В GNU sed на Linux достаточно `-i`. Для переносимых скриптов указывайте суффикс или определяйте ОС. Если в macOS опустить суффикс, появится неочевидная ошибка об отсутствующем входном файле.
+
+#### Замена
+
+Команду `s` вы будете использовать в большинстве случаев.
+
+```bash
+# Basic form: s/PATTERN/REPLACEMENT/FLAGS
+sed 's/old/new/'            # first match per line
+sed 's/old/new/g'           # all matches per line (global)
+sed 's/old/new/2'           # second match only
+sed 's/old/new/gi'          # global + case-insensitive
+
+# Capture groups (with -E for extended regex)
+sed -E 's/(ERROR|WARN)/[\1]/g' app.log   # wrap severity in brackets
+
+# Alternate delimiters — use any char when pattern contains /
+sed 's|/usr/local|/opt|g' paths.txt
+sed 's@http://old.host@https://new.host@g' urls.txt
+
+# In-place substitution — the most common DevOps use
+sed -i.bak 's/debug: true/debug: false/' config.yaml
+sed -i 's/localhost/db.prod.internal/g' app.conf
+```
+
+**Совет по обратным ссылкам:** символ `&` в строке замены обозначает весь найденный фрагмент. Это позволяет обойтись без группы захвата, если нужно лишь обернуть или дополнить совпадение.
+
+```bash
+echo "192.168.1.1" | sed 's/[0-9.]*/[&]/'
+# Output: [192.168.1.1]
+
+# Prefix every non-blank line with a timestamp placeholder
+sed '/./s/^/2024-01-01 /' file.txt
+```
+
+#### Адресация — выбор нужных строк
+
+Без адреса команда sed применяется ко всем строкам. Адреса позволяют ограничить область действия.
+
+| Синтаксис адреса | Значение |
+|----------------|---------|
+| `5` | Только строка 5 |
+| `3,7` | Строки с 3-й по 7-ю |
+ | Последняя строка |
+| `/pattern/` | Строки, соответствующие регулярному выражению |
+| `/start/,/end/` | От первой строки с `start` до следующей строки с `end` |
+| `0,/pattern/` (GNU) | От строки 0 до первого совпадения; учитывает строку 1, если она подходит |
+| `~N` (GNU) | Каждая N-я строка: `0~2` — чётные строки, `1~2` — нечётные |
+| `addr!` | Отрицание: применить к строкам, не соответствующим адресу |
 
 ```bash
 sed '3s/old/new/'             # substitution on line 3 only
@@ -104,9 +192,9 @@ sed '/START/,/END/d'          # delete blocks between markers (inclusive)
 sed '/pattern/!d'             # delete lines that do NOT match pattern
 ```
 
-**Range gotcha:** `/START/,/END/` is greedy per-block — it matches the *next* occurrence of END after each START. If END never appears after a START, the range consumes to end of file. This is useful when deleting stanzas from config files, but can silently delete more than intended if your END pattern is absent or misspelled. Always diff before committing an in-place edit.
+**Особенность диапазонов:** `/START/,/END/` выбирает до *следующего* совпадения END после каждого START. Если END не встречается, диапазон продолжается до конца файла. Это удобно для удаления блоков конфигурации, но опечатка в END может незаметно удалить лишнее. Перед коммитом всегда проверяйте diff.
 
-#### Delete, Print, Insert, and Append
+#### Удаление, вывод, вставка и добавление
 
 ```bash
 # Delete
@@ -128,9 +216,9 @@ sed '/\[section\]/a\key=value' cfg   # add key under a config section header
 sed '/^version:/c\version: "2.0"' config.yaml
 ```
 
-**`-n` with `p` is the correct grep alternative** when you need line numbers or surrounding context without installing GNU grep on a minimal container image: `sed -n '/ERROR/{=;p}' app.log` prints the line number (`=`) then the line (`p`).
+**`-n` вместе с `p` — хорошая альтернатива grep**, если нужны номера строк или контекст без установки GNU grep в минимальный образ контейнера: `sed -n '/ERROR/{=;p}' app.log` выводит номер строки (`=`), а затем саму строку (`p`).
 
-#### Multiple Expressions and Script Files
+#### Несколько выражений и файлы скриптов
 
 ```bash
 # Multiple -e flags — readable for 2–3 commands
@@ -148,50 +236,50 @@ EOF
 sed -i.bak -f fix.sed config.yaml
 ```
 
-Script files make complex edits auditable and version-controllable — commit `fix.sed` to your repo alongside the Ansible playbook or CI script that calls it.
+Файлы скриптов делают сложные изменения проверяемыми и версионируемыми. Добавляйте `fix.sed` в репозиторий вместе с вызывающим его playbook Ansible или CI-скриптом.
 
 ---
 
-### awk — Field Processor
+### awk — обработчик полей
 
-#### Execution Model
+#### Модель выполнения
 
-`awk` programs consist of `pattern { action }` rules. For each input line:
-1. The line is split into fields `$1`, `$2`, ... `$NF` using `FS`.
-2. Each rule is evaluated in order: if the pattern matches (or is absent), the action runs.
-3. `BEGIN` and `END` blocks run once before and after all input, respectively.
+Программы `awk` состоят из правил `pattern { action }`. Для каждой входной строки:
+1. Строка разбивается на поля `$1`, `$2`, …, `$NF` с помощью `FS`.
+2. Правила проверяются по порядку: если шаблон совпал (или отсутствует), выполняется действие.
+3. Блоки `BEGIN` и `END` выполняются один раз до и после обработки всех данных.
 
 ```
 awk 'BEGIN { setup } pattern { action } END { teardown }' file
 ```
 
-This is fundamentally different from sed: awk is stateful across lines, can do arithmetic, has arrays, and supports full control flow (`if/else`, `for`, `while`). Think of it as a row-oriented database query engine where each line is a row and each field is a column.
+Это принципиально отличается от sed: awk сохраняет состояние между строками, умеет выполнять арифметику, поддерживает массивы и полноценное управление потоком (`if/else`, `for`, `while`). Его можно представить как движок запросов к базе данных, где строка — запись, а поле — столбец.
 
-#### Built-in Variables Reference
+#### Справочник встроенных переменных
 
-| Variable | Default | Meaning |
+| Переменная | По умолчанию | Значение |
 |----------|---------|---------|
-| `$0` | — | Full current line |
-| `$1`…`$NF` | — | Individual fields |
-| `NF` | — | Number of fields on current line |
-| `NR` | — | Current record (line) number, across all files |
-| `FNR` | — | Record number within the current file |
-| `FS` | `" "` | Input field separator |
-| `OFS` | `" "` | Output field separator |
-| `RS` | `"\n"` | Input record separator |
-| `ORS` | `"\n"` | Output record separator |
-| `FILENAME` | — | Name of current input file |
+| `$0` | — | Вся текущая строка |
+| `$1`…`$NF` | — | Отдельные поля |
+| `NF` | — | Число полей в текущей строке |
+| `NR` | — | Номер текущей записи (строки) во всех файлах |
+| `FNR` | — | Номер записи внутри текущего файла |
+| `FS` | `" "` | Разделитель входных полей |
+| `OFS` | `" "` | Разделитель выходных полей |
+| `RS` | `"\n"` | Разделитель входных записей |
+| `ORS` | `"\n"` | Разделитель выходных записей |
+| `FILENAME` | — | Имя текущего входного файла |
 
-**`FS=" "` special behavior:** a single space (the default) means "split on any run of whitespace and strip leading/trailing whitespace." This is different from `FS="\t"` or `FS=" "` set explicitly via `-v`. This default is why `awk '{print $1}'` works on `ps`, `df`, and `ls -l` output without any flag. Set `FS="\t"` explicitly for TSV files where a field may be empty.
+**Особое поведение `FS=" "`:** пробел по умолчанию означает «разбивать по любой последовательности пробельных символов и удалять пробелы по краям». Это отличается от явно заданного через `-v` `FS="\t"` или `FS=" "`. Благодаря этому `awk '{print $1}'` работает с выводом `ps`, `df` и `ls -l` без дополнительных флагов. Для TSV, где поле может быть пустым, явно задавайте `FS="\t"`.
 
-**Modifying fields:** Assigning to `$1` or any field causes `$0` to be reconstructed using `OFS` as the delimiter. This is how you reformat a line: set `OFS`, modify a field, print `$0`.
+**Изменение полей:** присваивание `$1` или другого поля приводит к пересборке `$0` с использованием `OFS` в качестве разделителя. Чтобы изменить формат строки, задайте `OFS`, измените поле и выведите `$0`.
 
 ```bash
 # Change the 3rd field and reprint the whole line
 awk 'BEGIN{OFS=":"} {$3="REDACTED"; print $0}' /etc/passwd
 ```
 
-#### Field Separators and Output Formatting
+#### Разделители полей и форматирование вывода
 
 ```bash
 # Set FS at invocation
@@ -213,7 +301,7 @@ awk '{printf "%-30s %8.2f MB\n", $1, $2/1024}' sizes.txt
 # %05d   zero-padded integer
 ```
 
-#### Patterns: Filtering Lines
+#### Шаблоны: фильтрация строк
 
 ```bash
 # Regex pattern
@@ -238,7 +326,7 @@ awk 'NR>=10 && NR<=20'      file.txt     # line range — sometimes cleaner than
 awk '/BEGIN_BLOCK/,/END_BLOCK/' file.txt
 ```
 
-#### Aggregation and Counters
+#### Агрегация и счётчики
 
 ```bash
 # Sum a column
@@ -271,11 +359,11 @@ awk '
 ' access.log
 ```
 
-**Uninitialized variable gotcha:** In awk, uninitialized numeric variables are `0` and uninitialized strings are `""`. The `count+0` pattern forces numeric context so you print `0` instead of an empty string when no lines matched. This is especially important in `END` blocks where a counter may never have been incremented.
+**Особенность неинициализированных переменных:** в awk числовые переменные без начального значения равны `0`, а строковые — `""`. Выражение `count+0` принудительно задаёт числовой контекст, поэтому при отсутствии совпадений выводится `0`, а не пустая строка. Это особенно важно в блоках `END`, где счётчик мог ни разу не увеличиться.
 
-#### Arrays
+#### Массивы
 
-awk arrays are associative (hash maps) — keys can be strings or numbers, and they spring into existence on first assignment.
+Массивы awk ассоциативные (хеш-таблицы): ключами могут быть строки или числа, а сам элемент создаётся при первом присваивании.
 
 ```bash
 # Build a map of status codes to counts
@@ -305,9 +393,9 @@ awk '{count[$1 SUBSEP $9]++}
      }' access.log
 ```
 
-**`for (key in array)` order is undefined.** awk does not guarantee iteration order over array keys. Always pipe to `sort` if order matters in your output.
+**Порядок `for (key in array)` не определён.** awk не гарантирует порядок обхода ключей массива. Если порядок вывода важен, передавайте результат в `sort`.
 
-#### Multi-file Processing and FNR vs NR
+#### Обработка нескольких файлов: FNR и NR
 
 ```bash
 # NR: global line number across all input files
@@ -325,17 +413,17 @@ awk 'NR==FNR {allowed[$1]=1; next}   # runs for first file only
      whitelist.txt access.log
 ```
 
-The `NR==FNR` idiom is one of the most useful awk patterns for DevOps work — it lets you join two files without sort or a database.
+Идиома `NR==FNR` — один из самых полезных шаблонов awk в DevOps: она позволяет объединять два файла без `sort` и базы данных.
 
 ---
 
-### Combining sed and awk in Pipelines
+### Совместное использование sed и awk в конвейерах
 
-The real power is composition. Use each tool for what it does best:
+Главная сила — в совместном использовании. Применяйте каждый инструмент для его лучшей задачи:
 
-- **sed** for line-level editing: strip noise, normalize delimiters, fix encoding artifacts
-- **awk** for field-level analysis: extract columns, aggregate, report
-- **sort / uniq** between them for ranking and deduplication
+- **sed** для построчного редактирования: удаление лишнего, нормализация разделителей, исправление проблем кодировки
+- **awk** для анализа полей: извлечение столбцов, агрегация и отчёты
+- **sort / uniq** между ними для сортировки и удаления дубликатов
 
 ```bash
 # Pattern: normalize → extract → aggregate → sort → limit
@@ -347,20 +435,20 @@ sed '/^#/d; /^$/d' access.log \          # strip comments and blanks
   | head -20                            # top 20
 ```
 
-**Pipeline tool selection guide:**
+**Как выбрать инструмент для конвейера:**
 
-| Task | Best tool |
+| Задача | Лучший инструмент |
 |------|-----------|
-| Find lines matching a pattern | `grep` |
-| Edit/replace text in lines | `sed` |
-| Extract and reformat fields | `awk` |
-| Count occurrences | `awk` or `sort \| uniq -c` |
-| Sort output | `sort` |
-| Remove duplicates | `sort -u` or `uniq` |
-| Aggregate across lines | `awk` |
-| Structured formats (JSON, XML) | `jq`, `xmllint` |
+| Найти строки по шаблону | `grep` |
+| Изменить или заменить текст в строках | `sed` |
+| Извлечь и переформатировать поля | `awk` |
+| Посчитать вхождения | `awk` или `sort \| uniq -c` |
+| Отсортировать вывод | `sort` |
+| Удалить дубликаты | `sort -u` или `uniq` |
+| Выполнить агрегацию по строкам | `awk` |
+| Структурированные форматы (JSON, XML) | `jq`, `xmllint` |
 
-**Performance note:** For files under a few hundred MB, awk is fast enough that optimization rarely matters. For multi-GB log files, filter with `grep` first to reduce input volume before piping to awk — `grep` uses highly optimized Boyer-Moore matching and is often 5–10× faster for simple pattern matching than an awk regex on the same data.
+**Производительность:** для файлов размером до нескольких сотен МБ awk достаточно быстр, и оптимизация обычно не нужна. Для журналов размером в несколько ГБ сначала сократите объём данных через `grep`, а затем передавайте результат в awk. Для простого поиска шаблона `grep` с алгоритмом Boyer–Moore часто в 5–10 раз быстрее регулярного выражения awk.
 
 ---
 
@@ -397,7 +485,7 @@ grep -c 'new_value' critical.conf || { echo "Edit failed to apply"; exit 1; }
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: nginx Access Log Analysis Script
 
@@ -654,7 +742,7 @@ function parse_ts(ts,    parts, t) {
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Parsing df Output
 
@@ -767,7 +855,7 @@ awk 'BEGIN {
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Using `awk`, sum the values piped from `printf '10\n20\n30\n40\n'` and print the total. Write a one-liner: `printf '10\n20\n30\n40\n' | awk ...`
 

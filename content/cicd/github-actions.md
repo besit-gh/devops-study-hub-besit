@@ -7,12 +7,12 @@ tags: [cicd, github-actions, workflows, runners, secrets, matrix, caching]
 exercises: 4
 ---
 
-## Overview
-GitHub Actions is the CI/CD platform built into GitHub. Workflows live in `.github/workflows/` and run on push, pull request, schedule, or manual trigger. Every job gets a fresh runner; steps inside a job share the same filesystem and environment. Understanding the job/step model, caching, and secrets handling is enough to build production-grade pipelines.
+## Обзор
+GitHub Actions — встроенная в GitHub платформа CI/CD. Workflow-файлы хранятся в `.github/workflows/` и запускаются при push, pull request, по расписанию или вручную. Каждая job получает отдельный runner, а шаги внутри одной job используют общие файловую систему и окружение. Понимания модели job/step, кэширования и работы с секретами достаточно, чтобы строить production-пайплайны.
 
-## Concepts
+## Основные понятия
 
-### Workflow Structure
+### Структура workflow
 ```yaml
 # .github/workflows/ci.yml
 name: CI
@@ -44,22 +44,22 @@ jobs:
         run: pytest --tb=short
 ```
 
-### Runners
+### Исполнители (runner)
 ```yaml
-# GitHub-hosted (free tier: 2000 min/month for public repos)
+# GitHub-hosted (бесплатный лимит для публичных репозиториев — 2000 минут в месяц)
 runs-on: ubuntu-24.04
 runs-on: ubuntu-22.04
 runs-on: macos-14
 runs-on: windows-2022
 
-# Self-hosted (your own machine registered as a runner)
+# Self-hosted (собственная машина, зарегистрированная как runner)
 runs-on: self-hosted
 runs-on: [self-hosted, linux, x64, gpu]
 ```
 
-Self-hosted runners give you control over hardware, software, and network access — useful for accessing private infrastructure or needing specific hardware.
+Self-hosted runner даёт контроль над оборудованием, программным обеспечением и сетевым доступом. Это полезно для работы с закрытой инфраструктурой или при необходимости специального оборудования.
 
-### Secrets and Environment Variables
+### Секреты и переменные окружения
 ```yaml
 jobs:
   deploy:
@@ -77,9 +77,9 @@ jobs:
           aws s3 sync ./dist s3://my-bucket
 ```
 
-Secrets are set in **Settings → Secrets and variables → Actions**. They're masked in logs and never passed to workflows triggered by forks (for security).
+Секреты настраиваются в **Settings → Secrets and variables → Actions**. В журналах их значения маскируются; из соображений безопасности секреты не передаются workflow, запущенным из форков.
 
-### Caching
+### Кэширование
 ```yaml
 - name: Cache pip packages
   uses: actions/cache@v4
@@ -96,9 +96,9 @@ Secrets are set in **Settings → Secrets and variables → Actions**. They're m
     key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
 ```
 
-Cache key includes a hash of the lockfile — cache busts automatically when dependencies change.
+Ключ кэша включает хеш lock-файла — при изменении зависимостей кэш автоматически обновляется.
 
-### Artifacts
+### Артефакты
 ```yaml
 - name: Build
   run: npm run build
@@ -110,14 +110,14 @@ Cache key includes a hash of the lockfile — cache busts automatically when dep
     path: dist/
     retention-days: 7
 
-# In a later job: download it
+# В следующем задании: скачать артефакт
 - uses: actions/download-artifact@v4
   with:
     name: dist
     path: ./dist
 ```
 
-### Matrix Builds
+### Матричные сборки
 ```yaml
 jobs:
   test:
@@ -134,7 +134,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 ```
 
-### Job Dependencies
+### Зависимости заданий
 ```yaml
 jobs:
   test:
@@ -152,7 +152,7 @@ jobs:
     steps: [...]
 ```
 
-### Environments and Approvals
+### Окружения и подтверждения
 ```yaml
 jobs:
   deploy-prod:
@@ -164,9 +164,9 @@ jobs:
       - run: ./deploy.sh
 ```
 
-Configure the `production` environment in **Settings → Environments** to require manual approval from specific reviewers before the job runs.
+Настройте окружение `production` в **Settings → Environments**, чтобы перед запуском задания требовалось ручное подтверждение от выбранных проверяющих.
 
-### Reusable Workflows
+### Повторно используемые workflow
 ```yaml
 # .github/workflows/reusable-test.yml
 on:
@@ -190,7 +190,7 @@ jobs:
 ```
 
 ```yaml
-# Call it from another workflow:
+# Вызов из другого workflow:
 jobs:
   run-tests:
     uses: ./.github/workflows/reusable-test.yml
@@ -200,7 +200,7 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 ```
 
-### Conditional Steps
+### Условные шаги
 ```yaml
 - name: Deploy to prod
   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -215,9 +215,9 @@ jobs:
   run: docker compose down
 ```
 
-## Examples
+## Примеры
 
-### Full CI/CD Pipeline
+### Полный CI/CD-конвейер
 ```yaml
 name: CI/CD
 
@@ -283,32 +283,32 @@ jobs:
           kubectl rollout status deployment/myapp
 ```
 
-## Exercises
+## Практические задания
 
-1. Write a workflow that triggers on push to `main` and on pull requests. It should run `pytest` with Python 3.11 and 3.12 in a matrix. Use `actions/cache` for pip packages keyed to the hash of `requirements.txt`.
-2. Add a Docker build-and-push job that runs only on pushes to `main` (not PRs). Push the image to GitHub Container Registry (`ghcr.io`) using `GITHUB_TOKEN` for auth. Tag it with the commit SHA.
-3. Create a deployment job with an `environment: production` gate requiring manual approval. The job should only run after successful test and build jobs, and only on the `main` branch.
-4. Write a reusable workflow that accepts `python-version` as an input and runs linting + tests. Call it from a main workflow with two different Python versions.
+1. Напишите workflow, запускающийся при push в `main` и при создании pull request. Он должен запускать `pytest` для Python 3.11 и 3.12 в матрице. Используйте `actions/cache` для кэширования pip-пакетов с ключом на основе хеша `requirements.txt`.
+2. Добавьте задание сборки и отправки Docker-образа, запускающееся только при push в `main`, но не при pull request. Отправляйте образ в GitHub Container Registry (`ghcr.io`), используя `GITHUB_TOKEN` для аутентификации. В качестве тега используйте SHA коммита.
+3. Создайте задание развёртывания с ограничением `environment: production`, требующим ручного подтверждения. Оно должно запускаться только после успешного завершения тестов и сборки и только в ветке `main`.
+4. Создайте повторно используемый workflow, принимающий `python-version` на вход и запускающий линтер и тесты. Вызовите его из основного workflow для двух версий Python.
 
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
-5. Count jobs in a workflow stub. Run: `printf 'jobs:\n  build:\n    runs-on: ubuntu-latest\n  test:\n    runs-on: ubuntu-latest\n  deploy:\n    runs-on: ubuntu-latest\n' | awk '/^  [a-z]/ && !/^    /{c++} END{print c}'`
+5. Посчитайте задания в примере workflow. Выполните: `printf 'jobs:\n  build:\n    runs-on: ubuntu-latest\n  test:\n    runs-on: ubuntu-latest\n  deploy:\n    runs-on: ubuntu-latest\n' | awk '/^  [a-z]/ && !/^    /{c++} END{print c}'`
 
 ```expected_output
 3
 ```
 
-hint: Think about how you can use a pattern-matching tool to identify lines that look like top-level job names and increment a counter for each one.
-hint: Use awk with a regex like /^  [a-z]/ to match indented job-name lines, exclude deeper-indented lines with && !/^    /, increment a counter c++, and print it in the END block.
+Подсказка: используйте сопоставление с шаблоном, чтобы находить строки с именами заданий верхнего уровня и увеличивать счётчик для каждой.
+Подсказка: используйте `awk` с регулярным выражением `/^  [a-z]/` для строк с именами заданий, исключите более глубокий отступ через `&& !/^    /`, увеличивайте `c++` и выводите результат в блоке `END`.
 
-6. Count steps in a workflow job. Run: `printf 'steps:\n  - uses: actions/checkout@v4\n  - run: npm ci\n  - run: npm test\n  - run: npm run build\n' | grep -c '  - '`
+6. Посчитайте шаги в задании workflow. Выполните: `printf 'steps:\n  - uses: actions/checkout@v4\n  - run: npm ci\n  - run: npm test\n  - run: npm run build\n' | grep -c '  - '`
 
 ```expected_output
 4
 ```
 
-hint: Think about how you can filter lines that match a specific pattern and have the shell count those matches automatically.
-hint: Use grep with the -c flag to count occurrences of the step prefix pattern '  - ' from the piped input.
+Подсказка: отфильтруйте строки по шаблону и поручите shell автоматически подсчитать совпадения.
+Подсказка: используйте `grep -c`, чтобы посчитать в переданном потоке строки с префиксом шага `  - `.

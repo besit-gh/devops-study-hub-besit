@@ -1,5 +1,5 @@
 ---
-title: PromQL
+title: Язык запросов PromQL
 module: prometheus
 duration_min: 25
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [prometheus, promql, queries, alerting, recording-rules]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-PromQL (Prometheus Query Language) is a functional query language for selecting and aggregating time-series data. It is the primary skill gap between engineers who can deploy Prometheus and those who can actually operate it. Every alert, every Grafana panel, every recording rule is a PromQL expression. Mastering PromQL means being able to answer production questions like "what is the 99th-percentile latency of my API over the last 5 minutes, broken down by endpoint?" — and knowing why naive approaches give wrong answers with counters or histograms.
+PromQL (Prometheus Query Language) — функциональный язык запросов для выборки и агрегации временных рядов. Именно он часто отличает инженера, который умеет развернуть Prometheus, от специалиста, способного его полноценно эксплуатировать. Каждое оповещение, панель Grafana и recording rule содержит выражение PromQL. Владение языком позволяет отвечать на production-вопросы вроде «какова задержка API на 99-м перцентиле за последние пять минут в разрезе endpoint?» и понимать, почему наивные запросы дают неверные результаты для счётчиков и гистограмм.
 
-The most important mental model: PromQL operates on vectors, not tables or rows. An instant vector is a snapshot of many time series at one point in time; a range vector is a window of samples from those same series over a time range. Functions like `rate()`, `histogram_quantile()`, and aggregations transform between these types. Once you internalize that, the function signatures stop being arbitrary and start being logical.
+Ключевая модель мышления: PromQL работает с векторами, а не таблицами и строками. Instant vector — снимок множества временных рядов в один момент времени; range vector — набор выборок этих рядов за временной интервал. Функции `rate()`, `histogram_quantile()` и операторы агрегации преобразуют данные между типами. Когда это становится понятным, сигнатуры функций перестают казаться произвольными.
 
-Recording rules extend PromQL by letting you pre-compute expensive expressions and store their output as new time series. This is not optional for production: a dashboard querying a histogram aggregated across 50 instances without recording rules will timeout under load. The pattern of writing good recording rules — pre-computing at the `job` level, following the naming convention, layering aggregations — is one of the things that separates junior and senior SREs.
+Recording rules расширяют возможности PromQL: они позволяют заранее вычислять дорогие выражения и сохранять результат как новые временные ряды. В production это часто необходимо: панель, которая при каждом запросе агрегирует гистограмму с 50 экземпляров без recording rules, может завершаться по тайм-ауту под нагрузкой. Грамотные правила — предварительные вычисления на уровне `job`, единый стиль имён и последовательные уровни агрегации — один из признаков зрелой инженерной практики SRE.
 
-## Concepts
+## Основные понятия
 
-### Data Types
+### Типы данных
 
 | Type | Description | Example |
 |------|-------------|---------|
@@ -366,7 +366,7 @@ groups:
           )
 ```
 
-## Examples
+## Примеры
 
 **Investigate an error spike:**
 
@@ -399,7 +399,7 @@ predict_linear(node_filesystem_free_bytes{fstype!="tmpfs"}[6h], 4 * 3600)
 predict_linear(node_filesystem_free_bytes{fstype!="tmpfs"}[6h], 4 * 3600) < 0
 ```
 
-## Exercises
+## Практические задания
 
 1. Given a counter metric `api_requests_total{service, method, status_code}`, write a PromQL query that returns the per-second error rate (status_code >= 500) for each service, averaged over the last 10 minutes.
 
@@ -412,7 +412,7 @@ predict_linear(node_filesystem_free_bytes{fstype!="tmpfs"}[6h], 4 * 3600) < 0
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Extract the function name from a PromQL expression. Run: `echo "rate(http_requests_total[5m])" | cut -d'(' -f1`
 

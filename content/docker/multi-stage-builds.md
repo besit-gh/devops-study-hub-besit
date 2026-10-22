@@ -1,5 +1,5 @@
 ---
-title: Multi-stage Builds
+title: Многоэтапная сборка Docker
 module: docker
 duration_min: 15
 difficulty: intermediate
@@ -7,21 +7,21 @@ tags: [docker, multi-stage, dockerfile, optimization, build]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Multi-stage builds solve one of the oldest tensions in containerization: the tools you need to *build* software are almost never the tools you need to *run* it. Before multi-stage builds, teams used separate Dockerfiles for CI and production, or shell-scripted their way around the problem by building outside Docker and copying artifacts in. Both approaches broke reproducibility. Multi-stage builds collapse the entire pipeline — dependency installation, compilation, testing, and packaging — into a single Dockerfile with a clean separation between build-time and runtime concerns.
+Многоэтапная сборка решает одну из давних проблем контейнеризации: инструменты, необходимые для *сборки* ПО, почти никогда не нужны для его *запуска*. До появления multi-stage builds команды использовали отдельные Dockerfile для CI и production либо собирали приложение вне Docker и копировали артефакты внутрь. Оба подхода ухудшали воспроизводимость. Многоэтапная сборка объединяет установку зависимостей, компиляцию, тестирование и упаковку в одном Dockerfile, чётко разделяя этапы сборки и выполнения.
 
-The guiding principle is **artifact promotion**: each stage produces something, and later stages cherry-pick only what they need via `COPY --from`. The intermediate layers — compilers, test frameworks, downloaded source tarballs, intermediate object files — are discarded automatically. The final image is exactly what you declare it to be. This matters for security as much as size: a production image without a shell, a package manager, or source code has a dramatically smaller attack surface.
+Основной принцип — **перенос артефактов**: каждый этап создаёт результат, а следующие этапы забирают только нужные файлы через `COPY --from`. Промежуточные слои — компиляторы, тестовые фреймворки, исходные архивы и объектные файлы — автоматически исключаются из финального образа. Это важно не только для размера, но и для безопасности: production-образ без shell, менеджера пакетов и исходного кода имеет значительно меньшую поверхность атаки.
 
-In the broader DevOps toolchain, multi-stage builds sit at the intersection of CI/CD and container security. They enable a single `docker build` call to serve as a full pipeline step: install, compile, test, package. The `--target` flag lets CI systems stop at any stage — run tests in one job, push the production image in the next — without maintaining separate Dockerfiles. Combined with layer caching and build arguments, they make image builds both fast and auditable.
+В DevOps многоэтапная сборка находится на пересечении CI/CD и безопасности контейнеров. Один вызов `docker build` может включать установку зависимостей, компиляцию, тесты и упаковку. Флаг `--target` позволяет CI остановиться на нужном этапе: например, выполнить тесты в одной job, а затем отправить production-образ в registry — без отдельных Dockerfile. Вместе с кэшированием слоёв и аргументами сборки это делает процесс быстрым и проверяемым.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### The Problem Multi-stage Solves
+### Какую проблему решает многоэтапная сборка
 
-Without multi-stage builds, a naive Dockerfile bundles everything that touched the build process into the final image.
+Без многоэтапной сборки простой Dockerfile включает в финальный образ всё, что использовалось в процессе сборки.
 
 ```dockerfile
 # Single-stage: everything ends up in the image
@@ -36,7 +36,7 @@ RUN npm run build
 # Typical size: 1.0–1.4 GB
 ```
 
-Multi-stage builds isolate each concern into its own `FROM` block. Only deliberate `COPY --from` instructions move data between stages.
+Многоэтапная сборка разделяет задачи по отдельным блокам `FROM`. Между этапами переносятся только файлы, явно указанные в `COPY --from`.
 
 ```dockerfile
 # Stage 1: build — has everything the compiler needs
@@ -54,11 +54,11 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Typical size: 20–30 MB
 ```
 
-**The intermediate stages never appear in the final image.** Docker builds them in order, uses them as sources for `COPY --from`, then discards their layers from the final output. This is not a compression trick — those layers are simply never written to the output image.
+**Промежуточные этапы не попадают в финальный образ.** Docker собирает их по порядку, использует как источник для `COPY --from`, а затем исключает их слои из финального результата. Это не сжатие: эти слои просто не записываются в выходной образ.
 
 ---
 
-### Syntax and Stage Referencing
+### Синтаксис и ссылки на этапы
 
 ```dockerfile
 # Name a stage with AS <name> — names are lowercase by convention
@@ -75,21 +75,21 @@ COPY --from=0 /app/binary /binary
 COPY --from=alpine:3.19 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 ```
 
-| Reference style | Example | When to use |
+| Тип ссылки | Пример | Когда использовать |
 |---|---|---|
-| Named stage | `--from=builder` | Always prefer — readable and refactor-safe |
-| Index | `--from=0` | Avoid — breaks silently when stages are reordered |
-| External image | `--from=alpine:3.19` | Copying well-known files (certs, binaries) without defining a stage |
+| Именованный этап | `--from=builder` | Предпочтительный вариант: понятный и устойчивый к рефакторингу |
+| Индекс | `--from=0` | Лучше избегать: перестановка этапов может незаметно сломать сборку |
+| Внешний образ | `--from=alpine:3.19` | Копирование известных файлов (сертификатов, бинарников) без объявления этапа |
 
-**Stage names are scoped to the Dockerfile.** Two Dockerfiles can both have a stage named `builder` without conflict. Names must be valid identifiers (alphanumeric + hyphens, no underscores by convention).
+**Имена этапов действуют в пределах одного Dockerfile.** В двух разных Dockerfile может быть этап `builder` — конфликтов не будет. Имена должны быть допустимыми идентификаторами (буквы, цифры и дефисы; по принятому соглашению без подчёркиваний).
 
-**You can have multiple `FROM` instructions referencing the same base image with different names.** This is intentional and common — for example, a `test` stage and a `builder` stage both starting from the same `deps` stage to share a cached dependency layer.
+**Несколько инструкций `FROM` могут ссылаться на один базовый образ под разными именами.** Это обычная практика: например, этапы `test` и `builder` могут начинаться с общего этапа `deps`, используя один кэшированный слой зависимостей.
 
 ---
 
-### Build Arguments Across Stages
+### Аргументы сборки между этапами
 
-`ARG` values do not automatically propagate between stages. Each stage that needs an argument must re-declare it.
+Значения `ARG` не передаются автоматически между этапами. Каждый этап, которому нужен аргумент, должен объявить его повторно.
 
 ```dockerfile
 # Declare at the top: available before the first FROM (e.g., to pin base image versions)
@@ -113,9 +113,9 @@ COPY --from=builder /app/version.txt ./version.txt
 docker build --build-arg BUILD_VERSION=1.4.2 -t myapp:1.4.2 .
 ```
 
-**ARG vs ENV across stages:** `ARG` values exist only at build time and are not present in the running container. `ENV` values persist into the running container. If you need a value both at build time *and* runtime, assign it to an `ENV` inside the stage: `ENV APP_VERSION=$BUILD_VERSION`.
+**ARG и ENV между этапами:** значения `ARG` существуют только во время сборки и отсутствуют в запущенном контейнере. Значения `ENV` доступны и во время выполнения. Если значение нужно на обоих этапах, присвойте его `ENV` внутри этапа: `ENV APP_VERSION=$BUILD_VERSION`.
 
-**Security note:** `ARG` values (including secrets like API keys) are visible in `docker history`. Never pass secrets via `ARG`. Use Docker BuildKit secret mounts (`--mount=type=secret`) instead.
+**Безопасность:** значения `ARG`, включая секреты вроде API-ключей, видны в `docker history`. Никогда не передавайте секреты через `ARG`; используйте secret mounts Docker BuildKit (`--mount=type=secret`).
 
 ```bash
 # Correct pattern for secrets with BuildKit
@@ -126,9 +126,9 @@ docker build --secret id=npmrc,src=$HOME/.npmrc -t myapp .
 
 ---
 
-### Targeting a Specific Stage
+### Выбор конкретного этапа
 
-The `--target` flag stops the build at a named stage and exports that image. Every stage before the target is built normally; every stage after is skipped.
+Флаг `--target` останавливает сборку на указанном этапе и сохраняет его образ. Все предыдущие этапы собираются как обычно, последующие пропускаются.
 
 ```bash
 # Build only the 'builder' stage — useful for caching dependency layers in CI
@@ -141,7 +141,7 @@ docker build --target test -t myapp:test .
 docker build --target production -t myapp:latest .
 ```
 
-This pattern maps cleanly to CI pipeline stages:
+Этот подход удобно соответствует этапам CI-конвейера:
 
 ```yaml
 # GitLab CI — test and build as separate jobs sharing the registry cache
@@ -162,13 +162,13 @@ build-image:
   needs: [run-tests]
 ```
 
-**If you don't use `--target`, Docker builds all stages but only outputs the final one.** Intermediate stages are still cached, so subsequent builds reuse layers even from stages you never explicitly target. This is why a targeted `--target test` build followed by a `--target production` build is fast — the shared layers are already cached.
+**Без `--target` Docker собирает все этапы, но выдаёт только финальный образ.** Промежуточные этапы кэшируются, поэтому последующие сборки повторно используют их слои. Именно поэтому сборка `--target test`, а затем `--target production` выполняется быстро: общие слои уже в кэше.
 
 ---
 
-### The Test Stage Pattern
+### Шаблон этапа тестирования
 
-Embedding tests inside the Dockerfile guarantees tests run in the same environment as the build. If tests fail, the image is never produced.
+Если включить тесты в Dockerfile, они выполняются в том же окружении, что и сборка. При провале тестов образ не создаётся.
 
 ```dockerfile
 FROM python:3.12-slim AS base
@@ -196,15 +196,15 @@ docker build --target test .
 docker build --target production -t myapp:latest .
 ```
 
-**`RUN pytest` failing causes the entire `docker build` to exit non-zero.** Your CI system sees a failed build and stops the pipeline. The production image is never tagged or pushed. This is the intended behavior — it's not an error to be worked around.
+**Если `RUN pytest` завершается с ошибкой, вся команда `docker build` возвращает ненулевой код.** CI фиксирует провал сборки и останавливает конвейер. Production-образ не получает тег и не отправляется в registry. Это ожидаемое поведение, а не ошибка, которую нужно обходить.
 
-**The test stage shares layers with the production stage via the `base` stage.** `pip install -r requirements.txt` runs once and is cached. Only the dev dependencies and the test execution are unique to the test stage. This keeps CI fast without duplicating work.
+**Этап тестирования использует общие слои с production через этап `base`.** `pip install -r requirements.txt` выполняется один раз и кэшируется. Только dev-зависимости и запуск тестов относятся исключительно к тестовому этапу. Это ускоряет CI и исключает дублирование работы.
 
 ---
 
-### Layer Caching Strategy
+### Стратегия кэширования слоёв
 
-Multi-stage builds interact with Docker's layer cache the same way single-stage builds do: a layer is invalidated when its instruction or any preceding instruction changes. Good cache discipline matters especially in multi-stage builds because you typically have more layers and more opportunities to accidentally bust the cache.
+В многоэтапной сборке кэш слоёв работает так же, как в одноэтапной: слой становится недействительным, если изменяется его инструкция или любая предыдущая. В многоэтапных сборках особенно важно правильно организовать кэш, поскольку слоёв больше и выше риск случайно сбросить кэш.
 
 ```dockerfile
 FROM golang:1.24-alpine AS builder
@@ -221,17 +221,17 @@ COPY . .
 RUN CGO_ENABLED=0 go build -o server ./cmd/server
 ```
 
-**Common cache-busting mistake:** `COPY . .` before installing dependencies. Changing *any* source file invalidates the dependency install layer, forcing a full `npm ci` or `go mod download` on every build.
+**Типичная ошибка, сбрасывающая кэш:** `COPY . .` перед установкой зависимостей. Изменение любого исходного файла делает слой установки зависимостей недействительным и заставляет повторно выполнять `npm ci` или `go mod download` при каждой сборке.
 
-| What changes | Layers rebuilt |
+| Что изменилось | Какие слои пересобираются |
 |---|---|
-| Source code only | `COPY . .` and everything after |
-| `go.sum` / `package-lock.json` | Dependency install + all subsequent layers |
-| Base image updated upstream | All layers in that stage |
-| Any instruction text changes | That layer and all subsequent layers |
-| Nothing | Full cache hit — near-instant build |
+| Только исходный код | `COPY . .` и все последующие слои |
+| `go.sum` / `package-lock.json` | Установка зависимостей и все последующие слои |
+| Обновился базовый образ | Все слои этого этапа |
+| Изменилась любая инструкция | Этот слой и все последующие |
+| Ничего не изменилось | Полное попадание в кэш — почти мгновенная сборка |
 
-**BuildKit cache mounts** persist a directory across builds without baking it into a layer. This is ideal for package manager caches:
+**Cache mounts BuildKit** сохраняют каталог между сборками, не добавляя его в слой образа. Это идеально подходит для кэша менеджеров пакетов:
 
 ```dockerfile
 # --mount=type=cache persists /root/.cache across builds
@@ -242,11 +242,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 ---
 
-### Base Image Selection for Final Stages
+### Выбор базового образа финального этапа
 
-The choice of final-stage base image determines the security footprint, image size, and operational characteristics of your container.
+Выбор базового образа финального этапа определяет поверхность атаки, размер образа и эксплуатационные характеристики контейнера.
 
-| Base image | Typical size | Shell | Package manager | Use case |
+| Базовый образ | Примерный размер | Shell | Менеджер пакетов | Применение |
 |---|---|---|---|---|
 | `scratch` | 0 MB | No | No | Fully static Go/Rust binaries |
 | `alpine:3.x` | ~7 MB | sh (busybox) | apk | Small images that still need a shell |
@@ -256,17 +256,17 @@ The choice of final-stage base image determines the security footprint, image si
 | `gcr.io/distroless/java21` | ~220 MB | No | No | Java apps, minimal JRE, no shell |
 | Language `-slim` variants | Varies | bash | apt (limited) | Python/Ruby/Node with minimal OS |
 
-**`scratch` gotcha:** a binary in `scratch` must be completely statically linked. Any dynamic library dependency (including glibc) causes a runtime error: `no such file or directory` — not a meaningful error message for what is actually a missing shared library. For Go, set `CGO_ENABLED=0`. For Rust, use the `musl` target. For compiled languages that link against glibc (C, C++, default Rust), use `distroless/base` or `alpine` instead.
+**Особенность `scratch`:** бинарный файл в `scratch` должен быть полностью статически слинкован. Зависимость от динамической библиотеки (включая glibc) приведёт к ошибке выполнения `no such file or directory`, которая неочевидно указывает на отсутствие разделяемой библиотеки. Для Go задайте `CGO_ENABLED=0`. Для Rust используйте target `musl`. Для языков, использующих glibc (C, C++, Rust по умолчанию), выберите `distroless/base` или `alpine`.
 
-**`alpine` gotcha:** Alpine uses `musl` libc, not `glibc`. Most Go and Rust binaries work fine, but Python C extensions and some Node.js native modules may behave differently or require recompilation. If you see mysterious runtime errors that only appear in Alpine, suspect musl/glibc incompatibility. The fix is to switch to a `debian-slim` or `distroless` base.
+**Особенность `alpine`:** Alpine использует libc `musl`, а не `glibc`. Большинство бинарников Go и Rust работают нормально, но C-расширения Python и некоторые нативные модули Node.js могут вести себя иначе или требовать пересборки. Если загадочная ошибка возникает только в Alpine, проверьте несовместимость musl/glibc. Возможное решение — перейти на `debian-slim` или `distroless`.
 
-**Distroless images** contain no shell, no package manager, no coreutils — only the language runtime and its dependencies. This reduces the attack surface significantly (no `sh` means no shell injection pivot), but it also means `docker exec` for debugging is limited. Use a sidecar debug container or `docker debug` (Docker Desktop 4.27+) in those cases.
+**Distroless-образы** не содержат shell, менеджера пакетов и coreutils — только runtime языка и его зависимости. Это существенно уменьшает поверхность атаки, но ограничивает отладку через `docker exec`. В таких случаях используйте sidecar-контейнер для диагностики или `docker debug` (Docker Desktop 4.27+).
 
 ---
 
-### Signal Handling and PID 1
+### Обработка сигналов и PID 1
 
-A subtle but operationally important detail: the process started by `CMD` or `ENTRYPOINT` in exec form becomes PID 1 in the container. PID 1 receives signals (SIGTERM for graceful shutdown) directly. When you use shell form, a shell process becomes PID 1 and may not forward signals to your application.
+Важная эксплуатационная деталь: процесс, запущенный через `CMD` или `ENTRYPOINT` в exec-форме, становится PID 1 контейнера и напрямую получает сигналы (например, SIGTERM для корректного завершения). При shell-форме PID 1 становится shell, который может не передавать сигналы приложению.
 
 ```dockerfile
 # Shell form — sh becomes PID 1, your app is a child process
@@ -277,15 +277,15 @@ CMD uvicorn main:app --host 0.0.0.0 --port 8000
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-**Always use exec form (`["cmd", "arg"]`) in the final stage of multi-stage builds.** This is especially important in Kubernetes, where pod termination sends SIGTERM and waits for `terminationGracePeriodSeconds` before SIGKILL.
+**В финальном этапе многоэтапной сборки всегда используйте exec-форму (`["cmd", "arg"]`).** Это особенно важно в Kubernetes: при завершении pod отправляется SIGTERM, после чего система ждёт `terminationGracePeriodSeconds` перед SIGKILL.
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Go REST API to `scratch`
 
-A complete example for a Go HTTP server that makes outbound HTTPS calls. The final image is ~8 MB.
+Полный пример HTTP-сервера на Go, выполняющего исходящие HTTPS-запросы. Финальный образ занимает около 8 МБ.
 
 ```dockerfile
 # syntax=docker/dockerfile:1
@@ -348,7 +348,7 @@ docker stop goapi && docker rm goapi
 
 ### Example 2: Java / Maven Spring Boot
 
-Separates Maven dependency caching from source compilation. Reduces CI rebuild time significantly when only source changes.
+Отделяет кэширование зависимостей Maven от компиляции исходников. Значительно сокращает время пересборки CI при изменении только исходного кода.
 
 ```dockerfile
 # syntax=docker/dockerfile:1
@@ -412,7 +412,7 @@ docker images myapp
 
 ### Example 3: Node.js Three-Stage Build (deps / build / production)
 
-Demonstrates separating production dependency install, transpilation, and the final runtime image to minimize what enters production.
+Показывает, как разделить установку production-зависимостей, транспиляцию и создание финального runtime-образа, чтобы в production попадало только необходимое.
 
 ```dockerfile
 # syntax=docker/dockerfile:1
@@ -477,7 +477,7 @@ docker stop nodeapp && docker rm nodeapp
 
 ### Example 4: Static Frontend (React) Served by Nginx
 
-Builds a React application and serves only the compiled static assets behind Nginx, with a custom config baked in.
+Собирает приложение React и отдаёт через Nginx только скомпилированные статические файлы, используя встроенную пользовательскую конфигурацию.
 
 ```dockerfile
 # syntax=docker/dockerfile:1
@@ -551,11 +551,11 @@ docker stop frontend && docker rm frontend
 
 ---
 
-## Exercises
+## Практические задания
 
-### Exercise 1: Measure the Impact of Multi-stage Builds
+### Задание 1: оценить эффект многоэтапной сборки
 
-**Goal:** Quantify the size and content difference between single-stage and multi-stage builds for a real application.
+**Цель:** измерить разницу в размере и содержимом одноэтапного и многоэтапного образов реального приложения.
 
 1. Pick a language you are comfortable with (Node.js, Python, or Go). Write a minimal but working HTTP server that serves a `/healthz` endpoint.
 2. Write a **single-stage Dockerfile** that installs all dependencies (including dev) and runs the server. Build it and record the image size with `docker images`.
@@ -567,9 +567,9 @@ docker stop frontend && docker rm frontend
 
 ---
 
-### Exercise 2: Embed Tests in the Build Pipeline
+### Задание 2: встроить тесты в конвейер сборки
 
-**Goal:** Use the test stage pattern to make a failing test block image production.
+**Цель:** использовать этап тестирования, чтобы ошибка тестов блокировала создание образа.
 
 1. Take an existing project or create a new one with at least one unit test.
 2. Write a multi-stage Dockerfile with a `test` stage that runs the test suite. Ensure the `RUN` command for tests exits non-zero on failure.
@@ -582,9 +582,9 @@ docker stop frontend && docker rm frontend
 
 ---
 
-### Exercise 3: Optimize Cache Ordering for a Slow Dependency Install
+### Задание 3: оптимизировать порядок слоёв при медленной установке зависимостей
 
-**Goal:** Demonstrate the practical build time difference between cache-friendly and cache-hostile layer ordering.
+**Цель:** показать разницу во времени сборки при удачном и неудачном порядке слоёв с точки зрения кэша.
 
 1. Create a project with a `package.json` (or `requirements.txt`) that has at least 10 dependencies. Include a trivial source file.
 2. Write a **cache-hostile Dockerfile** that does `COPY . .` before `RUN npm ci`. Build it twice, change only a comment in your source file, build again. Measure the time for the third build — notice the full `npm ci` re-runs.
@@ -595,9 +595,9 @@ docker stop frontend && docker rm frontend
 
 ---
 
-### Exercise 4: Use `--target` in a Simulated CI Pipeline
+### Задание 4: использовать `--target` в имитации CI-конвейера
 
-**Goal:** Use `--target` to implement a two-job CI pipeline locally with shell scripts.
+**Цель:** реализовать локальный CI-конвейер из двух заданий с помощью `--target` и shell-скриптов.
 
 1. Write a multi-stage Dockerfile with at least three stages: `builder`, `test`, and `production`.
 2. Write a shell script `ci-test.sh` that:
@@ -614,7 +614,7 @@ docker stop frontend && docker rm frontend
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Extract stage aliases from a multi-stage Dockerfile. Run: `printf 'FROM golang:1.21 AS builder\nFROM gcr.io/distroless/static AS runtime\n' | awk '/AS/{print $NF}'`
 
@@ -623,13 +623,13 @@ builder
 runtime
 ```
 
-hint: Think about how you can filter lines containing a specific keyword and then extract the last word from those lines.
-hint: Use awk with a pattern match for 'AS' and print $NF to grab the final field on each matching line.
+Подсказка: отфильтруйте строки с заданным ключевым словом и извлеките из каждой последнее слово.
+Подсказка: используйте `awk` с шаблоном `AS` и выведите `$NF`, чтобы получить последнее поле каждой подходящей строки.
 
 6. Count `FROM` instructions in a multi-stage Dockerfile stub. Run: `printf 'FROM node:20 AS deps\nFROM node:20 AS build\nFROM nginx:alpine\n' | grep -c '^FROM'`
 
 ```expected_output
 3
 ```
-hint: Think about how you can filter lines that match a specific pattern and have the shell count those matches automatically.
-hint: Use grep with the -c flag to count lines matching the anchored pattern ^FROM in the piped input.
+Подсказка: отфильтруйте строки по шаблону и попросите shell автоматически посчитать совпадения.
+Подсказка: используйте `grep -c`, чтобы посчитать строки, соответствующие шаблону `^FROM`, в переданном потоке.

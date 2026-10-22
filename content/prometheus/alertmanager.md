@@ -7,19 +7,19 @@ tags: [prometheus, alertmanager, alerting, oncall, slack, pagerduty]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Alertmanager handles the lifecycle of alerts fired by Prometheus (and other Prometheus-compatible systems). It receives raw alert events, groups related alerts to reduce noise, routes them to the correct receiver based on labels, deduplicates repeated firings, and manages silences for planned maintenance. Understanding Alertmanager is essential for on-call work — misconfigured routing trees cause missed pages or alert storms, both of which have direct production impact.
+Alertmanager управляет жизненным циклом оповещений от Prometheus и других совместимых систем. Он получает события, группирует связанные оповещения для уменьшения шума, направляет их нужным получателям по меткам, устраняет дубликаты и поддерживает silences на время планового обслуживания. Понимание Alertmanager необходимо для дежурств: ошибки в дереве маршрутизации приводят к пропущенным уведомлениям или шквалу оповещений, напрямую влияющим на production.
 
-The split between Prometheus and Alertmanager is deliberate. Prometheus evaluates alerting rules and sends alert events to Alertmanager over HTTP — but Prometheus has no opinion about who gets notified or when. Alertmanager is solely responsible for the notification lifecycle: grouping alerts that arrive close together, waiting before sending (to allow bursts to settle), routing by label, and suppressing duplicates. This separation means multiple Prometheus instances can all send to the same Alertmanager cluster, and Alertmanager handles deduplication across them.
+Разделение Prometheus и Alertmanager сделано намеренно. Prometheus вычисляет правила оповещений и отправляет события в Alertmanager по HTTP, но не определяет, кому и когда отправлять уведомления. За весь жизненный цикл уведомлений отвечает Alertmanager: группирует близкие по времени оповещения, ждёт перед отправкой, чтобы объединить всплески, маршрутизирует по меткам и подавляет дубликаты. Благодаря этому несколько экземпляров Prometheus могут отправлять события в один кластер Alertmanager, который выполняет общую дедупликацию.
 
-A critical operational point: misconfiguring `group_wait`, `group_interval`, and `repeat_interval` causes two failure modes. Too aggressive (very short intervals) and you generate alert spam that trains people to ignore pages. Too conservative (very long `repeat_interval`) and a sustained incident stops generating pages after the first notification, leaving it invisible. Calibrating these values for each team's on-call culture is as important as writing the alerting expressions.
+Важный эксплуатационный момент: неправильная настройка `group_wait`, `group_interval` и `repeat_interval` приводит к двум проблемам. Слишком короткие интервалы создают поток уведомлений, к которому дежурные привыкают и перестают реагировать. Слишком длинный `repeat_interval` означает, что длительный инцидент не будет повторно напоминать о себе после первого уведомления. Подбор значений с учётом процесса дежурств команды так же важен, как и сами выражения оповещений.
 
-## Concepts
+## Основные понятия
 
-### Alerting Rules in Prometheus
+### Правила оповещений в Prometheus
 
-Alerting rules live in rule files loaded by Prometheus (same files as recording rules). A rule fires an alert when its expression returns a non-empty result for longer than the `for` duration.
+Правила оповещений хранятся в файлах правил, загружаемых Prometheus (в тех же файлах, что и recording rules). Правило срабатывает, когда выражение возвращает непустой результат дольше указанного интервала `for`.
 
 ```yaml
 # rules/alerts.yml
@@ -58,30 +58,30 @@ groups:
           summary: "Disk on {{ $labels.instance }} will fill within 4 hours"
 ```
 
-**Alert states:**
-- **Inactive** — expression is false (or returns no result)
-- **Pending** — expression is true, `for` timer not yet elapsed
-- **Firing** — expression has been true for longer than `for`
+**Состояния оповещения:**
+- **Inactive** — выражение ложно или не возвращает результат
+- **Pending** — выражение истинно, но интервал `for` ещё не истёк
+- **Firing** — выражение остаётся истинным дольше интервала `for`
 
-The `for` clause prevents flapping and reduces noise from transient spikes. A value of `0` fires immediately. For critical infrastructure alerts, 1-2 minutes is typical. For SLO violations, 5-10 minutes avoids paging on brief traffic bursts.
+Параметр `for` предотвращает частые переключения состояния и снижает шум от кратковременных всплесков. Значение `0` означает немедленное срабатывание. Для критической инфраструктуры обычно используют 1–2 минуты; для нарушений SLO — 5–10 минут, чтобы не вызывать дежурного из-за кратких всплесков трафика.
 
-**Labels vs Annotations:**
-- `labels` — become part of the alert identity; used by Alertmanager for routing and inhibition. Keep these low-cardinality (severity, team, env).
-- `annotations` — human-readable context attached to the notification. Not used for routing. Use Go template syntax to interpolate dynamic values.
+**Labels и annotations:**
+- `labels` — часть идентичности оповещения; используются Alertmanager для маршрутизации и подавления. Ограничивайте число возможных значений (severity, team, env).
+- `annotations` — понятный человеку контекст уведомления. Для маршрутизации не используются. Для динамических значений применяйте шаблоны Go.
 
-### Go Templates in Annotations
+### Шаблоны Go в annotations
 
-Alertmanager and Prometheus rule annotations support Go template syntax. You will use this in every real alert to include context that helps the on-call engineer respond faster.
+Annotations правил Prometheus и Alertmanager поддерживают синтаксис шаблонов Go. Используйте его в реальных оповещениях, чтобы добавить контекст и ускорить реакцию дежурного.
 
-**Available template variables:**
+**Доступные переменные шаблона:**
 
-| Variable | Type | Description |
+| Переменная | Тип | Описание |
 |----------|------|-------------|
-| `$labels` | map | All labels on the alert (metric labels + alert labels) |
-| `$value` | float64 | The numeric value of the alerting expression at the time the alert fired |
-| `$externalURL` | string | The Prometheus/Alertmanager external URL (for links back to the UI) |
+| `$labels` | map | Все метки оповещения (метрики и самого правила) |
+| `$value` | float64 | Числовое значение выражения в момент срабатывания |
+| `$externalURL` | string | Внешний URL Prometheus/Alertmanager (ссылка на интерфейс) |
 
-**Accessing labels:**
+**Доступ к меткам:**
 
 ```yaml
 annotations:
@@ -89,7 +89,7 @@ annotations:
   description: "Job {{ $labels.job }} on {{ $labels.instance }} has been down for 2 minutes."
 ```
 
-**Formatting the numeric value:**
+**Форматирование числового значения:**
 
 ```yaml
 annotations:
@@ -100,11 +100,11 @@ annotations:
   description: "Free bytes: {{ $value | humanize1024 }}"       # → human-readable bytes (KiB, MiB)
 ```
 
-**`humanizePercentage`** expects a fraction (0 to 1) and formats it as a percentage. If your expression returns `0.073`, the template renders `"7.3%"`.
+**`humanizePercentage`** принимает дробь от 0 до 1 и форматирует её как процент. Если выражение возвращает `0.073`, шаблон выдаст `"7.3%"`.
 
-**Iterating over labels in Alertmanager receiver templates:**
+**Перебор меток в шаблонах получателей Alertmanager:**
 
-In receiver config (e.g., Slack message body), you have access to `.Alerts` — a slice of alert objects. Each alert has `.Labels` and `.Annotations`:
+В конфигурации получателя (например, в теле сообщения Slack) доступен `.Alerts` — список объектов оповещений. У каждого объекта есть `.Labels` и `.Annotations`:
 
 ```yaml
 slack_configs:
@@ -116,7 +116,7 @@ slack_configs:
       {{ end }}
 ```
 
-**Conditional in templates:**
+**Условные выражения в шаблонах:**
 
 ```yaml
 annotations:
@@ -128,9 +128,9 @@ annotations:
     {{ end }}
 ```
 
-### Alertmanager Pipeline
+### Конвейер Alertmanager
 
-When Prometheus fires an alert, it sends it to Alertmanager. The pipeline:
+Когда Prometheus генерирует оповещение, он отправляет его в Alertmanager. Далее выполняются следующие этапы:
 
 ```
 Incoming alerts
@@ -154,9 +154,9 @@ Incoming alerts
   [Receiver]      ← Slack, PagerDuty, email, webhook, etc.
 ```
 
-### Routing Tree
+### Дерево маршрутизации
 
-The routing tree is the core of Alertmanager config. It is a tree of `route` nodes; each alert walks the tree top-down and is matched to the first (or all, if `continue: true`) matching route. The root route is a catch-all — it must have a receiver and cannot have match conditions.
+Дерево маршрутизации — основа конфигурации Alertmanager. Оно состоит из узлов `route`; каждое оповещение проходит дерево сверху вниз и направляется в первый подходящий маршрут (или во все совпавшие, если задано `continue: true`). Корневой маршрут принимает все оповещения: у него должен быть receiver, и он не может содержать условий сопоставления.
 
 ```yaml
 # alertmanager.yml
@@ -193,9 +193,9 @@ route:
       receiver: slack-warnings
 ```
 
-**`match` vs `match_re`:**
-- `match` performs exact string equality on label values.
-- `match_re` performs regex matching (RE2 syntax) on label values.
+**`match` и `match_re`:**
+- `match` проверяет точное совпадение значения метки.
+- `match_re` проверяет значение метки регулярным выражением (синтаксис RE2).
 
 ```yaml
 # Exact match — both labels must match exactly
@@ -208,18 +208,18 @@ route:
     team: "backend|api"
 ```
 
-**Grouping parameters:**
+**Параметры группировки:**
 
-| Parameter | Description |
+| Параметр | Описание |
 |-----------|-------------|
-| `group_by` | Labels to group alerts by. `["..."]` groups everything together. |
-| `group_wait` | Delay before sending the first notification for a new group — allows batching. |
-| `group_interval` | Minimum time before sending a new notification for an existing group when new alerts arrive. |
-| `repeat_interval` | How often to re-send a notification for an already-firing group. |
+| `group_by` | Метки для группировки оповещений. `["..."]` объединяет всё в одну группу. |
+| `group_wait` | Задержка перед первым уведомлением новой группы — позволяет объединить несколько событий. |
+| `group_interval` | Минимальный интервал между уведомлениями существующей группы при поступлении новых событий. |
+| `repeat_interval` | Как часто повторно отправлять уведомление для уже активной группы. |
 
-**`continue: true`:** by default, routing stops at the first match. Set `continue: true` to send to this receiver AND continue matching further routes (useful for audit logging, NOC channel, etc.).
+**`continue: true`:** по умолчанию маршрутизация останавливается на первом совпадении. Установите `continue: true`, чтобы отправить уведомление этому получателю И продолжить проверку следующих маршрутов (например, для аудита или канала NOC).
 
-### Receiver Configuration
+### Настройка получателей
 
 ```yaml
 receivers:
@@ -269,7 +269,7 @@ receivers:
     # no configs needed — empty receiver discards alerts
 ```
 
-**Webhook receiver** (generic integrations — OpsGenie, custom scripts):
+**Получатель webhook** (универсальные интеграции — OpsGenie, пользовательские скрипты):
 
 ```yaml
   - name: "webhook-custom"
@@ -280,9 +280,9 @@ receivers:
           bearer_token: "<token>"
 ```
 
-### Inhibition Rules
+### Правила подавления
 
-Inhibition suppresses alerts when another (source) alert is already firing. The classic use case: if a node is down, suppress all the application alerts firing because of that node going down — otherwise every pod on that node pages separately.
+Inhibition подавляет оповещения, если уже активно другое (исходное) оповещение. Типичный пример: если узел недоступен, подавить все оповещения приложений, вызванные его отказом, иначе каждое приложение на этом узле будет отдельно вызывать дежурного.
 
 ```yaml
 inhibit_rules:
@@ -301,11 +301,11 @@ inhibit_rules:
     equal: ["instance"]
 ```
 
-**How the `equal` field works:** the inhibition rule only suppresses `target` alerts when the `source` alert and the `target` alert have identical values for all labels listed in `equal`. This prevents a node outage in one datacenter from suppressing alerts in a different datacenter that happen to share the same severity label.
+**Как работает поле `equal`:** правило подавляет `target` только тогда, когда `source` и `target` имеют одинаковые значения всех меток, перечисленных в `equal`. Это не позволяет сбою узла в одном дата-центре подавлять оповещения в другом дата-центре лишь потому, что у них одинаковая метка severity.
 
-**`target_match_re`:** matches any alert where the label value matches the regex. `alertname: ".+"` matches every alert (any non-empty alertname). This lets you suppress all alerts of any name for a given instance when that instance is down.
+**`target_match_re`:** выбирает любое оповещение, значение метки которого соответствует регулярному выражению. `alertname: ".+"` соответствует всем оповещениям с непустым alertname. Это позволяет подавлять все оповещения конкретного экземпляра, если он недоступен.
 
-**Kubernetes node inhibition — suppressing pod alerts when a node is down:**
+**Подавление оповещений Kubernetes: игнорирование pod-оповещений при отказе узла:**
 
 ```yaml
 inhibit_rules:
@@ -317,11 +317,11 @@ inhibit_rules:
     equal: ["instance"]
 ```
 
-This works because `InstanceDown` has an `instance` label (the node address), and the Kubernetes alerts for pods on that node also carry an `instance` label pointing to the same node. When they match, the pod alerts are suppressed.
+Это работает, потому что `InstanceDown` содержит метку `instance` с адресом узла, и оповещения Kubernetes для pod на этом узле содержат ту же метку. При совпадении pod-оповещения подавляются.
 
-### Silences
+### Подавление оповещений (silences)
 
-Silences are created via the Alertmanager UI or API. They mute matching alerts for a time window — used during maintenance, deployments, or known incidents.
+Silence создаются через интерфейс или API Alertmanager. Они временно отключают уведомления для совпадающих оповещений и используются при обслуживании, развёртывании и известных инцидентах.
 
 ```bash
 # Create a silence via API (expires in 2 hours)
@@ -345,7 +345,7 @@ curl -s http://alertmanager:9093/api/v2/silences | jq '.[] | select(.status.stat
 curl -s -X DELETE http://alertmanager:9093/api/v2/silences/<silence_id>
 ```
 
-**amtool** — CLI for Alertmanager management:
+**amtool** — CLI для управления Alertmanager:
 
 ```bash
 amtool --alertmanager.url=http://alertmanager:9093 silence add \
@@ -358,13 +358,13 @@ amtool --alertmanager.url=http://alertmanager:9093 alert query
 amtool --alertmanager.url=http://alertmanager:9093 config show
 ```
 
-### Deduplication
+### Дедупликация
 
-Alertmanager deduplicates alerts automatically: if the same alert (same labels) keeps firing, only one notification is sent (then repeated per `repeat_interval`). This is different from grouping — deduplication prevents re-sending the same alert within a group, while grouping controls how alerts are bundled into notifications.
+Alertmanager автоматически выполняет дедупликацию: если одно и то же оповещение (с теми же метками) продолжает срабатывать, отправляется одно уведомление, а затем повторяется с интервалом `repeat_interval`. Это отличается от группировки: дедупликация предотвращает повторную отправку одного оповещения, а группировка определяет, как объединять разные оповещения в уведомления.
 
-## Examples
+## Примеры
 
-**Run Alertmanager with Docker:**
+**Запуск Alertmanager через Docker:**
 
 ```bash
 cat > /tmp/alertmanager.yml <<EOF
@@ -394,7 +394,7 @@ docker run --rm \
 promtool check rules rules/alerts.yml
 ```
 
-**Test routing without sending real notifications:**
+**Проверка маршрутизации без отправки настоящих уведомлений:**
 
 ```bash
 # Use amtool to test which receiver an alert would hit
@@ -403,7 +403,7 @@ amtool config routes test \
   severity=critical team=infra alertname=InstanceDown
 ```
 
-**Complete alertmanager.yml with routing, receivers, and inhibition:**
+**Полный alertmanager.yml с маршрутизацией, получателями и подавлением:**
 
 ```yaml
 global:
@@ -451,7 +451,7 @@ receivers:
         send_resolved: true
 ```
 
-## Exercises
+## Практические задания
 
 1. Write a complete `alertmanager.yml` that routes: (a) `severity=critical` alerts to PagerDuty with a 10s group_wait, (b) `severity=warning` alerts to a Slack channel with 5m group_wait, (c) everything else to a "null" receiver (drop). Add an inhibition rule that suppresses warning alerts when a critical alert fires for the same `job`.
 
@@ -462,7 +462,7 @@ receivers:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 4. Count receivers in an Alertmanager config stub. Run: `printf 'receivers:\n- name: team-slack\n- name: team-email\n- name: team-pagerduty\n' | grep -c '^- name:'`
 
@@ -470,8 +470,8 @@ receivers:
 3
 ```
 
-hint: Think about how you can filter lines that match a specific pattern and have the shell count those matches for you.
-hint: Use grep with the -c flag to count lines matching the pattern '^- name:' from the piped printf output.
+Подсказка: отфильтруйте строки по шаблону и поручите shell посчитать совпадения.
+Подсказка: используйте `grep -c`, чтобы посчитать строки, соответствующие шаблону `^- name:`, в выводе `printf`, переданном через конвейер.
 
 5. Extract the `repeat_interval` from a route config stub. Run: `printf 'route:\n  receiver: team-slack\n  group_wait: 30s\n  repeat_interval: 4h\n' | awk '/repeat_interval:/{print $2}'`
 
@@ -479,5 +479,5 @@ hint: Use grep with the -c flag to count lines matching the pattern '^- name:' f
 4h
 ```
 
-hint: Consider using a text processing tool that can match a specific line by pattern and then print a particular field from that line.
-hint: Use awk with a pattern match like /repeat_interval:/ combined with {print $2} to extract the second whitespace-separated field from the matching line.
+Подсказка: используйте инструмент обработки текста, который находит строку по шаблону и выводит нужное поле.
+Подсказка: используйте `awk` с шаблоном `/repeat_interval:/` и `{print $2}`, чтобы извлечь второе поле найденной строки.

@@ -1,102 +1,102 @@
-# Linux — Quick Reference
+# Linux — краткая справка
 
-## File System Navigation
+## Навигация по файловой системе
 
 | Command | Description |
 |---------|-------------|
-| `ls -lah` | Long list, all files, human sizes |
-| `ls -lt` | Sort by modification time |
-| `find . -name "*.log"` | Find by name |
-| `find . -mtime -7` | Files modified in last 7 days |
-| `find . -size +100M` | Files larger than 100 MB |
-| `find . -type f -exec rm {} \;` | Find and execute on each |
-| `locate filename` | Fast search via index (update: `updatedb`) |
-| `du -sh dir/` | Directory size summary |
-| `df -h` | Disk usage by filesystem |
-| `pwd` | Print working directory |
+| `ls -lah` | Подробный список всех файлов, размеры в удобном формате |
+| `ls -lt` | Сортировка по времени изменения |
+| `find . -name "*.log"` | Поиск по имени |
+| `find . -mtime -7` | Файлы, изменённые за последние 7 дней |
+| `find . -size +100M` | Файлы размером более 100 МБ |
+| `find . -type f -exec rm {} \;` | Найти и выполнить команду для каждого файла |
+| `locate filename` | Быстрый поиск по индексу (обновление: `updatedb`) |
+| `du -sh dir/` | Сводный размер каталога |
+| `df -h` | Использование диска по файловым системам |
+| `pwd` | Показать текущий каталог |
 
-## File Permissions
+## Права доступа к файлам
 
 | Command | Description |
 |---------|-------------|
 | `chmod 755 file` | rwxr-xr-x |
 | `chmod 644 file` | rw-r--r-- |
-| `chmod +x file` | Add execute bit |
-| `chmod -R 750 dir/` | Recursive |
-| `chown user:group file` | Change owner |
-| `chown -R user:group dir/` | Recursive ownership change |
-| `umask 022` | Default permissions mask |
-| `stat file` | Detailed file metadata |
+| `chmod +x file` | Добавить право на выполнение |
+| `chmod -R 750 dir/` | Рекурсивно |
+| `chown user:group file` | Изменить владельца |
+| `chown -R user:group dir/` | Рекурсивно изменить владельца |
+| `umask 022` | Маска прав по умолчанию |
+| `stat file` | Подробные метаданные файла |
 
-## Process Management
-
-| Command | Description |
-|---------|-------------|
-| `ps aux` | All running processes |
-| `ps aux \| grep name` | Find process by name |
-| `top` | Interactive process viewer |
-| `htop` | Enhanced top (if installed) |
-| `kill PID` | Send SIGTERM |
-| `kill -9 PID` | Send SIGKILL (force) |
-| `pkill name` | Kill by process name |
-| `jobs` | List background jobs |
-| `bg %1` | Resume job 1 in background |
-| `fg %1` | Bring job 1 to foreground |
-| `nohup cmd &` | Run immune to hangups |
-| `nice -n 10 cmd` | Run with lower priority |
-
-## User & Groups
+## Управление процессами
 
 | Command | Description |
 |---------|-------------|
-| `whoami` | Current user |
-| `id` | Current user ID + groups |
-| `useradd -m username` | Add user with home dir |
-| `passwd username` | Set password |
-| `usermod -aG group user` | Add user to group |
-| `groupadd groupname` | Create group |
-| `su - username` | Switch user |
-| `sudo cmd` | Run as root |
-| `sudo -u user cmd` | Run as another user |
-| `visudo` | Edit sudoers safely |
+| `ps aux` | Все запущенные процессы |
+| `ps aux \| grep name` | Найти процесс по имени |
+| `top` | Интерактивный просмотр процессов |
+| `htop` | Расширенная версия top (если установлена) |
+| `kill PID` | Отправить SIGTERM |
+| `kill -9 PID` | Отправить SIGKILL (принудительно) |
+| `pkill name` | Завершить процесс по имени |
+| `jobs` | Список фоновых задач |
+| `bg %1` | Продолжить выполнение задачи 1 в фоне |
+| `fg %1` | Перевести задачу 1 на передний план |
+| `nohup cmd &` | Запустить без завершения при разрыве терминала |
+| `nice -n 10 cmd` | Запустить с пониженным приоритетом |
 
-## Systemd / Services
-
-| Command | Description |
-|---------|-------------|
-| `systemctl start svc` | Start service |
-| `systemctl stop svc` | Stop service |
-| `systemctl restart svc` | Restart service |
-| `systemctl enable svc` | Start on boot |
-| `systemctl disable svc` | Remove from boot |
-| `systemctl status svc` | Check status |
-| `journalctl -u svc` | View service logs |
-| `journalctl -u svc -f` | Follow service logs |
-| `journalctl --since "1 hour ago"` | Recent logs |
-| `systemctl list-units --failed` | List failed services |
-
-## Package Management (apt / yum)
+## Пользователи и группы
 
 | Command | Description |
 |---------|-------------|
-| `apt update` | Refresh package index |
-| `apt install pkg` | Install package |
-| `apt remove pkg` | Remove package |
-| `apt upgrade` | Upgrade all packages |
-| `apt search term` | Search packages |
-| `dpkg -l` | List installed packages |
-| `yum install pkg` | (RHEL/CentOS) install |
-| `yum update` | Update all |
-| `rpm -qa` | List all RPM packages |
+| `whoami` | Текущий пользователь |
+| `id` | ID текущего пользователя и группы |
+| `useradd -m username` | Создать пользователя с домашним каталогом |
+| `passwd username` | Установить пароль |
+| `usermod -aG group user` | Добавить пользователя в группу |
+| `groupadd groupname` | Создать группу |
+| `su - username` | Переключить пользователя |
+| `sudo cmd` | Выполнить от имени root |
+| `sudo -u user cmd` | Выполнить от имени другого пользователя |
+| `visudo` | Безопасно редактировать sudoers |
 
-## Archives & Compression
+## Systemd и службы
 
 | Command | Description |
 |---------|-------------|
-| `tar -czf archive.tar.gz dir/` | Create gzipped tar |
-| `tar -xzf archive.tar.gz` | Extract gzipped tar |
-| `tar -tzf archive.tar.gz` | List contents without extracting |
-| `zip -r archive.zip dir/` | Create zip |
-| `unzip archive.zip` | Extract zip |
-| `gzip file` | Compress file |
-| `gunzip file.gz` | Decompress |
+| `systemctl start svc` | Запустить службу |
+| `systemctl stop svc` | Остановить службу |
+| `systemctl restart svc` | Перезапустить службу |
+| `systemctl enable svc` | Запускать при загрузке |
+| `systemctl disable svc` | Отключить запуск при загрузке |
+| `systemctl status svc` | Проверить состояние |
+| `journalctl -u svc` | Просмотреть журнал службы |
+| `journalctl -u svc -f` | Следить за журналами службы |
+| `journalctl --since "1 hour ago"` | Недавние записи журнала |
+| `systemctl list-units --failed` | Список служб с ошибками |
+
+## Управление пакетами (apt / yum)
+
+| Command | Description |
+|---------|-------------|
+| `apt update` | Обновить индекс пакетов |
+| `apt install pkg` | Установить пакет |
+| `apt remove pkg` | Удалить пакет |
+| `apt upgrade` | Обновить все пакеты |
+| `apt search term` | Найти пакеты |
+| `dpkg -l` | Список установленных пакетов |
+| `yum install pkg` | Установка (RHEL/CentOS) |
+| `yum update` | Обновить всё |
+| `rpm -qa` | Список всех RPM-пакетов |
+
+## Архивы и сжатие
+
+| Command | Description |
+|---------|-------------|
+| `tar -czf archive.tar.gz dir/` | Создать архив tar.gz |
+| `tar -xzf archive.tar.gz` | Распаковать архив tar.gz |
+| `tar -tzf archive.tar.gz` | Показать содержимое без распаковки |
+| `zip -r archive.zip dir/` | Создать ZIP-архив |
+| `unzip archive.zip` | Распаковать ZIP-архив |
+| `gzip file` | Сжать файл |
+| `gunzip file.gz` | Распаковать |

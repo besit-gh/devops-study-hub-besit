@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { searchContent } from '../store/curriculumStore'
+import { localizeGroupTitle, localizeModuleTitle, localizeLessonTitle } from '../utils/localization'
 
 const GROUP_ORDER = ['Foundations', 'Containers & Infra', 'CI/CD & Cloud', 'Security & APIs', 'Observability']
 
@@ -19,9 +20,9 @@ export default function SearchModal({ modules, progress = {}, onClose }) {
   const items = modules.flatMap(m =>
     (m.lessons || []).map(l => ({
       moduleSlug: m.slug,
-      moduleTitle: m.title,
+      moduleTitle: localizeModuleTitle(m.slug, m.title),
       lessonSlug: l.slug,
-      lessonTitle: l.title,
+      lessonTitle: localizeLessonTitle(l.title),
       done: progress[String(l.id)] === 'complete',
     }))
   )
@@ -104,11 +105,11 @@ export default function SearchModal({ modules, progress = {}, onClose }) {
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKey}
-            placeholder="Search lessons and content…"
+            placeholder="Поиск по урокам и материалам…"
             className="flex-1 py-3 text-sm bg-transparent text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
           />
           {contentLoading && (
-            <span className="text-[10px] text-gray-400 dark:text-gray-500 animate-pulse">searching…</span>
+            <span className="text-[10px] text-gray-400 dark:text-gray-500 animate-pulse">Ищем…</span>
           )}
           <kbd className="text-[10px] text-gray-400 dark:text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700">Esc</kbd>
         </div>
@@ -147,7 +148,7 @@ export default function SearchModal({ modules, progress = {}, onClose }) {
               <li key={`${item.moduleSlug}/${item.lessonSlug}/${item.type}`}>
                 {i === titleCount && showContentDivider && (
                   <div className="px-4 py-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 border-t border-gray-100 dark:border-gray-700 mt-1 pt-2">
-                    In content
+                    В материалах
                   </div>
                 )}
                 <button
@@ -174,12 +175,12 @@ export default function SearchModal({ modules, progress = {}, onClose }) {
         )}
 
         {q && allResults.length === 0 && !contentLoading && (
-          <div className="px-4 py-3 text-sm text-gray-400 dark:text-gray-500">No results for "{query}"</div>
+          <div className="px-4 py-3 text-sm text-gray-400 dark:text-gray-500">Нет результатов по запросу "{query}"</div>
         )}
 
         {!q && (
           <div className="px-4 py-2.5 text-xs text-gray-400 dark:text-gray-500">
-            {items.length} lessons across {modules.length} modules
+            {items.length} уроков в {modules.length} модулях
           </div>
         )}
       </div>

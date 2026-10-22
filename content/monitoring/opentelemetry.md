@@ -7,17 +7,17 @@ tags: [monitoring, opentelemetry, otel, traces, metrics, collector, otlp, vendor
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-OpenTelemetry (OTel) is the CNCF standard for observability instrumentation — a vendor-neutral API and SDK for generating the three pillars of observability: metrics, logs, and traces. The fundamental promise is *instrument once, export anywhere*. You write instrumentation code against the OTel API, and at runtime you configure where that telemetry goes: Datadog, Jaeger, Prometheus, Grafana Tempo, Honeycomb, or any OTLP-compatible backend. Changing backends is a configuration change, not a code change. This matters enormously in practice: vendor migrations don't require re-instrumenting your entire codebase.
+OpenTelemetry (OTel) — стандарт CNCF для инструментирования наблюдаемости: независимые от поставщика API и SDK для создания трёх столпов observability — метрик, логов и трассировок. Основная идея: *инструментировать один раз, экспортировать куда угодно*. Код использует API OTel, а при запуске вы настраиваете, куда отправлять телеметрию: Datadog, Jaeger, Prometheus, Grafana Tempo, Honeycomb или любой backend с поддержкой OTLP. Смена backend становится изменением конфигурации, а не кода, поэтому миграция между поставщиками не требует повторного инструментирования всего приложения.
 
-OTel's design separates the API (what your application code calls) from the SDK (the implementation that does the actual work) and from the exporter (the transport layer). This layering means library authors can add OTel instrumentation using only the API package — with zero overhead if the calling application hasn't configured an SDK. Applications then wire in the SDK and choose exporters without touching library code. The project emerged from the merger of OpenCensus and OpenTracing, absorbing lessons from both, and is now the second-most active CNCF project after Kubernetes.
+Архитектура OTel разделяет API (то, что вызывает код приложения), SDK (реализацию, выполняющую работу) и exporter (транспортный слой). Благодаря этому авторы библиотек могут добавлять инструментирование, используя только пакет API; если приложение не настроило SDK, накладные расходы отсутствуют. Приложение подключает SDK и выбирает exporter без изменения кода библиотеки. Проект возник в результате объединения OpenCensus и OpenTracing, объединив опыт обеих систем, и стал одним из наиболее активных проектов CNCF после Kubernetes.
 
 In the DevOps toolchain, OTel sits at the instrumentation layer — between your application code and your observability backends. It replaces vendor-specific agents and libraries that previously forced a choice between vendor lock-in and observability. Paired with the OpenTelemetry Collector (a standalone process for receiving, processing, and routing telemetry), OTel gives teams a unified pipeline they control. Whether you're running a monolith, a microservices mesh, or a mix of languages, OTel provides a consistent model for how telemetry flows from code to dashboards.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### The Three Signals: Traces, Metrics, Logs
 
@@ -37,7 +37,7 @@ Metrics in OTel map to the same types you'd find in Prometheus: counters, histog
 
 ---
 
-### Architecture and Data Flow
+### Архитектура and Data Flow
 
 ```
 Your Application (Python, Go, Java, Node…)
@@ -492,7 +492,7 @@ export OTEL_BSP_MAX_EXPORT_BATCH_SIZE=512
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: FastAPI Service with Full OTel Stack (Docker Compose)
 
@@ -791,7 +791,7 @@ kubectl logs -n monitoring daemonset/otel-collector --tail=50
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Instrument a Python Function with Manual Spans and Verify in Jaeger
 
@@ -878,7 +878,7 @@ kubectl logs -n monitoring daemonset/otel-collector --tail=50
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 7. Count receivers in an OTel pipeline config stub. Run: `printf 'receivers:\n  otlp:\n  prometheus:\n  hostmetrics:\n' | awk '/^  [a-z]/{c++} END{print c}'`
 

@@ -1,209 +1,112 @@
-# DevOps Study Hub
+# DevOps Study Hub — русская локализация
 
-An interactive, self-hosted learning tool for anyone transitioning into DevOps or SRE. Covers 23 topics, 91 structured lessons, 455 quiz questions, and 184 interview questions — all running locally on your machine.
+Интерактивная локальная платформа для обучения DevOps и SRE. Включает 23 темы, 91 структурированный урок, 455 вопросов для тестов и 184 вопроса для подготовки к собеседованиям.
 
 ![DevOps Study Hub](docs/screenshot.png)
 
----
+## Возможности
 
-## Contents
+- ИИ-наставник с потоковыми ответами по текущему уроку.
+- Песочница кода: запуск Bash, Python и YAML с выполнением команд в отдельных процессах.
+- Тесты с интервальным повторением по алгоритму SM-2 и дополнительной проработкой слабых тем.
+- Подготовка к собеседованиям: ИИ оценивает ответы как слабые, достаточные или сильные и объясняет оценку.
+- 10 практических проектов, включающих Kubernetes, IaC, GitOps, Helm и ELK.
+- Учебный маршрут с прогрессом по модулям, XP, сериями занятий и экспортом прогресса.
+- Справочные карточки с командами для каждого модуля.
 
-- [What's inside](#whats-inside)
-- [Prerequisites](#prerequisites)
-- [Quick start](#quick-start)
-- [Database](#database)
-- [Run options](#run-options)
-- [AI features](#ai-features)
-- [Environment variables](#environment-variables)
-- [Security note](#security-note)
-- [Contributing](#contributing)
-- [License](#license)
+Данные обучения хранятся локально. Регистрация и подписка не требуются.
 
----
+## Темы
 
-## What's inside
-
-| Area | Topics |
+| Раздел | Технологии |
 |---|---|
-| **Foundations** | Linux, Python, Bash/Shell, Git & VCS, Networking |
-| **Containers & Infra** | Docker, Kubernetes, Helm, Terraform, Ansible |
-| **CI/CD & Cloud** | GitHub Actions, Jenkins, ArgoCD, AWS, GCP |
-| **Security & APIs** | DevSecOps, Postman / API Testing |
-| **Observability** | Prometheus, Grafana, Zabbix, Elasticsearch, Logstash, Kibana, Opsgenie |
+| Основы | Linux, Python, Bash/Shell, Git и системы контроля версий, сети |
+| Контейнеры и инфраструктура | Docker, Kubernetes, Helm, Terraform, Ansible |
+| CI/CD и облака | GitHub Actions, Jenkins, ArgoCD, AWS, GCP |
+| Безопасность и API | DevSecOps, Postman и тестирование API |
+| Наблюдаемость | Prometheus, Grafana, Zabbix, Elasticsearch, Logstash, Kibana, Opsgenie |
 
-**By the numbers:** 91 lessons · 455 quiz questions · 184 interview questions · 10 multi-step projects
+## Требования
 
-**Key features:**
-- AI Tutor with streaming answers, scoped to the current lesson
-- Code Sandbox — write and run Bash, Python, and YAML inline with real subprocess execution
-- Spaced repetition quizzes (SM-2 algorithm) with weak-area drill across all modules
-- Interview Prep — AI grades answers Weak / Adequate / Strong; flashcard mode for self-grading
-- 10 interview-ready projects (Kubernetes, IaC, GitOps, Helm, ELK, and more)
-- Roadmap with per-module readiness scores, XP, streaks, and progress export
-- Per-module command reference cards for quick lookup mid-lesson
+- Python 3.12 или новее
+- Node.js 18 или новее
+- npm 9 или новее
+- Git
+- Docker 24 или новее — необязательно, если предпочитаете запуск через контейнеры
 
-All study data stays local. No account or subscription required.
+Поддерживаются Linux и macOS. Windows официально не поддерживается; WSL2 может работать, но не тестировался авторами.
 
----
-
-## Screenshots
-
-<p align="center">
-  <img src="docs/lesson-viewer.png" width="48%" alt="Lesson viewer — structured content with AI Tutor panel">
-  <img src="docs/ai-tutor.png" width="48%" alt="AI Tutor — streaming answers scoped to the current lesson">
-</p>
-<p align="center">
-  <img src="docs/interview-prep.png" width="48%" alt="Interview Prep — AI grades answers Weak / Adequate / Strong">
-  <img src="docs/project-detail.png" width="48%" alt="Project steps — Sandbox and AI-graded tasks">
-</p>
-<p align="center">
-  <img src="docs/stats.png" width="48%" alt="Stats — XP timeline, streaks, and quiz weak areas">
-</p>
-
----
-
-## Prerequisites
-
-| Tool | Minimum version | Notes |
-|---|---|---|
-| Python | 3.12+ | Used for the FastAPI backend |
-| Node.js | 18+ | Used for the React frontend |
-| npm | 9+ | Comes with Node 18+ |
-| Git | any | For cloning the repo |
-
-**Supported OS:** Linux and macOS. Windows is not currently supported (WSL2 may work but is untested).
-
-Optional: Docker 24+ if you prefer the containerized setup.
-
-### macOS notes
-
-- Install Python and Node via Homebrew: `brew install python@3.12 node`
-- **Bash sandbox exercises:** macOS ships bash 3.2 (Apple won't update past GPL v2). Exercises that use bash 4+ features (`declare -A`, `mapfile`, `${var,,}`) will fail in the sandbox. Two options:
-  - **Recommended:** use Docker — the container runs Linux with bash 5.x, so all exercises work correctly
-  - **Alternative:** `brew install bash` — the sandbox PATH includes `/opt/homebrew/bin`, so Homebrew bash 5.x is picked up automatically on Apple Silicon and Intel Macs
-
----
-
-## Quick start
+## Быстрый запуск
 
 ```bash
-# 1. Clone
-git clone https://github.com/igalhub/devops-study-hub.git
-cd devops-study-hub
+# 1. Клонировать ваш форк
+git clone https://github.com/besit-gh/devops-study-hub-besit.git
+cd devops-study-hub-besit
 
-# 2. Backend
+# 2. Подготовить backend
 python3 -m venv .venv
 .venv/bin/pip install -r backend/requirements.txt
 
-# 3. API key (required for AI features — see AI features section)
+# 3. Настроить ключ ИИ для функций наставника
 cp backend/.env.example backend/.env
-# Open backend/.env and set: ANTHROPIC_API_KEY=sk-ant-...
+# Откройте backend/.env и укажите OPENAI_API_KEY=...
 
-# 4. Frontend
+# 4. Установить зависимости frontend
 cd frontend && npm install && cd ..
 
-# 5. Run
+# 5. Запустить приложение
 ./start.sh
 ```
 
-Opens http://localhost:5173 automatically. Ctrl-C stops both servers.
+После запуска откройте http://localhost:5173. Скрипт запускает backend на порту 8000 и frontend на порту 5173. Для остановки нажмите Ctrl+C.
 
-**After `git pull`:** the seed scripts (`seed.py`, `seed_curriculum.py`, `seed_interview.py`, `seed_projects.py`) are all idempotent — safe to re-run on an existing database without data loss. Schema migrations are not currently needed; `db.py` creates missing tables on startup.
+## Полный перевод учебного контента
 
----
-
-## Database
-
-The repo ships with a pre-seeded `backend/hub.db` containing all 455 quiz questions, 184 interview questions, and 10 projects — ready on first launch, no extra seeding step required. Your study progress is stored in the same file and stays local.
-
-**For contributors:** run this once after cloning so local progress changes don't appear as pending commits:
+Основные элементы интерфейса уже локализованы. Чтобы перевести тексты уроков, справочные материалы, тесты, вопросы для собеседований и практические проекты в текущей базе данных, после настройки ключа выполните из корня репозитория:
 
 ```bash
-git update-index --skip-worktree backend/hub.db
+./.venv/bin/python backend/translate_content.py --dry-run
+./.venv/bin/python backend/translate_content.py --apply
 ```
 
-**Limitation:** this flag doesn't survive `git checkout` or `git stash` — you'll need to re-run it after switching branches or unstashing. To back up your progress before a branch switch, use the Export button on the Stats page.
+Скрипт использует OpenAI API, сохраняет резервную копию исходных Markdown-файлов и базы данных во временную папку и защищает блоки кода, inline-код, URL и HTML-теги от перевода. Перевод расходует средства согласно тарифам вашего OpenAI API. После выполнения проверьте изменения и запустите тесты. Если базы данных ещё нет, сначала переведите Markdown, затем запустите backend один раз для создания базы и выполните `./.venv/bin/python backend/translate_content.py --database-only --apply`. Режим `--markdown-only` переводит только файлы. Не запускайте полный перевод повторно без необходимости.
 
-To reset back to a clean pre-seeded state at any time:
-
-```bash
-cd backend && ../.venv/bin/python reset_progress.py --yes
-```
-
----
-
-## Run options
-
-**Option A — single terminal (recommended):**
-
-```bash
-./start.sh
-```
-
-Starts backend (port 8000) and frontend (port 5173), opens browser automatically, and monitors both processes. Ctrl-C stops everything cleanly.
-
-**Option B — two terminals:**
-
-```bash
-# Terminal 1 — backend
-./start-backend.sh
-
-# Terminal 2 — frontend
-./start-frontend.sh
-```
-
-**Option C — Docker:**
+## Запуск через Docker
 
 ```bash
 docker compose up --build
 ```
 
-Frontend at http://localhost:5173, backend at http://localhost:8000. The API key is read from `backend/.env` at runtime (never baked into the image).
+Ключ API считывается backend из файла `backend/.env` во время запуска и не встраивается в образ.
 
----
+## Функции ИИ
 
-## AI features
+Для ИИ-наставника, оценки ответов на собеседовании и генерации решений упражнений нужен API-ключ OpenAI. Оплата зависит от использования. Без ключа доступны уроки, тесты, проекты и справочные карточки, но функции ИИ возвращают ошибку.
 
-AI features require an [Anthropic API key](https://console.anthropic.com/). Usage is pay-per-use — typical study sessions cost a few cents.
+## Переменные окружения
 
-| Feature | What it does |
-|---|---|
-| AI Tutor | Streams answers scoped to the current lesson |
-| Interview grader | Scores your answer Weak / Adequate / Strong with written feedback |
-| Show answer | Generates a full solution for open-ended exercises |
-
-**Without an API key:** lessons, quizzes, projects, and reference cards all work. AI Tutor, interview grading, and Show Answer will return an error when called.
-
----
-
-## Environment variables
-
-| Variable | Required | Default | Description |
+| Переменная | Обязательна для ИИ | Значение по умолчанию | Назначение |
 |---|---|---|---|
-| `ANTHROPIC_API_KEY` | Yes (for AI) | — | Anthropic API key |
-| `CLAUDE_MODEL` | No | `claude-sonnet-4-6` | Claude model to use |
-| `VITE_API_URL` | No | `http://localhost:8000` | Backend URL (override in `frontend/.env`) |
+| `OPENAI_API_KEY` | Да | — | Ключ OpenAI API |
+| `OPENAI_MODEL` | Нет | `gpt-4.1-mini` | Модель OpenAI |
+| `VITE_API_URL` | Нет | `http://localhost:8000` | Адрес backend; задаётся в `frontend/.env` |
 
----
+## Важно о безопасности
 
-## Security note
+Песочница запускает реальные команды на вашем компьютере с ограничениями ресурсов и урезанным окружением. **Не открывайте приложение в публичный интернет без дополнительной защиты**: изоляции сети и контейнеров, ограничений системных вызовов и проверки модели угроз. По умолчанию приложение предназначено для запуска на `localhost`.
 
-The Code Sandbox executes real subprocess calls on your machine with resource limits (CPU, memory, file size, open file descriptors) and a stripped environment. This is intentional for a self-hosted learning tool, but it means **you should not expose this app to the public internet** without additional hardening (network isolation, container isolation, seccomp profiles).
+## База данных и прогресс
 
-Run it on `localhost` only, which is the default.
+В репозитории есть предварительно заполненная база `backend/hub.db` с тестами, вопросами для собеседований и проектами. Прогресс сохраняется в этой же базе.
 
----
+Перед переключением веток сохраните прогресс через экспорт на странице статистики. Сбросить локальный прогресс можно командой:
 
-## Contributing
+```bash
+cd backend && ../.venv/bin/python reset_progress.py --yes
+```
 
-Contributions are welcome — new lessons, quiz questions, bug fixes, or sandbox improvements. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+## Лицензия
 
----
+MIT — см. файл [LICENSE](LICENSE).
 
-## License
-
-[MIT](LICENSE) — free to use, modify, and distribute.
-
----
-
-*Built by [Igal](https://github.com/igalhub) as part of a DevOps career transition.*
+Исходный проект создан [Igal](https://github.com/igalhub). Этот форк предназначен для русскоязычной локализации.

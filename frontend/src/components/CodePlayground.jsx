@@ -7,9 +7,9 @@ import { checkExercise } from '../store/curriculumStore'
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 const STARTER = {
-  bash: '#!/bin/bash\n# Try the exercises from this lesson\necho "Hello, DevOps!"\n',
-  python: '# Try the exercises from this lesson\nprint("Hello, DevOps!")\n',
-  yaml: '# Write your YAML here\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: example\ndata:\n  key: value\n',
+  bash: '#!/bin/bash\n# Попробуйте выполнить задания из этого урока\necho "Hello, DevOps!"\n',
+  python: '# Попробуйте выполнить задания из этого урока\nprint("Hello, DevOps!")\n',
+  yaml: '# Напишите YAML здесь\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: example\ndata:\n  key: value\n',
 }
 
 function useDarkMode() {
@@ -117,9 +117,9 @@ export default function CodePlayground({ initialCode, initialLanguage, expectedO
         body: JSON.stringify({ lesson_slug: exerciseSlug, exercise_text: exerciseText }),
       })
       const data = await res.json()
-      setAnswer(res.ok ? data.answer : `Error: ${data.detail ?? 'Request failed'}`)
+      setAnswer(res.ok ? data.answer : `Error: ${data.detail ?? 'Запрос не выполнен'}`)
     } catch (e) {
-      setAnswer(`Error: ${e.message}`)
+      setAnswer(`Ошибка: ${e.message}`)
     } finally {
       setFetchingAnswer(false)
     }
@@ -163,7 +163,7 @@ export default function CodePlayground({ initialCode, initialLanguage, expectedO
               disabled={fetchingAnswer}
               className="text-xs px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-400 dark:hover:border-gray-500 disabled:opacity-50 rounded-full transition-colors"
             >
-              {fetchingAnswer ? 'Loading…' : answer !== null ? 'Hide answer' : 'Show answer'}
+              {fetchingAnswer ? 'Загрузка…' : answer !== null ? 'Скрыть решение' : 'Показать решение'}
             </button>
           )}
           {hasCheck && (
@@ -183,7 +183,7 @@ export default function CodePlayground({ initialCode, initialLanguage, expectedO
             className="text-xs px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-medium rounded-full transition-colors flex items-center gap-1.5"
           >
             <span>{running ? '…' : '▶'}</span>
-            <span>{running ? (language === 'yaml' ? 'Validating' : 'Running') : (language === 'yaml' ? 'Validate' : 'Run')}</span>
+            <span>{running ? (language === 'yaml' ? 'Проверяем' : 'Выполняется') : (language === 'yaml' ? 'Проверить' : 'Запустить')}</span>
             {!running && <span className="text-emerald-200 text-[10px]">Ctrl+Enter</span>}
           </button>
         </div>
@@ -229,14 +229,14 @@ export default function CodePlayground({ initialCode, initialLanguage, expectedO
       <div
         onMouseDown={startResize}
         className="h-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-emerald-400 dark:hover:bg-emerald-600 cursor-ns-resize transition-colors"
-        title="Drag to resize editor"
+        title="Перетащите, чтобы изменить высоту редактора"
       />
 
       {/* Run output */}
       {output !== null && (
         <div className="border-t border-gray-200 dark:border-gray-700">
           <div className="px-3 py-1.5 bg-gray-800 flex items-center gap-2 border-b border-gray-700">
-            <span className="text-xs text-gray-400">Output</span>
+            <span className="text-xs text-gray-400">Вывод</span>
             {output.exit_code !== 0 && (
               <span className="text-xs text-red-400">exit {output.exit_code}</span>
             )}
@@ -248,7 +248,7 @@ export default function CodePlayground({ initialCode, initialLanguage, expectedO
             {output.stdout && <span>{output.stdout}</span>}
             {output.stderr && <span className="text-red-400">{output.stderr}</span>}
             {!output.stdout && !output.stderr && (
-              <span className="text-gray-500">(no output)</span>
+              <span className="text-gray-500">(нет вывода)</span>
             )}
           </pre>
         </div>
@@ -259,7 +259,7 @@ export default function CodePlayground({ initialCode, initialLanguage, expectedO
         <div className="border-t border-gray-200 dark:border-gray-700">
           {checkResult.error ? (
             <div className="px-4 py-3 bg-red-950 text-red-300 text-sm">
-              Check failed: {checkResult.error}
+              Проверка не пройдена: {checkResult.error}
             </div>
           ) : checkResult.passed ? (
             <div className="px-4 py-3 bg-emerald-950 border-b border-emerald-800 flex items-center gap-3">
@@ -273,18 +273,18 @@ export default function CodePlayground({ initialCode, initialLanguage, expectedO
           ) : (
             <div>
               <div className="px-4 py-3 bg-red-950 border-b border-red-800">
-                <span className="text-red-400 font-medium text-sm">❌ Not quite — here's the diff:</span>
+                <span className="text-red-400 font-medium text-sm">❌ Пока неверно — сравни результаты:</span>
                 {checkResult.stderr && (
                   <pre className="mt-2 text-xs text-red-300 font-mono whitespace-pre-wrap">{checkResult.stderr}</pre>
                 )}
               </div>
               <div className="grid grid-cols-2 divide-x divide-gray-700 bg-gray-900">
                 <div className="px-4 py-3">
-                  <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-1">Expected</div>
+                  <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-1">Ожидалось</div>
                   <pre className="text-sm font-mono text-emerald-300 whitespace-pre-wrap">{checkResult.expected}</pre>
                 </div>
                 <div className="px-4 py-3">
-                  <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-1">Got</div>
+                  <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-1">Получено</div>
                   <pre className="text-sm font-mono text-red-300 whitespace-pre-wrap">{checkResult.actual !== '' ? checkResult.actual : <span className="text-gray-500">(no output)</span>}</pre>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 ---
-title: Modules & Workspaces
+title: Модули и рабочие пространства Terraform
 module: terraform
 duration_min: 20
 difficulty: intermediate
@@ -7,25 +7,25 @@ tags: [terraform, modules, workspaces, reusability, for-each, count]
 exercises: 4
 ---
 
-## Overview
-Modules package reusable Terraform configurations — instead of copy-pasting the same VPC or EKS cluster definition across teams, you write it once as a module and call it with different inputs. Workspaces let a single configuration manage multiple state files for different environments. Together they're the foundation of scalable Terraform architecture.
+## Обзор
+Модули упаковывают повторно используемые конфигурации Terraform. Вместо копирования одного и того же описания VPC или кластера EKS между командами вы создаёте модуль один раз и вызываете его с разными входными параметрами. Workspaces позволяют одной конфигурации управлять несколькими файлами состояния для разных окружений. Вместе они составляют основу масштабируемой архитектуры Terraform.
 
-## Concepts
+## Основные понятия
 
-### Modules
-A module is any directory containing `.tf` files. You've been using the root module; child modules are referenced from it:
+### Модули
+Модуль — это каталог с файлами `.tf`. До сих пор вы работали с корневым модулем; дочерние модули подключаются из него:
 
 ```hcl
-# Call a local module
+# Подключить локальный модуль
 module "vpc" {
-  source = "./modules/vpc"      # local path
+  source = "./modules/vpc"      # локальный путь
 
   cidr_block         = "10.0.0.0/16"
   availability_zones = ["us-east-1a", "us-east-1b"]
   environment        = var.environment
 }
 
-# Call a Terraform Registry module
+# Подключить модуль из Terraform Registry
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"
@@ -36,7 +36,7 @@ module "eks" {
   subnet_ids      = module.vpc.private_subnets
 }
 
-# Call a module from a git repo
+# Подключить модуль из Git-репозитория
 module "db" {
   source = "git::https://github.com/myorg/terraform-modules.git//rds?ref=v1.2.0"
 
@@ -45,28 +45,28 @@ module "db" {
 }
 ```
 
-After adding or changing a module source, run `terraform init` again.
+После добавления модуля или изменения его источника повторно выполните `terraform init`.
 
-### Module Structure
+### Структура модуля
 ```
 modules/
   vpc/
-    main.tf        # resources
-    variables.tf   # input variables (the module's interface)
-    outputs.tf     # outputs (what callers can reference)
-    versions.tf    # required_providers, required_version
+    main.tf        # ресурсы
+    variables.tf   # входные переменные (интерфейс модуля)
+    outputs.tf     # выходные значения, на которые могут ссылаться вызывающие конфигурации
+    versions.tf    # required_providers и required_version
 ```
 
 ```hcl
 # modules/vpc/variables.tf
 variable "cidr_block" {
   type        = string
-  description = "VPC CIDR block"
+  description = "CIDR-блок VPC"
 }
 
 variable "environment" {
   type        = string
-  description = "Deployment environment (dev, staging, prod)"
+  description = "Окружение развёртывания (dev, staging, prod)"
 }
 
 variable "tags" {
@@ -90,11 +90,11 @@ output "public_subnets" {
 }
 ```
 
-Reference module outputs: `module.vpc.vpc_id`, `module.vpc.private_subnets`
+Ссылки на выходные значения модуля: `module.vpc.vpc_id`, `module.vpc.private_subnets`
 
 ### for_each and count — Multiple Resource Instances
 ```hcl
-# count — simple numeric repetition
+# count — повторение заданное числом
 resource "aws_instance" "web" {
   count         = var.instance_count
   ami           = data.aws_ami.linux.id
@@ -105,9 +105,9 @@ resource "aws_instance" "web" {
   }
 }
 
-# Reference: aws_instance.web[0].id, aws_instance.web[*].id
+# Примеры ссылок: aws_instance.web[0].id, aws_instance.web[*].id
 
-# for_each — iterate a map or set (preferred over count for named resources)
+# for_each — перебор map или set (предпочтительнее count для именованных ресурсов)
 resource "aws_s3_bucket" "assets" {
   for_each = toset(["images", "videos", "documents"])
 
@@ -117,9 +117,9 @@ resource "aws_s3_bucket" "assets" {
   }
 }
 
-# Reference: aws_s3_bucket.assets["images"].id
+# Пример ссылки: aws_s3_bucket.assets["images"].id
 
-# for_each with a map
+# for_each с map
 variable "subnets" {
   default = {
     "us-east-1a" = "10.0.1.0/24"
@@ -136,19 +136,19 @@ resource "aws_subnet" "private" {
 }
 ```
 
-Prefer `for_each` over `count` for anything named — removing an element from a `count` list shifts indices and causes Terraform to destroy and recreate everything after the gap.
+Для именованных ресурсов предпочитайте `for_each` вместо `count`: удаление элемента из списка `count` сдвигает индексы, из-за чего Terraform может удалить и пересоздать все ресурсы после образовавшегося разрыва.
 
-### Workspaces
-Workspaces let you use the same configuration with separate state files — one per workspace:
+### Рабочие пространства
+Workspaces позволяют использовать одну конфигурацию с отдельным файлом состояния для каждого рабочего пространства:
 
 ```bash
-# List workspaces
+# Показать рабочие пространства
 terraform workspace list
 # * default
 #   staging
 #   production
 
-# Create and switch
+# Создать рабочее пространство и переключиться на него
 terraform workspace new staging
 terraform workspace select production
 terraform workspace show    # current workspace name
@@ -171,10 +171,10 @@ resource "aws_instance" "app" {
 }
 ```
 
-**Workspace limitations:**
-- State files share the same backend — can't use different AWS accounts per workspace
-- Easy to forget which workspace is active — accidental prod changes
-- For true environment isolation (different accounts, different permissions), use separate root configurations with separate backends instead
+**Ограничения рабочих пространств:**
+- Файлы состояния используют один backend — нельзя выбрать отдельный аккаунт AWS для каждого workspace
+- Легко забыть, какой workspace активен, и случайно изменить production
+- Для полноценной изоляции окружений (разные аккаунты и права) используйте отдельные корневые конфигурации с разными backend
 
 ### Terraform Registry and Module Versioning
 ```hcl
@@ -183,18 +183,18 @@ module "eks" {
   version = "~> 20.0"   # ~> 20.0 = >= 20.0, < 21.0
 }
 
-# Version constraints:
+# Ограничения версий:
 # = 20.5.0   — exact
 # ~> 20.5    — >= 20.5, < 20.6 (patch only)
 # ~> 20.0    — >= 20.0, < 21.0 (minor+patch)
 # >= 20.0, < 21.0   — explicit range
 ```
 
-Always pin module versions in production — `source = "...//module"` without a `version` is a footgun.
+В production всегда фиксируйте версии модулей: использование `source = "...//module"` без `version` может привести к неожиданным изменениям.
 
-## Examples
+## Примеры
 
-### Multi-Environment with Modules
+### Несколько окружений с помощью модулей
 ```hcl
 # environments/prod/main.tf
 module "network" {
@@ -217,18 +217,18 @@ module "app" {
 ```
 infrastructure/
   modules/
-    network/    # reusable VPC, subnets, IGW, NAT
-    app/        # reusable ECS/EC2 app deployment
-    rds/        # reusable RDS cluster
+    network/    # повторно используемая VPC, подсети, IGW и NAT
+    app/        # повторно используемое развёртывание приложения в ECS/EC2
+    rds/        # повторно используемый кластер RDS
   environments/
     dev/main.tf
     staging/main.tf
     prod/main.tf
 ```
 
-### Call a Public Module
+### Подключение публичного модуля
 ```hcl
-# Use the community EKS module instead of writing 500 lines yourself
+# Используйте готовый модуль EKS вместо написания 500 строк конфигурации
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"
@@ -250,32 +250,32 @@ module "eks" {
 }
 ```
 
-## Exercises
+## Практические задания
 
-1. Extract a repeated resource block (e.g. multiple S3 buckets or EC2 instances) into a module. Call it from the root module with different inputs for each instance. Verify `terraform plan` shows the same result as before.
-2. Use `for_each` to create three S3 buckets from a `toset` of names. Then remove one name from the set — observe how `terraform plan` handles removal vs what would happen with `count`.
-3. Create two workspaces (`dev` and `prod`). Use `terraform.workspace` to set different instance types in each. Apply in both workspaces and verify different instances were created via `terraform state list`.
-4. Use the `terraform-aws-modules/s3-bucket/aws` module from the Terraform Registry to create an S3 bucket with versioning and encryption. Compare the amount of HCL needed vs writing the resources directly.
+1. Вынесите повторяющийся блок ресурсов (например, несколько бакетов S3 или экземпляров EC2) в модуль. Вызывайте его из корневого модуля с разными входными параметрами. Убедитесь, что `terraform plan` показывает тот же результат, что и до изменений.
+2. Используйте `for_each`, чтобы создать три бакета S3 из набора имён `toset`. Затем удалите одно имя и сравните план с поведением варианта на `count`.
+3. Создайте два workspace (`dev` и `prod`). Используйте `terraform.workspace`, чтобы задавать разные типы экземпляров в каждом. Примените конфигурацию в обоих workspace и проверьте созданные экземпляры командой `terraform state list`.
+4. Используйте модуль `terraform-aws-modules/s3-bucket/aws` из Terraform Registry, чтобы создать бакет S3 с версионированием и шифрованием. Сравните объём HCL с вариантом, где ресурсы описаны напрямую.
 
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
-5. Count `module` blocks in an HCL config stub. Run: `printf 'module "vpc" {\n  source = "./modules/vpc"\n}\nmodule "eks" {\n  source = "./modules/eks"\n}\n' | grep -c '^module'`
+5. Посчитайте блоки `module` в примере конфигурации HCL. Выполните: `printf 'module "vpc" {\n  source = "./modules/vpc"\n}\nmodule "eks" {\n  source = "./modules/eks"\n}\n' | grep -c '^module'`
 
 ```expected_output
 2
 ```
 
-hint: Think about how you can filter lines that start with a specific keyword and count the matches in a single command.
-hint: Use grep with the -c flag and the anchored pattern '^module' to count only lines where 'module' appears at the very beginning.
+Подсказка: отфильтруйте строки, начинающиеся с заданного ключевого слова, и посчитайте их одной командой.
+Подсказка: используйте `grep -c` с шаблоном `^module`, чтобы считать только строки, которые начинаются со слова `module`.
 
-6. Extract the resource type from a Terraform resource address. Run: `echo "aws_instance.web_server" | cut -d. -f1`
+6. Извлеките тип ресурса из адреса ресурса Terraform. Выполните: `echo "aws_instance.web_server" | cut -d. -f1`
 
 ```expected_output
 aws_instance
 ```
 
-hint: Think about how you can split a string by a delimiter and select only the first segment.
-hint: Use the cut command with the -d flag to specify '.' as the delimiter and -f1 to extract the first field.
+Подсказка: разделите строку по разделителю и выберите первый фрагмент.
+Подсказка: используйте `cut` с флагом `-d`, указав `.` как разделитель, и `-f1`, чтобы получить первое поле.

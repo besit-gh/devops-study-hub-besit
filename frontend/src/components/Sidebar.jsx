@@ -1,10 +1,11 @@
 import { Link, useMatch, useLocation } from 'react-router-dom'
+import { localizeModuleTitle, localizeGroupTitle } from '../utils/localization'
 
 const GROUP_ORDER = ['Foundations', 'Containers & Infra', 'CI/CD & Cloud', 'Security & APIs', 'Observability']
 
 function Badge({ status, pct }) {
   if (status === 'complete')
-    return <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 font-medium">Done</span>
+    return <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 font-medium">Пройдено</span>
   if (status === 'in_progress')
     return <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 font-medium">{pct}%</span>
   return null
@@ -54,13 +55,13 @@ export default function Sidebar({ modules, progress }) {
         <div className="mt-2 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${overallPct}%` }} />
         </div>
-        <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">{overallPct}% complete</div>
+        <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">{overallPct}% пройдено</div>
         {nextLesson && (
           <Link
             to={`/module/${nextLesson.moduleSlug}/lesson/${nextLesson.slug}`}
             className="mt-2 block text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 truncate transition-colors"
           >
-            Continue → {nextLesson.title}
+            Продолжить → {nextLesson.title}
           </Link>
         )}
       </div>
@@ -80,7 +81,7 @@ export default function Sidebar({ modules, progress }) {
         </div>
         <div className="mx-2 mb-2 border-t border-gray-200 dark:border-gray-700" />
         {grouped.map(({ group, modules: mods }) => (
-          <div key={group} className="mb-1">
+          <div key={localizeGroupTitle(group)} className="mb-1">
             <div className="px-4 py-1 text-[10px] font-semibold tracking-widest uppercase text-gray-500 dark:text-gray-500">
               {group}
             </div>
@@ -96,7 +97,7 @@ export default function Sidebar({ modules, progress }) {
                   to={`/module/${mod.slug}`}
                   className={`${baseClass} ${active ? activeClass : idleClass}`}
                 >
-                  <span className="truncate">{mod.title}</span>
+                  <span className="truncate">{localizeModuleTitle(mod.slug, mod.title)}</span>
                   <Badge status={status} pct={pct} />
                 </Link>
               )
@@ -115,7 +116,7 @@ export default function Sidebar({ modules, progress }) {
                 : 'text-gray-700 dark:text-gray-400 hover:bg-stone-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
             }`}
           >
-            <span className="truncate">Projects</span>
+            <span className="truncate">Проекты</span>
           </Link>
           <Link
             to="/interview"
@@ -125,7 +126,7 @@ export default function Sidebar({ modules, progress }) {
                 : 'text-gray-700 dark:text-gray-400 hover:bg-stone-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
             }`}
           >
-            <span className="truncate">Interview Prep</span>
+            <span className="truncate">Подготовка к собеседованию</span>
           </Link>
         </div>
         <div className="mb-1 border-t border-gray-200 dark:border-gray-700 pt-2">
@@ -140,7 +141,7 @@ export default function Sidebar({ modules, progress }) {
                 : 'text-gray-700 dark:text-gray-400 hover:bg-stone-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
             }`}
           >
-            <span className="truncate">Spaced Review</span>
+            <span className="truncate">Интервальное повторение</span>
           </Link>
           <Link
             to="/stats"
@@ -150,7 +151,7 @@ export default function Sidebar({ modules, progress }) {
                 : 'text-gray-700 dark:text-gray-400 hover:bg-stone-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
             }`}
           >
-            Stats
+            Статистика
           </Link>
         </div>
       </nav>

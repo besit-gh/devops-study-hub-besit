@@ -50,17 +50,17 @@ async def chat(request: ChatRequest):
         if m.role not in ('user', 'assistant'):
             raise HTTPException(status_code=400, detail=f"Invalid role: {m.role!r}. Must be 'user' or 'assistant'.")
 
-    MAX_HISTORY = 10   # messages sent to Claude (keeps last 5 exchanges)
+    MAX_HISTORY = 10   # последние 5 обменов сообщениями
     LESSON_CHARS = 3000
 
     title, content = _lesson_context(request.lesson_slug)
 
-    system = f"You are an AI tutor for a DevOps course. The student is studying:\n\nLesson: {title}\n\n"
+    system = f"Ты — ИИ-наставник русскоязычного курса DevOps. Отвечай на русском языке, если пользователь явно не попросил другой язык. Тема занятия:\n\nУрок: {title}\n\n"
     if content:
-        system += f"Lesson content:\n{content[:LESSON_CHARS]}\n\n"
+        system += f"Содержание урока:\n{content[:LESSON_CHARS]}\n\n"
     system += (
-        "Answer questions concisely and clearly. Use concrete examples. "
-        "Stay focused on DevOps topics. Keep responses short unless the student needs depth."
+        "Объясняй кратко, ясно и практично. Используй конкретные примеры и команды. "
+        "Оставайся в рамках DevOps. Не выдумывай результаты выполнения команд; отмечай риски для production. Сохраняй имена команд, параметров и API без перевода."
     )
 
     trimmed = request.messages[-MAX_HISTORY:]
@@ -73,7 +73,7 @@ async def chat(request: ChatRequest):
             ):
                 yield f"data: {json.dumps({'text': chunk})}\n\n"
         except Exception as e:
-            yield f"data: {json.dumps({'text': f'Error: {e}'})}\n\n"
+            yield f"data: {json.dumps({'text': f'Ошибка: {e}'})}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(

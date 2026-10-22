@@ -1,5 +1,5 @@
 ---
-title: Pods & Deployments
+title: Pod и Deployment
 module: kubernetes
 duration_min: 25
 difficulty: intermediate
@@ -7,19 +7,19 @@ tags: [kubernetes, pods, deployments, replicas, rolling-update, kubectl]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-The Pod is the smallest deployable unit in Kubernetes — one or more containers sharing a network namespace, storage volumes, and an IP address. Containers inside a Pod communicate over `localhost` and see the same filesystem mounts. This co-location model solves a specific problem: tightly coupled processes (an app and a log-shipper sidecar, for example) that must run on the same machine but should remain independently packaged as container images. In practice, most Pods contain exactly one container; the multi-container pattern is reserved for sidecars, init containers, and adapters.
+Pod — минимальная единица развёртывания в Kubernetes: один или несколько контейнеров, использующих общее сетевое пространство имён, тома хранения и IP-адрес. Контейнеры внутри Pod взаимодействуют через `localhost` и видят общие точки монтирования. Такая модель подходит для тесно связанных процессов, например приложения и sidecar-контейнера для отправки логов, которые должны работать на одном узле, но поставляться отдельными образами. На практике большинство Pod содержит один контейнер; несколько контейнеров используют для sidecar-компонентов, init-контейнеров и адаптеров.
 
-You almost never create a Pod directly in production. A raw Pod has no self-healing: if the node it runs on dies, the Pod disappears and nothing replaces it. The **Deployment** controller exists to solve this. A Deployment declares desired state — "I want three replicas of this image, updated with zero downtime" — and a control loop continuously reconciles the cluster toward that state. Under the hood, a Deployment manages a **ReplicaSet**, which manages the individual Pods. Each time you change the Deployment's pod template (e.g., a new image tag), Kubernetes creates a new ReplicaSet and migrates traffic to it gradually, preserving rollback capability.
+В production Pod почти никогда не создают напрямую. У отдельного Pod нет механизма самовосстановления: если узел выходит из строя, Pod исчезает и не создаётся заново. Эту задачу решает контроллер **Deployment**. В Deployment задаётся желаемое состояние — например, три реплики образа с обновлением без простоя, — а управляющий цикл постоянно приводит кластер к нему. Deployment управляет объектом **ReplicaSet**, который поддерживает нужное количество Pod. При изменении шаблона Pod, например при смене тега образа, Kubernetes создаёт новый ReplicaSet и постепенно переводит нагрузку, сохраняя возможность отката.
 
-In the DevOps toolchain, Deployments are the primary target of your CI/CD pipeline. Your pipeline builds an image, pushes it to a registry, and then either calls `kubectl set image` or applies an updated manifest. Everything downstream — traffic routing via Services, autoscaling via HPA, observability via pod labels — depends on Deployments being correctly configured. Understanding how Pods and Deployments work internally lets you debug failed rollouts, tune update strategies for your traffic patterns, and write manifests that survive production load.
+В DevOps Deployment — одна из основных целей CI/CD-пайплайна. Пайплайн собирает образ, отправляет его в registry, а затем выполняет `kubectl set image` или применяет обновлённый манифест. Последующие механизмы — маршрутизация через Service, автомасштабирование с HPA и наблюдаемость по меткам Pod — зависят от корректной конфигурации Deployment. Понимание внутренней работы Pod и Deployment помогает разбирать неудачные обновления, выбирать стратегию развёртывания и создавать манифесты, устойчивые к production-нагрузке.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### The Object Hierarchy
+### Иерархия объектов
 
 ```
 Deployment
@@ -394,7 +394,7 @@ kubectl delete pod myapp-abc123 --grace-period=0 --force -n production
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Zero-Downtime Rolling Deployment
 
@@ -638,7 +638,7 @@ kubectl rollout status deployment/api -n production
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Diagnose a Broken Deployment
 
@@ -738,7 +738,7 @@ kubectl describe nodes | grep -A10 "Allocated resources:"
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 6. Extract replica count from a Deployment spec stub. Run: `printf 'spec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: web\n' | awk '/replicas:/{print $2}'`
 

@@ -1,97 +1,97 @@
-# Bash / Shell — Quick Reference
+# Bash / Shell — краткая справка
 
 ## awk
 
 | Command | Description |
 |---------|-------------|
-| `awk '{print $1}' file` | Print first field of each line |
-| `awk '{print $NF}' file` | Print last field |
-| `awk 'NR>1' file` | Skip header line |
-| `awk -F: '{print $1}' /etc/passwd` | Custom field delimiter |
-| `awk '$3 > 100' file` | Print lines where field 3 > 100 |
-| `awk '{sum+=$1} END{print sum}' file` | Sum a column |
-| `awk '/pattern/' file` | Print lines matching pattern |
-| `awk 'NR==2,NR==5' file` | Print lines 2–5 |
-| `awk '{gsub(/old/,"new"); print}' file` | Global in-place substitution |
-| `awk '{printf "%-10s %s\n",$1,$2}' file` | Formatted output |
+| `awk '{print $1}' file` | Вывести первое поле каждой строки |
+| `awk '{print $NF}' file` | Вывести последнее поле |
+| `awk 'NR>1' file` | Пропустить строку заголовка |
+| `awk -F: '{print $1}' /etc/passwd` | Задать разделитель полей |
+| `awk '$3 > 100' file` | Вывести строки, где поле 3 больше 100 |
+| `awk '{sum+=$1} END{print sum}' file` | Суммировать столбец |
+| `awk '/pattern/' file` | Вывести строки, соответствующие шаблону |
+| `awk 'NR==2,NR==5' file` | Вывести строки 2–5 |
+| `awk '{gsub(/old/,"new"); print}' file` | Глобальная замена на месте |
+| `awk '{printf "%-10s %s\n",$1,$2}' file` | Форматированный вывод |
 
 ## sed
 
 | Command | Description |
 |---------|-------------|
-| `sed 's/old/new/' file` | Replace first match per line |
-| `sed 's/old/new/g' file` | Replace all matches per line |
-| `sed -i 's/old/new/g' file` | Edit file in-place |
-| `sed -n '5,10p' file` | Print lines 5–10 |
-| `sed '/pattern/d' file` | Delete matching lines |
-| `sed -n '/pattern/p' file` | Print only matching lines |
-| `sed '3i\new line' file` | Insert before line 3 |
-| `sed '3a\new line' file` | Append after line 3 |
-| `sed -n '/start/,/end/p' file` | Print between two patterns |
+| `sed 's/old/new/' file` | Заменить первое совпадение в каждой строке |
+| `sed 's/old/new/g' file` | Заменить все совпадения в каждой строке |
+| `sed -i 's/old/new/g' file` | Изменить файл на месте |
+| `sed -n '5,10p' file` | Вывести строки 5–10 |
+| `sed '/pattern/d' file` | Удалить совпавшие строки |
+| `sed -n '/pattern/p' file` | Вывести только совпавшие строки |
+| `sed '3i\new line' file` | Вставить перед строкой 3 |
+| `sed '3a\new line' file` | Добавить после строки 3 |
+| `sed -n '/start/,/end/p' file` | Вывести строки между двумя шаблонами |
 
 ## grep
 
 | Command | Description |
 |---------|-------------|
 | `grep 'pattern' file` | Print matching lines |
-| `grep -i 'pattern' file` | Case-insensitive |
-| `grep -r 'pattern' dir/` | Recursive search |
-| `grep -v 'pattern' file` | Invert match |
-| `grep -c 'pattern' file` | Count matches |
-| `grep -n 'pattern' file` | Show line numbers |
-| `grep -l 'pattern' *.log` | List matching filenames only |
-| `grep -E 'a\|b' file` | Extended regex (alternation) |
-| `grep -A 3 'pattern' file` | 3 lines after match |
-| `grep -B 2 'pattern' file` | 2 lines before match |
+| `grep -i 'pattern' file` | Без учёта регистра |
+| `grep -r 'pattern' dir/` | Рекурсивный поиск |
+| `grep -v 'pattern' file` | Вывести строки, не совпадающие с шаблоном |
+| `grep -c 'pattern' file` | Подсчитать совпадения |
+| `grep -n 'pattern' file` | Показать номера строк |
+| `grep -l 'pattern' *.log` | Показать только имена совпавших файлов |
+| `grep -E 'a\|b' file` | Расширенные регулярные выражения (альтернатива) |
+| `grep -A 3 'pattern' file` | Три строки после совпадения |
+| `grep -B 2 'pattern' file` | Две строки перед совпадением |
 
-## Pipes & Redirection
+## Конвейеры и перенаправление
 
 | Pattern | Description |
 |---------|-------------|
-| `cmd1 \| cmd2` | Pipe stdout of cmd1 to cmd2 |
-| `cmd > file` | Redirect stdout (overwrite) |
-| `cmd >> file` | Redirect stdout (append) |
-| `cmd 2> file` | Redirect stderr |
-| `cmd 2>&1` | Merge stderr into stdout |
-| `cmd > file 2>&1` | Redirect both to file |
-| `cmd < file` | Redirect file to stdin |
-| `cmd1 \| tee file \| cmd2` | Tee: write to file AND pipe |
-| `cmd &` | Run in background |
-| `cmd1 && cmd2` | Run cmd2 only if cmd1 succeeds |
-| `cmd1 \|\| cmd2` | Run cmd2 only if cmd1 fails |
+| `cmd1 \| cmd2` | Передать stdout команды cmd1 в cmd2 |
+| `cmd > file` | Перенаправить stdout в файл с перезаписью |
+| `cmd >> file` | Добавить stdout в конец файла |
+| `cmd 2> file` | Перенаправить stderr |
+| `cmd 2>&1` | Объединить stderr и stdout |
+| `cmd > file 2>&1` | Перенаправить оба потока в файл |
+| `cmd < file` | Передать файл в stdin |
+| `cmd1 \| tee file \| cmd2` | tee: записать в файл И передать дальше по конвейеру |
+| `cmd &` | Запустить в фоне |
+| `cmd1 && cmd2` | Запустить cmd2, только если cmd1 завершилась успешно |
+| `cmd1 \|\| cmd2` | Запустить cmd2, только если cmd1 завершилась с ошибкой |
 
-## Text Processing
+## Обработка текста
 
 | Command | Description |
 |---------|-------------|
-| `cut -d: -f1 file` | Cut field 1 with `:` delimiter |
-| `sort file` | Sort lines alphabetically |
-| `sort -n file` | Sort numerically |
-| `sort -k2 -n file` | Sort by second field numerically |
-| `sort -u file` | Sort and deduplicate |
-| `uniq file` | Remove adjacent duplicate lines |
-| `uniq -c file` | Count duplicates |
-| `wc -l file` | Count lines |
-| `wc -w file` | Count words |
-| `tr 'a-z' 'A-Z'` | Translate characters |
-| `tr -d '\r'` | Delete carriage returns |
-| `paste file1 file2` | Merge files side-by-side |
-| `diff file1 file2` | Show differences |
+| `cut -d: -f1 file` | Извлечь поле 1 с разделителем `:` |
+| `sort file` | Сортировать строки по алфавиту |
+| `sort -n file` | Сортировать числа |
+| `sort -k2 -n file` | Числовая сортировка по второму полю |
+| `sort -u file` | Сортировать и удалить дубликаты |
+| `uniq file` | Удалить соседние повторяющиеся строки |
+| `uniq -c file` | Подсчитать дубликаты |
+| `wc -l file` | Подсчитать строки |
+| `wc -w file` | Подсчитать слова |
+| `tr 'a-z' 'A-Z'` | Преобразовать символы |
+| `tr -d '\r'` | Удалить символы возврата каретки |
+| `paste file1 file2` | Объединить файлы рядом |
+| `diff file1 file2` | Показать различия |
 
-## Script Patterns
+## Шаблоны скриптов
 
 | Pattern | Description |
 |---------|-------------|
-| `#!/usr/bin/env bash` | Portable shebang |
-| `set -euo pipefail` | Exit on error, unset vars, pipe fail |
-| `"${var:-default}"` | Default if var unset |
-| `"${var:?error msg}"` | Error if var unset |
-| `$(command)` | Command substitution |
-| `$((expr))` | Arithmetic expansion |
-| `[[ -f file ]]` | Test if file exists |
-| `[[ -d dir ]]` | Test if directory exists |
-| `[[ -z "$var" ]]` | Test if string is empty |
-| `[[ -n "$var" ]]` | Test if string is non-empty |
-| `for f in *.log; do ...; done` | Loop over files |
-| `while IFS= read -r line; do ...; done < file` | Read file line by line |
-| `trap 'cleanup' EXIT` | Run cleanup on exit |
+| `#!/usr/bin/env bash` | Переносимый shebang |
+| `set -euo pipefail` | Завершаться при ошибке, неопределённой переменной или сбое конвейера |
+| `"${var:-default}"` | Значение по умолчанию, если переменная не задана |
+| `"${var:?error msg}"` | Ошибка, если переменная не задана |
+| `$(command)` | Подстановка команды |
+| `$((expr))` | Арифметическое раскрытие |
+| `[[ -f file ]]` | Проверить существование файла |
+| `[[ -d dir ]]` | Проверить существование каталога |
+| `[[ -z "$var" ]]` | Проверить, пуста ли строка |
+| `[[ -n "$var" ]]` | Проверить, что строка не пуста |
+| `for f in *.log; do ...; done` | Цикл по файлам |
+| `while IFS= read -r line; do ...; done < file` | Читать файл построчно |
+| `trap 'cleanup' EXIT` | Выполнить очистку при выходе |

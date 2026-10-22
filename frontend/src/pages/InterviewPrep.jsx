@@ -76,7 +76,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
       setResults([])
       setPhase('active')
     } catch {
-      setError('Failed to load questions. Make sure the backend is running.')
+      setError('Не удалось загрузить вопросы. Убедись, что backend запущен.')
       setPhase('idle')
     }
   }
@@ -91,7 +91,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
       if (ev.xp_earned > 0 && onXpEarned) onXpEarned(ev.xp_total)
     } catch {
       if (!isMounted.current) return
-      setError('Failed to record rating. Try again.')
+      setError('Не удалось сохранить оценку. Попробуй ещё раз.')
     }
   }
 
@@ -107,7 +107,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
       if (ev.xp_earned > 0 && onXpEarned) onXpEarned(ev.xp_total)
     } catch (err) {
       if (!isMounted.current) return
-      setError(err?.message?.includes('504') ? 'Evaluation timed out — please try again.' : 'Evaluation failed. Try again.')
+      setError(err?.message?.includes('504') ? 'Время ожидания оценки истекло — попробуй ещё раз.' : 'Не удалось оценить ответ. Попробуй ещё раз.')
       setPhase('active')
     }
   }
@@ -161,7 +161,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
       if (ev.xp_earned > 0 && onXpEarned) onXpEarned(ev.xp_total)
     } catch (err) {
       if (!isMounted.current) return
-      setError(err?.message?.includes('504') ? 'Evaluation timed out — please try again.' : 'Evaluation failed. Try again.')
+      setError(err?.message?.includes('504') ? 'Время ожидания оценки истекло — попробуйте ещё раз.' : 'Не удалось оценить ответ. Попробуйте ещё раз.')
       setReviewPhase('active')
     }
   }
@@ -200,7 +200,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
     return (
       <div className="p-6 max-w-2xl">
         <div className="mb-6">
-          <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-1">Review Complete</h1>
+          <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-1">Повторение завершено</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {reviewQueue.length} question{reviewQueue.length === 1 ? '' : 's'} reviewed
           </p>
@@ -393,7 +393,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
               disabled={!selectedSlug || phase === 'loading'}
               className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors"
             >
-              {phase === 'loading' ? 'Loading…' : 'Start Session'}
+              {phase === 'loading' ? 'Загрузка…' : 'Start Session'}
             </button>
             <button
               onClick={() => start('flashcard')}

@@ -1,5 +1,5 @@
 ---
-title: Scripting Fundamentals
+title: Основы скриптов на Python
 module: python
 duration_min: 30
 difficulty: beginner
@@ -7,19 +7,19 @@ tags: [python, variables, functions, loops, conditionals, types]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Python is the lingua franca of DevOps automation. Every major tool — Ansible, AWS CDK, Airflow, SaltStack — either uses Python or provides a Python SDK. Unlike Bash, Python scales: it handles JSON, YAML, HTTP APIs, and complex logic without becoming unreadable. Unlike Go or Java, it requires no compilation step and ships on virtually every Linux system. This combination — readable, available, batteries-included — is why Python dominates the automation layer of the DevOps toolchain.
+Python — основной язык автоматизации в DevOps. Крупные инструменты — Ansible, AWS CDK, Airflow, SaltStack — либо используют Python, либо предоставляют Python SDK. В отличие от Bash, Python подходит для более сложной логики, работы с JSON, YAML и HTTP API без потери читаемости. В отличие от Go или Java, он не требует этапа компиляции и доступен почти в каждой Linux-системе. Читаемость, доступность и богатая стандартная библиотека сделали Python главным языком автоматизации в DevOps.
 
-This lesson covers the subset of Python that matters most for scripting: variables and types, control flow, functions, file I/O, and accepting input from the environment. These aren't academic exercises. The patterns here appear directly in CI/CD scripts, health checkers, log parsers, and deployment tools. Understanding them deeply means you can write a working script from scratch in an interview, contribute to an existing automation codebase on day one, and debug tools like Ansible or Fabric when they fail.
+В уроке рассматривается наиболее важная для скриптов часть Python: переменные и типы, управление потоком выполнения, функции, работа с файлами и получение данных из окружения. Это не абстрактные упражнения: такие шаблоны используются в CI/CD-скриптах, health checks, парсерах логов и инструментах развёртывания. Их понимание позволит написать рабочий скрипт на собеседовании, сразу вносить вклад в существующую автоматизацию и диагностировать сбои инструментов вроде Ansible или Fabric.
 
-Python sits between the shell and a full application framework in the DevOps toolchain. Use Bash for one-liners, command chaining, and wrapping CLI tools. Use Python when you need data structures, error handling, reusable functions, or anything involving APIs and file parsing. Use a full framework (Flask, FastAPI) only when you need persistent services. Most DevOps scripts live firmly in Python territory.
+В DevOps Python занимает промежуточное положение между shell и полноценным приложением. Используйте Bash для однострочных команд, конвейеров и обёрток над CLI-утилитами. Выбирайте Python, когда нужны структуры данных, обработка ошибок, повторно используемые функции, API или разбор файлов. Полноценный фреймворк вроде Flask или FastAPI нужен, когда требуется постоянно работающий сервис. Большинство DevOps-скриптов достаточно писать на Python.
 
-## Concepts
+## Основные понятия
 
-### Variables and Types
+### Переменные и типы
 
-Python is dynamically typed — the variable holds a reference to an object, and the type follows the object, not the variable name. There are no declarations.
+Python использует динамическую типизацию: переменная хранит ссылку на объект, а тип определяется объектом, а не именем переменной. Объявления типов не требуются.
 
 ```python
 name = "nginx"          # str
@@ -33,7 +33,7 @@ unique_envs = {"prod", "staging"}  # set — unordered, unique values
 nothing = None          # NoneType — explicit absence of a value
 ```
 
-Use `type()` for debugging and `isinstance()` for logic — `isinstance` handles inheritance correctly.
+Используйте `type()` для отладки, а `isinstance()` — для логики: `isinstance` корректно учитывает наследование.
 
 ```python
 isinstance(port, int)            # True
@@ -41,21 +41,21 @@ isinstance(tags, list)           # True
 isinstance(nothing, type(None))  # True — or: nothing is None
 ```
 
-| Type | Mutable | Ordered | Use case |
+| Тип | Изменяемый | Упорядоченный | Применение |
 |------|---------|---------|----------|
-| `str` | No | Yes | Hostnames, log lines, config values |
-| `int` / `float` | No | — | Ports, timeouts, ratios |
-| `list` | Yes | Yes | Server lists, CLI args, log lines |
-| `dict` | Yes | Yes (3.7+) | Config objects, JSON payloads |
-| `tuple` | No | Yes | Fixed pairs like `(host, port)` |
-| `set` | Yes | No | Deduplication, membership tests |
-| `None` | — | — | Missing values, unset variables |
+| `str` | Нет | Да | Имена узлов, строки журналов, значения конфигурации |
+| `int` / `float` | Нет | — | Порты, тайм-ауты, коэффициенты |
+| `list` | Да | Да | Списки серверов, аргументы CLI, строки журналов |
+| `dict` | Да | Да (3.7+) | Объекты конфигурации, payload JSON |
+| `tuple` | Нет | Да | Фиксированные пары вроде `(host, port)` |
+| `set` | Да | Нет | Удаление дубликатов, проверка вхождения |
+| `None` | — | — | Отсутствующие значения, незаданные переменные |
 
-**Dynamic typing gotcha:** Python will not warn you if you reassign a variable to a different type. `port = "8080"` followed by `port + 1` raises `TypeError` at runtime, not at parse time. For scripts longer than ~50 lines, consider adding type hints (`port: int = 8080`) — they don't enforce types at runtime but make intent clear and enable editor checking with `mypy`.
+**Особенность динамической типизации:** Python не предупреждает, если переменной присваивается значение другого типа. После `port = "8080"` выражение `port + 1` вызовет `TypeError` во время выполнения. Для скриптов длиннее примерно 50 строк добавляйте аннотации типов (`port: int = 8080`): они не проверяются во время выполнения, но делают намерения яснее и позволяют использовать `mypy`.
 
-### Strings
+### Строки
 
-Strings are immutable sequences. In DevOps scripts you constantly construct URLs, log messages, shell commands, and config file content from string parts.
+Строки — неизменяемые последовательности. В DevOps-скриптах из фрагментов строк постоянно собирают URL, сообщения журналов, shell-команды и содержимое конфигурационных файлов.
 
 ```python
 host = "api.example.com"
@@ -82,7 +82,7 @@ truncated = f"{host[:10]}..."  # slice inside the braces
 "line\n".rstrip("\n")                   # "line" — strip trailing newline
 ```
 
-**`split()` vs `split(",")` difference:** `"a  b".split()` (no argument) splits on any whitespace and discards empty strings. `"a  b".split(" ")` splits on exactly one space and produces empty strings. For log parsing, the no-argument form is almost always what you want for tokenizing whitespace-delimited lines.
+**Разница между `split()` и `split(" ")`:** `"a  b".split()` без аргумента разделяет по любым пробельным символам и удаляет пустые элементы. `"a  b".split(" ")` разделяет только по одному пробелу и создаёт пустые элементы. Для разбора журналов обычно подходит `split()` без аргумента.
 
 ```python
 # Parsing a log line — whitespace split is cleaner
@@ -93,9 +93,9 @@ method = parts[5].lstrip('"')  # "GET"
 status = int(parts[8])         # 200
 ```
 
-### Lists and Dicts
+### Списки и словари
 
-These two types do the heavy lifting in DevOps scripts. Lists hold sequences of things (servers, log lines, file paths). Dicts represent structured data (config objects, API responses, environment mappings).
+Эти два типа выполняют основную работу в DevOps-скриптах. Списки хранят последовательности элементов (серверы, строки журналов, пути файлов), а словари представляют структурированные данные (конфигурации, ответы API, переменные окружения).
 
 ```python
 # Lists
@@ -134,15 +134,15 @@ merged = defaults | overrides    # {"timeout": 10, "retries": 3, "host": "db"}
 merged = {**defaults, **overrides}
 ```
 
-**Dict key access vs `.get()`:** `config["missing_key"]` raises `KeyError`. `config.get("missing_key")` returns `None`. `config.get("missing_key", "default")` returns `"default"`. In scripts that read external data (API responses, config files), always use `.get()` unless you explicitly want the script to crash on a missing key.
+**Доступ к ключу словаря и `.get()`:** `config["missing_key"]` вызывает `KeyError`. `config.get("missing_key")` возвращает `None`, а `config.get("missing_key", "default")` — `"default"`. В скриптах, читающих внешние данные (ответы API, конфигурации), используйте `.get()`, если отсутствие ключа не должно приводить к аварийному завершению.
 
-**Set for deduplication:**
+**Множество для удаления дубликатов:**
 ```python
 all_tags = ["web", "prod", "web", "db", "prod"]
 unique_tags = list(set(all_tags))  # ["web", "prod", "db"] — order not guaranteed
 ```
 
-### Control Flow
+### Управление потоком выполнения
 
 ```python
 exit_code = 1
@@ -190,11 +190,11 @@ for line in log_lines:
     print(line)
 ```
 
-**`range()` usage:** `range(n)` produces `0` through `n-1`. `range(start, stop)` produces `start` through `stop-1`. `range(start, stop, step)` controls the step. Directly iterating a list (`for item in list`) is cleaner than `for i in range(len(list))` — use `enumerate` when you need the index.
+**Использование `range()`:** `range(n)` выдаёт числа от 0 до `n-1`. `range(start, stop)` — от `start` до `stop-1`. `range(start, stop, step)` позволяет задать шаг. Перебирать список напрямую (`for item in list`) чище, чем `for i in range(len(list))`; если нужен индекс, используйте `enumerate`.
 
-### List Comprehensions
+### Генераторы списков
 
-List comprehensions replace `for` loops that build new lists. They're concise and — for simple cases — faster than an explicit loop because Python can optimize them internally.
+Генераторы списков заменяют циклы `for`, создающие новые списки. Они компактнее и в простых случаях быстрее явного цикла, поскольку Python может оптимизировать их.
 
 ```python
 servers = ["web01", "old-web02", "web03", "old-db01"]
@@ -221,11 +221,11 @@ statuses = {int(line.split()[-1]) for line in log_lines}
 # {200, 500}
 ```
 
-**When to use a regular loop instead:** if the body requires more than one expression, or if you need exception handling inside the iteration, use a regular `for` loop. Comprehensions that span more than two logical conditions become hard to read and debug. Readability is not optional in scripts that teammates must maintain.
+**Когда лучше обычный цикл:** если внутри нужно несколько выражений или обработка исключений, используйте `for`. Генераторы с более чем двумя логическими условиями сложно читать и отлаживать. В скриптах, которые сопровождают коллеги, читаемость обязательна.
 
-### Functions
+### Функции
 
-Functions are the primary unit of reuse in scripts. A good DevOps script is mostly a collection of small, focused functions with a short `main()` that calls them in sequence.
+Функции — основная единица повторного использования кода. Хороший DevOps-скрипт состоит из небольших специализированных функций и короткой `main()`, которая вызывает их по порядку.
 
 ```python
 def check_port(host, port, timeout=5):
@@ -258,7 +258,7 @@ def good(items=None):    # correct pattern: use None as sentinel
     return items
 ```
 
-**Return values:** a function with no `return` statement returns `None`. Return early to avoid deep nesting — it's easier to read and reason about:
+**Возвращаемые значения:** функция без `return` возвращает `None`. Возвращайте результат раньше, чтобы избегать глубокой вложенности: такой код проще читать и анализировать.
 
 ```python
 def parse_port(value):
@@ -274,7 +274,7 @@ def parse_port(value):
     return port
 ```
 
-**`*args` and `**kwargs`** for flexible interfaces:
+**`*args` и `**kwargs`** для гибких интерфейсов:
 
 ```python
 def log(level, *messages, prefix="[script]"):
@@ -289,9 +289,9 @@ log("INFO", "started", "pid=123")
 log("ERROR", "connection failed", prefix="[health-check]")
 ```
 
-### Error Handling
+### Обработка ошибок
 
-In shell scripts, errors often silently pass. In Python you have `try/except` — use it to handle expected failures gracefully and let unexpected ones crash loudly. The goal is not to suppress errors but to control how the script responds to them.
+В shell-скриптах ошибки часто проходят незаметно. В Python есть `try/except`: используйте его для корректной обработки ожидаемых сбоев, а неожиданные ошибки должны проявляться явно. Цель — не подавлять ошибки, а управлять реакцией скрипта на них.
 
 ```python
 import sys
@@ -327,16 +327,16 @@ finally:
         conn.close()
 ```
 
-| Except pattern | When to use |
+| Шаблон except | Когда использовать |
 |----------------|-------------|
-| `except ValueError` | Catch one specific exception type |
-| `except (ValueError, TypeError)` | Catch a group of related exceptions |
-| `except Exception as e` | Catch any non-system-exit exception; always log `e` |
-| bare `except:` | Almost never — catches `SystemExit` and `KeyboardInterrupt` too |
+| `except ValueError` | Перехватить конкретный тип исключения |
+| `except (ValueError, TypeError)` | Перехватить несколько связанных типов исключений |
+| `except Exception as e` | Перехватить обычные исключения; всегда записывать `e` в журнал |
+| `except:` без типа | Почти никогда — перехватывает также `SystemExit` и `KeyboardInterrupt` |
 
-**Don't silence exceptions without logging.** `except Exception: pass` hides bugs permanently. At minimum: `except Exception as e: print(e, file=sys.stderr)`. In production scripts, use Python's `logging` module so errors appear in log aggregators.
+**Не подавляйте исключения без журналирования.** `except Exception: pass` навсегда скрывает ошибки. Как минимум используйте `except Exception as e: print(e, file=sys.stderr)`. В production-скриптах применяйте модуль `logging`, чтобы ошибки попадали в системы сбора журналов.
 
-### File I/O
+### Работа с файлами
 
 ```python
 # Read entire file into a string
@@ -366,9 +366,9 @@ with open("/tmp/data.csv", encoding="utf-8") as f:
     content = f.read()
 ```
 
-**Always use `with`:** it calls `f.close()` automatically, even if an exception is raised inside the block. A file handle left open in a long-running script leaks OS resources and can prevent other processes from writing to the file on some systems.
+**Всегда используйте `with`:** он автоматически вызывает `f.close()`, даже если внутри блока возникло исключение. Незакрытый файловый дескриптор в долгоживущем скрипте расходует ресурсы ОС и в некоторых системах мешает другим процессам записывать в файл.
 
-**Working with paths using `pathlib` (preferred over `os.path` for new code):**
+**Работа с путями через `pathlib` (предпочтительнее `os.path` в новом коде):**
 
 ```python
 from pathlib import Path
@@ -389,9 +389,9 @@ for f in log_dir.glob("*.log"):
 Path("/tmp/myapp/logs").mkdir(parents=True, exist_ok=True)
 ```
 
-### Environment Variables and sys.argv
+### Переменные окружения и sys.argv
 
-Scripts need to accept external configuration — credentials, hostnames, flags — without hardcoding values. Two primary mechanisms: environment variables (for secrets and config) and `sys.argv` (for command-line arguments).
+Скриптам нужно принимать внешнюю конфигурацию — учётные данные, имена узлов и флаги — без жёстко заданных значений. Основных механизмов два: переменные окружения (для секретов и настроек) и `sys.argv` (для аргументов командной строки).
 
 ```python
 import os
@@ -418,7 +418,7 @@ target = sys.argv[2]   # "web01"
 dry_run = "--dry-run" in sys.argv
 ```
 
-**For anything beyond two or three arguments, use `argparse`** from the standard library. It generates `--help` output automatically, handles types, and produces clear error messages:
+**Если аргументов больше двух-трёх, используйте `argparse`** из стандартной библиотеки. Он автоматически формирует `--help`, обрабатывает типы и выдаёт понятные сообщения об ошибках.
 
 ```python
 import argparse
@@ -433,7 +433,7 @@ args = parser.parse_args()
 # args.action, args.target, args.timeout, args.dry_run
 ```
 
-**Never hardcode credentials.** Reading from environment variables (set by a secrets manager, CI/CD platform, or `.env` file excluded from version control) is the minimum acceptable practice. Credentials in source code will be found in git history even after deletion.
+**Никогда не зашивайте учётные данные в код.** Минимально допустимый подход — читать их из переменных окружения, задаваемых менеджером секретов, CI/CD-платформой или файлом `.env`, исключённым из контроля версий. Даже после удаления секреты останутся в истории Git.
 
 ### The `main()` Pattern
 
@@ -466,7 +466,7 @@ if __name__ == "__main__":
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Log Error Rate Checker
 
@@ -729,7 +729,7 @@ kill %1   # stop the test server
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Parse a CSV and Compute Statistics
 
@@ -825,7 +825,7 @@ steps = [
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Sum the values of a dictionary.
 

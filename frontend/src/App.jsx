@@ -120,7 +120,7 @@ function AppLayout({ modules, progress, loadData, loading, xp, streak, interview
           <Sidebar modules={modules} progress={progress} />
         </div>
         {sidebarOpen && (
-          <div onMouseDown={startSidebarResize} className="w-1 shrink-0 cursor-col-resize hover:bg-emerald-400 dark:hover:bg-emerald-600 bg-transparent transition-colors" title="Drag to resize sidebar" />
+          <div onMouseDown={startSidebarResize} className="w-1 shrink-0 cursor-col-resize hover:bg-emerald-400 dark:hover:bg-emerald-600 bg-transparent transition-colors" title="Перетащите, чтобы изменить ширину панели" />
         )}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <header className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-gray-200 dark:border-gray-700">
@@ -128,7 +128,7 @@ function AppLayout({ modules, progress, loadData, loading, xp, streak, interview
               <button
                 onClick={() => setSidebarOpen(o => !o)}
                 className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors text-base leading-none"
-                title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+                title={sidebarOpen ? 'Скрыть боковую панель' : 'Показать боковую панель'}
               >
                 ☰
               </button>
@@ -138,7 +138,7 @@ function AppLayout({ modules, progress, loadData, loading, xp, streak, interview
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-300 dark:border-gray-600 text-xs text-gray-600 dark:text-gray-400 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
               >
                 <span>⌕</span>
-                <span>Search</span>
+                <span>Поиск</span>
                 <span className="text-gray-400 dark:text-gray-600 text-[10px]">Ctrl K</span>
               </button>
               <RecentDropdown />
@@ -158,7 +158,7 @@ function AppLayout({ modules, progress, loadData, loading, xp, streak, interview
                   onClick={() => setReadingMode(r => !r)}
                   className="text-xs px-3 py-1 rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                 >
-                  {readingMode ? 'Side panel' : 'Focus'}
+                  {readingMode ? 'Боковая панель' : 'Режим чтения'}
                 </button>
               )}
               <ThemeToggle dark={dark} toggle={toggle} />
@@ -184,7 +184,7 @@ function AppLayout({ modules, progress, loadData, loading, xp, streak, interview
                 <Route path="/stats" element={<Stats />} />
                 <Route path="/reference/:moduleSlug" element={<Reference />} />
                 <Route path="/module/:moduleSlug/lesson/:lessonSlug" element={
-                  <Suspense fallback={<div className="p-6 text-gray-400 dark:text-gray-500">Loading…</div>}>
+                  <Suspense fallback={<div className="p-6 text-gray-400 dark:text-gray-500">Загрузка…</div>}>
                     <LessonViewer modules={modules} progress={progress} onProgressUpdate={loadData} />
                   </Suspense>
                 } />
@@ -205,7 +205,7 @@ function AppLayout({ modules, progress, loadData, loading, xp, streak, interview
                           : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                       }`}
                     >
-                      {tab === 'tutor' ? 'Tutor' : tab === 'quiz' ? 'Quiz' : 'Notes'}
+                      {tab === 'tutor' ? 'Наставник' : tab === 'quiz' ? 'Тест' : 'Заметки'}
                     </button>
                   ))}
                 </div>
@@ -241,7 +241,7 @@ class ErrorBoundary extends Component {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
           <div className="text-center space-y-4 max-w-md px-6">
-            <p className="text-2xl font-semibold">Something went wrong</p>
+            <p className="text-2xl font-semibold">Что-то пошло не так</p>
             <p className="text-sm text-gray-500 dark:text-gray-400 font-mono break-all">{this.state.error?.message ?? String(this.state.error)}</p>
             <button
               onClick={() => window.location.reload()}

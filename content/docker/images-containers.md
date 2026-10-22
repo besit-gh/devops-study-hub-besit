@@ -1,5 +1,5 @@
 ---
-title: Images & Containers
+title: Образы и контейнеры Docker
 module: docker
 duration_min: 20
 difficulty: beginner
@@ -7,19 +7,19 @@ tags: [docker, images, containers, dockerfile, build, run]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Docker solves the "works on my machine" problem by packaging an application together with every library, config file, and runtime dependency it needs into a single artifact called an **image**. When you run that image, Docker creates a **container** — an isolated process that sees its own filesystem, network stack, and process tree. Because the image is identical regardless of the host, a container behaves the same on a developer laptop, a CI runner, or a production Kubernetes node. That reproducibility is why containers became the default unit of deployment in modern DevOps.
+Docker решает проблему «у меня на машине работает», упаковывая приложение вместе с библиотеками, конфигурационными файлами и зависимостями в единый артефакт — **образ (image)**. При запуске образа Docker создаёт **контейнер** — изолированный процесс со своей файловой системой, сетевым стеком и деревом процессов. Поскольку образ одинаков на разных хостах, контейнер ведёт себя предсказуемо на ноутбуке разработчика, CI-runner и production-узле Kubernetes. Благодаря такой воспроизводимости контейнеры стали стандартной единицей развёртывания в современном DevOps.
 
-The design centers on two principles: **immutability** and **layering**. Images are never modified after they are built; instead, you build a new image. Layering means each build instruction adds a thin diff on top of the previous state, and Docker caches those diffs aggressively. The result is fast incremental builds and efficient storage — two images that share a base layer store that base only once on disk and in a registry.
+В основе Docker лежат два принципа: **неизменяемость** и **слоистая структура**. После сборки образ не редактируют — вместо этого создают новый. Каждая инструкция сборки добавляет небольшой слой изменений поверх предыдущего состояния, а Docker активно кэширует слои. Это ускоряет повторные сборки и экономит место: если два образа используют общий базовый слой, на диске и в registry он хранится один раз.
 
-In the broader toolchain, images sit at the handoff point between development and operations. A CI pipeline builds and tests an image, pushes it to a registry (Docker Hub, ECR, GCR, GHCR), and downstream systems — Compose, Kubernetes, ECS — pull and run it. Understanding exactly how images are built and how containers behave at runtime is prerequisite knowledge for every layer above it: you cannot meaningfully debug a crashed pod in Kubernetes without understanding what a container is and how its lifecycle works.
+В DevOps-цепочке образы связывают разработку и эксплуатацию. CI-пайплайн собирает и тестирует образ, отправляет его в registry (Docker Hub, ECR, GCR, GHCR), а Compose, Kubernetes или ECS загружают и запускают его. Понимание сборки образов и поведения контейнеров во время работы необходимо для следующих уровней стека: невозможно осмысленно диагностировать упавший pod в Kubernetes, не понимая контейнер и его жизненный цикл.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### Images vs Containers
+### Образы и контейнеры: различия
 
 | | Image | Container |
 |---|---|---|
@@ -445,7 +445,7 @@ docker images --digests
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Containerize a Python FastAPI Application
 
@@ -668,7 +668,7 @@ docker rm -f broken-nginx
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Optimize a Slow Dockerfile with Layer Caching
 
@@ -741,7 +741,7 @@ COPY --from=builder /install /usr/local
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Count `FROM` instructions in a multi-stage Dockerfile stub. Run: `printf 'FROM ubuntu:22.04\nRUN apt-get update\nFROM python:3.12-slim\nCMD ["python"]\n' | grep -c '^FROM'`
 

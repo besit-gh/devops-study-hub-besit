@@ -1,97 +1,97 @@
-# Git & VCS — Quick Reference
+# Git и системы контроля версий — краткая справка
 
-## Core Workflow
-
-| Command | Description |
-|---------|-------------|
-| `git init` | Initialize a new repo |
-| `git clone url` | Clone a remote repo |
-| `git status` | Show working tree state |
-| `git add file` | Stage a file |
-| `git add -p` | Stage hunks interactively |
-| `git commit -m "msg"` | Commit staged changes |
-| `git commit --amend` | Edit last commit message/content |
-| `git push origin branch` | Push branch to remote |
-| `git pull` | Fetch + merge remote changes |
-| `git fetch` | Fetch without merging |
-
-## Branches
+## Основной рабочий процесс
 
 | Command | Description |
 |---------|-------------|
-| `git branch` | List local branches |
-| `git branch -a` | List all branches (incl. remote) |
-| `git branch name` | Create branch |
-| `git checkout name` | Switch to branch |
-| `git checkout -b name` | Create and switch |
-| `git switch name` | Modern branch switch |
-| `git switch -c name` | Create and switch (modern) |
-| `git branch -d name` | Delete merged branch |
-| `git branch -D name` | Force delete branch |
-| `git push origin --delete name` | Delete remote branch |
+| `git init` | Создать новый репозиторий |
+| `git clone url` | Клонировать удалённый репозиторий |
+| `git status` | Показать состояние рабочего дерева |
+| `git add file` | Добавить файл в индекс |
+| `git add -p` | Интерактивно выбрать фрагменты для индекса |
+| `git commit -m "msg"` | Создать коммит из изменений в индексе |
+| `git commit --amend` | Изменить сообщение или содержимое последнего коммита |
+| `git push origin branch` | Отправить ветку в удалённый репозиторий |
+| `git pull` | Получить и слить удалённые изменения |
+| `git fetch` | Получить изменения без слияния |
 
-## Merging & Rebasing
-
-| Command | Description |
-|---------|-------------|
-| `git merge branch` | Merge branch into current |
-| `git merge --no-ff branch` | Merge with explicit merge commit |
-| `git merge --squash branch` | Squash into one commit |
-| `git rebase main` | Rebase current branch onto main |
-| `git rebase -i HEAD~3` | Interactive rebase last 3 commits |
-| `git cherry-pick abc123` | Apply a specific commit |
-| `git merge --abort` | Abort in-progress merge |
-| `git rebase --abort` | Abort in-progress rebase |
-
-## History & Diff
+## Ветки
 
 | Command | Description |
 |---------|-------------|
-| `git log --oneline` | Compact commit history |
-| `git log --oneline --graph` | ASCII branch graph |
-| `git log -p` | Show diffs per commit |
-| `git log --author="name"` | Filter by author |
-| `git log --since="2 weeks ago"` | Filter by date |
-| `git diff` | Unstaged changes |
-| `git diff --staged` | Staged changes |
-| `git diff branch1..branch2` | Diff between branches |
-| `git blame file` | Show who wrote each line |
-| `git show abc123` | Show commit details |
+| `git branch` | Список локальных веток |
+| `git branch -a` | Список всех веток, включая удалённые |
+| `git branch name` | Создать ветку |
+| `git checkout name` | Переключиться на ветку |
+| `git checkout -b name` | Создать ветку и переключиться на неё |
+| `git switch name` | Современный способ переключения веток |
+| `git switch -c name` | Создать ветку и переключиться (современный вариант) |
+| `git branch -d name` | Удалить слитую ветку |
+| `git branch -D name` | Принудительно удалить ветку |
+| `git push origin --delete name` | Удалить удалённую ветку |
 
-## Undoing Changes
-
-| Command | Description |
-|---------|-------------|
-| `git restore file` | Discard unstaged changes |
-| `git restore --staged file` | Unstage a file |
-| `git reset HEAD~1` | Undo last commit, keep changes |
-| `git reset --hard HEAD~1` | Undo last commit, discard changes |
-| `git revert abc123` | Create reverse commit (safe) |
-| `git stash` | Stash working changes |
-| `git stash pop` | Restore stash |
-| `git stash list` | List stashes |
-| `git clean -fd` | Remove untracked files & dirs |
-
-## Remotes & Tags
+## Слияние и перебазирование
 
 | Command | Description |
 |---------|-------------|
-| `git remote -v` | List remotes |
-| `git remote add origin url` | Add remote |
-| `git push -u origin branch` | Push and set upstream |
-| `git tag v1.0.0` | Create lightweight tag |
-| `git tag -a v1.0.0 -m "msg"` | Annotated tag |
-| `git push origin --tags` | Push all tags |
-| `git tag -d v1.0.0` | Delete local tag |
+| `git merge branch` | Слить ветку в текущую |
+| `git merge --no-ff branch` | Слить с отдельным merge-коммитом |
+| `git merge --squash branch` | Объединить изменения в один коммит |
+| `git rebase main` | Перебазировать текущую ветку на main |
+| `git rebase -i HEAD~3` | Интерактивно перебазировать последние 3 коммита |
+| `git cherry-pick abc123` | Применить конкретный коммит |
+| `git merge --abort` | Прервать выполняющееся слияние |
+| `git rebase --abort` | Прервать выполняющийся rebase |
 
-## Config & Hooks
+## История и различия
 
 | Command | Description |
 |---------|-------------|
-| `git config --global user.name "Name"` | Set global username |
-| `git config --global user.email "e@m"` | Set global email |
-| `git config --list` | Show all config |
-| `git config --global alias.st status` | Create alias |
-| `.git/hooks/pre-commit` | Script runs before each commit |
-| `git bisect start` | Start binary search for bug |
-| `git bisect good / bad` | Mark commits during bisect |
+| `git log --oneline` | Краткая история коммитов |
+| `git log --oneline --graph` | Граф веток в ASCII |
+| `git log -p` | Показать diff каждого коммита |
+| `git log --author="name"` | Фильтр по автору |
+| `git log --since="2 weeks ago"` | Фильтр по дате |
+| `git diff` | Изменения вне индекса |
+| `git diff --staged` | Изменения в индексе |
+| `git diff branch1..branch2` | Различия между ветками |
+| `git blame file` | Показать автора каждой строки |
+| `git show abc123` | Показать сведения о коммите |
+
+## Отмена изменений
+
+| Command | Description |
+|---------|-------------|
+| `git restore file` | Отбросить изменения вне индекса |
+| `git restore --staged file` | Убрать файл из индекса |
+| `git reset HEAD~1` | Отменить последний коммит, сохранив изменения |
+| `git reset --hard HEAD~1` | Отменить последний коммит и удалить изменения |
+| `git revert abc123` | Создать обратный коммит (безопасный способ отмены) |
+| `git stash` | Временно сохранить изменения |
+| `git stash pop` | Восстановить сохранённые изменения |
+| `git stash list` | Список временно сохранённых изменений |
+| `git clean -fd` | Удалить неотслеживаемые файлы и каталоги |
+
+## Удалённые репозитории и теги
+
+| Command | Description |
+|---------|-------------|
+| `git remote -v` | Список удалённых репозиториев |
+| `git remote add origin url` | Добавить удалённый репозиторий |
+| `git push -u origin branch` | Отправить ветку и настроить upstream |
+| `git tag v1.0.0` | Создать лёгкий тег |
+| `git tag -a v1.0.0 -m "msg"` | Аннотированный тег |
+| `git push origin --tags` | Отправить все теги |
+| `git tag -d v1.0.0` | Удалить локальный тег |
+
+## Конфигурация и хуки
+
+| Command | Description |
+|---------|-------------|
+| `git config --global user.name "Name"` | Задать глобальное имя пользователя |
+| `git config --global user.email "e@m"` | Задать глобальный email |
+| `git config --list` | Показать всю конфигурацию |
+| `git config --global alias.st status` | Создать псевдоним команды |
+| `.git/hooks/pre-commit` | Скрипт запускается перед каждым коммитом |
+| `git bisect start` | Начать двоичный поиск коммита с ошибкой |
+| `git bisect good / bad` | Пометить коммиты как хорошие или плохие во время bisect |

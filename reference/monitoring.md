@@ -1,31 +1,31 @@
-# Monitoring (Datadog) — Quick Reference
+# Мониторинг (Datadog) — краткая справка
 
-## Datadog Agent
+## Агент Datadog
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
-| `datadog-agent status` | Full agent status |
-| `datadog-agent check check_name` | Run a check manually |
-| `datadog-agent configcheck` | Validate check configs |
-| `datadog-agent diagnose` | Run connectivity diagnostics |
-| `datadog-agent hostname` | Show reported hostname |
-| `datadog-agent flare` | Create support flare |
-| `systemctl status datadog-agent` | Agent service status |
-| `journalctl -u datadog-agent -f` | Follow agent logs |
+| `datadog-agent status` | Полное состояние агента |
+| `datadog-agent check check_name` | Выполнить проверку вручную |
+| `datadog-agent configcheck` | Проверить конфигурации проверок |
+| `datadog-agent diagnose` | Запустить диагностику сетевой связности |
+| `datadog-agent hostname` | Показать сообщаемое имя хоста |
+| `datadog-agent flare` | Создать пакет диагностики для поддержки |
+| `systemctl status datadog-agent` | Состояние службы агента |
+| `journalctl -u datadog-agent -f` | Следить за журналом агента |
 
-## Datadog CLI (dogstatsd / ddtrace)
+## CLI Datadog (dogstatsd / ddtrace)
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
-| `DD_ENV=prod DD_SERVICE=web ddtrace-run python app.py` | APM trace injection |
-| `DD_AGENT_HOST=localhost ddtrace-run gunicorn app:app` | Remote agent |
-| `dog metric post my.metric 42 --tags env:prod` | Post custom metric |
-| `dog event post "Deploy" "v1.2.3 deployed" --alert_type info` | Post event |
-| `dog monitor mute ID --end 1700000000` | Mute monitor until time |
+| `DD_ENV=prod DD_SERVICE=web ddtrace-run python app.py` | Подключить трассировку APM |
+| `DD_AGENT_HOST=localhost ddtrace-run gunicorn app:app` | Удалённый агент |
+| `dog metric post my.metric 42 --tags env:prod` | Отправить пользовательскую метрику |
+| `dog event post "Deploy" "v1.2.3 deployed" --alert_type info` | Отправить событие |
+| `dog monitor mute ID --end 1700000000` | Приглушить монитор до указанного времени |
 
-## DogStatsD Metrics (from code)
+## Метрики DogStatsD из кода
 
-| Type | Pattern | Description |
+| Type | Pattern | Описание |
 |------|---------|-------------|
 | Count | `statsd.increment("requests.count", tags=["env:prod"])` | Increment counter |
 | Gauge | `statsd.gauge("queue.depth", 42)` | Set gauge value |
@@ -35,7 +35,7 @@
 
 ## Query Language (Metrics)
 
-| Query | Description |
+| Query | Описание |
 |-------|-------------|
 | `avg:system.cpu.user{*}` | Average CPU across all hosts |
 | `sum:nginx.net.request_per_s{env:prod}` | Sum by tag filter |
@@ -59,7 +59,7 @@ thresholds:
 
 ## Logs Query Syntax
 
-| Query | Description |
+| Query | Описание |
 |-------|-------------|
 | `service:nginx status:error` | Errors from nginx |
 | `env:prod @http.status_code:[500 TO 599]` | 5xx in production |

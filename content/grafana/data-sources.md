@@ -1,5 +1,5 @@
 ---
-title: Data Sources & Plugins
+title: Источники данных и плагины Grafana
 module: grafana
 duration_min: 25
 difficulty: intermediate
@@ -7,15 +7,15 @@ tags: [grafana, data-sources, prometheus, loki, plugins, transformations, annota
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-A data source in Grafana is a connection to a backend system that can answer queries. Every panel on a dashboard is backed by exactly one data source — or a mixed-source configuration. DevOps engineers configure and troubleshoot data sources constantly: adding a new Prometheus cluster, hooking up Loki for logs, pulling CloudWatch metrics for AWS cost dashboards.
+Источник данных Grafana — подключение к backend-системе, способной отвечать на запросы. Каждая панель дашборда использует один источник данных либо смешанную конфигурацию. DevOps-инженеры постоянно настраивают и диагностируют источники: подключают новый кластер Prometheus, добавляют Loki для логов или получают метрики CloudWatch для дашбордов стоимости AWS.
 
-Data sources are the boundary between Grafana's visualization layer and the observability backends it queries. Understanding how they work — how to configure them correctly, how to provision them as code so they're reproducible, how to combine multiple sources in one view, and how to reshape output with transformations — is essential for building reliable observability infrastructure. In interviews, questions about data sources often appear in the form of troubleshooting scenarios: "The panel shows 'No data' — what do you check?" or "How do you correlate Prometheus metrics with log events in the same view?"
+Источники данных связывают слой визуализации Grafana с backend-системами наблюдаемости. Для надёжной инфраструктуры нужно понимать, как правильно настраивать источники, описывать их как код для воспроизводимого развёртывания, объединять несколько источников в одном представлении и преобразовывать результаты. На собеседованиях часто встречаются сценарии диагностики: «Панель показывает No data — что проверите?» или «Как сопоставить метрики Prometheus и события логов в одном представлении?»
 
 Data source configuration errors are among the most common issues in new Grafana deployments. The access mode (proxy vs. direct), the URL, authentication method, and TLS settings all interact. Provisioning data sources as code — rather than configuring them in the UI once and hoping they persist — is the production-grade approach.
 
-## Concepts
+## Основные понятия
 
 ### Built-in Data Sources
 
@@ -288,7 +288,7 @@ allow_loading_unsigned_plugins = plugin-name-here
 
 Or as env var: `GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=plugin-name`.
 
-### Transformations
+### Преобразования
 
 Transformations process query results before rendering. They run client-side in the browser and can reshape data without touching the data source.
 
@@ -365,7 +365,7 @@ Common issues and how to diagnose them:
 **"No data" after provisioning a new data source:**
 - The `uid` in the provisioning YAML must match the `uid` used in dashboard JSON. A mismatch causes panels to show "Data source not found".
 
-## Examples
+## Примеры
 
 **Add a Prometheus data source via API (useful in automation):**
 ```bash
@@ -428,7 +428,7 @@ Query B (data source: CloudWatch):
 
 Both series plot on the same time axis. Add a threshold line at your SLO target using **Thresholds** in the panel options. A gap between App RPS and ALB RPS indicates traffic is reaching the load balancer but not the application — useful for diagnosing connection pool exhaustion or pod scheduling delays.
 
-## Exercises
+## Практические задания
 
 1. Provision a Loki data source via a YAML file under `/etc/grafana/provisioning/datasources/`. Include a `derivedFields` entry that parses `trace_id=(\w+)` from log lines and links to a Tempo data source using the matched value. Restart Grafana, open a Logs panel backed by Loki, expand a log line that contains `trace_id=`, and confirm the **Derived fields** section shows a clickable TraceID link. If the link is absent, test your regex with `grep -oP 'trace_id=\K\w+' <<< "your sample log line"` to confirm it matches before troubleshooting Grafana config.
 
@@ -439,7 +439,7 @@ Both series plot on the same time axis. Add a threshold line at your SLO target 
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 4. Extract the data source type from a provisioning stub. Run: `printf 'name: Prometheus\ntype: prometheus\nurl: http://prometheus:9090\n' | awk '/^type:/{print $2}'`
 

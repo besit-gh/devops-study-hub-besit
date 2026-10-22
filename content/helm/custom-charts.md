@@ -1,5 +1,5 @@
 ---
-title: Writing Custom Charts
+title: Создание собственных Helm chart
 module: helm
 duration_min: 25
 difficulty: advanced
@@ -7,24 +7,24 @@ tags: [helm, custom-charts, subcharts, hooks, tests, library-charts]
 exercises: 4
 ---
 
-## Overview
-Writing your own Helm charts means controlling exactly how your application is deployed, tested, and upgraded across environments. This lesson covers production-grade chart patterns: hooks for database migrations, chart tests, library charts for shared templates, and dependency management with subcharts.
+## Обзор
+Создание собственных Helm chart позволяет точно контролировать развёртывание, тестирование и обновление приложения в разных окружениях. В уроке рассматриваются практики для production: hooks для миграций базы данных, тесты chart, библиотечные chart с общими шаблонами и управление зависимостями через subcharts.
 
-## Concepts
+## Основные понятия
 
-### Hooks
-Hooks run Jobs at specific points in the release lifecycle:
+### Hooks — хуки жизненного цикла
+Hooks запускают задания Job в определённые моменты жизненного цикла релиза:
 
-| Hook | When it runs |
+| Hook | Когда запускается |
 |---|---|
-| `pre-install` | Before any resources are created |
-| `post-install` | After all resources are created |
-| `pre-upgrade` | Before upgrading resources |
-| `post-upgrade` | After upgrading resources |
-| `pre-delete` | Before deleting resources |
-| `post-delete` | After deleting resources |
-| `pre-rollback` | Before rolling back |
-| `test` | Only when `helm test` is run |
+| `pre-install` | До создания ресурсов |
+| `post-install` | После создания всех ресурсов |
+| `pre-upgrade` | До обновления ресурсов |
+| `post-upgrade` | После обновления ресурсов |
+| `pre-delete` | До удаления ресурсов |
+| `post-delete` | После удаления ресурсов |
+| `pre-rollback` | До отката |
+| `test` | Только при запуске `helm test` |
 
 ```yaml
 # templates/hooks/db-migrate.yaml
@@ -53,13 +53,13 @@ spec:
                   key: DATABASE_URL
 ```
 
-Hook delete policies:
-- `hook-succeeded` — delete after hook Job completes successfully
-- `hook-failed` — delete if hook fails (keeps on success for inspection)
-- `before-hook-creation` — delete old hook before running new one (default if not specified)
+Политики удаления hook:
+- `hook-succeeded` — удалить после успешного завершения Job, запущенного hook
+- `hook-failed` — удалить, если hook завершился с ошибкой (при успехе оставить для проверки)
+- `before-hook-creation` — удалить предыдущий hook перед запуском нового (значение по умолчанию)
 
-### Chart Tests
-Tests are Pods with the `helm.sh/hook: test` annotation. They run when you call `helm test`:
+### Тестирование chart
+Тесты — это pod с аннотацией `helm.sh/hook: test`. Они запускаются командой `helm test`:
 
 ```yaml
 # templates/tests/test-connection.yaml
@@ -81,14 +81,14 @@ spec:
 
 ```bash
 helm test myapp -n production
-# Running hook: myapp/templates/tests/test-connection.yaml
-# Pod myapp-test-connection: Succeeded
-# TEST SUITE: myapp
-# Status: SUCCESS
+# Запущен hook: myapp/templates/tests/test-connection.yaml
+# Pod myapp-test-connection: успешно завершился
+# НАБОР ТЕСТОВ: myapp
+# Статус: УСПЕШНО
 ```
 
-### Library Charts
-A library chart contains only `_helpers.tpl` templates — reusable snippets with no renderable manifests. Other charts declare it as a dependency:
+### Библиотечные chart
+Библиотечный chart содержит только шаблоны `_helpers.tpl` — повторно используемые фрагменты без генерируемых манифестов. Другие chart подключают его как зависимость:
 
 ```yaml
 # library-chart/Chart.yaml
@@ -122,7 +122,7 @@ metadata:
     {{- include "common.labels" . | nindent 4 }}
 ```
 
-### Chart Dependencies (Subcharts)
+### Зависимости chart (subcharts)
 ```yaml
 # Chart.yaml
 dependencies:
@@ -139,15 +139,15 @@ dependencies:
 ```
 
 ```bash
-# Download dependencies into charts/
+# Загрузить зависимости в charts/
 helm dependency update ./mychart
 # Creates charts/postgresql-14.2.3.tgz, charts/redis-18.x.x.tgz, and Chart.lock
 
-# Build dependencies (use Chart.lock versions)
+# Собрать зависимости (использовать версии из Chart.lock)
 helm dependency build ./mychart
 ```
 
-In `values.yaml`, subchart values are nested under the subchart name:
+В `values.yaml` значения subchart располагаются внутри секции с именем подчинённого chart:
 ```yaml
 postgresql:
   enabled: true
@@ -162,9 +162,9 @@ redis:
   enabled: false
 ```
 
-### Advanced Template Patterns
+### Продвинутые шаблоны
 
-#### Named Templates with Arguments
+#### Именованные шаблоны с аргументами
 ```yaml
 # _helpers.tpl
 {{- define "myapp.env" -}}
@@ -181,20 +181,20 @@ env:
   {{- include "myapp.env" .Values.env | nindent 12 }}
 ```
 
-#### Required and Validation
+#### Обязательные значения и проверка
 ```yaml
-# Fail fast if required values are missing
+# Сразу завершиться, если отсутствуют обязательные значения
 image: {{ required "image.repository is required" .Values.image.repository }}
 
-# Custom validation
+# Пользовательская проверка
 {{- if and .Values.ingress.enabled (not .Values.ingress.host) }}
 {{- fail "ingress.host must be set when ingress.enabled=true" }}
 {{- end }}
 ```
 
-#### Computed Values
+#### Вычисляемые значения
 ```yaml
-# Combine values into a connection string
+# Объединить значения в строку подключения
 env:
   - name: DATABASE_URL
     value: {{ printf "postgresql://%s:%s@%s:%d/%s"
@@ -205,24 +205,24 @@ env:
       .Values.db.name | quote }}
 ```
 
-### Packaging and Publishing
+### Упаковка и публикация
 ```bash
-# Package chart into a .tgz
+# Упаковать chart в архив .tgz
 helm package ./mychart
 
-# Package with specific output directory
+# Упаковать в указанный выходной каталог
 helm package ./mychart --destination ./dist
 
-# Update repo index (for self-hosted chart repo)
+# Обновить индекс репозитория (для собственного репозитория chart)
 helm repo index ./dist --url https://charts.example.com
 
-# Push to OCI registry
+# Отправить в реестр OCI
 helm push mychart-0.1.0.tgz oci://registry.example.com/charts
 ```
 
-## Examples
+## Примеры
 
-### Production Chart with Migration Hook
+### Production chart с hook для миграции
 ```yaml
 # templates/hooks/migrate.yaml
 apiVersion: batch/v1
@@ -249,32 +249,32 @@ spec:
                 name: {{ .Release.Name }}-secrets
 ```
 
-## Exercises
+## Практические задания
 
-1. Add a `pre-upgrade` hook to an existing chart that runs a database migration Job. Use `helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded`. Test it by running `helm upgrade` and verifying the Job ran.
-2. Write a chart test that verifies the application's `/health` endpoint returns HTTP 200. Run it with `helm test` and verify it passes and cleans up the test pod.
-3. Create a library chart with a `common.labels` template. Create a dependent application chart that uses it. Verify `helm template` produces the shared labels on all resources.
-4. Add `postgresql` from Bitnami as a chart dependency with `condition: postgresql.enabled`. Show that `helm install --set postgresql.enabled=false` deploys your app without a PostgreSQL instance.
+1. Добавьте в существующий chart hook `pre-upgrade`, запускающий Job для миграции базы данных. Используйте `helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded`. Проверьте работу командой `helm upgrade` и убедитесь, что Job выполнился.
+2. Напишите тест chart, проверяющий, что endpoint `/health` приложения возвращает HTTP 200. Запустите его через `helm test` и убедитесь, что тест проходит, а тестовый pod удаляется.
+3. Создайте библиотечный chart с шаблоном `common.labels`, затем chart приложения, который зависит от него. Убедитесь, что `helm template` добавляет общие метки ко всем ресурсам.
+4. Добавьте `postgresql` от Bitnami как зависимость chart с условием `condition: postgresql.enabled`. Проверьте, что `helm install --set postgresql.enabled=false` разворачивает приложение без экземпляра PostgreSQL.
 
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
-5. Count template files in a chart template directory listing. Run: `printf 'deployment.yaml\nservice.yaml\ningress.yaml\nconfigmap.yaml\nserviceaccount.yaml\n' | grep -c '\.yaml$'`
+5. Посчитайте файлы шаблонов в каталоге chart. Выполните: `printf 'deployment.yaml\nservice.yaml\ningress.yaml\nconfigmap.yaml\nserviceaccount.yaml\n' | grep -c '\.yaml$'`
 
 ```expected_output
 5
 ```
 
-hint: Think about how you can filter lines by a pattern and have the tool count the matches for you automatically.
-hint: Use grep with the -c flag, which counts matching lines directly, and match on the .yaml file extension pattern at the end of each line.
+Подсказка: отфильтруйте строки по шаблону и автоматически подсчитайте совпадения.
+Подсказка: используйте `grep -c` для подсчёта строк, заканчивающихся на расширение `.yaml`.
 
-6. Extract the chart type from a library Chart.yaml stub. Run: `printf 'apiVersion: v2\nname: mylib\ntype: library\n' | awk '/^type:/{print $2}'`
+6. Извлеките тип chart из примера `Chart.yaml` библиотечного chart. Выполните: `printf 'apiVersion: v2\nname: mylib\ntype: library\n' | awk '/^type:/{print $2}'`
 
 ```expected_output
 library
 ```
 
-hint: Think about how awk can match lines by a pattern and then print a specific field from those lines.
-hint: Use awk with a regex pattern like '/^type:/' to match the line, then reference the second whitespace-separated field with '$2'.
+Подсказка: используйте `awk`, чтобы найти строку по шаблону и вывести определённое поле.
+Подсказка: используйте `awk` с шаблоном `/^type:/`, затем обратитесь ко второму полю через `$2`.

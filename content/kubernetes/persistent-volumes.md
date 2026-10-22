@@ -1,5 +1,5 @@
 ---
-title: Persistent Volumes
+title: Постоянные тома Kubernetes
 module: kubernetes
 duration_min: 20
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [kubernetes, pv, pvc, storageclass, statefulset, storage]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Containers are ephemeral by design — every file written inside a container's filesystem is gone the moment the pod is deleted, rescheduled, or crashes. Persistent Volumes (PVs) are Kubernetes's answer to this: a storage subsystem that decouples durable storage from the pod lifecycle, allowing data to survive container restarts, pod rescheduling, and even cluster upgrades. For DevOps engineers, this is the foundation for running any stateful workload in Kubernetes — PostgreSQL, MySQL, Redis, Kafka, Elasticsearch, and similar services that are now routinely deployed on Kubernetes in production.
+Контейнеры по своей природе эфемерны: файлы внутри файловой системы контейнера исчезают при удалении Pod, его переносе на другой узел или аварии. Persistent Volumes (PV) решают эту проблему: подсистема хранения отделяет долговечные данные от жизненного цикла Pod, позволяя им переживать перезапуски контейнеров, пересоздание Pod и даже обновления кластера. Для DevOps это основа запуска stateful-нагрузок в Kubernetes — PostgreSQL, MySQL, Redis, Kafka, Elasticsearch и других сервисов, которые сегодня часто эксплуатируются в production-кластерах.
 
-The design is deliberately layered. Cluster administrators manage *how* storage is provisioned (StorageClass). Developers request *how much* and *what kind* of storage they need (PersistentVolumeClaim). Kubernetes reconciles those two concerns and binds them to actual storage (PersistentVolume). This separation means a developer writing a PVC YAML doesn't need to know whether the cluster runs on AWS, GCP, or bare metal — the StorageClass abstracts that away. This is the same separation-of-concerns pattern that Services apply to networking.
+Архитектура намеренно разделена на уровни. Администраторы кластера определяют, *как* выделяется хранилище (StorageClass), а разработчики указывают, *сколько* и *какого типа* хранилища им нужно (PersistentVolumeClaim, PVC). Kubernetes связывает эти требования с реальным томом (PersistentVolume, PV). Разработчику не нужно знать, работает ли кластер в AWS, GCP или на физических серверах: детали скрыты за StorageClass. Это тот же принцип разделения ответственности, который Service применяет к сетям.
 
 In the broader DevOps toolchain, PVs sit at the intersection of infrastructure provisioning and application deployment. They integrate with cloud provider APIs (via CSI drivers), affect backup and disaster recovery strategies, influence pod scheduling, and carry cost implications. Misconfiguring reclaim policies has caused production data loss. Understanding the full PV/PVC/StorageClass lifecycle — including edge cases — is one of the clearest signals of Kubernetes operational maturity in a job interview.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### The Storage Abstraction Layers
 
@@ -480,7 +480,7 @@ kubectl get volumesnapshot -n production
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: PostgreSQL with Dynamic Provisioning on EKS
 
@@ -737,7 +737,7 @@ kubectl exec -n production postgres -- df -h /var/lib/postgresql/data
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Diagnose and Fix a Stuck PVC
 
@@ -805,7 +805,7 @@ kubectl exec -n production postgres -- df -h /var/lib/postgresql/data
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 7. Extract the access mode from a PVC spec stub. Run: `printf 'spec:\n  accessModes:\n  - ReadWriteOnce\n' | awk '/- Read/{print $2}'`
 

@@ -1,90 +1,90 @@
-# Networking Essentials — Quick Reference
+# Сети — краткая справка
 
-## Connectivity Testing
+## Проверка связности
 
 | Command | Description |
 |---------|-------------|
-| `ping -c 4 host` | ICMP echo test (4 packets) |
-| `traceroute host` | Trace packet route |
-| `tracepath host` | Like traceroute, no root needed |
-| `mtr host` | Interactive combined traceroute/ping |
-| `nc -zv host port` | Test TCP port reachability |
-| `nc -zvw3 host port` | With 3s timeout |
-| `telnet host port` | Manual TCP connect test |
-| `curl -I url` | HTTP response headers only |
-| `curl -v url` | Verbose HTTP (shows TLS, headers) |
+| `ping -c 4 host` | Проверка ICMP echo (4 пакета) |
+| `traceroute host` | Проследить маршрут пакетов |
+| `tracepath host` | Аналог traceroute, права root не нужны |
+| `mtr host` | Интерактивная комбинация traceroute и ping |
+| `nc -zv host port` | Проверить доступность TCP-порта |
+| `nc -zvw3 host port` | Тайм-аут 3 секунды |
+| `telnet host port` | Ручная проверка TCP-подключения |
+| `curl -I url` | Только HTTP-заголовки ответа |
+| `curl -v url` | Подробный HTTP-вывод (TLS и заголовки) |
 
 ## DNS
 
 | Command | Description |
 |---------|-------------|
-| `nslookup domain` | Basic DNS query |
-| `dig domain` | Detailed DNS query |
-| `dig domain A` | Query A records |
-| `dig domain MX` | Query MX records |
-| `dig @8.8.8.8 domain` | Query specific resolver |
-| `dig +short domain` | Just the IP |
-| `dig -x 1.2.3.4` | Reverse DNS lookup |
-| `host domain` | Simple DNS + reverse lookup |
-| `resolvectl query domain` | systemd-resolved lookup |
+| `nslookup domain` | Базовый DNS-запрос |
+| `dig domain` | Подробный DNS-запрос |
+| `dig domain A` | Запрос A-записей |
+| `dig domain MX` | Запрос MX-записей |
+| `dig @8.8.8.8 domain` | Запрос к определённому DNS-резолверу |
+| `dig +short domain` | Только IP-адрес |
+| `dig -x 1.2.3.4` | Обратный DNS-запрос |
+| `host domain` | Простой прямой и обратный DNS-запрос |
+| `resolvectl query domain` | Запрос через systemd-resolved |
 
-## Ports & Sockets
-
-| Command | Description |
-|---------|-------------|
-| `ss -tlnp` | TCP listening sockets + PIDs |
-| `ss -ulnp` | UDP listening sockets |
-| `ss -s` | Socket statistics summary |
-| `netstat -tlnp` | (older) TCP listening sockets |
-| `lsof -i :port` | What's using a port |
-| `lsof -i tcp:8080` | Specific TCP port |
-| `fuser port/tcp` | PID using a port |
-
-## Interfaces & Routing
+## Порты и сокеты
 
 | Command | Description |
 |---------|-------------|
-| `ip addr` | Show interfaces and IPs |
-| `ip link` | Show interface status |
-| `ip route` | Show routing table |
-| `ip route add 10.0.0.0/8 via gw` | Add static route |
-| `ip neigh` | ARP/neighbor table |
-| `ifconfig` | (older) interface config |
-| `route -n` | (older) routing table |
-| `ethtool eth0` | Interface hardware details |
+| `ss -tlnp` | Слушающие TCP-сокеты и PID |
+| `ss -ulnp` | Слушающие UDP-сокеты |
+| `ss -s` | Сводка по сокетам |
+| `netstat -tlnp` | Устаревший способ просмотра слушающих TCP-сокетов |
+| `lsof -i :port` | Какой процесс использует порт |
+| `lsof -i tcp:8080` | Конкретный TCP-порт |
+| `fuser port/tcp` | PID процесса, использующего порт |
 
-## curl Patterns
-
-| Command | Description |
-|---------|-------------|
-| `curl -X POST -d '{"k":"v"}' -H "Content-Type: application/json" url` | POST JSON |
-| `curl -u user:pass url` | Basic auth |
-| `curl -H "Authorization: Bearer TOKEN" url` | Bearer token |
-| `curl -o file url` | Download to file |
-| `curl -L url` | Follow redirects |
-| `curl -k url` | Skip TLS verification |
-| `curl -w "%{http_code}" -o /dev/null -s url` | Just HTTP status code |
-| `curl --max-time 5 url` | Set timeout |
-| `curl -x proxy:port url` | Use proxy |
-
-## Firewall (iptables / nftables)
+## Интерфейсы и маршрутизация
 
 | Command | Description |
 |---------|-------------|
-| `iptables -L -n` | List rules |
-| `iptables -A INPUT -p tcp --dport 22 -j ACCEPT` | Allow SSH |
-| `iptables -A INPUT -j DROP` | Default deny |
-| `iptables-save > rules.v4` | Save rules |
-| `ufw status` | Ubuntu firewall status |
-| `ufw allow 22/tcp` | Allow port |
-| `ufw enable` | Enable firewall |
+| `ip addr` | Показать интерфейсы и IP-адреса |
+| `ip link` | Показать состояние интерфейсов |
+| `ip route` | Показать таблицу маршрутизации |
+| `ip route add 10.0.0.0/8 via gw` | Добавить статический маршрут |
+| `ip neigh` | Таблица ARP/соседей |
+| `ifconfig` | Устаревшая настройка интерфейса |
+| `route -n` | Устаревшая таблица маршрутизации |
+| `ethtool eth0` | Аппаратные сведения об интерфейсе |
 
-## Packet Capture
+## Примеры curl
 
 | Command | Description |
 |---------|-------------|
-| `tcpdump -i eth0` | Capture on interface |
-| `tcpdump -i eth0 port 80` | Filter by port |
-| `tcpdump -i eth0 host 1.2.3.4` | Filter by host |
-| `tcpdump -i eth0 -w file.pcap` | Write to file |
-| `tcpdump -r file.pcap` | Read from file |
+| `curl -X POST -d '{"k":"v"}' -H "Content-Type: application/json" url` | Отправить JSON методом POST |
+| `curl -u user:pass url` | Базовая аутентификация |
+| `curl -H "Authorization: Bearer TOKEN" url` | Токен Bearer |
+| `curl -o file url` | Скачать в файл |
+| `curl -L url` | Следовать перенаправлениям |
+| `curl -k url` | Пропустить проверку TLS |
+| `curl -w "%{http_code}" -o /dev/null -s url` | Только HTTP-код ответа |
+| `curl --max-time 5 url` | Задать тайм-аут |
+| `curl -x proxy:port url` | Использовать прокси |
+
+## Межсетевой экран (iptables / nftables)
+
+| Command | Description |
+|---------|-------------|
+| `iptables -L -n` | Показать правила |
+| `iptables -A INPUT -p tcp --dport 22 -j ACCEPT` | Разрешить SSH |
+| `iptables -A INPUT -j DROP` | Запретить всё остальное по умолчанию |
+| `iptables-save > rules.v4` | Сохранить правила |
+| `ufw status` | Состояние межсетевого экрана Ubuntu |
+| `ufw allow 22/tcp` | Разрешить порт |
+| `ufw enable` | Включить межсетевой экран |
+
+## Захват сетевых пакетов
+
+| Command | Description |
+|---------|-------------|
+| `tcpdump -i eth0` | Захватывать пакеты на интерфейсе |
+| `tcpdump -i eth0 port 80` | Фильтровать по порту |
+| `tcpdump -i eth0 host 1.2.3.4` | Фильтровать по узлу |
+| `tcpdump -i eth0 -w file.pcap` | Записать в файл |
+| `tcpdump -r file.pcap` | Прочитать из файла |

@@ -1,5 +1,5 @@
 ---
-title: Error Handling
+title: Обработка ошибок в Bash
 module: bash
 duration_min: 15
 difficulty: intermediate
@@ -7,25 +7,25 @@ tags: [bash, error-handling, set-e, trap, exit-codes, pipefail]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Bash's default behavior is dangerous: it continues executing after errors. A failed `cp` in the middle of a deployment script doesn't stop the script — it silently proceeds to the next line, potentially leaving your system in a half-deployed, inconsistent state. This matters in DevOps because scripts drive production deployments, database migrations, infrastructure provisioning, and backup jobs. A script that fails silently is worse than one that crashes loudly, because you may not discover the problem until you need the backup or the migration result.
+Поведение Bash по умолчанию опасно: после ошибки выполнение продолжается. Если `cp` завершится неудачно посреди скрипта развёртывания, скрипт перейдёт к следующей строке и может оставить систему в частично обновлённом, несогласованном состоянии. Это особенно важно в DevOps, где скрипты управляют production-развёртываниями, миграциями баз данных, подготовкой инфраструктуры и резервным копированием. Тихий сбой хуже явного падения: проблему можно обнаружить лишь тогда, когда понадобится резервная копия или результат миграции.
 
-The core design principle is *fail fast, clean up always*. The combination of `set -euo pipefail` makes the shell treat errors like a typed language would: undefined variables and failed commands are hard stops, not warnings. The `trap` builtin adds the cleanup guarantee — you register a function once, and the shell calls it whether the script succeeds, hits an error, or receives a signal. This turns Bash from a fragile sequence of commands into something with predictable lifecycle semantics.
+Основной принцип — *быстро завершаться при ошибке и всегда выполнять очистку*. Комбинация `set -euo pipefail` заставляет shell строго реагировать на сбои: неопределённые переменные и неудачные команды становятся причиной остановки, а не просто предупреждением. Встроенная команда `trap` обеспечивает очистку: зарегистрированная функция вызывается при успешном завершении, ошибке или получении сигнала. Так последовательность команд Bash становится более предсказуемой.
 
-In the broader DevOps toolchain, robust error handling in Bash is foundational. CI/CD pipelines (Jenkins, GitHub Actions, GitLab CI) execute shell steps and use exit codes to determine pass/fail. Infrastructure tools like Ansible run shell commands and check return codes. Docker `ENTRYPOINT` and `RUN` instructions are shell commands — a `RUN` step that exits non-zero breaks the image build. Understanding Bash error handling is not just a scripting skill; it's a prerequisite for understanding how every other tool in the ecosystem signals success and failure.
+Надёжная обработка ошибок Bash важна для всего DevOps-стека. CI/CD-пайплайны (Jenkins, GitHub Actions, GitLab CI) выполняют shell-команды и определяют успех по кодам возврата. Ansible проверяет результаты запуска команд, а инструкции Docker `ENTRYPOINT` и `RUN` также выполняют команды: ненулевой код `RUN` ломает сборку образа. Понимание обработки ошибок в Bash необходимо, чтобы разбираться в том, как другие инструменты сообщают об успехе и сбоях.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### set -e — Exit on Error
+### set -e — завершение при ошибке
 
 ```bash
 set -e   # or: set -o errexit
 ```
 
-With `set -e`, the shell exits immediately when any simple command returns a non-zero exit code. Without it, failures are silently ignored:
+С `set -e` shell немедленно завершается, если простая команда возвращает ненулевой код. Без этого режима ошибки могут быть проигнорированы:
 
 ```bash
 # Without set -e — dangerous in a deployment context
@@ -34,17 +34,17 @@ cp important.file /nonexistent/  # also fails
 echo "Deployment complete"       # still runs — you think it succeeded
 ```
 
-With `set -e`, the script stops at the first failure and the false "success" message never prints.
+С `set -e` скрипт останавливается при первой ошибке, и ложное сообщение об успехе не выводится.
 
-**Exception — commands whose exit codes are explicitly tested are not subject to `set -e`:**
+**Исключение: `set -e` не применяется к командам, код завершения которых проверяется явно:**
 
-| Context | Subject to `set -e`? |
+| Контекст | Действует ли `set -e`? |
 |---|---|
-| Simple command: `cp a b` | Yes |
-| Condition in `if`: `if grep -q x file` | No |
-| Left side of `&&` or `\|\|` | No |
-| Commands in `while`/`until` condition | No |
-| Last command in a pipeline (without `pipefail`) | Yes |
+| Простая команда: `cp a b` | Да |
+| Условие `if`: `if grep -q x file` | Нет |
+| Левая часть `&&` или `\|\|` | Нет |
+| Команды в условии `while`/`until` | Нет |
+| Последняя команда конвейера (без `pipefail`) | Да |
 
 ```bash
 set -e
@@ -60,7 +60,7 @@ systemctl is-active nginx || echo "nginx is down"
 some_command_that_may_fail || true
 ```
 
-**`set -e` gotcha — subshell command substitution:** `set -e` does not trigger on failures inside `$(...)` when the substitution is part of a variable assignment. The assignment itself returns 0 even if the subshell fails. This is one of the most common sources of hidden bugs.
+**Особенность `set -e` при подстановке команд в subshell:** ошибки внутри `$(...)` могут не вызвать завершение, если подстановка используется в присваивании переменной. Само присваивание возвращает 0, даже если subshell завершился с ошибкой. Это частый источник скрытых дефектов.
 
 ```bash
 set -e
@@ -73,17 +73,17 @@ git log -1 --format=%H > /dev/null   # will exit on failure
 LAST_COMMIT=$(git log -1 --format=%H)
 ```
 
-**`set -e` gotcha — functions:** `set -e` applies inside functions, but if a function call appears in a compound context (like `if myfunc; then`), failures inside the function are suppressed. Test functions directly as simple commands, not inside conditions, if you want `set -e` to catch their internal failures.
+**Особенность `set -e` в функциях:** режим действует внутри функций, но если вызов функции находится в составном условии (например, `if myfunc; then`), ошибки внутри функции подавляются. Если нужно, чтобы `set -e` ловил внутренние ошибки, вызывайте функцию как обычную команду, а не внутри условия.
 
 ---
 
-### set -u — Undefined Variables are Errors
+### set -u — ошибка при незаданных переменных
 
 ```bash
 set -u   # or: set -o nounset
 ```
 
-Without `set -u`, referencing an unset variable silently expands to an empty string. The consequences range from wrong output to catastrophic data loss:
+Без `set -u` обращение к незаданной переменной незаметно превращается в пустую строку. Последствия варьируются от неверного вывода до катастрофической потери данных:
 
 ```bash
 # Without set -u:
@@ -91,17 +91,17 @@ echo "$UNSET_VAR/config"    # prints: /config  (wrong path)
 rm -rf "$UNSET_VAR/"        # becomes: rm -rf /  (disaster)
 ```
 
-With `set -u`, the script exits immediately with `bash: UNSET_VAR: unbound variable`.
+С `set -u` скрипт немедленно завершается с сообщением `bash: UNSET_VAR: unbound variable`.
 
-**Providing safe defaults with parameter expansion:**
+**Безопасные значения по умолчанию через раскрытие параметров:**
 
-| Syntax | Behavior |
+| Синтаксис | Поведение |
 |---|---|
-| `${VAR:-default}` | Use `default` if VAR is unset **or empty** |
-| `${VAR-default}` | Use `default` only if VAR is unset (empty string passes through) |
-| `${VAR:?error msg}` | Exit with error message if VAR is unset or empty |
-| `${VAR:=default}` | Assign `default` to VAR if unset or empty, then expand |
-| `${VAR:+alternate}` | Use `alternate` if VAR is set and non-empty; otherwise empty string |
+| `${VAR:-default}` | Использовать `default`, если VAR не задана **или пуста** |
+| `${VAR-default}` | Использовать `default`, только если VAR не задана (пустая строка сохраняется) |
+| `${VAR:?error msg}` | Завершиться с сообщением об ошибке, если VAR не задана или пуста |
+| `${VAR:=default}` | Присвоить VAR значение `default`, если она не задана или пуста, затем раскрыть её |
+| `${VAR:+alternate}` | Использовать `alternate`, если VAR задана и не пуста; иначе пустая строка |
 
 ```bash
 set -u
@@ -112,7 +112,7 @@ CONFIG_FILE="${CONFIG_FILE:?CONFIG_FILE must be set}"        # hard requirement 
 OPTIONAL_FLAG="${OPTIONAL_FLAG:+--flag=${OPTIONAL_FLAG}}"   # only include if set
 ```
 
-**`set -u` gotcha with arrays:** accessing an unset array or referencing `$@` when no positional arguments were passed triggers the error. The idiomatic safe expansion for arrays and `$@` is the `${array[@]+"${array[@]}"}` pattern:
+**Особенность `set -u` с массивами:** обращение к незаданному массиву или `$@` без позиционных аргументов вызывает ошибку. Безопасный шаблон раскрытия массива и `$@` — `${array[@]+"${array[@]}"}`.
 
 ```bash
 set -u
@@ -130,13 +130,13 @@ rsync "${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}" /src/ /dst/
 
 ---
 
-### set -o pipefail — Catch Pipe Failures
+### set -o pipefail — обнаружение ошибок в конвейере
 
 ```bash
 set -o pipefail
 ```
 
-Without `pipefail`, the exit code of a pipeline is the exit code of the **last command only**. This means failures earlier in the pipe are silently discarded, even with `set -e` active:
+Без `pipefail` код завершения конвейера равен коду **только последней команды**. Ошибки предыдущих команд незаметно теряются, даже если включён `set -e`:
 
 ```bash
 # Without pipefail:
@@ -147,7 +147,7 @@ cat /nonexistent_file | grep "ERROR" | wc -l
 # Pipeline exit code = 0 — script continues as if everything succeeded
 ```
 
-With `pipefail`, the pipeline exit code is the exit code of the **rightmost command that failed**:
+С `pipefail` код конвейера равен коду **самой правой команды, завершившейся с ошибкой**:
 
 ```bash
 set -eo pipefail
@@ -155,7 +155,7 @@ cat /nonexistent_file | grep "ERROR" | wc -l
 # Pipeline exit code = 1 (from cat) — script exits here
 ```
 
-**`pipefail` interaction with `grep`:** `grep` returns exit code 1 when it finds no matches — this is often correct behavior, not an error. With `pipefail` active, a pipeline ending in grep will exit 1 when there are no matches, which `set -e` will treat as a failure.
+**Взаимодействие `pipefail` с `grep`:** `grep` возвращает 1, если совпадений нет. Это часто нормальное поведение, а не ошибка. При включённом `pipefail` конвейер, заканчивающийся на `grep`, вернёт 1 при отсутствии совпадений, и `set -e` воспримет это как сбой.
 
 ```bash
 set -eo pipefail
@@ -168,7 +168,7 @@ ERROR_COUNT=$(journalctl -u nginx | grep -c "error" || true)
 echo "Found $ERROR_COUNT errors"
 ```
 
-**Inspecting individual pipe stage exit codes:** the `PIPESTATUS` array captures the exit code of each stage in the most recent pipeline. Use it when you need to distinguish which stage failed.
+**Проверка кодов завершения этапов конвейера:** массив `PIPESTATUS` содержит код каждой команды последнего конвейера. Используйте его, если нужно определить, какой именно этап завершился с ошибкой.
 
 ```bash
 set -o pipefail
@@ -183,18 +183,18 @@ echo "upload_to_s3:    ${pipe_codes[2]}"
 
 ---
 
-### The Standard Header
+### Стандартный заголовок скрипта
 
-Every production Bash script should start with:
+Каждый production-скрипт Bash должен начинаться с:
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
 ```
 
-Using `/usr/bin/env bash` instead of `/bin/bash` is more portable — it finds bash on `$PATH`, which matters on macOS (where `/bin/bash` is an ancient Bash 3.2), NixOS, and container images where bash lives in a non-standard location.
+Использование `/usr/bin/env bash` вместо `/bin/bash` более переносимо: Bash ищется в `$PATH`. Это важно для macOS (где `/bin/bash` — устаревшая версия 3.2), NixOS и контейнеров с нестандартным расположением Bash.
 
-Some teams extend this header with:
+Некоторые команды дополняют этот заголовок:
 
 ```bash
 #!/usr/bin/env bash
@@ -202,13 +202,13 @@ set -euo pipefail
 IFS=$'\n\t'   # safer word splitting: only newline and tab, not space
 ```
 
-Changing `IFS` prevents word-splitting bugs on filenames or values that contain spaces. Without it, a loop like `for f in $(ls)` will break on filenames with spaces. It's especially valuable in scripts that process file lists, user input, or external command output. The tradeoff is that some idioms (space-delimited string splitting) stop working — but those idioms are usually better replaced with arrays anyway.
+Изменение `IFS` предотвращает ошибки разбиения имён файлов и значений, содержащих пробелы. Без этого цикл вроде `for f in $(ls)` ломается на именах с пробелами. Это особенно полезно в скриптах, обрабатывающих списки файлов, пользовательский ввод или вывод внешних команд. Некоторые шаблоны (разбиение строк по пробелам) перестанут работать, но их обычно лучше заменить массивами.
 
 ---
 
-### trap — Cleanup on Exit
+### trap — очистка при завершении
 
-`trap` registers a command or function to execute when the shell receives a signal or exits. The most important use in scripts is guaranteed cleanup — temporary files, locks, and partially-modified state are cleaned up whether the script succeeds, errors, or is interrupted.
+`trap` регистрирует команду или функцию, которая выполняется при получении сигнала или завершении shell. Главное применение — гарантированная очистка: временные файлы, блокировки и частично изменённое состояние убираются как при успехе, так и при ошибке или прерывании скрипта.
 
 ```bash
 #!/usr/bin/env bash
@@ -222,19 +222,19 @@ process "$TMPDIR/source_data.csv" > output.csv
 # $TMPDIR removed automatically — success, error, or signal
 ```
 
-**Trap signal targets:**
+**События, на которые реагирует trap:**
 
-| Signal/Pseudo-signal | When it fires |
+| Сигнал / псевдосигнал | Когда срабатывает |
 |---|---|
-| `EXIT` | Script exits for any reason (normal, error, or signal) |
-| `ERR` | Any command returns non-zero (only with `set -e` reliably) |
-| `INT` | User presses Ctrl+C (SIGINT, signal 2) |
-| `TERM` | Process receives SIGTERM (e.g., `kill <pid>`) |
-| `HUP` | Terminal hangup (SIGHUP, e.g., SSH session drops) |
+| `EXIT` | Скрипт завершился по любой причине (нормально, с ошибкой или по сигналу) |
+| `ERR` | Команда вернула ненулевой код (надёжно работает только с `set -e`) |
+| `INT` | Пользователь нажал Ctrl+C (SIGINT, сигнал 2) |
+| `TERM` | Процесс получил SIGTERM (например, `kill <pid>`) |
+| `HUP` | Потеря терминала (SIGHUP, например, разрыв SSH-сессии) |
 
-**Prefer `EXIT` over `ERR`** for cleanup. `ERR` does not fire in all failure contexts (it's suppressed in some compound commands), while `EXIT` fires unconditionally whenever the script terminates.
+**Для очистки предпочитайте `EXIT`, а не `ERR`.** `ERR` срабатывает не во всех контекстах ошибок, тогда как `EXIT` выполняется при любом завершении скрипта.
 
-**`trap` gotcha — `$?` in the trap handler:** inside an `EXIT` trap, `$?` holds the exit code that triggered the exit. Capture it immediately as the first operation in your cleanup function — any command executed after that, including `echo`, will overwrite `$?`.
+**Особенность `trap`: `$?` в обработчике:** внутри `EXIT` trap переменная `$?` содержит код завершения, который привёл к выходу. Сохраните его первой операцией в функции очистки: любая последующая команда, даже `echo`, перезапишет `$?`.
 
 ```bash
 cleanup() {
@@ -248,7 +248,7 @@ cleanup() {
 trap cleanup EXIT
 ```
 
-**Stacking traps — each `trap` call replaces the previous one for that signal.** To add behavior without losing existing cleanup, chain functions explicitly:
+**Несколько trap:** каждый вызов `trap` заменяет предыдущий обработчик того же сигнала. Чтобы добавить действие, не потеряв существующую очистку, явно объедините функции:
 
 ```bash
 cleanup_files() { rm -rf "$TMPDIR"; }
@@ -265,7 +265,7 @@ cleanup_all() {
 trap cleanup_all EXIT
 ```
 
-**`trap` and subshells:** traps are not inherited by subshells created with `(...)`. If you spawn a subshell, define its own traps inside it. Child processes created with `$(...)` or `&` also do not inherit traps.
+**`trap` и subshell:** обработчики не наследуются subshell, созданными через `(...)`. Если запускаете subshell, задайте обработчики внутри него. Дочерние процессы, созданные через `$(...)` или `&`, также не наследуют trap.
 
 ---
 
@@ -386,7 +386,7 @@ set -x
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Robust Deployment Script with Automatic Rollback
 
@@ -644,7 +644,7 @@ export DB_HOST=db.internal DB_PORT=5432 DEPLOY_ENV=staging AWS_REGION=us-east-1
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Find the Silent Failures
 
@@ -731,7 +731,7 @@ Run the script four times, setting `FAIL_AT_STAGE` to 1, 2, 3, and 4 in turn, an
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Run `bash -c 'exit 42'` and immediately print its exit code using `echo $?`. Write both commands semicolon-separated on one line.
 

@@ -51,12 +51,12 @@ export default function ModuleQuiz({ modules }) {
   }
 
   if (loading) return (
-    <div className="p-6 text-gray-400 dark:text-gray-500 text-sm">Loading questions…</div>
+    <div className="p-6 text-gray-400 dark:text-gray-500 text-sm">Загружаем вопросы…</div>
   )
 
   if (error) return (
     <div className="p-6">
-      <Link to={`/module/${moduleSlug}`} className="text-sm text-gray-400 hover:text-emerald-600 transition-colors">← Back</Link>
+      <Link to={`/module/${moduleSlug}`} className="text-sm text-gray-400 hover:text-emerald-600 transition-colors">← Назад</Link>
       <p className="mt-4 text-sm text-red-500">{error}</p>
     </div>
   )
@@ -65,7 +65,7 @@ export default function ModuleQuiz({ modules }) {
     <div className="p-6 max-w-xl">
       <Link to={`/module/${moduleSlug}`} className="text-sm text-gray-400 dark:text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">← {mod?.title}</Link>
       <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">
-        No quiz questions yet — open individual lessons to generate them first.
+        Пока нет вопросов для теста — откройте отдельные уроки, чтобы сначала сгенерировать их.
       </p>
     </div>
   )
@@ -74,7 +74,7 @@ export default function ModuleQuiz({ modules }) {
     <div className="p-6 max-w-xl">
       <Link to={`/module/${moduleSlug}`} className="text-sm text-gray-400 dark:text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">← {mod?.title}</Link>
       <div className="mt-6">
-        <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-1">Module Quiz</h1>
+        <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-1">Тест по модулю</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
           {questions.length} questions across all lessons in {mod?.title}.
         </p>
@@ -95,11 +95,11 @@ export default function ModuleQuiz({ modules }) {
       <div className="p-6 max-w-xl">
         <Link to={`/module/${moduleSlug}`} className="text-sm text-gray-400 dark:text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">← {mod?.title}</Link>
         <div className="mt-6 flex flex-col gap-4">
-          <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Quiz Complete</h1>
+          <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Тест завершён</h1>
           <div className={`text-5xl font-bold ${color}`}>{pct}%</div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{score} / {questions.length} correct</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{score} / {questions.length} правильных ответов</p>
           {xpEarned > 0 && (
-            <p className="text-xs font-medium text-amber-600 dark:text-amber-400">+{xpEarned} XP earned</p>
+            <p className="text-xs font-medium text-amber-600 dark:text-amber-400">+{xpEarned} XP получено</p>
           )}
           <div className="flex gap-3 pt-2">
             <button

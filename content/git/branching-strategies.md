@@ -1,5 +1,5 @@
 ---
-title: Branching Strategies
+title: Стратегии ветвления Git
 module: git
 duration_min: 20
 difficulty: intermediate
@@ -7,19 +7,19 @@ tags: [git, branches, gitflow, trunk-based, feature-flags, release]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-A branching strategy is the team agreement on how work flows through git into production. At its core, it answers three questions: where does new work start, where does it land, and how does it get to users? The wrong strategy creates merge hell — long-lived branches diverge, conflicts compound, and integrating becomes a multi-day project in itself. The right strategy matches your deployment frequency, team size, and operational maturity. Two strategies dominate the industry: Gitflow, which organizes work around scheduled releases with explicit stabilization phases, and trunk-based development (TBD), which keeps everyone integrated on a single branch at all times.
+Стратегия ветвления — это договорённость команды о том, как изменения проходят через Git и попадают в production. Она отвечает на три вопроса: откуда начинается новая работа, куда вливаются изменения и как они доходят до пользователей. Неудачная стратегия создаёт «ад слияний»: долгоживущие ветки расходятся, конфликты накапливаются, а интеграция превращается в многодневную задачу. Хорошая стратегия соответствует частоте релизов, размеру команды и зрелости процессов. Наиболее распространены Gitflow с плановыми релизами и отдельными этапами стабилизации и trunk-based development (TBD), при котором команда постоянно интегрирует изменения в одну основную ветку.
 
-The core design tension is between isolation and integration. Isolation (long-lived branches) lets developers work independently without breaking each other, but defers the pain of integration until the end, where it concentrates. Continuous integration (short-lived branches or direct commits) distributes that pain evenly — every commit is a small integration — but requires strong automated test coverage and feature flag infrastructure to keep the main branch deployable at all times. This isn't a preference debate; it's an engineering tradeoff that depends on your constraints.
+Главный компромисс — между изоляцией и интеграцией. Долгоживущие ветки позволяют разработчикам работать независимо, но откладывают интеграционные конфликты на конец, когда они накапливаются. Непрерывная интеграция через короткоживущие ветки или прямые коммиты распределяет эту нагрузку: каждый коммит становится небольшим этапом интеграции. Однако для этого нужны надёжные автоматические тесты и feature flags, чтобы основная ветка всегда оставалась пригодной для развёртывания. Это не спор о предпочтениях, а инженерный компромисс, зависящий от ограничений проекта.
 
-In the broader DevOps toolchain, your branching strategy is the upstream input to your CI/CD pipeline. Branch names or target branches typically control which pipelines run, what environments get deployed, and whether a merge is allowed. A Gitflow `release/*` branch might trigger a staging deploy and a QA notification. A trunk-based push to `main` might trigger immediate production deployment. Getting the strategy wrong cascades downstream: flaky branch protection rules, confused pipeline triggers, and deployment bottlenecks that slow down every team touching the codebase.
+Стратегия ветвления напрямую влияет на CI/CD-пайплайн. Имя ветки и целевая ветка часто определяют, какие проверки запускаются, в какую среду выполняется развёртывание и разрешено ли слияние. В Gitflow ветка `release/*` может запускать деплой в staging и уведомление QA, а push в `main` при trunk-based подходе — немедленное развёртывание в production. Ошибочный выбор приводит к проблемам дальше по цепочке: нестабильным правилам защиты веток, неверным триггерам пайплайна и задержкам релизов.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### The Core Branch Types
+### Основные типы веток
 
 | Branch | Purpose | Merged into | Lifetime |
 |---|---|---|---|
@@ -135,7 +135,7 @@ git push origin --delete hotfix/1.4.1-fix-auth-bypass
 
 ---
 
-### Trunk-Based Development (TBD)
+### Trunk-based development (TBD)
 
 In trunk-based development, `main` (the trunk) is the only permanent branch. All developers integrate directly to `main`, or via feature branches that live no longer than one or two days. There are no `develop` or `release` branches — instead, every commit to `main` is expected to be deployable, and incomplete features are hidden behind feature flags rather than isolated on branches.
 
@@ -373,7 +373,7 @@ fi
 
 ---
 
-### Branch Protection Rules
+### Правила защиты веток
 
 Branch protection rules are the enforcement layer for your branching strategy. Without them, the strategy is a social agreement that breaks under deadline pressure — someone will push directly to `main` at 11pm during an incident and bypass every process.
 
@@ -419,7 +419,7 @@ workflow:
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Setting Up a New Repo with Trunk-Based Development
 
@@ -684,7 +684,7 @@ jobs:
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Simulate a Gitflow Release Cycle
 
@@ -721,7 +721,7 @@ Resolve the conflict deliberately — choose `60` as the final value and explain
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Initialize a repo with `main` as the default branch and confirm the starting branch name.
 

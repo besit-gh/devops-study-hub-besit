@@ -1,5 +1,5 @@
 ---
-title: Compute Engine and Cloud Storage
+title: Compute Engine и Cloud Storage
 module: gcp
 duration_min: 25
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [gcp, compute-engine, cloud-storage, gcs, iam, vpc, gsutil, gcloud]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Compute Engine is GCP's Infrastructure-as-a-Service VM offering — the layer where you get raw, configurable Linux or Windows machines running in Google's network. Cloud Storage (GCS) is GCP's globally consistent, strongly durable object store. For a DevOps engineer, these two services are where most foundational work happens: VMs run your workloads, and GCS holds build artifacts, Terraform state, container image layers, backups, and static assets. Understanding both deeply — not just the happy-path commands — is a prerequisite for almost every other GCP service you'll operate.
+Compute Engine — сервис виртуальных машин Infrastructure as a Service в GCP, предоставляющий настраиваемые Linux- и Windows-машины в сети Google. Cloud Storage (GCS) — объектное хранилище с высокой надёжностью и согласованностью данных. Для DevOps эти два сервиса лежат в основе многих задач: VM выполняют рабочие нагрузки, а GCS хранит артефакты сборки, Terraform state, слои образов, резервные копии и статические файлы. Глубокое понимание обоих сервисов, включая диагностику ошибок, необходимо для работы с большинством других компонентов GCP.
 
-GCP's design philosophy differs from AWS in one important structural way: the **resource hierarchy**. Every resource belongs to a Project, Projects belong to Folders, and Folders belong to an Organization. IAM policies propagate downward through this tree. This means access control is not purely flat — a permission granted at the Organization level is inherited by every VM and bucket in the entire company. This makes the hierarchy a lever for security at scale, and a footgun if you grant broad permissions carelessly.
+Важное структурное отличие GCP от AWS — **иерархия ресурсов**. Каждый ресурс принадлежит Project, проекты входят в Folders, а папки — в Organization. Политики IAM наследуются вниз по этой иерархии. Поэтому управление доступом не плоское: разрешение, выданное на уровне Organization, может распространяться на все VM и бакеты компании. Такая иерархия помогает централизовать безопасность, но становится источником риска при неосторожной выдаче широких прав.
 
 In the DevOps toolchain, Compute Engine and GCS sit at the infrastructure layer beneath Kubernetes, CI/CD pipelines, and application code. A CI system pushes build artifacts to GCS; a Managed Instance Group pulls them during VM startup. Terraform state lives in a GCS backend. Log exports land in GCS for long-term archival. Even if your production workloads run on GKE, you are almost certainly interacting with Compute Engine and GCS constantly.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### gcloud SDK Setup and Configuration
 
@@ -452,7 +452,7 @@ gsutil iam ch \
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Immutable VM Fleet with Rolling Deploys
 
@@ -732,7 +732,7 @@ terraform apply -auto-approve
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Launch a Private VM and Access It via IAP
 
@@ -783,7 +783,7 @@ Run a compute job on a Spot VM and demonstrate that preemption and restart produ
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 6. Extract the instance zone from a GCP resource path. Run: `echo "projects/my-project/zones/us-central1-a/instances/web-server" | cut -d/ -f4`
 

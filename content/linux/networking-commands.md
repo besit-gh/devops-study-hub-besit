@@ -1,5 +1,5 @@
 ---
-title: Networking Commands
+title: Сетевые команды Linux
 module: linux
 duration_min: 15
 difficulty: intermediate
@@ -7,21 +7,21 @@ tags: [ss, netstat, curl, ip, dig, ping, traceroute, tcpdump, networking]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Networking commands are your diagnostic toolkit on Linux servers — used to check connectivity, inspect open ports, trace traffic routes, query DNS, and test HTTP endpoints. In a DevOps role, you'll reach for these tools every time a deployment fails health checks, a microservice can't talk to another, or a customer reports that a service is down. Knowing which tool to use and in what order separates engineers who resolve incidents in five minutes from those who spend an hour guessing.
+Сетевые команды — основной набор инструментов диагностики Linux-серверов. Они помогают проверять связность, изучать открытые порты, отслеживать маршруты трафика, выполнять DNS-запросы и тестировать HTTP-точки. В DevOps к ним обращаются, когда развёртывание не проходит health checks, микросервисы не могут связаться друг с другом или пользователи сообщают о недоступности сервиса. Понимание того, какой инструмент и в каком порядке использовать, отличает быструю диагностику от часовых догадок.
 
-The Linux networking toolset evolved in two waves: the older `net-tools` package (`ifconfig`, `netstat`, `route`) which is deprecated but still installed on most systems, and the modern `iproute2` suite (`ip`, `ss`) which maps directly to the kernel's netlink interface and provides more accurate, richer output. You need to know both because you'll inherit servers running either generation, and interview questions reference both.
+Сетевые инструменты Linux развивались в два этапа. Старый пакет `net-tools` (`ifconfig`, `netstat`, `route`) считается устаревшим, но всё ещё встречается на многих системах. Современный набор `iproute2` (`ip`, `ss`) взаимодействует с ядром через netlink и предоставляет более точные и подробные данные. Нужно знать оба варианта: в работе могут встретиться серверы с любым набором, а на собеседованиях спрашивают и о старых командах.
 
-In the broader DevOps toolchain, these commands sit at the foundation layer. Kubernetes networking, service meshes, load balancer configuration, TLS termination, and CI/CD health checks all depend on the same underlying primitives: does the interface have an IP, is the port open, does DNS resolve, does the packet reach its destination. Every layer of abstraction above this still breaks down to these fundamentals when something goes wrong.
+В DevOps эти команды относятся к базовому уровню. Сеть Kubernetes, service mesh, балансировщики нагрузки, завершение TLS и health checks в CI/CD зависят от одних и тех же основ: назначен ли IP интерфейсу, открыт ли порт, разрешается ли DNS-имя и доходит ли пакет до назначения. При сбое любой более высокий уровень в конечном счёте сводится к проверке этих фундаментальных вещей.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### The Diagnostic Hierarchy
+### Последовательность диагностики
 
-Treat network troubleshooting as a layered process. Working from Layer 1 up prevents you from debugging DNS when the interface is down.
+Диагностируйте сеть последовательно, от нижних уровней к верхним. Так вы не будете искать проблему в DNS, если сетевой интерфейс вообще не работает.
 
 | Step | Question | Tool |
 |------|----------|------|
@@ -33,13 +33,13 @@ Treat network troubleshooting as a layered process. Working from Layer 1 up prev
 | 6 | Is DNS resolving to the right address? | `dig`, `nslookup` |
 | 7 | What is actually on the wire? | `tcpdump` |
 
-**Don't skip steps.** A misconfigured service listening on `127.0.0.1` instead of `0.0.0.0` (step 4) looks identical from the outside to a firewall block (step 5). Confirming step 4 first eliminates one hypothesis immediately.
+**Не пропускайте шаги.** Служба, слушающая `127.0.0.1` вместо `0.0.0.0` (шаг 4), снаружи выглядит так же, как блокировка межсетевым экраном (шаг 5). Сначала проверьте шаг 4 — это сразу исключит одну из гипотез.
 
 ---
 
-### `ip` — Interface and Routing Management
+### `ip` — интерфейсы и маршрутизация
 
-`ip` is the modern replacement for `ifconfig`, `route`, and `arp`. It talks directly to the kernel via netlink sockets and gives you authoritative state rather than a cached view.
+`ip` — современная замена `ifconfig`, `route` и `arp`. Команда напрямую взаимодействует с ядром через netlink-сокеты и показывает актуальное состояние, а не устаревшие кэшированные данные.
 
 ```bash
 # Show all interfaces with IP addresses, MAC addresses, and link state
@@ -86,9 +86,9 @@ ip addr del 192.168.50.10/24 dev eth1
 
 ---
 
-### `ss` — Socket Statistics
+### `ss` — статистика сокетов
 
-`ss` queries the kernel's socket tables directly. It is faster and more detailed than `netstat`, and it is what you should use on any modern system (kernel 2.6+).
+`ss` напрямую запрашивает таблицы сокетов ядра. Она быстрее и информативнее `netstat`, поэтому на современных системах (ядро 2.6 и новее) предпочтительнее использовать именно её.
 
 ```bash
 # The most useful single command: listening TCP and UDP with process info
@@ -120,7 +120,7 @@ ss -s
 watch -n1 'ss -s'
 ```
 
-**Read the `Local Address` column carefully.** `0.0.0.0:8080` means the service accepts connections on all interfaces. `127.0.0.1:8080` means it only accepts local connections — external clients will get "connection refused" or a timeout depending on firewall rules. This is the single most common misconfiguration in service deployments.
+**Внимательно смотрите на столбец `Local Address`.** `0.0.0.0:8080` означает, что служба принимает соединения на всех интерфейсах. `127.0.0.1:8080` означает, что соединения принимаются только локально: внешние клиенты получат отказ или тайм-аут в зависимости от правил firewall. Это одна из самых распространённых ошибок при развёртывании служб.
 
 | Local Address | Meaning | Accessible from |
 |---------------|---------|----------------|
@@ -133,7 +133,7 @@ watch -n1 'ss -s'
 
 ---
 
-### `netstat` — Legacy Socket Statistics
+### `netstat` — устаревшая статистика сокетов
 
 `netstat` comes from the `net-tools` package. It is deprecated but ships on almost every Linux distro you'll encounter. Know it for legacy systems and interview recognition.
 
@@ -318,7 +318,7 @@ curl --unix-socket /var/run/docker.sock http://localhost/version
 
 ---
 
-### `dig` — DNS Interrogation
+### `dig` — диагностика DNS
 
 `dig` (Domain Information Groper) is the standard tool for querying DNS. It gives you full control over which record type to request, which server to ask, and shows exactly what the resolver returned — including TTLs, authoritative flags, and the full answer chain.
 
@@ -380,7 +380,7 @@ dig +short google.com A | grep -q . && echo "resolves" || echo "NXDOMAIN"
 
 ---
 
-### `tcpdump` — Packet Capture
+### `tcpdump` — захват пакетов
 
 `tcpdump` captures raw packets off the wire. It's the tool of last resort when nothing else explains what's happening — you can see exactly what bytes are being exchanged, verify that packets are arriving, and observe protocol handshakes directly.
 
@@ -450,7 +450,7 @@ tcpdump -i eth0 -w /tmp/cap.pcap -C 10 -W 5 port 8080
 
 ---
 
-### `nmap` — Port Scanning and Service Discovery
+### `nmap` — сканирование портов и обнаружение служб
 
 `nmap` goes beyond `ss` — it lets you probe ports from the perspective of an external host, test firewall rules, and identify what services are actually reachable from a given network position.
 
@@ -503,7 +503,7 @@ diff scan_before.txt scan_after.txt
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Diagnosing a Service That Fails External Health Checks
 
@@ -673,7 +673,7 @@ curl -v --tls-max 1.3 https://upstream.internal:443/api/check 2>&1 | grep "SSL c
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Map What's Listening on a Server
 
@@ -729,7 +729,7 @@ This exercise requires `tcpdump` and root access (or a VM you control).
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Extract the CIDR prefix length from a network address.
 

@@ -1,5 +1,5 @@
 ---
-title: REST API Fundamentals
+title: Основы REST API
 module: postman
 duration_min: 20
 difficulty: beginner
@@ -7,9 +7,9 @@ tags: [postman, rest, http, api, request, response, headers, status-codes, curl]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-REST (Representational State Transfer) is the dominant API style for web services, and understanding it is table stakes for DevOps work. Every modern infrastructure tool — Kubernetes, Vault, Terraform Cloud, GitHub Actions, PagerDuty, Datadog — exposes a REST API. Automating deployments, writing infrastructure-as-code integrations, building runbooks, and debugging production incidents all require you to read, construct, and reason about HTTP requests and responses. If you cannot fluently read an API response and know why a `403` is different from a `401`, you will be blocked constantly.
+REST (Representational State Transfer) — наиболее распространённый стиль API для веб-сервисов, и его понимание необходимо для работы в DevOps. Современные инфраструктурные инструменты — Kubernetes, Vault, Terraform Cloud, GitHub Actions, PagerDuty и Datadog — предоставляют REST API. Автоматизация развёртывания, интеграции IaC, создание runbook и диагностика production-инцидентов требуют умения читать, формировать и анализировать HTTP-запросы и ответы. Если вы не понимаете ответ API и разницу между `403` и `401`, это будет постоянно мешать работе.
 
 REST is not a protocol — it is a set of architectural constraints defined by Roy Fielding in 2000. The key constraints are: statelessness (each request contains all information needed to process it, no server-side session), a uniform interface (resources identified by URLs, manipulated through representations), and client-server separation. In practice, "RESTful" APIs communicate over HTTP, use JSON bodies, identify resources with nouns in paths, and use HTTP methods to express intent. These constraints make APIs predictable and cacheable, which matters when you are scripting against them.
 
@@ -17,7 +17,7 @@ In the DevOps toolchain, REST API knowledge connects directly to several adjacen
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### HTTP Request Anatomy
 
@@ -55,7 +55,7 @@ The response mirrors this structure: a status line (`HTTP/1.1 201 Created`), res
 
 ---
 
-### HTTP Methods
+### HTTP-методы
 
 HTTP methods define the intent of the request. REST maps CRUD operations to methods, but the semantics go deeper than just "create/read/update/delete."
 
@@ -374,7 +374,7 @@ This integrates Postman collections directly into Jenkins, GitHub Actions, or Gi
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Querying the GitHub API with curl
 
@@ -552,7 +552,7 @@ pm.test("User created with correct role", () => {
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Diagnose a Failing API Call
 
@@ -630,7 +630,7 @@ curl -sI \
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 4. Extract the HTTP method from a `curl` command. Run: `echo "curl -X POST https://api.example.com/users" | awk '{for(i=1;i<=NF;i++) if ($i=="-X") print $(i+1)}'`
 

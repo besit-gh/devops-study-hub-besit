@@ -1,5 +1,5 @@
 ---
-title: ArgoCD & GitOps
+title: Argo CD и GitOps
 module: cicd
 duration_min: 25
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [cicd, argocd, gitops, kubernetes, sync, applications, app-of-apps]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-GitOps is a deployment model where Git is the single source of truth for cluster state. Instead of engineers running `kubectl apply` or triggering imperative scripts, the desired state of every workload lives in a Git repository as declarative YAML. ArgoCD runs as a controller inside Kubernetes, continuously comparing what is in Git against what is running in the cluster. Any divergence — whether from a new commit or from someone manually patching a Deployment — is detected and reconciled. The entire deployment history is the Git log, which means rollback is `git revert`, audit trails are free, and disaster recovery is re-syncing from a known-good branch.
+GitOps — модель развёртывания, в которой Git является единственным источником истины о состоянии кластера. Вместо ручного запуска `kubectl apply` или императивных скриптов желаемое состояние каждой рабочей нагрузки описывается декларативным YAML в Git-репозитории. Argo CD работает внутри Kubernetes как контроллер и постоянно сравнивает состояние Git с реальным состоянием кластера. Любое расхождение — новый коммит или ручное изменение Deployment — обнаруживается и устраняется. История развёртываний хранится в Git: откат выполняется через `git revert`, аудит доступен из коробки, а восстановление после аварии сводится к синхронизации с проверенной веткой.
 
-The four principles that define GitOps (declarative, versioned, automatically applied, continuously reconciled) map directly onto ArgoCD's design. Applications are defined as Kubernetes CRDs, not as CLI state. Sync policies control whether reconciliation is automated or requires human approval. RBAC controls who can trigger syncs or override policies. This design keeps the cluster from drifting into an unknown state and makes environment promotion — dev → staging → prod — a Git operation, not a runbook.
+Четыре принципа GitOps — декларативность, версионирование, автоматическое применение и постоянное согласование — напрямую отражены в архитектуре Argo CD. Приложения описываются через CRD Kubernetes, а не сохраняются как состояние CLI. Политики синхронизации определяют, происходит ли согласование автоматически или требует одобрения человека. RBAC регулирует, кто может запускать синхронизацию и менять политики. Благодаря этому кластер не уходит в неизвестное состояние, а продвижение между dev, staging и prod выполняется изменениями в Git, а не ручными инструкциями.
 
 In the broader DevOps toolchain, ArgoCD sits at the boundary between CI and the running cluster. CI builds artifacts and updates manifests; ArgoCD deploys them. This separation means your CI system never needs cluster credentials, the cluster's desired state is auditable, and you can reproduce any historical deployment by pointing ArgoCD at a specific commit SHA.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### GitOps vs. Traditional Push-Based CD
 
@@ -190,7 +190,7 @@ This pattern is the correct way to integrate ArgoCD into a CI pipeline. Fire the
 
 ---
 
-### Sync Policies, Sync Windows, and Automated Sync
+### Политики синхронизации, Sync Windows, and Automated Sync
 
 ```yaml
 syncPolicy:
@@ -482,7 +482,7 @@ spec:
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Deploy a Helm Application from a Private Repo
 
@@ -706,7 +706,7 @@ argocd app get payments-api
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Bootstrap ArgoCD and Deploy Your First Application
 
@@ -720,7 +720,7 @@ argocd app get payments-api
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 6. Extract the destination namespace from an ArgoCD Application stub. Run: `printf 'destination:\n  server: https://kubernetes.default.svc\n  namespace: production\n' | awk '/namespace:/{print $2}'`
 

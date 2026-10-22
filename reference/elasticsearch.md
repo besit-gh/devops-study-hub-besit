@@ -1,75 +1,75 @@
-# Elasticsearch — Quick Reference
+# Elasticsearch — краткая справка
 
-## Cluster & Health
+## Кластер и состояние
 
-| API Call | Description |
+| Вызов API | Описание |
 |----------|-------------|
-| `GET /_cluster/health` | Cluster health (green/yellow/red) |
-| `GET /_cluster/stats` | Cluster-wide statistics |
-| `GET /_nodes/stats` | Per-node stats |
-| `GET /_cat/nodes?v` | Node list with roles |
-| `GET /_cat/shards?v` | Shard allocation |
-| `GET /_cat/allocation?v` | Disk usage per node |
-| `GET /_cat/pending_tasks` | Pending cluster tasks |
+| `GET /_cluster/health` | Состояние кластера (green/yellow/red) |
+| `GET /_cluster/stats` | Статистика всего кластера |
+| `GET /_nodes/stats` | Статистика по узлам |
+| `GET /_cat/nodes?v` | Список узлов и их ролей |
+| `GET /_cat/shards?v` | Распределение шардов |
+| `GET /_cat/allocation?v` | Использование диска по узлам |
+| `GET /_cat/pending_tasks` | Ожидающие задачи кластера |
 
-## Index Management
+## Управление индексами
 
-| API Call | Description |
+| Вызов API | Описание |
 |----------|-------------|
-| `GET /_cat/indices?v` | List indices with stats |
-| `PUT /myindex` | Create index |
-| `PUT /myindex` `{ "settings": { "number_of_shards": 1 } }` | Create with settings |
-| `DELETE /myindex` | Delete index |
-| `GET /myindex/_settings` | Show index settings |
-| `GET /myindex/_mapping` | Show index mapping |
-| `POST /myindex/_open` | Open closed index |
-| `POST /myindex/_close` | Close index |
-| `POST /myindex/_refresh` | Force refresh (make docs searchable) |
-| `POST /myindex/_flush` | Force flush to disk |
-| `POST /_aliases` `{ "actions": [...] }` | Manage aliases |
+| `GET /_cat/indices?v` | Список индексов со статистикой |
+| `PUT /myindex` | Создать индекс |
+| `PUT /myindex` `{ "settings": { "number_of_shards": 1 } }` | Создать индекс с настройками |
+| `DELETE /myindex` | Удалить индекс |
+| `GET /myindex/_settings` | Показать настройки индекса |
+| `GET /myindex/_mapping` | Показать mapping индекса |
+| `POST /myindex/_open` | Открыть закрытый индекс |
+| `POST /myindex/_close` | Закрыть индекс |
+| `POST /myindex/_refresh` | Принудительно обновить индекс, чтобы документы стали доступны для поиска |
+| `POST /myindex/_flush` | Принудительно сбросить данные на диск |
+| `POST /_aliases` `{ "actions": [...] }` | Управлять псевдонимами |
 
-## Document CRUD
+## CRUD-операции с документами
 
-| API Call | Description |
+| Вызов API | Описание |
 |----------|-------------|
-| `PUT /index/_doc/ID` `{ ... }` | Index document with ID |
-| `POST /index/_doc` `{ ... }` | Index with auto-generated ID |
-| `GET /index/_doc/ID` | Retrieve document |
-| `POST /index/_update/ID` `{ "doc": { ... } }` | Partial update |
-| `DELETE /index/_doc/ID` | Delete document |
-| `POST /index/_delete_by_query` `{ "query": { ... } }` | Delete by query |
-| `GET /index/_count` `{ "query": { ... } }` | Count matching docs |
+| `PUT /index/_doc/ID` `{ ... }` | Индексировать документ с указанным ID |
+| `POST /index/_doc` `{ ... }` | Индексировать документ с автоматически созданным ID |
+| `GET /index/_doc/ID` | Получить документ |
+| `POST /index/_update/ID` `{ "doc": { ... } }` | Частично обновить документ |
+| `DELETE /index/_doc/ID` | Удалить документ |
+| `POST /index/_delete_by_query` `{ "query": { ... } }` | Удалить документы по запросу |
+| `GET /index/_count` `{ "query": { ... } }` | Подсчитать совпавшие документы |
 
 ## Search Queries
 
-| Query | Description |
+| Запрос | Описание |
 |-------|-------------|
-| `{ "query": { "match_all": {} } }` | All documents |
-| `{ "query": { "match": { "field": "text" } } }` | Full-text match |
-| `{ "query": { "term": { "field": "exact" } } }` | Exact keyword match |
-| `{ "query": { "range": { "field": { "gte": 10 } } } }` | Range filter |
-| `{ "query": { "bool": { "must": [...], "filter": [...] } } }` | Boolean query |
-| `{ "query": { "wildcard": { "field": "val*" } } }` | Wildcard |
-| `{ "from": 0, "size": 20, "query": { ... } }` | Pagination |
-| `{ "sort": [{ "field": "desc" }], "query": { ... } }` | Sort results |
+| `{ "query": { "match_all": {} } }` | Все документы |
+| `{ "query": { "match": { "field": "text" } } }` | Полнотекстовый поиск |
+| `{ "query": { "term": { "field": "exact" } } }` | Точное совпадение по ключевому слову |
+| `{ "query": { "range": { "field": { "gte": 10 } } } }` | Фильтр по диапазону |
+| `{ "query": { "bool": { "must": [...], "filter": [...] } } }` | Булев запрос |
+| `{ "query": { "wildcard": { "field": "val*" } } }` | Шаблон с подстановочными символами |
+| `{ "from": 0, "size": 20, "query": { ... } }` | Пагинация |
+| `{ "sort": [{ "field": "desc" }], "query": { ... } }` | Сортировать результаты |
 
-## Aggregations
+## Агрегацияs
 
-| Aggregation | Description |
+| Агрегация | Описание |
 |-------------|-------------|
-| `{ "aggs": { "by_field": { "terms": { "field": "status" } } } }` | Count by field value |
-| `{ "aggs": { "avg_price": { "avg": { "field": "price" } } } }` | Average |
-| `{ "aggs": { "total": { "sum": { "field": "amount" } } } }` | Sum |
-| `{ "aggs": { "over_time": { "date_histogram": { "field": "@timestamp", "calendar_interval": "day" } } } }` | Time histogram |
+| `{ "aggs": { "by_field": { "terms": { "field": "status" } } } }` | Подсчитать документы по значению поля |
+| `{ "aggs": { "avg_price": { "avg": { "field": "price" } } } }` | Среднее значение |
+| `{ "aggs": { "total": { "sum": { "field": "amount" } } } }` | Сумма |
+| `{ "aggs": { "over_time": { "date_histogram": { "field": "@timestamp", "calendar_interval": "day" } } } }` | Гистограмма по времени |
 
 ## Index Lifecycle (ILM)
 
-| API Call | Description |
+| Вызов API | Описание |
 |----------|-------------|
-| `GET /_ilm/policy` | List ILM policies |
-| `PUT /_ilm/policy/myPolicy` `{ "policy": { ... } }` | Create ILM policy |
-| `GET /index/_ilm/explain` | Show index ILM status |
-| `POST /index/_ilm/retry` | Retry failed ILM step |
+| `GET /_ilm/policy` | Список политик ILM |
+| `PUT /_ilm/policy/myPolicy` `{ "policy": { ... } }` | Создать политику ILM |
+| `GET /index/_ilm/explain` | Показать состояние ILM для индекса |
+| `POST /index/_ilm/retry` | Повторить неудачный шаг ILM |
 
 ## curl Shorthand
 

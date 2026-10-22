@@ -1,5 +1,5 @@
 ---
-title: Package Managers (apt/yum)
+title: Менеджеры пакетов (apt/yum)
 module: linux
 duration_min: 10
 difficulty: beginner
@@ -7,37 +7,37 @@ tags: [apt, yum, dnf, dpkg, rpm, packages]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Package managers are the primary mechanism for installing, updating, and removing software on Linux systems. Rather than manually downloading tarballs and managing dependencies by hand, package managers resolve the full dependency graph, handle version conflicts, verify cryptographic signatures, and provide a clean upgrade and rollback path. For DevOps work, fluency with package managers is non-negotiable — every provisioning script, Dockerfile, Ansible playbook, and CI pipeline you write will invoke one.
+Менеджеры пакетов — основной способ установки, обновления и удаления программ в Linux. Вместо ручного скачивания архивов и самостоятельного разрешения зависимостей менеджер строит граф зависимостей, разбирается с конфликтами версий, проверяет криптографические подписи и обеспечивает контролируемое обновление. Для DevOps умение работать с пакетными менеджерами обязательно: они используются в скриптах подготовки серверов, Dockerfile, плейбуках Ansible и CI-пайплайнах.
 
-Two ecosystems dominate in practice: the **Debian/Ubuntu family** uses `apt` and `.deb` packages, while the **RHEL/CentOS/Amazon Linux/Fedora family** uses `yum` or `dnf` and `.rpm` packages. Cloud environments make both unavoidable: Ubuntu is common on GCP and general AWS workloads; Amazon Linux 2/2023 and RHEL are standard in enterprise AWS and on-prem environments. You will write scripts that must work on both.
+На практике доминируют две экосистемы: семейство **Debian/Ubuntu** использует `apt` и пакеты `.deb`, а семейство **RHEL/CentOS/Amazon Linux/Fedora** — `yum` или `dnf` и пакеты `.rpm`. В облаках встречаются обе: Ubuntu распространена в GCP и типовых нагрузках AWS, а Amazon Linux 2/2023 и RHEL часто используются в корпоративных AWS- и локальных инфраструктурах. Поэтому скрипты нередко должны поддерживать обе системы.
 
-The guiding design principle behind both systems is separation between the **high-level tool** (`apt`, `dnf`) and the **low-level tool** (`dpkg`, `rpm`). The high-level tool talks to remote repositories, resolves dependencies, and orchestrates installs. The low-level tool deals with individual package files on disk. Understanding this split matters because you'll encounter both layers — the high-level tool when provisioning servers, and the low-level tool when debugging what's actually installed or manually installing an offline `.deb`/`.rpm` file.
+В обеих системах разделены **высокоуровневые инструменты** (`apt`, `dnf`) и **низкоуровневые** (`dpkg`, `rpm`). Высокоуровневый инструмент обращается к репозиториям, разрешает зависимости и управляет установкой. Низкоуровневый работает с отдельными файлами пакетов. Это различие важно: первый используют при подготовке серверов, второй — при диагностике установленного ПО или ручной установке локального `.deb`/`.rpm` без доступа к сети.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### The Two Ecosystems
+### Две экосистемы пакетов
 
-| Distro Family | Package Manager | Package Format | Low-level Tool | Config Location |
+| Семейство дистрибутивов | Менеджер пакетов | Формат пакета | Низкоуровневый инструмент | Каталог конфигурации |
 |---|---|---|---|---|
 | Debian, Ubuntu | `apt` / `apt-get` | `.deb` | `dpkg` | `/etc/apt/` |
 | RHEL, CentOS 7, Amazon Linux 2 | `yum` | `.rpm` | `rpm` | `/etc/yum.repos.d/` |
 | CentOS 8+, Amazon Linux 2023, Fedora | `dnf` | `.rpm` | `rpm` | `/etc/yum.repos.d/` |
 
-`apt` and `yum`/`dnf` are **high-level wrappers**. They handle dependency resolution, contact remote repositories over HTTPS, verify package signatures, and manage the transaction as a whole. `dpkg` and `rpm` are **low-level tools** — they install or query individual package files but do not fetch dependencies automatically.
+`apt` и `yum`/`dnf` — **высокоуровневые инструменты**. Они разрешают зависимости, обращаются к удалённым репозиториям по HTTPS, проверяют подписи пакетов и управляют установкой как единой транзакцией. `dpkg` и `rpm` — **низкоуровневые инструменты**: они устанавливают отдельные файлы пакетов и показывают сведения о них, но автоматически не загружают зависимости.
 
-**`dnf` vs `yum`:** `dnf` is the direct successor to `yum` and accepts nearly identical commands. On systems where both are present, `yum` is often a symlink to `dnf`. Prefer `dnf` in new scripts; use `yum` only when targeting older RHEL 7 / Amazon Linux 2 systems where `dnf` isn't available.
+**`dnf` и `yum`:** `dnf` — прямой преемник `yum`, команды у них почти одинаковые. Если доступны оба инструмента, `yum` часто является символической ссылкой на `dnf`. В новых скриптах предпочитайте `dnf`; `yum` используйте для старых систем RHEL 7 и Amazon Linux 2, где `dnf` может отсутствовать.
 
-**`apt` vs `apt-get`:** `apt` is the modern frontend and the right choice for interactive use. `apt-get` is older and less readable, but its output format is guaranteed stable — which matters if you're parsing output in a script. In practice, `apt` is fine for both interactive and scripted use in modern environments.
+**`apt` и `apt-get`:** `apt` — современный интерфейс, удобный для интерактивной работы. `apt-get` старше и менее удобен для чтения, зато формат его вывода гарантированно стабилен, что важно при разборе вывода в скриптах. В современных средах `apt` обычно подходит и для ручной работы, и для автоматизации.
 
 ---
 
-### Repositories and Package Sources
+### Репозитории и источники пакетов
 
-Packages come from **repositories** — curated collections of packages hosted on remote servers. The package manager fetches a metadata index from each configured repo, then uses that index to locate and download packages on demand.
+Пакеты поступают из **репозиториев** — организованных коллекций пакетов на удалённых серверах. Менеджер пакетов загружает индекс метаданных каждого настроенного репозитория, а затем использует его для поиска и загрузки нужных пакетов.
 
 **apt repo config:**
 ```
@@ -51,9 +51,9 @@ deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.
 #  ^type ^options                                         ^base URL                              ^codename ^component
 ```
 
-- `deb` = binary packages; `deb-src` = source packages
-- `signed-by` = path to the GPG public key used to verify packages from this repo (modern format; replaces the deprecated `apt-key` approach)
-- codename (`jammy`, `focal`, `bookworm`) pins the repo to your specific distro release — using the wrong codename is a frequent source of "package not found" errors
+- `deb` — бинарные пакеты; `deb-src` — пакеты с исходным кодом
+- `signed-by` — путь к публичному GPG-ключу для проверки пакетов из репозитория (современный способ, заменивший устаревший подход с `apt-key`)
+- Кодовое имя (`jammy`, `focal`, `bookworm`) привязывает репозиторий к конкретному выпуску дистрибутива. Неверное имя часто приводит к ошибке «пакет не найден».
 
 **yum/dnf repo config:**
 ```
@@ -70,23 +70,23 @@ gpgcheck=1
 gpgkey=https://download.docker.com/linux/centos/gpg
 ```
 
-**`$releasever` and `$basearch`** are variables automatically substituted by dnf/yum at runtime — they expand to the OS major version (e.g., `9`) and CPU architecture (e.g., `x86_64`) of the running system. This makes a single `.repo` file portable across versions and architectures.
+**`$releasever` и `$basearch`** — переменные, которые dnf/yum автоматически подставляют во время выполнения. Они раскрываются в основную версию ОС (например, `9`) и архитектуру CPU (например, `x86_64`), поэтому один файл `.repo` подходит для разных версий и архитектур.
 
-**Important:** `apt update` (or `dnf makecache`) does not install anything — it only refreshes the local metadata index from all configured repos. You must run this before installing packages on a fresh system or after adding a new repo, otherwise the package manager works from a stale index and may report packages as not found or install outdated versions.
+**Важно:** `apt update` (или `dnf makecache`) ничего не устанавливает — команда лишь обновляет локальный индекс метаданных всех настроенных репозиториев. Выполняйте её перед установкой пакетов на новой системе и после добавления репозитория. Иначе менеджер будет использовать устаревший индекс и может не найти пакет или установить старую версию.
 
-**Gotcha: never run `apt upgrade` without `apt update` first in automation.** The upgrade will silently operate on the cached (possibly months-old) metadata. In Dockerfiles and provisioning scripts, always pair them on the same line:
+**Важный нюанс: не запускайте `apt upgrade` в автоматизации без предварительного `apt update`.** Иначе обновление будет использовать кэшированные метаданные, которые могут быть устаревшими на месяцы. В Dockerfile и скриптах подготовки сервера объединяйте команды в одну строку:
 
 ```bash
 apt-get update && apt-get install -y package-name
 ```
 
-Separating them into two `RUN` layers in a Dockerfile is a well-known antipattern — Docker may cache the `apt-get update` layer and skip it on subsequent builds, leaving the install step working from stale metadata.
+Разносить эти команды по двум инструкциям `RUN` в Dockerfile — известный антипаттерн: Docker может использовать кэш слоя `apt-get update` при последующих сборках, и установка будет работать с устаревшими метаданными.
 
 ---
 
-### Installing, Removing, and Upgrading Packages
+### Установка, удаление и обновление пакетов
 
-The day-to-day commands you'll use in scripts and on live servers:
+Повседневные команды для скриптов и работающих серверов:
 
 **apt:**
 ```bash
@@ -375,7 +375,7 @@ RUN dnf install -y --setopt=install_weak_deps=False \
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Bootstrap a New Ubuntu Server for a Web Application
 
@@ -551,7 +551,7 @@ rm -rf /tmp/nginx-offline/
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Cross-Ecosystem Command Mapping
 
@@ -616,7 +616,7 @@ On any Linux system you have access to (your laptop, a VM, a container):
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Confirm `bash` is installed using the low-level package tool.
 

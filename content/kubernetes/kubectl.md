@@ -1,5 +1,5 @@
 ---
-title: kubectl Mastery
+title: Уверенная работа с kubectl
 module: kubernetes
 duration_min: 25
 difficulty: intermediate
@@ -7,19 +7,19 @@ tags: [kubernetes, kubectl, commands, debugging, context, jsonpath]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-`kubectl` is the primary interface between an operator and a Kubernetes cluster's control plane. Every action — deploying an application, inspecting a failing pod, rolling back a release, draining a node — flows through it. For a DevOps engineer, proficiency with kubectl is not optional: it is the lens through which you read the state of the system, and the scalpel with which you intervene. The difference between a senior and junior engineer under incident pressure is often just how fast and confidently they can interrogate a cluster.
+`kubectl` — основной интерфейс между инженером и control plane кластера Kubernetes. Через него выполняют все основные операции: развёртывают приложения, исследуют неисправные Pod, откатывают релизы и выводят узлы из обслуживания. Для DevOps-инженера уверенное владение kubectl обязательно: это инструмент наблюдения за состоянием системы и точечного вмешательства. Во время инцидента опытного инженера часто отличает скорость и уверенность, с которой он может исследовать кластер.
 
-kubectl communicates with the Kubernetes API server over HTTPS. Every subcommand maps to a REST operation against the API — `get` is a GET, `apply` is a server-side PATCH or POST, `delete` is a DELETE. Understanding this helps demystify error messages and teaches you that almost anything kubectl can do, you can also do with `curl` against the API server directly. This design also means kubectl is fully stateless: all cluster state lives in etcd, accessed through the API server, never locally.
+kubectl взаимодействует с Kubernetes API server по HTTPS. Каждая подкоманда соответствует REST-операции: `get` выполняет GET, `apply` — серверный PATCH или POST, `delete` — DELETE. Это помогает понимать сообщения об ошибках и показывает, что почти любую операцию kubectl можно выполнить напрямую через `curl` к API server. Сам kubectl не хранит состояние кластера: оно находится в etcd и доступно через API server.
 
-In the DevOps toolchain, kubectl sits at the intersection of CI/CD pipelines, incident response, and infrastructure-as-code workflows. Pipelines call `kubectl apply` to deploy. On-call engineers call `kubectl describe` and `kubectl logs` to diagnose. Platform teams use JSONPath and custom columns to build health dashboards. Knowing the tool at depth — output formatting, context management, debugging primitives — directly translates into faster deploys and shorter mean-time-to-resolution.
+В DevOps kubectl используется на стыке CI/CD, реагирования на инциденты и управления инфраструктурой как кодом. Пайплайны выполняют `kubectl apply` для развёртывания, дежурные инженеры используют `kubectl describe` и `kubectl logs` для диагностики, а платформенные команды применяют JSONPath и пользовательские столбцы для построения панелей состояния. Глубокое знание форматов вывода, управления контекстами и средств отладки ускоряет развёртывание и сокращает среднее время восстановления.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### Contexts and Clusters
+### Контексты и кластеры
 
 A kubeconfig file (default: `~/.kube/config`) holds three types of objects: **clusters** (API server endpoints + CA certs), **users** (credentials), and **contexts** (a named tuple of cluster + user + namespace). Switching context switches all three simultaneously.
 
@@ -445,7 +445,7 @@ kubectl top pods -n production --containers     # per-container breakdown
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Full Deploy, Verify, and Rollback Cycle
 
@@ -662,7 +662,7 @@ kubectl get deployments -A -o json \
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Context and Namespace Safety
 
@@ -762,7 +762,7 @@ Without reading the YAML above after applying it:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 6. Count Running pods from a status list. Run: `printf 'web-1 Running\ndb-0 Pending\nweb-2 Running\ncache-0 Running\n' | awk '$2=="Running"{c++} END{print c}'`
 

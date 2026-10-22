@@ -1,5 +1,5 @@
 ---
-title: Pipeline Configuration
+title: Настройка pipeline Logstash
 module: logstash
 duration_min: 20
 difficulty: beginner
@@ -7,15 +7,15 @@ tags: [logstash, elk, pipelines, configuration]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Logstash is the data processing layer of the Elastic Stack. It ingests data from sources, transforms it through a filter chain, and ships it to one or more outputs. The core abstraction is the **pipeline**: a sequence of three stages — input, filter, and output — defined in a single `.conf` file using a domain-specific language that looks like a hybrid of Ruby and Nginx config. Understanding how pipelines are configured and how to run multiple pipelines efficiently is foundational for building reliable log ingestion systems.
+Logstash — слой обработки данных в Elastic Stack. Он получает данные из источников, преобразует их цепочкой фильтров и отправляет в один или несколько выходов. Основная абстракция — **pipeline**, состоящий из трёх этапов: input, filter и output. Они описываются в `.conf`-файле с помощью специализированного языка, похожего на смесь Ruby и конфигурации Nginx. Понимание настройки pipeline и эффективного запуска нескольких конвейеров — основа надёжного сбора логов.
 
-In production DevOps environments, Logstash sits between log shippers (Filebeat, Kafka) and Elasticsearch, normalising heterogeneous log formats before indexing. Without Logstash, raw log lines land in Elasticsearch as opaque strings. With it, you get structured, typed, time-accurate documents that make search and dashboards possible. Every exercise in this lesson can be run using the Logstash CLI without a full ELK stack — the `stdout` output with `rubydebug` codec lets you see exactly what events would be written to Elasticsearch.
+В production Logstash располагается между отправителями логов (Filebeat, Kafka) и Elasticsearch, приводя разнородные форматы к единому виду перед индексацией. Без Logstash исходные строки попадают в Elasticsearch как непрозрачный текст. С ним получаются структурированные документы с типами и корректными временными метками, пригодные для поиска и дашбордов. Упражнения можно выполнять через CLI Logstash без полного стека ELK: вывод `stdout` с codec `rubydebug` показывает, какие события отправлялись бы в Elasticsearch.
 
 Logstash is a JVM application. It starts slowly (10–30 seconds) and uses significant memory, but once running it is highly throughput-capable. Package installs place config at `/etc/logstash/`; tarball/Docker installs use `$LS_HOME/config/`. The default package service name is `logstash`, managed via `systemctl start logstash`.
 
-## Concepts
+## Основные понятия
 
 ### Pipeline Architecture: Input → Filter → Output
 
@@ -339,7 +339,7 @@ Sample `events` output:
 
 `in` vs `out` discrepancy: events were dropped (by a `drop` filter) or failed (check DLQ). High `duration_in_millis` relative to event count: slow filters or slow outputs.
 
-## Examples
+## Примеры
 
 ### Multi-pipeline production directory layout
 
@@ -422,7 +422,7 @@ curl -s http://localhost:9600/_node/stats/pipelines | \
   }'
 ```
 
-## Exercises
+## Практические задания
 
 1. Write a `pipelines.yml` that declares two pipelines: one named `nginx` pointing to `nginx.conf` with 2 workers, batch size 500, a persisted queue of 2gb, and dead letter queue enabled; one named `app` pointing to `app.conf` with 4 workers, batch size 1000, and an in-memory queue. The DLQ should be enabled only on the nginx pipeline.
 
@@ -433,7 +433,7 @@ curl -s http://localhost:9600/_node/stats/pipelines | \
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 4. Count the three pipeline stages in a Logstash config. Run: `printf 'input { }\nfilter { }\noutput { }\n' | grep -c '^[a-z]'`
 

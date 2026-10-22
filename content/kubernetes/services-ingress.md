@@ -1,5 +1,5 @@
 ---
-title: Services & Ingress
+title: Service и Ingress в Kubernetes
 module: kubernetes
 duration_min: 20
 difficulty: intermediate
@@ -7,20 +7,20 @@ tags: [kubernetes, services, ingress, clusterip, nodeport, loadbalancer, network
 exercises: 4
 ---
 
-## Overview
-Pods are ephemeral and get new IPs every restart. Services give you a stable endpoint that automatically routes to healthy Pods — regardless of which specific Pod IPs are active. Ingress routes external HTTP/HTTPS traffic to the right Service based on hostname or path. Together they form the networking layer every Kubernetes app depends on.
+## Обзор
+Pod эфемерны и при каждом пересоздании могут получать новые IP-адреса. Service предоставляет стабильную точку доступа и автоматически направляет запросы к здоровым Pod независимо от их текущих IP. Ingress маршрутизирует внешний HTTP/HTTPS-трафик к нужному Service по имени хоста или пути. Вместе они образуют сетевой слой, от которого зависит каждое приложение Kubernetes.
 
-## Concepts
+## Основные понятия
 
-### Service Types
-| Type | Accessible from | Use case |
+### Типы Service
+| Тип | Откуда доступен | Применение |
 |---|---|---|
-| `ClusterIP` | Inside cluster only | Internal service-to-service |
-| `NodePort` | Any node's IP + port | Simple external access, dev/testing |
-| `LoadBalancer` | Public IP (cloud LB) | Production external access |
-| `ExternalName` | Inside cluster | DNS alias to an external hostname |
+| `ClusterIP` | Только внутри кластера | Внутреннее взаимодействие сервисов |
+| `NodePort` | IP любого узла + порт | Простой внешний доступ, разработка и тестирование |
+| `LoadBalancer` | Публичный IP (облачный балансировщик) | Внешний доступ в production |
+| `ExternalName` | Внутри кластера | DNS-псевдоним внешнего имени хоста |
 
-### ClusterIP (Default)
+### ClusterIP (по умолчанию)
 ```yaml
 apiVersion: v1
 kind: Service
@@ -37,12 +37,12 @@ spec:
       protocol: TCP
 ```
 
-Other pods in the cluster reach this service at:
-- `api-service` (same namespace)
-- `api-service.production` (cross-namespace shorthand)
-- `api-service.production.svc.cluster.local` (full DNS name)
+Другие pod в кластере могут обращаться к сервису по следующим именам:
+- `api-service` (то же пространство имён)
+- `api-service.production` (короткая форма для другого пространства имён)
+- `api-service.production.svc.cluster.local` (полное DNS-имя)
 
-Kubernetes DNS handles resolution automatically — no IPs needed.
+DNS Kubernetes автоматически разрешает имена — IP-адреса указывать не нужно.
 
 ### NodePort
 ```yaml
@@ -56,7 +56,7 @@ spec:
       nodePort: 30080   # optional — auto-assigned in 30000-32767 range if omitted
 ```
 
-Accessible at `<any-node-ip>:30080`. Rarely used in production — use LoadBalancer or Ingress instead.
+Доступен по адресу `<any-node-ip>:30080`. В production используется редко — обычно лучше выбрать LoadBalancer или Ingress.
 
 ### LoadBalancer
 ```yaml
@@ -69,10 +69,10 @@ spec:
       targetPort: 8080
 ```
 
-In cloud environments (EKS, GKE, AKS), this provisions an actual cloud load balancer and assigns a public IP. Each LoadBalancer Service costs money (one cloud LB per Service). Ingress is more cost-efficient for HTTP/HTTPS.
+В облачных средах (EKS, GKE, AKS) создаётся настоящий облачный балансировщик и назначается публичный IP. Каждый Service типа LoadBalancer стоит денег: для каждого сервиса создаётся отдельный балансировщик. Для HTTP/HTTPS Ingress обычно экономичнее.
 
 ### Endpoints and Pod Selection
-Services route to Pods via label selectors. The Service controller maintains an `Endpoints` object (list of ready Pod IPs):
+Service направляет трафик к pod с помощью селекторов меток. Контроллер Service поддерживает объект `Endpoints` — список IP-адресов готовых pod:
 
 ```bash
 kubectl get endpoints api-service
@@ -80,10 +80,10 @@ kubectl get endpoints api-service
 # api-service   10.0.1.5:8080,10.0.1.6:8080      5m
 ```
 
-Only Pods with matching labels AND passing their readiness probe appear in Endpoints. Unhealthy Pods are automatically removed.
+В Endpoints попадают только pod с подходящими метками, прошедшие readiness probe. Неработающие pod автоматически удаляются из списка.
 
 ### Ingress
-Ingress routes external HTTP/HTTPS traffic based on host or path. Requires an **Ingress Controller** (nginx-ingress, AWS ALB Controller, Traefik, etc.) to be installed in the cluster.
+Ingress маршрутизирует внешний HTTP/HTTPS-трафик по имени хоста или пути. В кластере должен быть установлен **Ingress Controller** (nginx-ingress, AWS ALB Controller, Traefik и т. п.).
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -129,15 +129,15 @@ spec:
                   number: 80
 ```
 
-### Path Types
-| Type | Behavior |
+### Типы путей
+| Тип | Поведение |
 |---|---|
-| `Exact` | Exactly matches the path |
-| `Prefix` | Matches path prefix (most common) |
-| `ImplementationSpecific` | Controller-defined behavior |
+| `Exact` | Точное совпадение пути |
+| `Prefix` | Совпадение с префиксом пути (самый распространённый вариант) |
+| `ImplementationSpecific` | Поведение определяется контроллером |
 
-### DNS Resolution Inside the Cluster
-Every Service gets a DNS entry managed by CoreDNS:
+### Разрешение DNS-имён внутри кластера
+Каждый Service получает DNS-запись, которой управляет CoreDNS:
 ```
 <service>.<namespace>.svc.cluster.local
 ```
@@ -150,8 +150,8 @@ nslookup api-service.production.svc.cluster.local
 wget -qO- http://api-service.production/health
 ```
 
-### Network Policies
-Control traffic between pods (requires a CNI plugin that supports NetworkPolicy, e.g., Calico, Cilium):
+### Сетевые политики
+Управляют трафиком между pod (требуется CNI-плагин с поддержкой NetworkPolicy, например Calico или Cilium):
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -180,9 +180,9 @@ spec:
         - port: 5432
 ```
 
-## Examples
+## Примеры
 
-### Full Stack: Deployment + Service + Ingress
+### Полный стек: Deployment + Service + Ingress
 ```yaml
 ---
 apiVersion: apps/v1
@@ -235,32 +235,32 @@ spec:
                   number: 80
 ```
 
-## Exercises
+## Практические задания
 
-1. Create a Deployment and a ClusterIP Service for an nginx Pod. Verify the Service resolves correctly by running `kubectl run -it --rm debug --image=busybox -- wget -qO- http://<service-name>` from within the cluster.
-2. Change the Service type to `NodePort`. Find the assigned node port with `kubectl get svc`. Access the service from outside the cluster at `<node-ip>:<node-port>`.
-3. Write an Ingress resource that routes `api.local/v1` to one Service and `api.local/v2` to another Service. Apply it and test with `curl -H "Host: api.local" http://<ingress-ip>/v1`.
-4. Write a NetworkPolicy that allows only pods with label `app: frontend` to talk to pods with label `app: api` on port 8080. Deny all other ingress. Test it by creating both pod types and verifying connectivity.
+1. Создайте Deployment и Service типа ClusterIP для pod с nginx. Изнутри кластера выполните `kubectl run -it --rm debug --image=busybox -- wget -qO- http://<service-name>` и проверьте, что имя сервиса разрешается корректно.
+2. Измените тип Service на `NodePort`. Найдите назначенный порт узла командой `kubectl get svc` и обратитесь к сервису извне кластера по адресу `<node-ip>:<node-port>`.
+3. Создайте ресурс Ingress, направляющий `api.local/v1` в один Service, а `api.local/v2` — в другой. Примените его и проверьте командой `curl -H "Host: api.local" http://<ingress-ip>/v1`.
+4. Создайте NetworkPolicy, разрешающую pod с меткой `app: frontend` обращаться к pod с меткой `app: api` по порту 8080. Весь остальной входящий трафик запретите. Проверьте правило, создав оба типа pod и проверив соединение.
 
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
-5. Extract the `targetPort` from a Service spec stub. Run: `printf 'ports:\n- port: 80\n  targetPort: 8080\n' | awk '/targetPort:/{print $2}'`
+5. Извлеките `targetPort` из примера спецификации Service. Выполните: `printf 'ports:\n- port: 80\n  targetPort: 8080\n' | awk '/targetPort:/{print $2}'`
 
 ```expected_output
 8080
 ```
 
-hint: Think about how you can filter a YAML stream line by line to isolate the field you need and then extract its value.
-hint: Use awk with a pattern match on the field name, such as /targetPort:/, and print the second whitespace-separated field with {print $2}.
+Подсказка: найдите в YAML нужное поле и извлеките его значение.
+Подсказка: используйте `awk` с шаблоном `/targetPort:/` и выведите второе поле через `{print $2}`.
 
-6. Count host rules in an Ingress spec stub. Run: `printf 'rules:\n- host: app.example.com\n- host: api.example.com\n- host: admin.example.com\n' | grep -c 'host:'`
+6. Посчитайте правила host в примере Ingress. Выполните: `printf 'rules:\n- host: app.example.com\n- host: api.example.com\n- host: admin.example.com\n' | grep -c 'host:'`
 
 ```expected_output
 3
 ```
 
-hint: Think about how you can filter lines matching a specific pattern and get a count directly from that filtering command.
-hint: The grep command has a -c flag that counts matching lines instead of printing them — use it with the pattern 'host:' on the piped input.
+Подсказка: отфильтруйте строки по шаблону и сразу получите число совпадений.
+Подсказка: флаг `-c` команды `grep` считает совпавшие строки вместо их вывода. Используйте его с шаблоном `host:`.

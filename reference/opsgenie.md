@@ -1,25 +1,25 @@
-# Opsgenie — Quick Reference
+# Opsgenie — краткая справка
 
-## Opsgenie CLI (opsgenie-cli / ogcli)
+## CLI Opsgenie (opsgenie-cli / ogcli)
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
-| `ogcli get alert --id ID` | Get alert details |
-| `ogcli list alert` | List open alerts |
-| `ogcli create alert --message "msg" --priority P2` | Create alert |
-| `ogcli acknowledge alert --id ID` | Acknowledge alert |
-| `ogcli close alert --id ID --note "resolved"` | Close alert |
-| `ogcli add alert note --id ID --note "msg"` | Add note to alert |
-| `ogcli list schedule` | List on-call schedules |
-| `ogcli get who-is-on-call --schedule "Team"` | Current on-call |
+| `ogcli get alert --id ID` | Получить сведения об оповещении |
+| `ogcli list alert` | Список открытых оповещений |
+| `ogcli create alert --message "msg" --priority P2` | Создать оповещение |
+| `ogcli acknowledge alert --id ID` | Подтвердить получение оповещения |
+| `ogcli close alert --id ID --note "resolved"` | Закрыть оповещение |
+| `ogcli add alert note --id ID --note "msg"` | Добавить заметку к оповещению |
+| `ogcli list schedule` | Список графиков дежурств |
+| `ogcli get who-is-on-call --schedule "Team"` | Кто сейчас дежурит |
 
-## Alerts API (curl)
+## API оповещений (curl)
 
 ```bash
 OG_KEY="your-api-key"
 BASE="https://api.opsgenie.com/v2"
 
-# Create alert
+# Создать оповещение
 curl -X POST "$BASE/alerts" \
   -H "Authorization: GenieKey $OG_KEY" \
   -H "Content-Type: application/json" \
@@ -33,12 +33,12 @@ curl -X GET "$BASE/alerts/ID" \
 curl -X GET "$BASE/alerts?status=open&limit=20" \
   -H "Authorization: GenieKey $OG_KEY"
 
-# Acknowledge alert
+# Подтвердить получение оповещения
 curl -X POST "$BASE/alerts/ID/acknowledge" \
   -H "Authorization: GenieKey $OG_KEY" \
   -d '{"note":"Looking into it"}'
 
-# Close alert
+# Закрыть оповещение
 curl -X DELETE "$BASE/alerts/ID" \
   -H "Authorization: GenieKey $OG_KEY"
 

@@ -1,5 +1,5 @@
 ---
-title: HTTP & HTTPS
+title: HTTP и HTTPS
 module: networking
 duration_min: 15
 difficulty: beginner
@@ -7,21 +7,21 @@ tags: [networking, http, https, tls, ssl, headers, status-codes, curl]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-HTTP (HyperText Transfer Protocol) is the application-layer protocol that underpins nearly every interaction between services in a modern infrastructure. As a DevOps engineer, you encounter HTTP constantly: in health checks, load balancer configs, reverse proxy rules, CI/CD pipeline webhook calls, container readiness probes, and API integrations. A surface-level understanding gets you through simple setups; a deep understanding lets you diagnose why a deployment broke at 2 AM when a 502 starts cascading across your cluster.
+HTTP (HyperText Transfer Protocol) — протокол прикладного уровня, на котором основано большинство взаимодействий между сервисами современной инфраструктуры. DevOps-инженер сталкивается с HTTP в health checks, конфигурациях балансировщиков и reverse proxy, webhook-вызовах CI/CD, readiness probes контейнеров и интеграциях API. Базовых знаний хватает для простых настроек, но глубокое понимание позволяет диагностировать ночные инциденты, когда ошибка 502 распространяется по кластеру.
 
-HTTP's design is intentionally simple: a stateless request-response protocol where the client sends a structured message and the server replies with a structured response. That statelessness is both a strength and a source of bugs — each request must carry all the context the server needs (credentials, content type, session state), which means misconfigured headers are a surprisingly common root cause of production incidents. HTTPS layers TLS on top of HTTP to add encryption, authentication, and integrity — and since most modern services enforce HTTPS, understanding TLS certificate mechanics is a practical requirement, not an academic one.
+HTTP намеренно устроен просто: это stateless-протокол «запрос — ответ», в котором клиент отправляет структурированное сообщение, а сервер возвращает ответ. Отсутствие состояния упрощает масштабирование, но создаёт и источник ошибок: каждый запрос должен содержать необходимый контекст — учётные данные, тип содержимого и состояние сессии. Поэтому неправильно настроенные заголовки часто становятся причиной production-инцидентов. HTTPS добавляет поверх HTTP TLS для шифрования, аутентификации и проверки целостности. Поскольку современные сервисы обычно требуют HTTPS, понимание сертификатов TLS — практическая необходимость.
 
-In the DevOps toolchain, HTTP knowledge connects directly to your work with nginx/Caddy/HAProxy configuration, Kubernetes Ingress and Service definitions, Prometheus scraping, container health checks, API gateway rules, and observability pipelines. The tools in this lesson — primarily `curl` and `openssl` — are available on virtually every server and are the first tools you should reach for when something between two services stops working.
+В DevOps знание HTTP напрямую связано с настройкой nginx, Caddy и HAProxy, ресурсами Ingress и Service в Kubernetes, сбором метрик Prometheus, health checks контейнеров, правилами API gateway и конвейерами наблюдаемости. Основные инструменты урока — `curl` и `openssl` — доступны почти на каждом сервере и должны быть среди первых средств диагностики, когда нарушается взаимодействие двух сервисов.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### HTTP Request Structure
+### Структура HTTP-запроса
 
-Every HTTP request is plain text with a defined structure. Understanding this structure means you can construct requests manually, read raw logs, and spot malformed requests without needing a GUI.
+Каждый HTTP-запрос имеет определённую текстовую структуру. Понимание этой структуры позволяет формировать запросы вручную, читать сырые журналы и находить некорректные запросы без графического интерфейса.
 
 ```
 POST /api/v1/deployments HTTP/1.1
@@ -35,15 +35,15 @@ Content-Length: 47
 {"service": "payments", "version": "v2.3.1"}
 ```
 
-The four parts:
-1. **Request line** — method, path, and protocol version
-2. **Headers** — one per line, colon-separated key-value pairs
-3. **Blank line** — mandatory separator; its absence causes parse failures
-4. **Body** — only present for POST, PUT, PATCH; must match `Content-Type`
+Четыре части:
+1. **Строка запроса** — метод, путь и версия протокола
+2. **Заголовки** — по одному на строку, пары ключ-значение через двоеточие
+3. **Пустая строка** — обязательный разделитель; без неё разбор может завершиться ошибкой
+4. **Тело** — обычно используется с POST, PUT и PATCH; должно соответствовать `Content-Type`
 
-**Host header is mandatory in HTTP/1.1.** A server can host multiple virtual hosts on the same IP. Without `Host`, the server doesn't know which site you're asking for. Missing or wrong `Host` is a common cause of unexpected 400 or 404 responses when debugging proxy configs.
+**Заголовок Host обязателен в HTTP/1.1.** Один сервер может обслуживать несколько виртуальных хостов на одном IP. Без `Host` сервер не понимает, к какому сайту обращается клиент. Отсутствующий или неверный `Host` часто вызывает неожиданные ответы 400 или 404 при диагностике прокси.
 
-HTTP responses follow the same pattern, but the first line is a status line:
+HTTP-ответы имеют похожую структуру, но первая строка содержит статус:
 
 ```
 HTTP/1.1 201 Created
@@ -55,27 +55,27 @@ Content-Length: 82
 {"id": 9912, "service": "payments", "version": "v2.3.1", "status": "queued"}
 ```
 
-**HTTP/1.1 vs HTTP/2 vs HTTP/3:** In HTTP/2, the wire format changes (binary framing, header compression, multiplexed streams over one TCP connection), but the semantics — methods, status codes, headers — stay the same. HTTP/3 moves the transport layer from TCP to QUIC (UDP-based), reducing head-of-line blocking further. From a DevOps perspective, the practical difference is: HTTP/2 requires TLS in almost all real implementations, and multiplexing means a single connection handles many requests in parallel, which changes how connection pool sizing works in proxies.
+**HTTP/1.1, HTTP/2 и HTTP/3:** в HTTP/2 меняется формат передачи (бинарные кадры, сжатие заголовков, мультиплексирование потоков через одно TCP-соединение), но семантика методов, статусов и заголовков остаётся прежней. HTTP/3 использует QUIC поверх UDP вместо TCP, дополнительно снижая блокировку очереди. На практике HTTP/2 почти всегда требует TLS, а мультиплексирование позволяет обслуживать много запросов через одно соединение, что влияет на настройку пулов соединений в прокси.
 
 ---
 
-### HTTP Methods
+### Методы HTTP
 
-| Method  | Meaning                               | Idempotent | Safe | Body |
+| Метод | Назначение | Идемпотентный | Безопасный | Тело |
 |---------|---------------------------------------|------------|------|------|
-| GET     | Retrieve a resource                   | Yes        | Yes  | No   |
-| POST    | Create a resource / trigger an action | No         | No   | Yes  |
-| PUT     | Replace a resource entirely           | Yes        | No   | Yes  |
-| PATCH   | Partially update a resource           | No         | No   | Yes  |
-| DELETE  | Remove a resource                     | Yes        | No   | No   |
-| HEAD    | Same as GET but response has no body  | Yes        | Yes  | No   |
-| OPTIONS | Ask what methods the server accepts   | Yes        | Yes  | No   |
+| GET | Получить ресурс | Да | Да | Нет |
+| POST | Создать ресурс или запустить действие | Нет | Нет | Да |
+| PUT | Полностью заменить ресурс | Да | Нет | Да |
+| PATCH | Частично изменить ресурс | Нет | Нет | Да |
+| DELETE | Удалить ресурс | Да | Нет | Нет |
+| HEAD | Как GET, но без тела ответа | Да | Да | Нет |
+| OPTIONS | Узнать, какие методы принимает сервер | Да | Да | Нет |
 
-**Idempotent** means calling the method N times produces the same result as calling it once. **Safe** means the method does not modify server state.
+**Идемпотентность** означает, что N вызовов метода дают тот же результат, что и один вызов. **Безопасный метод** не изменяет состояние сервера.
 
-**Why DevOps engineers care about idempotency:** Infrastructure automation and retry logic depend on it. If your deployment script retries a failed PUT, the resource ends up in one known state. If it retries a failed POST, you may create duplicate records. Design your internal tooling APIs accordingly, and look for `Retry-After` headers to know when it's safe to retry a 429 or 503.
+**Зачем DevOps-инженеру идемпотентность:** от неё зависят автоматизация инфраструктуры и повторные попытки. Повторный PUT приводит ресурс к одному и тому же состоянию, а повторный POST может создать дубликаты. Учитывайте это при проектировании API и проверяйте `Retry-After`, чтобы понять, когда можно повторить запрос после 429 или 503.
 
-**HEAD is underused.** It's ideal for health checks and cache validation — you get the status code and all response headers (including `Content-Length` and `Last-Modified`) without downloading the body. Useful for checking if a large artifact exists in object storage before downloading it.
+**HEAD используют недостаточно часто.** Он подходит для health checks и проверки кэша: можно получить статус и заголовки ответа (включая `Content-Length` и `Last-Modified`) без скачивания тела. Это удобно, чтобы проверить наличие большого артефакта в объектном хранилище перед загрузкой.
 
 ```bash
 # Check if an artifact exists without downloading it
@@ -85,47 +85,47 @@ curl -I https://artifacts.example.com/releases/app-v2.3.1.tar.gz
 # Last-Modified: Tue, 14 Jan 2025 09:22:11 GMT
 ```
 
-**OPTIONS and CORS preflight:** Browsers send an OPTIONS request before a cross-origin POST or PUT to ask the server which methods and headers it allows. If your API gateway or reverse proxy doesn't forward OPTIONS correctly, browser clients get CORS errors even though the API itself works fine. When debugging CORS, always check whether OPTIONS returns the correct `Access-Control-Allow-Origin` and `Access-Control-Allow-Methods` headers.
+**OPTIONS и предварительная проверка CORS:** браузеры отправляют OPTIONS перед междоменным POST или PUT, чтобы узнать разрешённые методы и заголовки. Если API gateway или reverse proxy неправильно передаёт OPTIONS, браузер показывает CORS-ошибку, хотя сам API работает. При диагностике CORS проверьте заголовки `Access-Control-Allow-Origin` и `Access-Control-Allow-Methods` в ответе OPTIONS.
 
 ---
 
-### HTTP Status Codes
+### Коды состояния HTTP
 
-| Range | Category     | Common codes and meaning |
+| Диапазон | Категория | Распространённые коды и значения |
 |-------|--------------|--------------------------|
-| 2xx   | Success      | 200 OK, 201 Created, 202 Accepted, 204 No Content |
-| 3xx   | Redirect     | 301 Moved Permanently, 302 Found, 304 Not Modified |
-| 4xx   | Client error | 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 409 Conflict, 422 Unprocessable Entity, 429 Too Many Requests |
-| 5xx   | Server error | 500 Internal Server Error, 502 Bad Gateway, 503 Service Unavailable, 504 Gateway Timeout |
+| 2xx | Успех | 200 OK, 201 Created, 202 Accepted, 204 No Content |
+| 3xx | Перенаправление | 301 Moved Permanently, 302 Found, 304 Not Modified |
+| 4xx | Ошибка клиента | 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 409 Conflict, 422 Unprocessable Entity, 429 Too Many Requests |
+| 5xx | Ошибка сервера | 500 Internal Server Error, 502 Bad Gateway, 503 Service Unavailable, 504 Gateway Timeout |
 
-**The codes you'll debug most often in production:**
+**Коды, которые чаще всего приходится диагностировать в production:**
 
-| Code | What it actually means | Where to look |
+| Код | Что он означает на практике | Где искать причину |
 |------|------------------------|---------------|
-| 400  | Request is malformed — wrong body, missing required field | Application logs, request body |
-| 401  | No credentials or invalid credentials | Auth service logs, token expiry |
-| 403  | Valid credentials, but no permission | IAM/RBAC config, service mesh policy |
-| 404  | Path doesn't exist at this server | Is the route registered? Is the service running? |
-| 409  | Conflict — resource already exists or state mismatch | Idempotency key, database constraints |
-| 422  | Request is well-formed but semantically invalid | Validation logic in the application |
-| 429  | Rate limited — check `Retry-After` header | API gateway config, client retry logic |
-| 502  | Proxy reached backend and got garbage back, or couldn't connect | Proxy error logs, backend health |
-| 503  | Backend explicitly saying it's unavailable | Backend logs, health check endpoint |
-| 504  | Backend connected but took too long to respond | Timeout config in proxy, slow query |
+| 400 | Некорректный запрос — неверное тело или отсутствует обязательное поле | Журналы приложения, тело запроса |
+| 401 | Нет учётных данных или они недействительны | Журналы сервиса аутентификации, срок действия токена |
+| 403 | Учётные данные верны, но прав недостаточно | Конфигурация IAM/RBAC, политика service mesh |
+| 404 | На сервере нет такого пути | Зарегистрирован ли маршрут? Работает ли сервис? |
+| 409 | Конфликт — ресурс уже существует или состояние не совпадает | Idempotency key, ограничения базы данных |
+| 422 | Запрос синтаксически корректен, но недопустим по смыслу | Логика валидации приложения |
+| 429 | Превышен лимит запросов — проверьте `Retry-After` | Конфигурация API gateway, логика повторных попыток клиента |
+| 502 | Прокси не смог подключиться к backend или получил некорректный ответ | Журналы ошибок прокси, состояние backend |
+| 503 | Backend сообщает о недоступности | Журналы backend, endpoint проверки состояния |
+| 504 | Соединение с backend установлено, но ответ не пришёл вовремя | Тайм-аут прокси, медленный запрос |
 
-**502 vs 504 distinction is critical.** A 502 means the gateway got a bad or no response (connection refused, backend crashed, upstream sent invalid HTTP). A 504 means the connection was established but the backend didn't respond within the timeout. They point to different problems: a 502 suggests the process is down or returning garbage; a 504 suggests it's alive but slow or deadlocked. In nginx, check `error.log` for the upstream error that produced the 502 — it often includes the actual OS error (`Connection refused`, `no live upstreams`).
+**Различие между 502 и 504 критично.** 502 означает, что шлюз получил некорректный ответ или не получил его вовсе (отказ соединения, падение backend, неправильный HTTP). 504 означает, что соединение установлено, но backend не ответил в пределах тайм-аута. 502 указывает на остановленный процесс или неверный ответ, а 504 — на медленную работу или взаимную блокировку. В nginx проверьте `error.log`: там часто указана системная причина (`Connection refused`, `no live upstreams`).
 
-**304 Not Modified** saves bandwidth. When a client has a cached copy with an `ETag` or `Last-Modified` date, it sends `If-None-Match` or `If-Modified-Since`. If the resource hasn't changed, the server returns 304 with no body — the client uses its cache. Misconfigured CDN or cache headers that suppress 304 responses cause unnecessary data transfer and slower page loads.
+**304 Not Modified** экономит трафик. Если у клиента есть кэшированная копия с `ETag` или `Last-Modified`, он отправляет `If-None-Match` или `If-Modified-Since`. Если ресурс не изменился, сервер возвращает 304 без тела, и клиент использует кэш. Неверные настройки CDN или заголовков кэширования, мешающие ответам 304, вызывают лишнюю передачу данных и замедляют загрузку страниц.
 
-**201 vs 202:** Return 201 when the resource is fully created and its URL is known (include a `Location` header pointing to it). Return 202 when the work is queued or async — the resource doesn't exist yet. CI/CD webhooks and job-submission APIs typically return 202.
+**201 и 202:** возвращайте 201, если ресурс уже создан и его URL известен (добавьте заголовок `Location`). Возвращайте 202, если работа поставлена в очередь или выполняется асинхронно и ресурс ещё не готов. Webhook CI/CD и API постановки заданий обычно возвращают 202.
 
 ---
 
-### Key HTTP Headers
+### Основные HTTP-заголовки
 
-Headers carry metadata that controls caching, authentication, content negotiation, routing, and observability. Knowing which header does what lets you configure proxies and debug problems without guessing.
+Заголовки передают метаданные, управляющие кэшированием, аутентификацией, согласованием содержимого, маршрутизацией и наблюдаемостью. Понимание их назначения помогает настраивать прокси и диагностировать проблемы без догадок.
 
-**Request headers:**
+**Заголовки запроса:**
 
 | Header | Purpose | Example |
 |--------|---------|---------|
@@ -494,7 +494,7 @@ spec:
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Debugging a 502 Bad Gateway in a Proxy Setup
 
@@ -716,7 +716,7 @@ docker stop api-test && docker rm api-test
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Decode and Analyze a Full HTTP Transaction
 
@@ -767,7 +767,7 @@ Test it against `https://httpbin.org/status/200` (should succeed immediately) an
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Decode a Basic Auth credential — the value you would send in the `Authorization` header.
 

@@ -1,5 +1,5 @@
 ---
-title: Architecture & Data Model
+title: Архитектура и модель данных Elasticsearch
 module: elasticsearch
 duration_min: 20
 difficulty: beginner
@@ -7,11 +7,11 @@ tags: [elasticsearch, architecture, indexing, mappings, ilm]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Elasticsearch is a distributed, RESTful search and analytics engine built on Apache Lucene. It stores documents as JSON and makes them searchable in near-real-time by maintaining an **inverted index** — a data structure that maps every token (word) in every field to the list of documents containing it. This is fundamentally different from a relational database: you trade rigid schema enforcement and row-level locking for flexible, horizontal scalability and millisecond full-text search across billions of documents. The trade-off is intentional — Elasticsearch is optimized for read-heavy, append-heavy workloads, not transactional updates.
+Elasticsearch — распределённый RESTful-движок поиска и аналитики на базе Apache Lucene. Он хранит документы в JSON и обеспечивает поиск почти в реальном времени с помощью **инвертированного индекса** — структуры, связывающей каждый токен в каждом поле со списком документов, где он встречается. Это принципиально отличается от реляционной базы данных: вместо строгой схемы и блокировок строк вы получаете гибкую горизонтальную масштабируемость и полнотекстовый поиск по миллиардам документов за миллисекунды. Elasticsearch оптимизирован для чтения и добавления данных, а не для транзакционных обновлений.
 
-In a DevOps context, Elasticsearch is the backbone of the ELK (Elasticsearch, Logstash, Kibana) and Elastic Stack, ingesting logs, metrics, and traces from across your infrastructure. Understanding its data model — how a cluster organizes shards, replicas, and indices — is prerequisite knowledge before you can tune performance, diagnose split-brain scenarios, or build reliable ILM policies that keep disk usage under control. A misconfigured shard count you cannot undo without a full reindex, or a dynamic mapping that stores an IP address as `text`, will cost you far more time to fix than getting it right upfront.
+В DevOps Elasticsearch — основа ELK (Elasticsearch, Logstash, Kibana) и Elastic Stack, где хранятся логи, метрики и трассировки инфраструктуры. Понимание модели данных — организации shards, реплик и индексов в кластере — необходимо для настройки производительности, диагностики split-brain и создания надёжных политик ILM, контролирующих использование диска. A misconfigured shard count you cannot undo without a full reindex, or a dynamic mapping that stores an IP address as `text`, will cost you far more time to fix than getting it right upfront.
 
 From version 8.0 onward, Elasticsearch runs with security enabled by default (TLS + authentication). The examples in this lesson use a single-node Docker container with security disabled so you can focus on the data model itself. The Security lesson covers how to enable and configure authentication properly.
 
@@ -73,7 +73,7 @@ curl -o /dev/null -w "%{http_code}\n" -s -I http://localhost:9200/my-index
 
 Install `jq` if you don't have it: `sudo apt-get install jq` or `brew install jq`.
 
-## Concepts
+## Основные понятия
 
 ### Cluster, Nodes, and Roles
 
@@ -109,7 +109,7 @@ curl -s "http://localhost:9200/_cat/nodes?v&h=name,node.role,master"
 # master column: * = elected master
 ```
 
-### Indices, Shards, and Replicas
+### Индексы, shards и реплики
 
 An **index** is a logical namespace for a collection of documents. Physically, an index is divided into **primary shards**, each of which is an independent Lucene index holding a subset of the documents. **Replica shards** are exact copies of primaries; they serve read requests and provide failover.
 
@@ -425,7 +425,7 @@ EOF
 
 **`_bulk` is the correct way to ingest data at scale.** Single-document `POST /_doc` requests have per-request HTTP and cluster overhead. Bulk requests of 5–15 MB are the standard recommendation — measure your throughput and tune batch size accordingly.
 
-## Examples
+## Примеры
 
 ### Example 1 — Designing a Logging Index for a Microservices Platform
 
@@ -607,7 +607,7 @@ curl -s -X PUT http://localhost:9200/logs-app-2024/_settings \
 curl -s http://localhost:9200/_cluster/health | jq '.status'
 ```
 
-## Exercises
+## Практические задания
 
 ### Exercise 1 — Create an Index with Explicit Mappings
 
@@ -669,7 +669,7 @@ Write your configuration as valid `elasticsearch.yml` snippets — one per node 
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Calculate total shards for 3 primary shards with 1 replica each. Run: `python3 -c "primary=3; replicas=1; print(primary * (1 + replicas))"`
 

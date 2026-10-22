@@ -1,5 +1,5 @@
 ---
-title: boto3 — AWS SDK
+title: boto3 — SDK AWS для Python
 module: python
 duration_min: 25
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [python, boto3, aws, s3, ec2, iam, automation]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-boto3 is the official AWS SDK for Python, maintained by AWS and built on top of the lower-level `botocore` library. Every major AWS service — EC2, S3, Lambda, ECS, RDS, Route53, SSM, Secrets Manager — has a boto3 client, and most DevOps automation that runs on or targets AWS will use it. Whether you're writing a deployment script, a Lambda function that rotates credentials, a CI pipeline step that invalidates a CloudFront distribution, or a compliance tool that audits resource tagging, you're writing boto3. Understanding its patterns well means you can automate anything in AWS without reaching for the console.
+boto3 — официальный AWS SDK для Python, поддерживаемый AWS и построенный поверх низкоуровневой библиотеки `botocore`. Для большинства сервисов AWS — EC2, S3, Lambda, ECS, RDS, Route 53, SSM и Secrets Manager — есть клиент boto3. Большая часть DevOps-автоматизации для AWS использует именно его: скрипты развёртывания, Lambda-функции ротации credentials, шаги CI для сброса кэша CloudFront и инструменты аудита тегов ресурсов. Знание основных шаблонов boto3 позволяет автоматизировать AWS без постоянного обращения к консоли.
 
-boto3's design reflects two guiding principles. First, it mirrors the AWS API surface almost exactly — the method names, response shapes, and parameter names in boto3 match the underlying HTTP API documented in the AWS reference. This means the AWS documentation and the SDK are always in sync: if you know the API call, you know the boto3 call. Second, it handles the undifferentiated heavy lifting of cloud API interaction: automatic retries with exponential backoff, streaming multipart transfers, paginator abstractions over cursor-based APIs, and a flexible credential chain that works the same whether your code runs on a laptop, an EC2 instance, or a Lambda function.
+У boto3 два ключевых принципа. Во-первых, он почти точно повторяет API AWS: имена методов, структура ответов и параметры соответствуют документированному HTTP API. Поэтому знание API-вызова обычно означает, что вы знаете и соответствующий вызов boto3. Во-вторых, SDK берёт на себя рутинные детали взаимодействия с облачным API: автоматические повторы с экспоненциальной задержкой, потоковую multipart-передачу, абстракции для API с курсорной пагинацией и гибкую цепочку поиска credentials, которая одинаково работает на ноутбуке, экземпляре EC2 или в Lambda-функции.
 
-In the DevOps toolchain, boto3 fills the gap between infrastructure-as-code tools (Terraform, CloudFormation) and day-to-day operational scripts. IaC tools declare desired state; boto3 scripts query current state, react to events, orchestrate workflows, and automate tasks that don't map cleanly to resource definitions. It's also how you extend other tools: custom Terraform providers, Ansible modules targeting AWS, and serverless event handlers are all boto3 at the core.
+В DevOps boto3 связывает инструменты Infrastructure as Code (Terraform, CloudFormation) с повседневными операционными скриптами. IaC-инструменты описывают желаемое состояние, а скрипты boto3 запрашивают текущее состояние, реагируют на события, оркестрируют процессы и автоматизируют задачи, которые неудобно выразить декларативными ресурсами. Через boto3 также расширяют другие инструменты: создают собственные Terraform providers, модули Ansible для AWS и serverless-обработчики событий.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### Clients vs Resources
 
@@ -441,7 +441,7 @@ db_password = secret["password"]
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: S3 Artifact Cleanup — Delete Objects Older Than N Days
 
@@ -761,7 +761,7 @@ aws ssm get-parameter --name "/myapp/prod/db_host" --with-decryption
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Paginated S3 Inventory
 
@@ -835,7 +835,7 @@ aws ssm get-parameters-by-path --path /myapp/prod/ --with-decryption \
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Filter a list of instance dicts by state — the same pattern boto3 responses require.
 

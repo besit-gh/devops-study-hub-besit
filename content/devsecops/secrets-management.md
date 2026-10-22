@@ -1,5 +1,5 @@
 ---
-title: Secrets Management
+title: Управление секретами
 module: devsecops
 duration_min: 25
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [devsecops, secrets, vault, aws-secrets-manager, kubernetes, external-secr
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-A secret hardcoded in a Dockerfile, `.env` file, or CI pipeline YAML is a breach waiting to happen — and "private" repositories are not a mitigation. Secrets management is the practice of ensuring secrets are stored encrypted at rest, transmitted securely, access is audited, and secrets can be rotated without redeploying code. The goal is to make it impossible for a developer to accidentally commit a credential, and impossible for an attacker who gains filesystem access to harvest usable long-lived credentials.
+Секрет, жёстко прописанный в Dockerfile, файле `.env` или YAML CI-пайплайна, — потенциальная утечка; «приватный» репозиторий не решает проблему. Управление секретами означает, что они шифруются при хранении, безопасно передаются, доступ к ним аудируется, а сами секреты можно менять без повторного развёртывания кода. Цель — исключить случайную отправку учётных данных в репозиторий и затруднить получение действующих долгоживущих credentials злоумышленником, получившим доступ к файловой системе.
 
-The guiding principles are: **least privilege** (each service reads only its own secrets), **short lifetimes** (dynamic credentials expire automatically), **auditability** (every read is logged with an identity), and **separation of concerns** (the application never owns the secret store). These principles push you away from static passwords shared across services and toward just-in-time credential issuance tied to verified workload identity.
+Основные принципы: **минимальные привилегии** — каждый сервис читает только собственные секреты; **короткий срок действия** — динамические credentials автоматически истекают; **аудируемость** — каждое чтение записывается вместе с идентичностью; **разделение ответственности** — приложение не владеет хранилищем секретов. Это помогает отказаться от общих статических паролей в пользу выдачи временных credentials подтверждённым рабочим нагрузкам.
 
-Secrets management sits at the intersection of security and platform engineering in the DevOps toolchain. It integrates with your CI/CD system (injecting secrets into pipelines), your orchestration layer (Kubernetes mounting secrets into pods), your cloud IAM (IRSA, Workload Identity, IAM roles), and your application code (SDKs for reading secrets at startup or on demand). This lesson covers the two most common backends — HashiCorp Vault and AWS Secrets Manager — and the External Secrets Operator for bridging them into Kubernetes clusters.
+Управление секретами находится на пересечении безопасности и платформенной инженерии. Оно интегрируется с CI/CD (передача секретов пайплайнам), оркестрацией (монтирование секретов в Pod Kubernetes), облачным IAM (IRSA, Workload Identity, IAM roles) и SDK приложения, которое читает секреты при запуске или по запросу. В уроке рассматриваются два распространённых хранилища — HashiCorp Vault и AWS Secrets Manager — и External Secrets Operator, который интегрирует их с кластерами Kubernetes.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### What Counts as a Secret
 
@@ -632,7 +632,7 @@ jobs:
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Vault Dev Mode — End-to-End Static Secret Workflow
 
@@ -905,7 +905,7 @@ EOF
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Vault Policy Least-Privilege Audit
 
@@ -977,7 +977,7 @@ Set up a local Kubernetes cluster (kind or minikube) with ESO installed. You'll 
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 6. Detect an AWS access key ID in this environment variable line. Print only the matched key.
 

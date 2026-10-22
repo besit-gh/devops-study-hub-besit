@@ -1,5 +1,5 @@
 ---
-title: Exporters & Service Discovery
+title: Экспортёры и обнаружение сервисов Prometheus
 module: prometheus
 duration_min: 20
 difficulty: intermediate
@@ -7,10 +7,10 @@ tags: [prometheus, exporters, service-discovery, kubernetes, relabeling, node-ex
 exercises: 3
 ---
 
-## Overview
-Prometheus scrapes targets that expose metrics in the Prometheus text format. Most existing systems (Linux hosts, databases, network devices) don't natively expose this format — exporters bridge that gap by translating native metrics into Prometheus format. Alongside exporters, service discovery (SD) mechanisms replace static target lists with dynamic queries against infrastructure APIs — Kubernetes, Consul, EC2, DNS, etc. Relabeling rules give fine-grained control over which targets are scraped and what labels they carry. These three topics — exporters, service discovery, and relabeling — are what make Prometheus operationally practical at scale.
+## Обзор
+Prometheus опрашивает цели, предоставляющие метрики в текстовом формате Prometheus. Большинство существующих систем — Linux-хосты, базы данных и сетевые устройства — не поддерживают этот формат напрямую. Экспортёры решают проблему, преобразуя исходные метрики в формат Prometheus. Service discovery (SD) заменяет статические списки целей динамическими запросами к API инфраструктуры: Kubernetes, Consul, EC2, DNS и другим. Правила relabeling позволяют точно управлять тем, какие цели опрашиваются и какие метки они получают. Именно экспортёры, обнаружение сервисов и relabeling делают Prometheus практичным при масштабировании.
 
-## Concepts
+## Основные понятия
 
 ### node_exporter
 `node_exporter` exposes Linux host metrics: CPU, memory, disk I/O, filesystem, network, load average, and more. It is the standard starting point for host monitoring.
@@ -236,7 +236,7 @@ scrape_configs:
 | service | `__meta_kubernetes_service_name` | Service name |
 | endpoints | `__meta_kubernetes_endpoint_port_name` | Named port |
 
-### Relabeling
+### Relabeling — изменение меток
 Relabeling is Prometheus's most powerful (and complex) mechanism. It runs a sequence of rules against the label set of each discovered target, before and after scraping.
 
 **Two phases:**
@@ -315,7 +315,7 @@ scrape_configs:
 ]
 ```
 
-## Examples
+## Примеры
 
 **Deploy node_exporter as a Kubernetes DaemonSet:**
 
@@ -369,7 +369,7 @@ curl -s http://localhost:9090/api/v1/targets | \
 curl -s http://localhost:9090/api/v1/targets?state=dropped | jq '.data.droppedTargets | length'
 ```
 
-## Exercises
+## Практические задания
 
 1. Write a `prometheus.yml` scrape job that uses `kubernetes_sd_configs` with `role: endpoints` to scrape all services in the `production` namespace that have the label `app.kubernetes.io/monitored: "true"`. Include relabeling to: (a) keep only those matching endpoints, (b) set `namespace`, `service`, and `pod` labels from Kubernetes metadata, (c) use the `prometheus.io/port` annotation to override the default port.
 
@@ -380,7 +380,7 @@ curl -s http://localhost:9090/api/v1/targets?state=dropped | jq '.data.droppedTa
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 4. Identify the Node Exporter's default port. Run: `python3 -c "ports={'node': 9100, 'blackbox': 9115, 'mysqld': 9104}; print(ports['node'])"`
 

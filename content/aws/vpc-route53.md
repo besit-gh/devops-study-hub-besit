@@ -1,5 +1,5 @@
 ---
-title: VPC and Route 53
+title: VPC и Route 53
 module: aws
 duration_min: 25
 difficulty: intermediate
@@ -7,12 +7,12 @@ tags: [aws, vpc, subnets, route53, networking, nat-gateway, security-groups, dns
 exercises: 4
 ---
 
-## Overview
-VPC gives you a private, isolated network in AWS. Route 53 is AWS's DNS service. Together they control how traffic enters your infrastructure, how it's routed between services, and how the outside world discovers your endpoints. Most real infrastructure issues trace back to VPC misconfiguration — wrong route table, overly permissive security group, or missing NAT gateway.
+## Обзор
+VPC предоставляет приватную изолированную сеть в AWS, а Route 53 — DNS-сервис AWS. Вместе они определяют, как трафик попадает в инфраструктуру, маршрутизируется между сервисами и как внешние клиенты находят ваши endpoint. Многие реальные проблемы инфраструктуры связаны с ошибками VPC: неверной таблицей маршрутизации, слишком широкими правилами security group или отсутствующим NAT Gateway.
 
-## Concepts
+## Основные понятия
 
-### VPC Structure
+### Структура VPC
 ```
 VPC (10.0.0.0/16)
 ├── Public Subnet (10.0.1.0/24) — AZ us-east-1a
@@ -25,59 +25,59 @@ VPC (10.0.0.0/16)
 └── Private Subnet (10.0.11.0/24) — AZ us-east-1b
 ```
 
-A **public subnet** has a route to an Internet Gateway (IGW).
-A **private subnet** has no IGW route — outbound-only internet via NAT Gateway.
+**Публичная подсеть** имеет маршрут к Internet Gateway (IGW).
+**Приватная подсеть** не имеет маршрута к IGW; исходящий доступ в интернет обеспечивается через NAT Gateway.
 
-### Creating a VPC (CLI)
+### Создание VPC через CLI
 ```bash
-# Create VPC
+# Создать VPC
 VPC_ID=$(aws ec2 create-vpc \
   --cidr-block 10.0.0.0/16 \
   --query 'Vpc.VpcId' --output text)
 aws ec2 create-tags --resources $VPC_ID --tags Key=Name,Value=prod-vpc
 
-# Enable DNS hostnames (required for some services)
+# Включить DNS-имена узлов (требуется некоторым сервисам)
 aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-hostnames
 
-# Create subnets
+# Создать подсети
 aws ec2 create-subnet \
   --vpc-id $VPC_ID \
   --cidr-block 10.0.1.0/24 \
   --availability-zone us-east-1a \
   --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=public-1a}]'
 
-# Create and attach Internet Gateway
+# Создать и подключить Internet Gateway
 IGW_ID=$(aws ec2 create-internet-gateway --query 'InternetGateway.InternetGatewayId' --output text)
 aws ec2 attach-internet-gateway --internet-gateway-id $IGW_ID --vpc-id $VPC_ID
 
-# Create public route table
+# Создать таблицу маршрутизации публичной подсети
 RT_ID=$(aws ec2 create-route-table --vpc-id $VPC_ID --query 'RouteTable.RouteTableId' --output text)
 aws ec2 create-route --route-table-id $RT_ID --destination-cidr-block 0.0.0.0/0 --gateway-id $IGW_ID
 aws ec2 associate-route-table --route-table-id $RT_ID --subnet-id <public-subnet-id>
 ```
 
 ### NAT Gateway
-Private subnets need a NAT Gateway for outbound internet access (package installs, API calls):
+Приватным подсетям нужен NAT Gateway для исходящего доступа в интернет (установка пакетов, API-запросы):
 
 ```bash
-# Allocate Elastic IP for NAT Gateway
+# Выделить Elastic IP для NAT Gateway
 EIP=$(aws ec2 allocate-address --domain vpc --query 'AllocationId' --output text)
 
-# Create NAT Gateway in a PUBLIC subnet
+# Создать NAT Gateway в ПУБЛИЧНОЙ подсети
 NAT_ID=$(aws ec2 create-nat-gateway \
   --subnet-id <public-subnet-id> \
   --allocation-id $EIP \
   --query 'NatGateway.NatGatewayId' --output text)
 
-# Private route table: route outbound traffic through NAT
+# Таблица маршрутизации приватной подсети: направить исходящий трафик через NAT
 PRIVATE_RT=$(aws ec2 create-route-table --vpc-id $VPC_ID --query 'RouteTable.RouteTableId' --output text)
 aws ec2 create-route --route-table-id $PRIVATE_RT --destination-cidr-block 0.0.0.0/0 --nat-gateway-id $NAT_ID
 aws ec2 associate-route-table --route-table-id $PRIVATE_RT --subnet-id <private-subnet-id>
 ```
 
-NAT Gateways cost ~$0.045/hour + $0.045/GB processed. One per AZ for HA.
+NAT Gateway стоит примерно $0,045 в час плюс $0,045 за каждый обработанный гигабайт. Для высокой доступности рекомендуется отдельный шлюз в каждой зоне доступности.
 
-### Security Groups vs NACLs
+### Группы безопасности и NACL
 ```
 Security Groups                 NACLs
 ─────────────────               ─────────────────
@@ -89,41 +89,41 @@ Default: deny all inbound       Default: allow all (VPC default NACL)
 ```
 
 ```bash
-# Security group for web servers
+# Группа безопасности веб-серверов
 SG_ID=$(aws ec2 create-security-group \
   --group-name web-sg \
   --description "Web server security group" \
   --vpc-id $VPC_ID \
   --query 'GroupId' --output text)
 
-# Allow HTTPS from anywhere
+# Разрешить HTTPS из любых источников
 aws ec2 authorize-security-group-ingress \
   --group-id $SG_ID \
   --protocol tcp --port 443 --cidr 0.0.0.0/0
 
-# Allow SSH from specific IP only
+# Разрешить SSH только с конкретного IP
 aws ec2 authorize-security-group-ingress \
   --group-id $SG_ID \
   --protocol tcp --port 22 --cidr 203.0.113.0/32
 
-# Allow app traffic from another security group (not CIDR)
+# Разрешить трафик приложения из другой группы безопасности (не по CIDR)
 aws ec2 authorize-security-group-ingress \
   --group-id $DB_SG_ID \
   --protocol tcp --port 5432 \
   --source-group $APP_SG_ID
 ```
 
-### VPC Endpoints
-Access AWS services without leaving the AWS network:
+### Конечные точки VPC
+Доступ к сервисам AWS без выхода из сети AWS:
 
 ```bash
-# S3 Gateway endpoint (free — traffic stays on AWS backbone)
+# Gateway endpoint для S3 (бесплатно — трафик остаётся в магистральной сети AWS)
 aws ec2 create-vpc-endpoint \
   --vpc-id $VPC_ID \
   --service-name com.amazonaws.us-east-1.s3 \
   --route-table-ids $PRIVATE_RT
 
-# Interface endpoint for Secrets Manager (creates an ENI in your subnet)
+# Interface endpoint для Secrets Manager (создаёт ENI в вашей подсети)
 aws ec2 create-vpc-endpoint \
   --vpc-id $VPC_ID \
   --vpc-endpoint-type Interface \
@@ -136,19 +136,19 @@ aws ec2 create-vpc-endpoint \
 
 ### Route 53
 
-#### Hosted Zones and Records
+#### Хостинговые зоны и записи
 ```bash
-# Create hosted zone (public — for internet-facing DNS)
+# Создать hosted zone (публичную — для DNS, доступного из интернета)
 aws route53 create-hosted-zone \
   --name myapp.com \
   --caller-reference $(date +%s)
 
-# Get hosted zone ID
+# Получить ID hosted zone
 HZ_ID=$(aws route53 list-hosted-zones-by-name \
   --dns-name myapp.com \
   --query 'HostedZones[0].Id' --output text | cut -d/ -f3)
 
-# Create/update an A record
+# Создать или обновить запись A
 aws route53 change-resource-record-sets \
   --hosted-zone-id $HZ_ID \
   --change-batch '{
@@ -163,7 +163,7 @@ aws route53 change-resource-record-sets \
     }]
   }'
 
-# Alias record (for ALB/CloudFront — no TTL needed)
+# Alias-запись (для ALB/CloudFront — TTL не требуется)
 aws route53 change-resource-record-sets \
   --hosted-zone-id $HZ_ID \
   --change-batch '{
@@ -182,7 +182,7 @@ aws route53 change-resource-record-sets \
   }'
 ```
 
-#### Routing Policies
+#### Политики маршрутизации
 ```
 Simple           — single record, single value (default)
 Weighted         — distribute traffic by weight (A/B testing, gradual rollout)
@@ -193,7 +193,7 @@ Geoproximity     — route by proximity, with configurable bias
 ```
 
 ```bash
-# Weighted routing — 10% to canary
+# Взвешенная маршрутизация — 10% трафика на canary
 aws route53 change-resource-record-sets --hosted-zone-id $HZ_ID \
   --change-batch '{
     "Changes": [
@@ -217,9 +217,9 @@ aws route53 change-resource-record-sets --hosted-zone-id $HZ_ID \
   }'
 ```
 
-#### Health Checks
+#### Проверки состояния
 ```bash
-# Create health check for an endpoint
+# Создать проверку состояния endpoint
 HC_ID=$(aws route53 create-health-check \
   --caller-reference $(date +%s) \
   --health-check-config '{
@@ -233,11 +233,11 @@ HC_ID=$(aws route53 create-health-check \
   --query 'HealthCheck.Id' --output text)
 ```
 
-Associate a health check with a DNS record — Route 53 stops routing to unhealthy endpoints in failover and latency routing policies.
+Свяжите проверку состояния с DNS-записью: при политиках failover и latency Route 53 перестанет направлять трафик на неработающие конечные точки.
 
-## Examples
+## Примеры
 
-### Standard 3-Tier VPC (Terraform)
+### Стандартная трёхуровневая VPC (Terraform)
 ```hcl
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
@@ -255,32 +255,32 @@ module "vpc" {
 }
 ```
 
-## Exercises
+## Практические задания
 
-1. Create a VPC with two public and two private subnets across two AZs. Add an Internet Gateway for the public subnets and a NAT Gateway (in one public subnet) for the private subnets. Verify a private subnet instance can reach the internet via the NAT Gateway by checking `curl https://example.com`.
-2. Create two security groups: `web-sg` (allows 443 from 0.0.0.0/0) and `app-sg` (allows port 8080 only from `web-sg`). Demonstrate that restricting the app security group to the web security group source prevents direct internet access.
-3. Set up Route 53 with a public hosted zone. Create an A record and verify DNS resolution with `dig`. Then set up weighted routing — 80% to one IP, 20% to another — and verify with repeated `dig` queries.
-4. Configure a failover routing policy in Route 53: a primary record pointing to an active server with a health check, and a secondary pointing to a standby. Simulate failure by making the health check fail and verify Route 53 switches to the secondary.
+1. Создайте VPC с двумя публичными и двумя приватными подсетями в двух зонах доступности. Добавьте Internet Gateway для публичных подсетей и NAT Gateway (в одной публичной подсети) для приватных. Убедитесь, что экземпляр в приватной подсети выходит в интернет через NAT Gateway, выполнив `curl https://example.com`.
+2. Создайте две группы безопасности: `web-sg` (разрешает порт 443 с `0.0.0.0/0`) и `app-sg` (разрешает порт 8080 только от `web-sg`). Покажите, что ограничение источника для `app-sg` группой `web-sg` блокирует прямой доступ из интернета.
+3. Настройте Route 53 с публичной hosted zone. Создайте запись A и проверьте DNS-разрешение командой `dig`. Затем настройте взвешенную маршрутизацию — 80% запросов на один IP и 20% на другой — и проверьте её повторными запросами `dig`.
+4. Настройте в Route 53 политику failover: основную запись на активный сервер с проверкой состояния и резервную — на standby. Имитируйте сбой, добившись неуспешной проверки, и убедитесь, что Route 53 переключается на резервную запись.
 
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
-5. Calculate the number of usable host addresses in a /24 subnet. Run: `python3 -c "print(2**(32-24) - 2)"`
+5. Рассчитайте количество доступных адресов узлов в подсети /24. Выполните: `python3 -c "print(2**(32-24) - 2)"`
 
 ```expected_output
 254
 ```
 
-hint: Think about how subnet math works — the total number of addresses minus reserved ones gives you usable hosts.
-hint: Use Python's exponentiation with 2**(32-prefix) and subtract the reserved network and broadcast addresses.
+Подсказка: общее число адресов минус зарезервированные адреса даёт количество адресов, доступных узлам.
+Подсказка: используйте возведение в степень в Python: `2**(32-префикс)`, затем вычтите адрес сети и широковещательный адрес.
 
-6. Count the octets in an IPv4 address. Run: `echo "192.168.10.5" | tr '.' '\n' | wc -l`
+6. Посчитайте количество октетов в IPv4-адресе. Выполните: `echo "192.168.10.5" | tr '.' '\n' | wc -l`
 
 ```expected_output
 4
 ```
 
-hint: Think about how you can split the IP address into separate lines and then count those lines using standard Unix tools.
-hint: Use tr to translate the dot separator into newline characters, then pipe the result into wc -l to count the resulting lines.
+Подсказка: разбейте IP-адрес на отдельные строки, а затем посчитайте их стандартными инструментами Unix.
+Подсказка: используйте `tr`, чтобы заменить точки символами новой строки, а результат передайте в `wc -l` для подсчёта строк.

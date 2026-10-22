@@ -1,5 +1,5 @@
 ---
-title: Firewalls & Load Balancers
+title: Межсетевые экраны и балансировщики нагрузки
 module: networking
 duration_min: 20
 difficulty: intermediate
@@ -7,55 +7,55 @@ tags: [networking, firewall, iptables, ufw, security-groups, load-balancer, ngin
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Firewalls and load balancers are the gatekeepers of every production system. A firewall enforces access policy — it decides which packets are allowed to reach a service and which are dropped before they arrive. A load balancer distributes accepted traffic across multiple backend instances, enabling horizontal scaling and fault tolerance. In practice, these two components are almost always deployed together: the firewall controls who can reach the load balancer, and the load balancer decides which backend handles the request.
+Межсетевые экраны и балансировщики нагрузки — привратники любой production-системы. Firewall применяет политику доступа: определяет, какие пакеты могут дойти до сервиса, а какие будут отброшены. Балансировщик распределяет разрешённый трафик между несколькими backend-экземплярами, обеспечивая горизонтальное масштабирование и отказоустойчивость. На практике эти компоненты почти всегда работают вместе: firewall контролирует доступ к балансировщику, а балансировщик выбирает backend для обработки запроса.
 
-For a DevOps engineer, understanding both is non-negotiable. Misconfigured firewalls are one of the most common causes of "it works on my machine" connectivity failures in staging and production environments. Misconfigured load balancers cause silent data-loss bugs, uneven traffic distribution, and failed health checks that route traffic to dead instances. You need to be able to read a ruleset, write a new one, and diagnose failures at each layer — on bare metal, in VMs, and in cloud infrastructure.
+DevOps-инженеру необходимо разбираться в обоих компонентах. Неверная настройка firewall — одна из самых частых причин ситуации «у меня на машине работает», когда соединение не работает в staging или production. Ошибки балансировщика приводят к незаметной потере данных, неравномерному распределению трафика и health checks, направляющим запросы на неработающие экземпляры. Нужно уметь читать и создавать наборы правил, а также диагностировать сбои на bare metal, в виртуальных машинах и облачной инфраструктуре.
 
-Both technologies exist at multiple layers of the stack simultaneously. On a single Linux host you might have `iptables` rules enforced by the kernel, a cloud security group applied at the hypervisor level before packets even reach your OS, and an application-layer load balancer in front of everything. These layers interact. Understanding their boundaries — and how they can contradict each other — is what separates engineers who can diagnose production incidents from those who guess and restart services.
+Обе технологии могут одновременно работать на разных уровнях стека. На одном Linux-хосте могут действовать правила `iptables` в ядре, облачная security group на уровне гипервизора (до поступления пакетов в ОС) и расположенный впереди балансировщик прикладного уровня. Эти уровни взаимодействуют. Понимание их границ и возможных противоречий отличает инженера, способного диагностировать production-инциденты, от того, кто лишь гадает и перезапускает службы.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### How Firewall Rule Evaluation Works
+### Как обрабатываются правила firewall
 
-A firewall is an ordered list of rules. Each rule has a **match condition** (which packets it applies to) and a **target** (what to do with matching packets: ACCEPT, DROP, REJECT, LOG, etc.). Rules are evaluated top to bottom; the first rule that matches terminates evaluation for that packet.
+Firewall — это упорядоченный список правил. У каждого правила есть **условие совпадения** (к каким пакетам оно применяется) и **действие** (что делать с совпавшим пакетом: ACCEPT, DROP, REJECT, LOG и т. д.). Правила проверяются сверху вниз; первое совпавшее правило завершает обработку пакета.
 
-This ordering has critical implications:
+Порядок правил имеет важные последствия:
 
-- A broad ACCEPT rule placed before a specific DROP rule will make the DROP unreachable.
-- A broad DROP at the top of a chain will block everything, including your own SSH session.
-- Rules that are never matched add latency (small, but measurable at high packet rates).
+- Широкое правило ACCEPT перед конкретным DROP сделает DROP недостижимым.
+- Широкое правило DROP в начале цепочки заблокирует весь трафик, включая текущее SSH-соединение.
+- Никогда не срабатывающие правила добавляют задержку (небольшую, но измеримую при высокой скорости пакетов).
 
-| Target | Behavior | Visible to sender? |
+| Действие | Поведение | Видно отправителю? |
 |--------|----------|--------------------|
-| `ACCEPT` | Let the packet through | Yes — connection proceeds |
-| `DROP` | Silently discard | No — sender times out |
-| `REJECT` | Discard and send ICMP error | Yes — sender gets immediate error |
-| `LOG` | Log and continue evaluation | N/A — non-terminating |
+| `ACCEPT` | Пропустить пакет | Да — соединение продолжается |
+| `DROP` | Молча отбросить | Нет — отправитель ждёт тайм-аута |
+| `REJECT` | Отбросить и отправить ошибку ICMP | Да — отправитель сразу получает ошибку |
+| `LOG` | Записать в журнал и продолжить проверку | Неприменимо — обработка продолжается |
 
-**DROP vs REJECT:** Use `DROP` for external-facing rules — giving no response makes port scanning slower and less informative for attackers. Use `REJECT` internally (between services) so that legitimate clients fail fast rather than hanging until timeout.
+**DROP и REJECT:** используйте `DROP` для правил, обращённых к внешней сети: отсутствие ответа замедляет сканирование портов и даёт атакующему меньше информации. Внутри системы (между сервисами) используйте `REJECT`, чтобы легитимные клиенты быстро получали ошибку, а не ждали тайм-аут.
 
-**Connection state matters:** Modern firewalls are stateful. A packet that is part of an already-established TCP session (`ESTABLISHED`) or is related to one (`RELATED`, e.g., ICMP error responses) does not need its own ACCEPT rule. Always add a stateful ACCEPT rule near the top of your INPUT chain — failing to do this is the most common way engineers accidentally lock themselves out when setting a default DROP policy.
+**Состояние соединения имеет значение:** современные firewall отслеживают состояние соединений. Для пакета существующего TCP-соединения (`ESTABLISHED`) или связанного с ним (`RELATED`, например ответа об ошибке ICMP) не требуется отдельное правило ACCEPT. Всегда добавляйте правило для установленных и связанных соединений в начало цепочки INPUT. Иначе при политике DROP по умолчанию можно случайно заблокировать себе доступ.
 
 ---
 
-### iptables (Linux Kernel Firewall)
+### iptables (межсетевой экран ядра Linux)
 
-`iptables` is the traditional userspace interface to the Linux kernel's `netfilter` packet-filtering framework. On Ubuntu 20.04+ and RHEL 9+, the actual backend is `nftables` — `iptables` commands are translated via a compatibility shim (`iptables-nft`). The syntax and behavior below remain the same; the shim is transparent.
+`iptables` — традиционный пользовательский интерфейс к подсистеме фильтрации пакетов `netfilter` ядра Linux. В Ubuntu 20.04+ и RHEL 9+ фактическим backend является `nftables`, а команды `iptables` преобразуются совместимым слоем `iptables-nft`. Синтаксис и поведение при этом остаются прежними.
 
-Rules are organized into **chains** within **tables**:
+Правила организованы в **цепочки (chains)** внутри **таблиц (tables)**:
 
-| Table | Purpose | Chains |
+| Таблица | Назначение | Цепочки |
 |-------|---------|--------|
-| `filter` | Accept/drop/reject (default) | INPUT, OUTPUT, FORWARD |
-| `nat` | Address translation | PREROUTING, POSTROUTING, OUTPUT |
-| `mangle` | Packet header modification | All five chains |
-| `raw` | Skip connection tracking | PREROUTING, OUTPUT |
+| `filter` | Разрешение и блокировка пакетов (по умолчанию) | INPUT, OUTPUT, FORWARD |
+| `nat` | Трансляция адресов | PREROUTING, POSTROUTING, OUTPUT |
+| `mangle` | Изменение заголовков пакетов | Все пять цепочек |
+| `raw` | Отключение отслеживания соединений | PREROUTING, OUTPUT |
 
-For most firewall work, you only touch the `filter` table.
+Для большинства задач с firewall достаточно таблицы `filter`.
 
 ```bash
 # Show current rules with line numbers, packet/byte counts, no DNS lookup
@@ -109,17 +109,17 @@ service iptables save
 iptables-restore < /etc/iptables/rules.v4
 ```
 
-**Gotcha — the lockout trap:** If you run `iptables -P INPUT DROP` before adding the ESTABLISHED/RELATED and SSH ACCEPT rules, your existing SSH session will continue (the kernel keeps existing connections) but you will not be able to reconnect after disconnecting. Always add ACCEPT rules first, then set the default DROP policy.
+**Ловушка блокировки доступа:** если выполнить `iptables -P INPUT DROP` до добавления правил ACCEPT для ESTABLISHED/RELATED и SSH, текущее SSH-соединение продолжит работать (ядро сохраняет существующие соединения), но повторно подключиться после отключения уже не получится. Сначала добавляйте правила ACCEPT и только потом устанавливайте политику DROP по умолчанию.
 
-**Gotcha — rules don't persist by default:** `iptables` rules live in kernel memory. A reboot wipes them. On Debian/Ubuntu, install `iptables-persistent` (`apt install iptables-persistent`) and save rules via `netfilter-persistent save`. On RHEL, use `firewalld` or the `iptables` service with the `iptables-services` package.
+**Правила по умолчанию не сохраняются после перезагрузки:** правила `iptables` находятся в памяти ядра и исчезают после reboot. В Debian/Ubuntu установите `iptables-persistent` и сохраните правила через `netfilter-persistent save`. В RHEL используйте `firewalld` или службу `iptables` из пакета `iptables-services`.
 
-**Gotcha — rule ordering with `-A` vs `-I`:** `-A` appends to the end of a chain. If your chain ends in a DROP policy and you append an ACCEPT, it may never be reached because an earlier DROP rule already matched. Use `-I` with a position number to insert rules at the correct point.
+**Порядок правил с `-A` и `-I`:** `-A` добавляет правило в конец цепочки. Если раньше уже сработало DROP, добавленное в конец ACCEPT не будет достигнуто. Используйте `-I` с номером позиции, чтобы вставить правило в нужное место.
 
 ---
 
-### ufw — Uncomplicated Firewall
+### ufw — простой межсетевой экран
 
-`ufw` wraps `iptables` with a simpler interface designed for servers. It's the standard on Ubuntu. Internally it still generates `iptables` rules, so you can mix `iptables -L` inspection with `ufw` management.
+`ufw` предоставляет более простой интерфейс к `iptables`, предназначенный для серверов. Это стандартный инструмент Ubuntu. Внутри он всё равно создаёт правила `iptables`, поэтому можно управлять firewall через `ufw`, а проверять правила командой `iptables -L`.
 
 ```bash
 # Initial setup — set defaults before enabling
@@ -156,28 +156,28 @@ ufw delete 3                    # by number from 'ufw status numbered'
 ufw reset
 ```
 
-**When to use ufw vs iptables directly:** Use `ufw` for simple server hardening where you need a small set of static rules. Use `iptables` directly (or `nftables`) when you need fine-grained control — custom chains, packet marking, NAT rules, or integration with tooling like Docker.
+**Когда использовать ufw, а когда iptables напрямую:** `ufw` подходит для простой защиты сервера с небольшим набором статических правил. Используйте `iptables` или `nftables`, когда нужен точный контроль: собственные цепочки, маркировка пакетов, NAT или интеграция с Docker.
 
-**Docker and ufw gotcha:** Docker bypasses `ufw` by writing rules directly to `iptables`. If you `ufw deny 8080` but run a container with `-p 8080:8080`, the port will still be publicly accessible. The fix is to either configure Docker to not manipulate iptables (`"iptables": false` in `/etc/docker/daemon.json`) or bind containers to localhost (`-p 127.0.0.1:8080:8080`) and let a reverse proxy handle external access.
+**Особенность Docker и ufw:** Docker обходит `ufw`, напрямую записывая правила в `iptables`. Если выполнить `ufw deny 8080`, но запустить контейнер с `-p 8080:8080`, порт всё равно может быть доступен извне. Решения: запретить Docker управлять iptables (`"iptables": false` в `/etc/docker/daemon.json`) либо привязать контейнер к localhost (`-p 127.0.0.1:8080:8080`) и поручить внешний доступ reverse proxy.
 
 ---
 
-### Cloud Security Groups
+### Облачные security groups
 
-Cloud security groups are stateful firewalls applied at the hypervisor/NIC level — before packets reach your instance's OS. This means they work regardless of what's running inside the VM, and they cannot be bypassed from within the OS.
+Облачные security group — stateful firewall на уровне гипервизора или сетевого интерфейса, то есть до того, как пакет попадёт в ОС экземпляра. Они работают независимо от процессов внутри ВМ и не могут быть обойдены из самой ОС.
 
-| Feature | iptables (host) | AWS Security Group |
+| Свойство | iptables (хост) | AWS Security Group |
 |---------|----------------|-------------------|
-| Applied at | OS kernel | Hypervisor/NIC |
-| Statefulness | Requires conntrack module | Always stateful |
-| Rule ordering | Matters (first match wins) | All rules evaluated; most permissive wins |
-| References other groups | No | Yes — attach SG as a source |
-| Logging | Via LOG target | Via VPC Flow Logs |
-| Persistence | Requires explicit save | Always persisted |
+| Уровень применения | Ядро ОС | Гипервизор/NIC |
+| Отслеживание состояния | Требуется модуль conntrack | Всегда stateful |
+| Порядок правил | Важен (первое совпадение) | Проверяются все правила; действует наиболее разрешающее |
+| Ссылки на другие группы | Нет | Да — можно указать SG как источник |
+| Журналирование | Через действие LOG | Через VPC Flow Logs |
+| Сохранение | Нужно сохранять явно | Сохраняется автоматически |
 
-**All rules evaluated — no ordering:** Unlike iptables, AWS security groups evaluate all inbound rules and take the most permissive result. There is no "first match wins." This means you cannot block a specific IP if another rule allows all traffic on that port — the ALLOW wins. To block specific IPs in AWS, use a Network ACL (NACL), which does support ordered deny rules.
+**Проверяются все правила, порядка нет:** в отличие от iptables, AWS security groups учитывают все входящие правила и применяют наиболее разрешающий результат. Принципа «первое совпадение» нет. Поэтому нельзя заблокировать конкретный IP, если другое правило разрешает весь трафик на этом порту: победит ALLOW. Для блокировки отдельных IP используйте Network ACL (NACL), где можно задать упорядоченные правила DENY.
 
-**Security group referencing:** Instead of specifying IP CIDR ranges, you can reference another security group as the source. Any instance assigned that group is automatically allowed. This is the correct pattern for internal service communication in AWS — it scales automatically as instances are added or removed without touching firewall rules.
+**Ссылки на security group:** вместо CIDR-диапазона можно указать другую security group как источник. Любой экземпляр с этой группой автоматически получит доступ. Это рекомендуемый способ организовать внутреннее взаимодействие сервисов AWS: при добавлении или удалении экземпляров правила менять не нужно.
 
 ```
 # Example: 3-tier application security group structure
@@ -199,20 +199,20 @@ Inbound:
   All traffic  0.0.0.0/0        ← AWS default; restrict if compliance requires it
 ```
 
-**GCP firewall rules** work similarly but are applied at the VPC network level, not per-instance. Rules use **target tags** or **service accounts** as selectors, and priority (0–65535, lower = higher priority) determines evaluation order when multiple rules match. GCP supports explicit DENY rules, unlike AWS security groups.
+**Правила firewall в GCP** работают похоже, но применяются на уровне сети VPC, а не отдельных экземпляров. Для выбора целей используются **target tags** или **service accounts**; приоритет (0–65535, меньшее значение означает более высокий приоритет) определяет порядок обработки совпавших правил. В отличие от AWS security groups, GCP поддерживает явные правила DENY.
 
-**NACLs vs Security Groups (AWS):** Security groups are stateful — if you allow inbound port 80, the response traffic is automatically allowed outbound. NACLs are stateless — you must explicitly allow both inbound and outbound for each port. NACLs apply to entire subnets; security groups apply per-instance. Use NACLs for subnet-level blast radius control (blocking a compromised subnet), and security groups for fine-grained instance-level policy.
+**NACL и Security Groups в AWS:** security groups отслеживают состояние соединений, поэтому при разрешении входящего порта 80 ответный исходящий трафик автоматически разрешается. NACL stateless: для каждого порта нужно отдельно разрешать входящий и исходящий трафик. NACL действуют на всю подсеть, security groups — на уровне экземпляра. Используйте NACL для ограничения последствий компрометации подсети, а security groups — для точной политики отдельных экземпляров.
 
 ---
 
-### Load Balancer Types and Layer Differences
+### Типы балансировщиков нагрузки and Layer Differences
 
-| Type | OSI Layer | What it inspects | Typical use |
+| Тип | Уровень OSI | Что анализирует | Типичное применение |
 |------|-----------|-----------------|-------------|
-| L4 (Transport) | 4 — TCP/UDP | IP, port, protocol | Any TCP/UDP protocol, ultra-low latency |
-| L7 (Application) | 7 — HTTP | URL, headers, cookies, body | HTTP/HTTPS routing, SSL termination |
+| L4 (транспортный) | 4 — TCP/UDP | IP, порт, протокол | Любой TCP/UDP-протокол, минимальная задержка |
+| L7 (прикладной) | 7 — HTTP | URL, заголовки, cookies, тело | Маршрутизация HTTP/HTTPS, завершение SSL/TLS |
 
-**L4 load balancers** forward raw TCP/UDP connections. They are fast because they do minimal inspection. They cannot distinguish between `/api` and `/static` in the same connection — they only see port and protocol. Use L4 when you need to load-balance non-HTTP protocols (gRPC over raw TCP, MQTT, database protocols, game servers) or when latency is the primary constraint.
+**Балансировщики L4** передают TCP/UDP-соединения без анализа содержимого. Они быстрые, поскольку проверяют минимум данных. Они не различают `/api` и `/static`: видят только порт и протокол. Используйте L4 для балансировки не-HTTP-протоколов (gRPC поверх TCP, MQTT, протоколы баз данных, игровые серверы) или когда критична задержка.
 
 **L7 load balancers** parse the HTTP request before routing. This enables:
 
@@ -379,7 +379,7 @@ containers:
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Hardening a New Ubuntu Server with ufw
 
@@ -675,7 +675,7 @@ nc -zv 10.0.1.5 5432
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Build and Test an iptables Ruleset
 
@@ -754,7 +754,7 @@ This exercise is design and CLI-based. You need AWS CLI access and an AWS accoun
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Parse the default policy from an `iptables -L` chain header.
 

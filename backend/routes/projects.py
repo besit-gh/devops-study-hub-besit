@@ -234,32 +234,32 @@ def grade_ai_step(slug: str, step_id: int, req: AiGradeRequest):
     project, step = _get_project_and_step(slug, step_id, "ai")
 
     prompt = (
-        f"You are evaluating a DevOps project task response.\n\n"
+        f"Ты оцениваешь ответ на практическое задание DevOps. Все feedback и model_answer пиши на русском языке.\n\n"
         f"Task: {step['title']}\n"
         f"Requirements:\n{step['prompt']}\n\n"
         f"Candidate's response:\n{req.answer}\n\n"
-        "Score the response. Return ONLY a JSON object — no other text, no markdown fences:\n"
-        '{"score":"Weak|Adequate|Strong","feedback":"2-3 sentences on correctness, completeness, and best-practice gaps","model_answer":"A strong example response"}'
+        "Оцени ответ. Верни ТОЛЬКО JSON-объект без другого текста и Markdown-обрамления:\n"
+        '{"score":"Weak|Adequate|Strong","feedback":"2–3 предложения о корректности, полноте и пробелах в лучших практиках","model_answer":"пример сильного ответа"}'
     )
     try:
         text = generate(prompt, max_tokens=1500, timeout=45.0)
     except AINotConfiguredError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except AITimeoutError:
-        raise HTTPException(status_code=504, detail="Evaluation timed out — please try again")
+        raise HTTPException(status_code=504, detail="Время ожидания оценки истекло — попробуйте ещё раз")
     if text.startswith("```"):
         parts = text.split("```")
         text = parts[1].lstrip("json").strip() if len(parts) > 1 else text
     try:
         result = json.loads(text)
     except json.JSONDecodeError as e:
-        raise HTTPException(status_code=502, detail=f"Claude returned unparseable JSON: {e}")
+        raise HTTPException(status_code=502, detail=f"OpenAI вернул некорректный JSON: {e}")
 
     if not isinstance(result, dict):
-        raise HTTPException(status_code=502, detail="Claude returned unexpected format")
+        raise HTTPException(status_code=502, detail="OpenAI вернул неожиданный формат")
     missing = {"score", "feedback", "model_answer"} - result.keys()
     if missing:
-        raise HTTPException(status_code=502, detail=f"Claude response missing keys: {missing}")
+        raise HTTPException(status_code=502, detail=f"В ответе OpenAI отсутствуют обязательные поля: {missing}")
     if result["score"] not in ("Weak", "Adequate", "Strong"):
         raise HTTPException(status_code=502, detail=f"Invalid score: {result['score']!r}")
 

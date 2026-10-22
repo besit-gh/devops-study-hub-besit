@@ -8,92 +8,92 @@ from db import get_conn
 PROJECTS = [
     {
         "slug": "containerize-python-app",
-        "title": "Containerize a Python App",
-        "description": "Build and containerize a Python web service, then write a CI/CD pipeline to test and publish it.",
+        "title": "Контейнеризация приложения на Python",
+        "description": "Соберите и контейнеризируйте веб-сервис на Python, затем создайте CI/CD-пайплайн для его тестирования и публикации.",
         "modules": ["Python", "Docker", "CI/CD Pipelines"],
         "difficulty": "intermediate",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Generate a requirements file",
+                "title": "Создать файл requirements",
                 "type": "sandbox",
                 "prompt": (
-                    "Write a bash command that creates `/tmp/requirements.txt` containing exactly two lines:\n\n"
+                    "Напишите Bash-команду, которая создаёт `/tmp/requirements.txt` ровно с двумя строками:\n\n"
                     "```\nflask==3.0.0\ngunicorn==21.2.0\n```\n\n"
-                    "Then print the number of lines in the file."
+                    "Затем выведите количество строк в файле."
                 ),
                 "language": "bash",
                 "expected_output": "2",
                 "hints": [
-                    "Use `printf` or `echo -e` with `\\n` to write both lines to the file at once.",
-                    "Count lines with `wc -l` and pipe through `awk '{print $1}'` to strip the filename from the count.",
+                    "Используйте `printf` или `echo -e` с `\\n`, чтобы записать обе строки за один раз.",
+                    "Подсчитайте строки с помощью `wc -l`, затем передайте результат в `awk '{print $1}'`, чтобы убрать имя файла из вывода.",
                 ],
             },
             {
                 "order_index": 2,
-                "title": "Parse app configuration",
+                "title": "Разобрать конфигурацию приложения",
                 "type": "sandbox",
                 "prompt": (
-                    "Write a Python one-liner that parses this YAML string and prints the value of `port`:\n\n"
+                    "Напишите однострочную команду Python, которая разбирает эту строку YAML и выводит значение `port`:\n\n"
                     '`name: my-app\\nport: 8080\\ndebug: false`\n\n'
-                    "Import `yaml` from the standard PyYAML library."
+                    "Импортируйте `yaml` из библиотеки PyYAML."
                 ),
                 "language": "python",
                 "expected_output": "8080",
                 "hints": [
-                    "Call `yaml.safe_load()` on the string — the `\\n` characters in the string are real newlines that YAML will parse correctly.",
-                    "Access the result like a Python dict: `yaml.safe_load('name: my-app\\nport: 8080\\ndebug: false')['port']`.",
+                    "Передайте строку в `yaml.safe_load()`: символы `\\n` обозначают реальные переводы строк, которые YAML корректно обработает.",
+                    "Обратитесь к результату как к словарю Python: `yaml.safe_load('name: my-app\\nport: 8080\\ndebug: false')['port']`.",
                 ],
             },
             {
                 "order_index": 3,
-                "title": "Write a production Dockerfile",
+                "title": "Написать production Dockerfile",
                 "type": "ai",
                 "prompt": (
-                    "Write a multi-stage Dockerfile for a Python Flask application.\n\n"
-                    "Stage 1 (builder): install dependencies from requirements.txt into a virtualenv.\n"
-                    "Stage 2 (runtime): copy only the virtualenv and app code into a minimal base image.\n\n"
+                    "Напишите многоэтапный Dockerfile для приложения Flask на Python.\n\n"
+                    "Этап 1 (builder): установите зависимости из requirements.txt в virtualenv.\n"
+                    "Этап 2 (runtime): скопируйте в минимальный базовый образ только virtualenv и код приложения.\n\n"
                     "Include best practices: non-root user, no dev packages in the final image, "
                     "a HEALTHCHECK instruction, and explicit EXPOSE."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Cover the two-stage pattern: stage 1 installs deps into a virtualenv, stage 2 copies only the venv. Add a non-root user with `useradd` or `adduser`.",
-                    "Key directives to include: `COPY --from=builder /opt/venv /opt/venv`, `ENV PATH=/opt/venv/bin:$PATH`, `USER`, `EXPOSE`, and `HEALTHCHECK CMD curl -f http://localhost/ || exit 1`.",
+                    "Опишите два этапа: на первом зависимости устанавливаются в virtualenv, на втором копируется только окружение. Создайте непривилегированного пользователя с помощью `useradd` или `adduser`.",
+                    "Добавьте директивы `COPY --from=builder /opt/venv /opt/venv`, `ENV PATH=/opt/venv/bin:$PATH`, `USER`, `EXPOSE` и `HEALTHCHECK CMD curl -f http://localhost/ || exit 1`.",
                 ],
             },
             {
                 "order_index": 4,
-                "title": "Design the CI pipeline",
+                "title": "Спроектировать CI-пайплайн",
                 "type": "ai",
                 "prompt": (
-                    "Write a GitHub Actions workflow (`.github/workflows/ci.yml`) that:\n"
-                    "1. Triggers on push to `main` and on pull requests\n"
-                    "2. Runs `pytest` with pip caching\n"
-                    "3. Builds and pushes a Docker image to GitHub Container Registry (GHCR) only on merge to `main`\n"
-                    "4. Caches Docker layers between runs\n\n"
-                    "Explain briefly why you structured the jobs the way you did."
+                    "Создайте workflow GitHub Actions (`.github/workflows/ci.yml`), который:\n"
+                    "1. Запускается при push в `main` и при открытии pull request\n"
+                    "2. Запускает `pytest` с кэшированием pip\n"
+                    "3. Собирает и отправляет Docker-образ в GitHub Container Registry (GHCR) только после слияния в `main`\n"
+                    "4. Кэширует слои Docker между запусками\n\n"
+                    "Кратко объясните, почему вы разделили задачи именно таким образом."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Split into two jobs: `test` (runs on all events) and `publish` (runs only on push to `main`, with `needs: test` so it only fires after tests pass).",
-                    "Key actions: `actions/cache` for pip, `docker/login-action` with `${{ secrets.GITHUB_TOKEN }}` for GHCR, `docker/build-push-action` with `cache-from: type=gha` for Docker layer caching.",
+                    "Разделите workflow на две job: `test` (запускается при всех событиях) и `publish` (только при push в `main`, с `needs: test`, чтобы публикация происходила после успешных тестов).",
+                    "Используйте `actions/cache` для pip, `docker/login-action` с `${{ secrets.GITHUB_TOKEN }}` для GHCR и `docker/build-push-action` с `cache-from: type=gha` для кэширования слоёв Docker.",
                 ],
             },
         ],
     },
     {
         "slug": "zero-downtime-deploy",
-        "title": "Zero-Downtime Kubernetes Deployment",
-        "description": "Design a Kubernetes workload with rolling updates, readiness probes, and a self-healing strategy.",
+        "title": "Развёртывание в Kubernetes без простоя",
+        "description": "Спроектируйте рабочую нагрузку Kubernetes с rolling updates, readiness probes и механизмом самовосстановления.",
         "modules": ["Kubernetes", "Docker", "CI/CD Pipelines"],
         "difficulty": "advanced",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Extract image from kubectl output",
+                "title": "Извлечь образ из вывода kubectl",
                 "type": "sandbox",
                 "prompt": (
                     "Use `awk` to extract the container image from this `kubectl get pods -o wide` output line "
@@ -103,51 +103,51 @@ PROJECTS = [
                 "language": "bash",
                 "expected_output": "nginx:1.24",
                 "hints": [
-                    "Think about which field in the space-delimited output corresponds to the image name.",
-                    "Use `awk '{print $NF}'` to print the last field from the input line.",
+                    "Определите, какое поле в выводе, разделённом пробелами, содержит имя образа.",
+                    "Используйте `awk '{print $NF}'`, чтобы вывести последнее поле строки.",
                 ],
             },
             {
                 "order_index": 2,
-                "title": "Parse pod status JSON",
+                "title": "Разобрать JSON состояния Pod",
                 "type": "sandbox",
                 "prompt": (
-                    "Write a bash one-liner (using Python) that parses this JSON and prints the pod phase:\n\n"
+                    "Напишите однострочную Bash-команду с Python, которая разбирает этот JSON и выводит фазу Pod:\n\n"
                     '`{"status":{"phase":"Running","hostIP":"10.0.0.1"}}`'
                 ),
                 "language": "bash",
                 "expected_output": "Running",
                 "hints": [
-                    "Pipe the JSON string into a Python one-liner that reads from stdin and navigates the parsed dict.",
+                    "Передайте JSON-строку в однострочную команду Python, которая читает stdin и обращается к полям разобранного словаря.",
                     "Try `echo '{...}' | python3 -c \"import sys,json; print(json.loads(sys.stdin.read())['status']['phase'])\"`.",
                 ],
             },
             {
                 "order_index": 3,
-                "title": "Write a Deployment manifest",
+                "title": "Написать манифест Deployment",
                 "type": "ai",
                 "prompt": (
-                    "Write a complete Kubernetes Deployment manifest for an app called `api-server` with:\n"
-                    "- 3 replicas\n"
-                    "- Rolling update strategy: `maxSurge: 1`, `maxUnavailable: 0`\n"
-                    "- CPU and memory resource requests and limits\n"
-                    "- An HTTP readiness probe on `/health` port 8080 with appropriate `initialDelaySeconds`\n"
-                    "- An HTTP liveness probe that gives the pod 30 seconds to start\n\n"
-                    "Explain your choice of readiness vs liveness probe parameters."
+                    "Напишите полный манифест Deployment Kubernetes для приложения `api-server`, который включает:\n"
+                    "- 3 реплики\n"
+                    "- Стратегию rolling update: `maxSurge: 1`, `maxUnavailable: 0`\n"
+                    "- requests и limits для CPU и памяти\n"
+                    "- HTTP readiness probe для `/health` на порту 8080 с подходящим `initialDelaySeconds`\n"
+                    "- HTTP liveness probe, предоставляющую Pod 30 секунд на запуск\n\n"
+                    "Объясните выбор параметров readiness- и liveness-проб."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Cover three key sections: `spec.strategy.rollingUpdate`, container `readinessProbe`, and container `livenessProbe`, each with `httpGet` on `/health` port 8080.",
-                    "For zero-downtime: set `maxUnavailable: 0` so no pod is removed before a replacement is ready; set `initialDelaySeconds` on readiness to the actual app warmup time.",
+                    "Добавьте три ключевые секции: `spec.strategy.rollingUpdate`, `readinessProbe` и `livenessProbe` контейнера; для обеих проб используйте `httpGet` на `/health`, порт 8080.",
+                    "Для развёртывания без простоя задайте `maxUnavailable: 0`, чтобы Pod не удалялся до готовности замены. Значение `initialDelaySeconds` для readiness должно соответствовать реальному времени прогрева приложения.",
                 ],
             },
             {
                 "order_index": 4,
-                "title": "Readiness vs liveness probes",
+                "title": "Сравнить readiness- и liveness-пробы",
                 "type": "ai",
                 "prompt": (
-                    "Explain the difference between Kubernetes readiness and liveness probes.\n\n"
+                    "Объясните разницу между readiness- и liveness-пробами Kubernetes.\n\n"
                     "Specifically: describe a realistic scenario where a pod fails a readiness check but passes "
                     "a liveness check — and why that distinction matters for zero-downtime deployments.\n\n"
                     "Then write probe definitions for a service that has a 30-second startup warmup "
@@ -156,39 +156,39 @@ PROJECTS = [
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Readiness controls traffic routing (pod removed from Service endpoints); liveness controls restarts — they have different consequences when they fail.",
-                    "Key scenario: a pod loading a large cache fails readiness (no traffic) but passes liveness (no restart) — traffic is withheld without killing the pod.",
+                    "Readiness управляет маршрутизацией трафика (Pod удаляется из endpoints Service), а liveness управляет перезапусками. Ошибка каждой пробы имеет разные последствия.",
+                    "Пример: Pod загружает большой кэш, поэтому не проходит readiness (трафик не поступает), но проходит liveness (перезапуск не нужен). Трафик временно не направляется в Pod, но сам Pod продолжает работать.",
                 ],
             },
         ],
     },
     {
         "slug": "linux-system-hardening",
-        "title": "Linux System Hardening",
-        "description": "Audit and lock down a Linux server: file permissions, SSH config, cron jobs, and user management.",
+        "title": "Усиление безопасности Linux",
+        "description": "Проведите аудит и защитите Linux-сервер: права доступа, конфигурация SSH, задания cron и управление пользователями.",
         "modules": ["Linux", "DevSecOps"],
         "difficulty": "intermediate",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Find world-writable files",
+                "title": "Найти файлы, доступные для записи всем",
                 "type": "sandbox",
                 "prompt": (
-                    "Write a bash script that:\n"
-                    "1. Creates a temp directory `/tmp/audit_test`\n"
-                    "2. Creates `safe.conf` (permissions 644) and `danger.conf` (permissions 777) inside it\n"
-                    "3. Finds and prints only the filename (not the full path) of any world-writable file in that directory"
+                    "Напишите Bash-скрипт, который:\n"
+                    "1. Создаёт временный каталог `/tmp/audit_test`\n"
+                    "2. Создаёт в нём `safe.conf` с правами 644 и `danger.conf` с правами 777\n"
+                    "3. Находит и выводит только имя файла (без полного пути), доступного для записи всем пользователям"
                 ),
                 "language": "bash",
                 "expected_output": "danger.conf",
                 "hints": [
-                    "The `find` command has a `-perm` flag for matching file permissions — world-writable means the 'other' write bit is set.",
-                    "Use `find /tmp/audit_test -perm -o+w` to match world-writable files, then pipe to `xargs basename` to strip the directory path.",
+                    "У команды `find` есть флаг `-perm` для поиска по правам. World-writable означает, что установлен бит записи для категории «остальные».",
+                    "Используйте `find /tmp/audit_test -perm -o+w`, затем передайте результат в `xargs basename`, чтобы убрать путь к каталогу.",
                 ],
             },
             {
                 "order_index": 2,
-                "title": "Extract privileged users",
+                "title": "Найти пользователей с повышенными привилегиями",
                 "type": "sandbox",
                 "prompt": (
                     "Write a bash one-liner that extracts all users with UID 0 from this `/etc/passwd` snippet "
@@ -200,13 +200,13 @@ PROJECTS = [
                 "language": "bash",
                 "expected_output": "root\nadmin",
                 "hints": [
-                    "The `/etc/passwd` format uses `:` as a delimiter — the UID is the third field and the username is the first.",
-                    "Use `awk -F: '$3 == 0 {print $1}'` to filter lines where the third field is 0 and print the username.",
+                    "В формате `/etc/passwd` поля разделены `:`. UID находится в третьем поле, имя пользователя — в первом.",
+                    "Используйте `awk -F: '$3 == 0 {print $1}'`, чтобы выбрать строки с нулевым значением третьего поля и вывести имя пользователя.",
                 ],
             },
             {
                 "order_index": 3,
-                "title": "Write SSH hardening config",
+                "title": "Настроить усиленную конфигурацию SSH",
                 "type": "ai",
                 "prompt": (
                     "Write a production-ready `/etc/ssh/sshd_config` block with at least 8 hardening settings. "
@@ -217,41 +217,41 @@ PROJECTS = [
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Focus on four attack surfaces: authentication method (keys only, no passwords), root access, idle session timeouts, and strong ciphers/algorithms.",
-                    "Key directives to include: `PermitRootLogin no`, `PasswordAuthentication no`, `PubkeyAuthentication yes`, `ClientAliveInterval`, `ClientAliveCountMax`, `AllowUsers`, and `KexAlgorithms`.",
+                    "Сосредоточьтесь на четырёх направлениях: способ аутентификации (только ключи, без паролей), доступ root, тайм-ауты бездействия и надёжные шифры/алгоритмы.",
+                    "Добавьте директивы `PermitRootLogin no`, `PasswordAuthentication no`, `PubkeyAuthentication yes`, `ClientAliveInterval`, `ClientAliveCountMax`, `AllowUsers` и `KexAlgorithms`.",
                 ],
             },
             {
                 "order_index": 4,
-                "title": "Design a log rotation strategy",
+                "title": "Спроектировать ротацию журналов",
                 "type": "ai",
                 "prompt": (
-                    "Design a complete log rotation strategy for a web server generating logs in `/var/log/myapp/`.\n\n"
-                    "Include:\n"
-                    "1. A cron expression that runs at 2:30 AM daily\n"
+                    "Спроектируйте полную стратегию ротации логов веб-сервера, который записывает их в `/var/log/myapp/`.\n\n"
+                    "Включите:\n"
+                    "1. Выражение cron для ежедневного запуска в 02:30\n"
                     "2. A bash script that compresses logs older than 7 days, deletes logs older than 30 days, "
                     "and sends a webhook alert if disk usage on the partition exceeds 80%\n\n"
-                    "Explain each decision, including why you chose those retention thresholds."
+                    "Объясните каждое решение, в том числе выбор сроков хранения."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Cover all three components: the cron schedule (minute, hour fields), the `find -mtime` commands for compression and deletion, and a `df` check piped to `awk` for disk usage.",
-                    "Cron expression for 2:30 AM daily is `30 2 * * *`; use `find /var/log/myapp -mtime +7 -exec gzip {} \\;` and `find ... -mtime +30 -delete`; send the webhook with `curl -X POST`.",
+                    "Охватите все три компонента: расписание cron (поля минут и часов), команды `find -mtime` для сжатия и удаления, а также проверку `df` с передачей результата в `awk` для определения использования диска.",
+                    "Выражение cron для ежедневного запуска в 02:30 — `30 2 * * *`. Используйте `find /var/log/myapp -mtime +7 -exec gzip {} \\;` для сжатия и `find ... -mtime +30 -delete` для удаления; webhook отправляйте через `curl -X POST`.",
                 ],
             },
         ],
     },
     {
         "slug": "observability-stack",
-        "title": "Observability Stack Setup",
-        "description": "Deploy a full observability stack with Prometheus and Grafana, write PromQL queries, and configure alerting.",
+        "title": "Настройка стека наблюдаемости",
+        "description": "Разверните стек наблюдаемости на Prometheus и Grafana, напишите запросы PromQL и настройте оповещения.",
         "modules": ["Prometheus", "Grafana", "Docker"],
         "difficulty": "intermediate",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Extract a metric value",
+                "title": "Извлечь значение метрики",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that parses this Prometheus text-format string and prints "
@@ -268,7 +268,7 @@ PROJECTS = [
             },
             {
                 "order_index": 2,
-                "title": "Parse an alerting rule",
+                "title": "Разобрать правило оповещения",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that parses this Prometheus alerting rule YAML "
@@ -279,37 +279,37 @@ PROJECTS = [
                 "language": "python",
                 "expected_output": "InstanceDown",
                 "hints": [
-                    "Use `yaml.safe_load()` to parse the YAML string, then navigate the nested structure to find the alert name.",
-                    "Access `yaml.safe_load(s)['groups'][0]['rules'][0]['alert']` after importing yaml.",
+                    "Разберите YAML-строку с помощью `yaml.safe_load()`, затем пройдите по вложенной структуре до имени оповещения.",
+                    "После импорта `yaml` обратитесь к `yaml.safe_load(s)['groups'][0]['rules'][0]['alert']`.",
                 ],
             },
             {
                 "order_index": 3,
-                "title": "Write PromQL queries",
+                "title": "Написать запросы PromQL",
                 "type": "ai",
                 "prompt": (
-                    "Write PromQL queries for these three scenarios:\n"
-                    "1. HTTP request rate per second over the last 5 minutes, broken down by status code\n"
-                    "2. 95th percentile request latency using a histogram metric `http_request_duration_seconds`\n"
-                    "3. An alerting expression that fires when any instance has been down for more than 5 minutes\n\n"
-                    "Explain the difference between `rate()` and `irate()` and why you chose one over the other for query 1."
+                    "Напишите запросы PromQL для трёх сценариев:\n"
+                    "1. Частота HTTP-запросов в секунду за последние пять минут с группировкой по коду состояния\n"
+                    "2. 95-й перцентиль задержки запросов с использованием гистограммы `http_request_duration_seconds`\n"
+                    "3. Выражение оповещения, срабатывающее, если любой экземпляр недоступен более пяти минут\n\n"
+                    "Объясните разницу между `rate()` и `irate()` и почему для первого запроса вы выбрали одну из этих функций."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "For rate queries use `rate(metric[5m])` with `by (status_code)` aggregation; for histogram percentile use `histogram_quantile(0.95, sum(rate(..._bucket[5m])) by (le))`.",
-                    "`rate()` averages over the window (smoother, better for alerting); `irate()` uses the last two points (more reactive, better for real-time graphs) — prefer `rate()` for query 1.",
+                    "Для скорости используйте `rate(metric[5m])` с агрегацией `by (status_code)`. Для перцентиля гистограммы примените `histogram_quantile(0.95, sum(rate(..._bucket[5m])) by (le))`.",
+                    "`rate()` усредняет значение по окну (график стабильнее, подходит для оповещений); `irate()` использует две последние точки (быстрее реагирует, подходит для графиков реального времени). Для первого запроса предпочтительнее `rate()`.",
                 ],
             },
             {
                 "order_index": 4,
-                "title": "Design the full stack",
+                "title": "Спроектировать стек целиком",
                 "type": "ai",
                 "prompt": (
-                    "Write a `docker-compose.yml` that runs:\n"
-                    "- Prometheus (port 9090) scraping itself and a Node Exporter\n"
-                    "- Node Exporter (port 9100)\n"
-                    "- Grafana (port 3000) pre-configured with Prometheus as a data source\n\n"
+                    "Создайте `docker-compose.yml`, запускающий:\n"
+                    "- Prometheus на порту 9090, собирающий метрики с себя и Node Exporter\n"
+                    "- Node Exporter на порту 9100\n"
+                    "- Grafana на порту 3000 с предварительно настроенным Prometheus в качестве источника данных\n\n"
                     "Include: named volumes for Prometheus data and Grafana dashboards, "
                     "a minimal `prometheus.yml` scrape config as an inline comment, "
                     "and Grafana datasource provisioning via environment variables."
@@ -317,22 +317,22 @@ PROJECTS = [
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Define a shared network so services reach each other by name; each service needs `ports`, `volumes`, and `networks` sections.",
-                    "Grafana datasource auto-provisioning: set `GF_DATASOURCES_DEFAULT_URL=http://prometheus:9090` via environment, or mount a `provisioning/datasources/prometheus.yml` file.",
+                    "Определите общую сеть, чтобы сервисы обращались друг к другу по имени. Для каждого сервиса нужны секции `ports`, `volumes` и `networks`.",
+                    "Для автоматической настройки источника Grafana задайте переменную `GF_DATASOURCES_DEFAULT_URL=http://prometheus:9090` либо подключите файл `provisioning/datasources/prometheus.yml`.",
                 ],
             },
         ],
     },
     {
         "slug": "gitops-argocd",
-        "title": "GitOps Pipeline with ArgoCD",
-        "description": "Implement a GitOps deployment model using ArgoCD: write Application manifests, configure sync strategies, and design a multi-environment promotion workflow.",
+        "title": "GitOps-пайплайн с Argo CD",
+        "description": "Реализуйте модель GitOps-развёртывания с Argo CD: создайте манифесты Application, настройте стратегии синхронизации и спроектируйте продвижение между несколькими окружениями.",
         "modules": ["Git & VCS", "Kubernetes", "CI/CD Pipelines"],
         "difficulty": "advanced",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Count merge commits",
+                "title": "Подсчитать merge-коммиты",
                 "type": "sandbox",
                 "prompt": (
                     "Write a bash one-liner that counts the number of merge commits in this "
@@ -345,13 +345,13 @@ PROJECTS = [
                 "language": "bash",
                 "expected_output": "2",
                 "hints": [
-                    "Think about what text pattern uniquely identifies a merge commit in the git log output shown.",
-                    "Use `grep -c 'Merge'` to count lines containing the word 'Merge' in the input.",
+                    "Определите текстовый шаблон, однозначно обозначающий merge-коммит в приведённом выводе git log.",
+                    "Используйте `grep -c 'Merge'`, чтобы подсчитать строки, содержащие слово `Merge`.",
                 ],
             },
             {
                 "order_index": 2,
-                "title": "Parse ArgoCD application status",
+                "title": "Разобрать состояние приложения Argo CD",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that parses this ArgoCD Application status JSON "
@@ -361,63 +361,63 @@ PROJECTS = [
                 "language": "python",
                 "expected_output": "Synced",
                 "hints": [
-                    "Use `json.loads()` to parse the string, then navigate the nested dict to find the sync status field.",
-                    "Access `json.loads(s)['status']['sync']['status']` after `import json`.",
+                    "Разберите строку через `json.loads()`, затем пройдите по вложенному словарю до поля состояния синхронизации.",
+                    "После `import json` обратитесь к `json.loads(s)['status']['sync']['status']`.",
                 ],
             },
             {
                 "order_index": 3,
-                "title": "Write an ArgoCD Application manifest",
+                "title": "Написать манифест Application для Argo CD",
                 "type": "ai",
                 "prompt": (
-                    "Write a complete ArgoCD `Application` manifest that:\n"
-                    "- Deploys from a Git repo `https://github.com/org/k8s-manifests` path `apps/api-server`\n"
-                    "- Targets the `staging` namespace on the local cluster\n"
-                    "- Uses `automated` sync policy with self-healing and pruning enabled\n"
-                    "- Tracks the `main` branch\n\n"
+                    "Напишите полный манифест `Application` для Argo CD, который:\n"
+                    "- Развёртывает приложение из Git-репозитория `https://github.com/org/k8s-manifests`, каталог `apps/api-server`\n"
+                    "- Использует namespace `staging` в локальном кластере\n"
+                    "- Использует политику синхронизации `automated` с включёнными self-healing и pruning\n"
+                    "- Отслеживает ветку `main`\n\n"
                     "Explain the difference between ArgoCD's `Synced` and `Healthy` status fields, "
                     "and what it means when a resource is `OutOfSync` but `Healthy`."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "The `Application` CRD has three main spec sections: `source` (repoURL, path, targetRevision), `destination` (server, namespace), and `syncPolicy`.",
-                    "Key fields: `spec.source.targetRevision: main`, `spec.syncPolicy.automated.selfHeal: true`, `spec.syncPolicy.automated.prune: true`.",
+                    "CRD `Application` содержит три основные секции `spec`: `source` (repoURL, path, targetRevision), `destination` (server, namespace) и `syncPolicy`.",
+                    "Ключевые поля: `spec.source.targetRevision: main`, `spec.syncPolicy.automated.selfHeal: true`, `spec.syncPolicy.automated.prune: true`.",
                 ],
             },
             {
                 "order_index": 4,
-                "title": "Design environment promotion strategy",
+                "title": "Спроектировать стратегию продвижения между окружениями",
                 "type": "ai",
                 "prompt": (
                     "Design a GitOps multi-environment promotion workflow for dev → staging → production "
                     "using a single Git repository.\n\n"
-                    "Cover:\n"
-                    "1. Directory structure for environment-specific manifests\n"
-                    "2. How image version promotion is triggered (manual PR vs automated image updater)\n"
-                    "3. How to prevent dev changes from accidentally reaching production\n"
-                    "4. What a rollback looks like in a GitOps model vs `kubectl rollout undo`\n\n"
-                    "Be specific: name files, branches, or tools where relevant."
+                    "Рассмотрите:\n"
+                    "1. Структуру каталогов для манифестов каждого окружения\n"
+                    "2. Как запускается продвижение версии образа (ручной PR или автоматический image updater)\n"
+                    "3. Как не допустить случайного попадания изменений dev в production\n"
+                    "4. Как выполняется откат в GitOps по сравнению с `kubectl rollout undo`\n\n"
+                    "Будьте конкретны: укажите имена файлов, веток и инструментов, где это уместно."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "The standard pattern is `apps/<service>/overlays/<env>` (Kustomize) or `values-<env>.yaml` (Helm); promotion means updating the image tag in the target env's config file via PR.",
-                    "GitOps rollback = revert the Git commit that changed the image tag (full audit trail); `kubectl rollout undo` bypasses Git and can cause drift — use it only for emergencies.",
+                    "Стандартный шаблон — `apps/<service>/overlays/<env>` для Kustomize или `values-<env>.yaml` для Helm. Продвижение означает обновление тега образа в конфигурации целевого окружения через PR.",
+                    "Откат в GitOps — это отмена Git-коммита, изменившего тег образа, с полной историей аудита. `kubectl rollout undo` обходит Git и может вызвать drift, поэтому используйте его только в экстренных случаях.",
                 ],
             },
         ],
     },
     {
         "slug": "ansible-config",
-        "title": "Ansible Server Configuration",
-        "description": "Automate Linux server provisioning with Ansible: write playbooks, define roles, manage inventory, and enforce idempotent configuration across a fleet.",
+        "title": "Настройка серверов с Ansible",
+        "description": "Автоматизируйте подготовку Linux-серверов с Ansible: создайте playbook, определите роли, настройте inventory и обеспечьте идемпотентную конфигурацию парка серверов.",
         "modules": ["Ansible", "Linux"],
         "difficulty": "intermediate",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Count tasks in a playbook",
+                "title": "Подсчитать задачи в playbook",
                 "type": "sandbox",
                 "prompt": (
                     "Write a bash one-liner that counts the number of tasks in this Ansible playbook "
@@ -430,13 +430,13 @@ PROJECTS = [
                 "language": "bash",
                 "expected_output": "3",
                 "hints": [
-                    "Think about what unique text pattern marks the start of each task definition in the playbook snippet.",
-                    "Use `grep -c '- name:'` to count lines matching the task name pattern in the input.",
+                    "Определите уникальный текстовый шаблон, с которого начинается описание каждой задачи в playbook.",
+                    "Используйте `grep -c '- name:'`, чтобы подсчитать строки с шаблоном имени задачи.",
                 ],
             },
             {
                 "order_index": 2,
-                "title": "Count hosts in an inventory group",
+                "title": "Подсчитать узлы в группе inventory",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that counts the number of hosts in the `[webservers]` group "
@@ -447,42 +447,42 @@ PROJECTS = [
                 "language": "python",
                 "expected_output": "3",
                 "hints": [
-                    "Split the string on `\\n`, find the `[webservers]` line, then collect lines until the next group header.",
-                    "Split on `\\n`, slice from the index after `[webservers]` up to the first line starting with `[`, then count the non-empty lines in that slice.",
+                    "Разделите строку по `\\n`, найдите строку `[webservers]`, затем соберите строки до следующего заголовка группы.",
+                    "Разделите строку по `\\n`, возьмите фрагмент после `[webservers]` до первой строки, начинающейся с `[`, и подсчитайте непустые строки.",
                 ],
             },
             {
                 "order_index": 3,
-                "title": "Write an Nginx Ansible role",
+                "title": "Создать роль Ansible для Nginx",
                 "type": "ai",
                 "prompt": (
-                    "Write an Ansible role called `nginx` that:\n"
-                    "1. Installs Nginx via the OS package manager\n"
-                    "2. Deploys a Jinja2 template for `nginx.conf` with variables for `worker_processes` and `server_name`\n"
-                    "3. Ensures Nginx is enabled and started\n"
-                    "4. Uses a `handler` to reload Nginx only when the config changes\n\n"
+                    "Создайте роль Ansible `nginx`, которая:\n"
+                    "1. Устанавливает Nginx через менеджер пакетов ОС\n"
+                    "2. Развёртывает шаблон Jinja2 для `nginx.conf` с переменными `worker_processes` и `server_name`\n"
+                    "3. Включает автозапуск Nginx и запускает службу\n"
+                    "4. Использует `handler` для перезагрузки Nginx только при изменении конфигурации\n\n"
                     "Show the full role directory structure with content for: `tasks/main.yml`, "
                     "`handlers/main.yml`, `templates/nginx.conf.j2`, and `defaults/main.yml`.\n\n"
-                    "Explain why using a handler for config reload is preferable to an unconditional service restart."
+                    "Объясните, почему handler для перезагрузки конфигурации лучше безусловного перезапуска службы."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Cover the four required files: tasks/main.yml (install + template + service), handlers/main.yml (reload), templates/nginx.conf.j2 (with `{{ worker_processes }}`), defaults/main.yml (variable defaults).",
-                    "The handler is triggered by `notify: Reload nginx` on the template task; it uses `state: reloaded` (not restarted) to apply config changes without dropping connections.",
+                    "Покажите четыре файла: tasks/main.yml (установка, шаблон и служба), handlers/main.yml (перезагрузка), templates/nginx.conf.j2 (с `{{ worker_processes }}`) и defaults/main.yml (значения переменных по умолчанию).",
+                    "Шаблонная задача вызывает handler через `notify: Reload nginx`. Для применения конфигурации используйте `state: reloaded`, а не `restarted`, чтобы не разрывать соединения.",
                 ],
             },
             {
                 "order_index": 4,
-                "title": "Design idempotent user management",
+                "title": "Спроектировать идемпотентное управление пользователями",
                 "type": "ai",
                 "prompt": (
                     "Write an Ansible playbook that manages a team of engineers across a fleet of servers. "
                     "The playbook should:\n"
-                    "1. Create user accounts from a `users` list variable (each with name, groups, and SSH public key)\n"
-                    "2. Remove users who appear in a `removed_users` list\n"
-                    "3. Ensure sudo access for users in the `admins` group\n"
-                    "4. Deploy each user's SSH authorized key\n\n"
+                    "1. Создавать пользователей из списка `users` (для каждого заданы имя, группы и публичный SSH-ключ)\n"
+                    "2. Удалять пользователей из списка `removed_users`\n"
+                    "3. Обеспечивать доступ через sudo пользователям группы `admins`\n"
+                    "4. Устанавливать авторизованный SSH-ключ каждого пользователя\n\n"
                     "The playbook must be fully idempotent — running it twice must produce no changes on the second run. "
                     "Show the playbook YAML and a sample `group_vars/all.yml`. "
                     "Explain how Ansible's `user` module achieves idempotency for account management."
@@ -490,22 +490,22 @@ PROJECTS = [
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Use `ansible.builtin.user` (state: present/absent), `ansible.posix.authorized_key` for SSH keys, and `loop` over the `users` and `removed_users` variables.",
-                    "Idempotency comes from Ansible's declarative model — `user` checks existence before creating; verify with `--check` mode which shows `changed=0` when nothing has drifted.",
+                    "Используйте `ansible.builtin.user` с `state: present/absent`, `ansible.posix.authorized_key` для SSH-ключей и `loop` по переменным `users` и `removed_users`.",
+                    "Идемпотентность обеспечивается декларативной моделью Ansible: модуль `user` проверяет наличие пользователя перед созданием. Проверьте это через `--check`: при отсутствии drift результат должен показывать `changed=0`.",
                 ],
             },
         ],
     },
     {
         "slug": "elk-log-pipeline",
-        "title": "ELK Stack Log Analysis",
-        "description": "Build a full log ingestion pipeline with Logstash and Elasticsearch, write Query DSL searches, and design a Kibana dashboard with alerting.",
+        "title": "Анализ логов в стеке ELK",
+        "description": "Создайте полный конвейер сбора логов с Logstash и Elasticsearch, напишите запросы Query DSL и спроектируйте дашборд Kibana с оповещениями.",
         "modules": ["Elasticsearch", "Logstash", "Kibana"],
         "difficulty": "advanced",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Extract HTTP status from an access log",
+                "title": "Извлечь HTTP-статус из access-лога",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that extracts the HTTP status code from this Apache access log line "
@@ -521,7 +521,7 @@ PROJECTS = [
             },
             {
                 "order_index": 2,
-                "title": "Parse an Elasticsearch query response",
+                "title": "Разобрать ответ запроса Elasticsearch",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that parses this Elasticsearch query response and "
@@ -531,39 +531,39 @@ PROJECTS = [
                 "language": "python",
                 "expected_output": "247",
                 "hints": [
-                    "Use `json.loads()` to parse the string, then navigate the nested dict to find the total hits count.",
-                    "Access `json.loads(s)['hits']['total']['value']` after `import json`.",
+                    "Разберите строку через `json.loads()`, затем найдите общее число совпадений во вложенном словаре.",
+                    "После `import json` обратитесь к `json.loads(s)['hits']['total']['value']`.",
                 ],
             },
             {
                 "order_index": 3,
-                "title": "Write a Logstash pipeline for Apache logs",
+                "title": "Создать pipeline Logstash для логов Apache",
                 "type": "ai",
                 "prompt": (
-                    "Write a complete Logstash pipeline configuration (`logstash.conf`) that:\n"
-                    "1. **Input**: reads from a file `/var/log/apache2/access.log` with `sincedb_path => /dev/null`\n"
+                    "Напишите полную конфигурацию pipeline Logstash (`logstash.conf`), которая:\n"
+                    "1. **Input**: читает файл `/var/log/apache2/access.log` с параметром `sincedb_path => /dev/null`\n"
                     "2. **Filter**: uses `grok` to parse the Apache Combined Log Format, extracts `clientip`, `verb`, `request`, `response`, `bytes`; "
                     "uses `date` to parse the timestamp into `@timestamp`; adds a `geoip` lookup on `clientip`; "
                     "drops health-check requests where `request == '/health'`\n"
-                    "3. **Output**: sends to Elasticsearch index `apache-logs-%%{+YYYY.MM.dd}`\n\n"
-                    "Explain what the `sincedb_path => /dev/null` setting does and when you would remove it in production."
+                    "3. **Output**: отправляет данные в индекс Elasticsearch `apache-logs-%%{+YYYY.MM.dd}`\n\n"
+                    "Объясните, что делает настройка `sincedb_path => /dev/null` и почему в production её следует убрать."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Cover the three pipeline sections: `input` (file plugin with sincedb), `filter` (grok with `%{COMBINEDAPACHELOG}` + date + geoip + conditional drop), `output` (elasticsearch plugin).",
-                    "`sincedb_path => /dev/null` makes Logstash re-read the file from the start on every restart (useful for testing); remove it in production so Logstash tracks its read position.",
+                    "Опишите три секции pipeline: `input` (file-плагин с sincedb), `filter` (`grok` с `%{COMBINEDAPACHELOG}`, date, geoip и условным отбрасыванием), `output` (плагин Elasticsearch).",
+                    "`sincedb_path => /dev/null` заставляет Logstash перечитывать файл с начала при каждом перезапуске, что удобно для тестов. В production уберите этот параметр, чтобы Logstash сохранял позицию чтения.",
                 ],
             },
             {
                 "order_index": 4,
-                "title": "Design index lifecycle and Kibana dashboard",
+                "title": "Спроектировать жизненный цикл индекса и дашборд Kibana",
                 "type": "ai",
                 "prompt": (
-                    "Design an Elasticsearch Index Lifecycle Management (ILM) policy for the Apache log index that:\n"
-                    "- Rolls over at 50GB or 30 days (whichever comes first)\n"
-                    "- Moves to warm phase after 7 days (force merge to 1 segment, set replicas to 0)\n"
-                    "- Deletes after 90 days\n\n"
+                    "Спроектируйте политику Index Lifecycle Management (ILM) для индекса логов Apache, которая:\n"
+                    "- Выполняет rollover при достижении 50 ГБ или 30 дней — в зависимости от того, что наступит раньше\n"
+                    "- Переводит индекс в фазу warm через 7 дней (force merge до одного сегмента, число реплик — 0)\n"
+                    "- Удаляет индекс через 90 дней\n\n"
                     "Then describe a Kibana dashboard for a web ops team — name the panels, "
                     "the visualisation type for each (e.g. area chart, data table, metric), "
                     "and what question each panel answers.\n\n"
@@ -573,22 +573,22 @@ PROJECTS = [
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "An ILM policy has phases: `hot` (rollover trigger), `warm` (force merge + replica reduction), `delete`; the rollover uses `max_size` and `max_age` on the hot phase.",
-                    "For the Kibana dashboard, key panels: a metric tile (total requests), an area chart (request rate over time), a data table (top URLs by 5xx count), and a bar chart (status code distribution).",
+                    "Политика ILM состоит из фаз `hot` (условие rollover), `warm` (force merge и уменьшение числа реплик) и `delete`. В фазе hot для rollover используются `max_size` и `max_age`.",
+                    "Для дашборда Kibana добавьте основные панели: метрику общего числа запросов, area chart частоты запросов во времени, таблицу URL с наибольшим количеством ошибок 5xx и bar chart распределения кодов состояния.",
                 ],
             },
         ],
     },
     {
         "slug": "helm-chart",
-        "title": "Helm Chart Development",
-        "description": "Build a production-grade Helm chart for a microservice with templating, values overrides, and a multi-environment deployment strategy using Helm upgrade and rollback.",
+        "title": "Разработка Helm chart",
+        "description": "Создайте production-ready Helm chart для микросервиса с шаблонами, переопределением values и стратегией развёртывания в нескольких окружениях через Helm upgrade и rollback.",
         "modules": ["Helm", "Kubernetes"],
         "difficulty": "intermediate",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Scaffold a Helm chart directory",
+                "title": "Создать структуру каталога Helm chart",
                 "type": "sandbox",
                 "prompt": (
                     "Write a bash script that creates a minimal Helm chart directory at `/tmp/mychart` with "
@@ -598,38 +598,38 @@ PROJECTS = [
                 "language": "bash",
                 "expected_output": "3",
                 "hints": [
-                    "Create the directory with `mkdir -p /tmp/mychart/templates`, create the three files with `touch`, then count with `find`.",
-                    "Use `find /tmp/mychart/templates -name '*.yaml' | wc -l` to count YAML files, stripping the trailing filename with `awk '{print $1}'` if needed.",
+                    "Создайте каталог командой `mkdir -p /tmp/mychart/templates`, создайте три файла через `touch`, затем подсчитайте их с помощью `find`.",
+                    "Используйте `find /tmp/mychart/templates -name '*.yaml' | wc -l` для подсчёта YAML-файлов; при необходимости уберите лишнее поле через `awk '{print $1}'`.",
                 ],
             },
             {
                 "order_index": 2,
-                "title": "Parse Helm values YAML",
+                "title": "Разобрать YAML values Helm",
                 "type": "sandbox",
                 "prompt": (
-                    "Write a Python one-liner that parses this Helm `values.yaml` content and prints the replica count:\n\n"
+                    "Напишите однострочную команду Python, которая разбирает содержимое Helm `values.yaml` и выводит количество реплик:\n\n"
                     "`replicaCount: 3\\nimage:\\n  repository: nginx\\n  tag: \\\"1.24\\\"\\nservice:\\n  port: 80`"
                 ),
                 "language": "python",
                 "expected_output": "3",
                 "hints": [
-                    "Use `yaml.safe_load()` on the string — the `\\n` sequences are real newlines that YAML parses into a nested dict.",
-                    "Access `yaml.safe_load(s)['replicaCount']` after `import yaml`, where `s` is the values string with `\\n` as actual newline characters.",
+                    "Передайте строку в `yaml.safe_load()`: последовательности `\\n` становятся переводами строк, а YAML преобразуется во вложенный словарь.",
+                    "После `import yaml` обратитесь к `yaml.safe_load(s)['replicaCount']`, где `s` — строка values с реальными переводами строк.",
                 ],
             },
             {
                 "order_index": 3,
-                "title": "Write a Helm chart for a stateless service",
+                "title": "Создать Helm chart для stateless-сервиса",
                 "type": "ai",
                 "prompt": (
                     "Write a Helm chart for a stateless web service called `api-server`. "
                     "Show the content of these files:\n\n"
-                    "1. `Chart.yaml` — with `apiVersion: v2`, name, version, and appVersion\n"
+                    "1. `Chart.yaml` — с `apiVersion: v2`, именем, версией chart и версией приложения\n"
                     "2. `values.yaml` — with defaults for replicaCount, image (repository + tag + pullPolicy), "
                     "service (type + port), resources (requests + limits), and ingress (enabled flag, host, tls)\n"
                     "3. `templates/deployment.yaml` — templated with `{{ .Values.* }}` references, "
                     "including resource limits and a liveness probe\n"
-                    "4. `templates/service.yaml` — ClusterIP service using `{{ .Values.service.port }}`\n\n"
+                    "4. `templates/service.yaml` — сервис ClusterIP с использованием `{{ .Values.service.port }}`\n\n"
                     "Use `{{ include \"api-server.fullname\" . }}` for naming and show the `_helpers.tpl` snippet "
                     "that defines it."
                 ),
@@ -637,17 +637,17 @@ PROJECTS = [
                 "expected_output": None,
                 "hints": [
                     "The `_helpers.tpl` defines named templates with `{{- define \"api-server.fullname\" -}}`; the deployment uses `{{ include \"api-server.fullname\" . }}` for the name and `{{ include \"api-server.labels\" . | nindent 4 }}` for labels.",
-                    "In `values.yaml` set `replicaCount: 1` and `image.pullPolicy: IfNotPresent`; wrap the ingress section in `deployment.yaml` with `{{- if .Values.ingress.enabled }}` and add resources from `{{ toYaml .Values.resources | nindent 12 }}`.",
+                    "В `values.yaml` задайте `replicaCount: 1` и `image.pullPolicy: IfNotPresent`. Оберните ingress-раздел в `deployment.yaml` условием `{{- if .Values.ingress.enabled }}` и добавьте ресурсы через `{{ toYaml .Values.resources | nindent 12 }}`.",
                 ],
             },
             {
                 "order_index": 4,
-                "title": "Multi-environment values and release management",
+                "title": "Управление values и релизами в нескольких окружениях",
                 "type": "ai",
                 "prompt": (
                     "Describe a strategy for deploying the same Helm chart to dev, staging, and production "
                     "environments with different values.\n\n"
-                    "1. Show the file structure for per-environment values files\n"
+                    "1. Покажите структуру файлов values для каждого окружения\n"
                     "2. Write the `helm upgrade --install` commands for each environment, "
                     "explaining the flags used\n"
                     "3. Explain what `helm rollback` does vs manually reverting the values file in Git — "
@@ -658,22 +658,22 @@ PROJECTS = [
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Standard pattern: `values.yaml` (base defaults), `values-dev.yaml`, `values-staging.yaml`, `values-prod.yaml`; override with `helm upgrade --install -f values-<env>.yaml`.",
-                    "`helm rollback` reverts cluster state using Helm's release history (fast, emergency use); reverting the Git values file is the GitOps approach with audit trail — prefer Git revert for planned rollbacks.",
+                    "Стандартная схема: `values.yaml` со значениями по умолчанию, `values-dev.yaml`, `values-staging.yaml`, `values-prod.yaml`. Переопределяйте значения через `helm upgrade --install -f values-<env>.yaml`.",
+                    "`helm rollback` восстанавливает состояние кластера по истории релизов Helm и подходит для экстренного отката. Возврат values-файла в Git — подход GitOps с полной историей аудита; для плановых откатов предпочтителен `git revert`.",
                 ],
             },
         ],
     },
     {
         "slug": "api-security-testing",
-        "title": "API Security & Testing",
-        "description": "Design and execute a comprehensive API testing strategy: validate authentication flows, test for OWASP API vulnerabilities, and automate security checks in CI.",
+        "title": "Безопасность и тестирование API",
+        "description": "Спроектируйте и реализуйте комплексную стратегию тестирования API: проверьте сценарии аутентификации, уязвимости OWASP API и автоматизируйте проверки безопасности в CI.",
         "modules": ["Postman / API Testing", "DevSecOps"],
         "difficulty": "intermediate",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Validate JWT structure",
+                "title": "Проверить структуру JWT",
                 "type": "sandbox",
                 "prompt": (
                     "Write a bash one-liner that prints the number of parts in this JWT "
@@ -685,13 +685,13 @@ PROJECTS = [
                 "language": "bash",
                 "expected_output": "3",
                 "hints": [
-                    "A JWT has 3 parts separated by `.` — think about counting the separators and adding 1, or counting fields directly.",
-                    "Use `echo 'JWT' | awk -F. '{print NF}'` to split on `.` and print the number of fields.",
+                    "JWT состоит из трёх частей, разделённых `.`. Можно подсчитать разделители и прибавить 1 либо сразу посчитать поля.",
+                    "Используйте `echo 'JWT' | awk -F. '{print NF}'`, чтобы разделить строку по `.` и вывести число полей.",
                 ],
             },
             {
                 "order_index": 2,
-                "title": "Decode a JWT payload",
+                "title": "Декодировать payload JWT",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that base64-decodes the middle segment of this JWT "
@@ -705,16 +705,16 @@ PROJECTS = [
                 "language": "python",
                 "expected_output": "user123",
                 "hints": [
-                    "Split the JWT on `.`, take index 1 (the payload segment), and base64url-decode it — the standard `base64.urlsafe_b64decode` needs padding added first.",
-                    "Padding fix: `base64.urlsafe_b64decode(payload + '=' * (-len(payload) % 4))`; then `json.loads()` the result and access `['sub']`.",
+                    "Разделите JWT по `.`, возьмите элемент с индексом 1 (payload) и декодируйте Base64url. Перед вызовом `base64.urlsafe_b64decode` нужно добавить padding.",
+                    "Исправление padding: `base64.urlsafe_b64decode(payload + '=' * (-len(payload) % 4))`; затем разберите результат через `json.loads()` и обратитесь к `['sub']`.",
                 ],
             },
             {
                 "order_index": 3,
-                "title": "Write a Postman collection for an auth API",
+                "title": "Создать коллекцию Postman для API аутентификации",
                 "type": "ai",
                 "prompt": (
-                    "Write a Postman collection (JSON) for an authentication API with these three requests:\n\n"
+                    "Создайте коллекцию Postman в формате JSON для API аутентификации с тремя запросами:\n\n"
                     "1. **POST /auth/login** — body `{email, password}`, test that response status is 200 "
                     "and response body contains a `token` field; save the token to a collection variable\n"
                     "2. **GET /api/profile** — uses the saved token as a Bearer header; "
@@ -727,28 +727,28 @@ PROJECTS = [
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "A Postman collection JSON has an `info` block (name, schema) and an `item` array; each item has `name`, `request`, and `event` arrays for pre-request and test scripts.",
-                    "In the login test script: `pm.collectionVariables.set('token', pm.response.json().token)`; reference it in the profile request `Authorization` header as `Bearer {{token}}`.",
+                    "JSON-коллекция Postman содержит блок `info` (name, schema) и массив `item`. Каждый элемент включает `name`, `request` и массив `event` с pre-request- и test-скриптами.",
+                    "В тестовом скрипте входа используйте `pm.collectionVariables.set('token', pm.response.json().token)`. В запросе профиля укажите в заголовке `Authorization`: `Bearer {{token}}`.",
                 ],
             },
             {
                 "order_index": 4,
-                "title": "Design an API security testing strategy",
+                "title": "Спроектировать стратегию тестирования безопасности API",
                 "type": "ai",
                 "prompt": (
-                    "Design an API security testing strategy covering these OWASP API Security Top 10 risks:\n\n"
-                    "- **API1** (Broken Object Level Authorization): describe a test scenario and how to automate it\n"
-                    "- **API3** (Broken Object Property Level Authorization): give a concrete example using a PATCH endpoint\n"
-                    "- **API5** (Broken Function Level Authorization): explain how to find and test admin-only endpoints\n"
-                    "- **API8** (Security Misconfiguration): list 5 headers or settings to check in every response\n\n"
+                    "Спроектируйте стратегию тестирования безопасности API, охватывающую следующие риски OWASP API Security Top 10:\n\n"
+                    "- **API1** (Broken Object Level Authorization): опишите сценарий тестирования и его автоматизацию\n"
+                    "- **API3** (Broken Object Property Level Authorization): приведите конкретный пример с endpoint PATCH\n"
+                    "- **API5** (Broken Function Level Authorization): объясните, как найти и проверить endpoint, доступные только администраторам\n"
+                    "- **API8** (Security Misconfiguration): перечислите пять заголовков или настроек, которые нужно проверять в каждом ответе\n\n"
                     "Then describe how you would integrate these checks into a CI pipeline using Newman "
                     "(the Postman CLI runner), so that a failing security test blocks the PR."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "For BOLA (API1): substitute another user's resource ID in the URL and assert a 403 response — if you get 200, authorization is broken. Automate by parameterizing resource IDs in Postman.",
-                    "For Newman CI integration: `newman run collection.json -e env.json --bail` exits non-zero on test failure; add it as a CI step after deploying to staging so security failures block the PR.",
+                    "Для BOLA (API1) подставьте в URL ID ресурса другого пользователя и проверьте ответ 403. Если приходит 200, авторизация работает неправильно. Автоматизируйте тест, параметризовав ID ресурсов в Postman.",
+                    "Для интеграции Newman с CI используйте `newman run collection.json -e env.json --bail`: при провале теста команда вернёт ненулевой код. Добавьте шаг после развёртывания в staging, чтобы ошибки безопасности блокировали PR.",
                 ],
             },
         ],
@@ -756,13 +756,13 @@ PROJECTS = [
     {
         "slug": "iac-aws-vpc",
         "title": "Infrastructure as Code: AWS VPC",
-        "description": "Write Terraform to provision a production-grade AWS VPC with subnets, security groups, and extract it into a reusable module.",
+        "description": "Напишите Terraform-конфигурацию для production-ready AWS VPC с подсетями и security groups, затем выделите конфигурацию в повторно используемый модуль.",
         "modules": ["Terraform", "AWS", "Networking Essentials"],
         "difficulty": "advanced",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Count Terraform variable blocks",
+                "title": "Подсчитать блоки переменных Terraform",
                 "type": "sandbox",
                 "prompt": (
                     "Write a bash one-liner that counts the number of `variable` blocks in this HCL snippet "
@@ -774,66 +774,66 @@ PROJECTS = [
                 "language": "bash",
                 "expected_output": "3",
                 "hints": [
-                    "Think about what unique keyword starts each variable block definition in HCL — you can count lines that begin with it.",
-                    "Use `grep -c '^variable'` to count lines where the word `variable` appears at the start.",
+                    "Вспомните ключевое слово, с которого начинается определение каждой переменной в HCL. Можно подсчитать строки, начинающиеся с него.",
+                    "Используйте `grep -c '^variable'`, чтобы подсчитать строки, начинающиеся со слова `variable`.",
                 ],
             },
             {
                 "order_index": 2,
-                "title": "Parse Terraform output JSON",
+                "title": "Разобрать JSON-вывод Terraform",
                 "type": "sandbox",
                 "prompt": (
-                    "Write a Python one-liner that parses this Terraform output JSON and prints the VPC ID value:\n\n"
+                    "Напишите однострочную команду Python, которая разбирает JSON-вывод Terraform и печатает ID VPC:\n\n"
                     '`{"vpc_id":{"value":"vpc-0abc1234","type":"string"}}`'
                 ),
                 "language": "python",
                 "expected_output": "vpc-0abc1234",
                 "hints": [
-                    "Use `json.loads()` to parse the string, then navigate the nested dict to find the value field.",
-                    "Access `json.loads(s)['vpc_id']['value']` after `import json`.",
+                    "Разберите строку через `json.loads()`, затем найдите поле `value` во вложенном словаре.",
+                    "После `import json` обратитесь к `json.loads(s)['vpc_id']['value']`.",
                 ],
             },
             {
                 "order_index": 3,
-                "title": "Write a reusable VPC module",
+                "title": "Создать повторно используемый модуль VPC",
                 "type": "ai",
                 "prompt": (
                     "Write a Terraform module for a production AWS VPC. "
                     "The module should accept variables for: CIDR block, environment name, and list of AZs.\n\n"
-                    "It should create:\n"
-                    "- The VPC with DNS hostnames enabled\n"
-                    "- One public subnet per AZ\n"
-                    "- One private subnet per AZ\n"
-                    "- An internet gateway attached to public subnets\n"
-                    "- A NAT gateway in the first public subnet (with an Elastic IP)\n"
-                    "- Appropriate route tables for public and private subnets\n\n"
+                    "Модуль должен создавать:\n"
+                    "- VPC с включёнными DNS hostnames\n"
+                    "- Одну публичную подсеть для каждой AZ\n"
+                    "- Одну приватную подсеть для каждой AZ\n"
+                    "- Internet Gateway для публичных подсетей\n"
+                    "- NAT Gateway в первой публичной подсети с Elastic IP\n"
+                    "- Подходящие таблицы маршрутизации для публичных и приватных подсетей\n\n"
                     "Show `main.tf`, `variables.tf`, and `outputs.tf`. "
                     "Use consistent naming with the environment variable."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Use `count = length(var.azs)` on subnet resources; the NAT gateway requires an `aws_eip` first; route tables need separate `aws_route_table_association` resources to attach to subnets.",
-                    "Private subnets route `0.0.0.0/0` to `aws_nat_gateway.main.id`; public subnets route to `aws_internet_gateway.main.id`; both need `aws_route_table` + `aws_route_table_association`.",
+                    "Для ресурсов подсетей используйте `count = length(var.azs)`. Перед созданием NAT Gateway создайте `aws_eip`. Для подключения таблиц маршрутизации к подсетям нужны отдельные ресурсы `aws_route_table_association`.",
+                    "В приватных подсетях направьте `0.0.0.0/0` на `aws_nat_gateway.main.id`, в публичных — на `aws_internet_gateway.main.id`. Для обоих типов нужны `aws_route_table` и `aws_route_table_association`.",
                 ],
             },
             {
                 "order_index": 4,
-                "title": "Security group design",
+                "title": "Спроектировать security group",
                 "type": "ai",
                 "prompt": (
-                    "Write Terraform `aws_security_group` resources for a 3-tier application:\n"
-                    "1. **Web tier** — allows HTTP (80) and HTTPS (443) from anywhere; SSH (22) from a bastion CIDR only\n"
-                    "2. **App tier** — allows traffic only from the web tier security group on port 8080\n"
-                    "3. **Database tier** — allows PostgreSQL (5432) only from the app tier security group\n\n"
+                    "Создайте ресурсы Terraform `aws_security_group` для трёхуровневого приложения:\n"
+                    "1. **Web tier** — разрешает HTTP (80) и HTTPS (443) отовсюду, SSH (22) — только из CIDR bastion-хоста\n"
+                    "2. **App tier** — разрешает трафик только от security group веб-уровня на порту 8080\n"
+                    "3. **Database tier** — разрешает PostgreSQL (5432) только от security group уровня приложения\n\n"
                     "Use security group references (not CIDR) for inter-tier rules. "
                     "Explain why security group references are preferable to CIDR-based rules for internal traffic."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Define security groups in dependency order (web → app → db); use `source_security_group_id = aws_security_group.web.id` in the app tier ingress rule instead of `cidr_blocks`.",
-                    "Security group references are dynamic — they follow the group regardless of IP changes, so they're more robust than CIDR rules that break when instances are replaced or scaled.",
+                    "Определяйте группы безопасности в порядке зависимостей (web → app → db). В ingress-правиле app-уровня используйте `source_security_group_id = aws_security_group.web.id` вместо `cidr_blocks`.",
+                    "Ссылки на security group динамические: они учитывают изменения IP-адресов и устойчивее CIDR-правил, которые могут перестать работать при замене или масштабировании экземпляров.",
                 ],
             },
         ],

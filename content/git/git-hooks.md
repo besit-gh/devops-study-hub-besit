@@ -1,5 +1,5 @@
 ---
-title: Git Hooks
+title: Git hooks — хуки Git
 module: git
 duration_min: 15
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [git, hooks, pre-commit, husky, automation, ci]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Git hooks are shell scripts (or any executable) that Git invokes automatically at well-defined points in its workflow — before a commit is recorded, before a push is sent, after a merge completes. For DevOps practitioners, hooks are the first line of defense in a quality pipeline: they catch linting errors, enforce commit message standards, block accidental secret leaks, and run test suites before code ever reaches a remote repository. Shifting these checks to the developer's local machine reduces CI feedback loops from minutes to seconds.
+Git hooks — это shell-скрипты или другие исполняемые файлы, которые Git автоматически запускает в определённых точках рабочего процесса: перед созданием коммита, отправкой push или после завершения merge. Для DevOps это первый рубеж контроля качества: хуки обнаруживают ошибки линтинга, проверяют формат сообщений коммитов, блокируют случайную утечку секретов и запускают тесты до отправки кода в удалённый репозиторий. Перенос таких проверок на машину разработчика сокращает обратную связь с CI с минут до секунд.
 
-The core design principle is simple: hooks are plain executables living in `.git/hooks/`. A non-zero exit code from a hook aborts the Git operation in progress. There is no special syntax or framework required — a five-line bash script is a fully functional hook. That simplicity is also the main friction point: because `.git/` is not version-controlled, hooks don't travel with a clone by default, so teams must establish a sharing strategy.
+Принцип прост: хуки — обычные исполняемые файлы в `.git/hooks/`. Ненулевой код завершения отменяет выполняемую операцию Git. Специальный синтаксис или фреймворк не нужен — даже пятистрочный Bash-скрипт может быть полноценным хуком. Но простота создаёт и ограничение: каталог `.git/` не версионируется, поэтому хуки по умолчанию не попадают в клон. Команде нужно отдельно организовать их распространение.
 
 In the broader DevOps toolchain, hooks occupy the leftmost quality gate — they run on the developer's workstation before code reaches a pull request or CI pipeline. They complement but don't replace CI: hooks are fast and local; CI is authoritative and shared. A healthy workflow uses both: hooks prevent embarrassing pushes, CI enforces policy with full infrastructure access. Understanding how to write, share, and manage hooks is a practical skill interviewers expect from candidates working on developer experience, platform engineering, or any team that owns a CI/CD pipeline.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### How Git Invokes Hooks
 
@@ -325,7 +325,7 @@ exit 0
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Full pre-commit Hook — Python Project
 
@@ -545,7 +545,7 @@ git merge feature/add-axios
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Write and Install a pre-commit Hook from Scratch
 
@@ -620,7 +620,7 @@ eslint .
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Validate a commit message against the conventional commit format — the same regex a `commit-msg` hook would use.
 

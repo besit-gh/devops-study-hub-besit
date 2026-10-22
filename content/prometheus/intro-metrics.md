@@ -1,5 +1,5 @@
 ---
-title: Intro & Metrics Model
+title: Введение в Prometheus и модель метрик
 module: prometheus
 duration_min: 20
 difficulty: beginner
@@ -7,26 +7,26 @@ tags: [prometheus, metrics, monitoring, observability]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Prometheus is an open-source systems monitoring and alerting toolkit originally built at SoundCloud, now a CNCF graduated project. It stores all collected data in a local time-series database (TSDB) and exposes a query API used by Grafana for dashboards, Alertmanager for notifications, and direct API consumers. For DevOps engineers, Prometheus is the de-facto standard for metrics in Kubernetes environments — understanding it from the data model up is a prerequisite for operating any modern infrastructure stack.
+Prometheus — открытый набор инструментов мониторинга и оповещения, первоначально созданный в SoundCloud и ставший зрелым проектом CNCF. Он хранит собранные данные в локальной базе временных рядов (TSDB) и предоставляет API запросов, которым пользуются Grafana для дашбордов, Alertmanager для уведомлений и другие клиенты. Для DevOps-инженеров Prometheus стал фактическим стандартом сбора метрик в Kubernetes-средах; понимание модели данных необходимо для эксплуатации современной инфраструктуры.
 
-The core design decision in Prometheus is its pull-based architecture: Prometheus reaches out to targets over HTTP at a configured interval and reads their metrics. This is the inverse of push-based systems (StatsD, Graphite) where instrumented code sends data to a collector. Pull-based monitoring places the scrape schedule, target list, and retry logic entirely inside Prometheus — the monitored application needs only to expose an HTTP endpoint in the correct text format. Every metric carried by Prometheus is tagged with the `job` label (the scrape job name) and the `instance` label (the target address), providing consistent provenance without any application-side configuration.
+Ключевое архитектурное решение Prometheus — модель pull: Prometheus сам обращается к целям по HTTP через заданные интервалы и считывает метрики. Это противоположно push-системам (StatsD, Graphite), в которых инструментированный код отправляет данные сборщику. При pull-модели расписание опроса, список целей и повторы контролируются Prometheus; приложению достаточно предоставить HTTP endpoint в нужном текстовом формате. Каждая метрика получает метку `job` (имя задания сбора) и `instance` (адрес цели), что обеспечивает единый источник происхождения данных без дополнительной настройки приложения.
 
-Every unique combination of metric name and label values forms a distinct time series. Prometheus stores each as a sequence of `(timestamp, float64)` pairs in 2-hour blocks that are compacted and downsampled over time. Default retention is 15 days, configurable via `--storage.tsdb.retention.time`. The local TSDB is Prometheus's only required storage — remote write/read integrations exist (Thanos, Cortex, VictoriaMetrics) but are not needed to get started.
+Каждая уникальная комбинация имени метрики и значений меток образует отдельный временной ряд. Prometheus хранит его как последовательность пар `(timestamp, float64)` в двухчасовых блоках, которые со временем уплотняются. По умолчанию данные хранятся 15 дней; срок можно изменить параметром `--storage.tsdb.retention.time`. Локальная TSDB — единственное необходимое хранилище Prometheus для старта. При необходимости можно подключить интеграции remote write/read, например Thanos, Cortex или VictoriaMetrics.
 
-## Concepts
+## Основные понятия
 
-### Pull-Based Architecture
+### Архитектура pull-модели
 
 Prometheus polls targets over HTTP at a configured scrape interval. Targets expose metrics on a `/metrics` endpoint in the Prometheus exposition format (plain text). This is the inverse of push-based systems where instrumented code sends metrics to a collector.
 
-**Advantages of pull:**
+**Преимущества pull-модели:**
 - Central config: Prometheus controls what is scraped and when.
 - Easy health check: if the scrape fails, the target is down.
 - No firewall holes needed from target to monitoring server (only Prometheus needs outbound access to targets).
 
-**When push is needed:** short-lived jobs (batch, cron) cannot be scraped before they exit. Use the **Pushgateway** to push metrics, then Prometheus scrapes the gateway.
+**Когда нужен push:** short-lived jobs (batch, cron) cannot be scraped before they exit. Use the **Pushgateway** to push metrics, then Prometheus scrapes the gateway.
 
 ### Metric Types
 
@@ -321,7 +321,7 @@ scrape_configs:
       - targets: ["localhost:8000"]
 ```
 
-## Examples
+## Примеры
 
 **Run Prometheus locally with Docker:**
 
@@ -391,7 +391,7 @@ curl -X POST http://localhost:9090/-/reload
 curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health}'
 ```
 
-## Exercises
+## Практические задания
 
 1. Run Prometheus in Docker using the config above with `--web.enable-lifecycle`. Navigate to `http://localhost:9090/targets` and confirm the self-scrape target is UP. Then query `prometheus_build_info` in the expression browser and identify what labels are present.
 
@@ -402,7 +402,7 @@ curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 4. Classify a metric by its name convention. Run: `python3 -c "name='http_requests_total'; print('counter' if name.endswith('_total') else 'gauge')"`
 

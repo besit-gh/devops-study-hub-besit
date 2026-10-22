@@ -1,5 +1,5 @@
 ---
-title: Integrations & Alert Routing
+title: Интеграции и маршрутизация оповещений
 module: opsgenie
 duration_min: 20
 difficulty: intermediate
@@ -7,12 +7,12 @@ tags: [opsgenie, integrations, routing, prometheus, datadog, api, deduplication]
 exercises: 3
 ---
 
-## Overview
-Opsgenie's value compounds when you connect it to your monitoring stack. Every monitoring tool you run — Prometheus, Grafana, Datadog, CloudWatch — generates alerts. Without routing intelligence, all of them land in a single noise pile. Opsgenie's integration rules give you fine-grained control: which team receives which alert, at what priority, and with what deduplication logic. This lesson covers the REST API, the major integrations, and the routing mechanics that make the difference between useful alerting and alert fatigue.
+## Обзор
+Польза Opsgenie особенно заметна при интеграции со стеком мониторинга. Prometheus, Grafana, Datadog, CloudWatch и другие инструменты создают оповещения. Без продуманной маршрутизации они превращаются в общий поток шума. Правила интеграции Opsgenie позволяют точно определить, какая команда получает конкретное оповещение, с каким приоритетом и по каким правилам дедупликации. В уроке рассматриваются REST API, основные интеграции и механизмы маршрутизации, которые отличают полезные оповещения от alert fatigue.
 
-## Concepts
+## Основные понятия
 
-### Opsgenie REST API
+### REST API Opsgenie
 The Opsgenie API is the integration backbone. Understanding it directly helps when native integrations don't exist or need customisation.
 
 Base URL: `https://api.opsgenie.com/v2/`
@@ -260,7 +260,7 @@ Configure at: **Settings → Heartbeat Monitoring → Add Heartbeat**
 
 Fields: name, interval (e.g., 10 minutes), interval unit, alert message, responder team.
 
-## Examples
+## Примеры
 
 ### Full routing logic for a multi-team setup
 
@@ -274,7 +274,7 @@ Rule 4: env=staging → P5, suppress notifications
 Rule 5 (default): route to platform-team, keep priority from source
 ```
 
-## Exercises
+## Практические задания
 
 1. Write the complete Alertmanager `receivers` and `route` configuration to send Prometheus alerts to Opsgenie, where: `severity: critical` maps to P1, `severity: warning` maps to P2, all other alerts default to P3. The alert alias must be constructed from `alertname` + `instance` labels to ensure per-host deduplication.
 
@@ -285,7 +285,7 @@ Rule 5 (default): route to platform-team, keep priority from source
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 4. Extract the routing condition field from a policy stub. Run: `printf 'conditions:\n- field: priority\n  operation: equals\n  value: P1\n' | awk '/field:/{print $2}'`
 

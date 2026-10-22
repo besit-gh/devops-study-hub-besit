@@ -1,5 +1,5 @@
 ---
-title: Application Performance Monitoring (APM)
+title: Мониторинг производительности приложений (APM)
 module: monitoring
 duration_min: 20
 difficulty: intermediate
@@ -7,19 +7,19 @@ tags: [monitoring, apm, datadog, distributed-tracing, spans, profiling, ddtrace]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Application Performance Monitoring (APM) gives you code-level visibility into how requests execute inside your services. Infrastructure metrics tell you a host is at 90% CPU; APM tells you *why* — a specific function, query, or downstream call is responsible. Without APM, a 2-second response time is a black box. With APM, you see the exact breakdown: 2ms in the API handler, 5ms in the auth service, and 1993ms blocked on a single unindexed database query. That specificity collapses the gap between "something is slow" and "here is the fix."
+Application Performance Monitoring (APM) показывает выполнение запросов внутри сервисов на уровне кода. Инфраструктурные метрики сообщают, что CPU хоста загружен на 90%, а APM объясняет, *почему*: виноваты конкретная функция, запрос или вызов нижележащего сервиса. Без APM задержка в две секунды остаётся загадкой. С APM видно точное распределение: 2 мс в API-обработчике, 5 мс в сервисе аутентификации и 1993 мс ожидания одного запроса к базе данных без индекса. Такая детализация превращает «что-то тормозит» в конкретную причину и способ исправления.
 
-The core design principle of modern APM is **distributed tracing**: every request is assigned a trace ID that propagates across service boundaries via HTTP headers or message queue metadata. Each unit of work within a trace is a **span** — a named, timed operation with arbitrary key-value tags attached. Spans form a parent-child tree that reconstructs exactly what happened during a request, across every service it touched. Datadog APM extends this model with automatic instrumentation of popular frameworks, deep database visibility, continuous profiling, and correlation with logs and metrics.
+Ключевой принцип современного APM — **распределённая трассировка**: каждому запросу назначается trace ID, который передаётся между сервисами через HTTP-заголовки или метаданные очереди сообщений. Каждая операция внутри трассировки — это **span**, именованная операция с измеренной длительностью и тегами «ключ-значение». Span образуют дерево родительских и дочерних операций, позволяющее восстановить путь запроса через все затронутые сервисы. Datadog APM дополняет эту модель автоматическим инструментированием популярных фреймворков, деталями работы с базами данных, непрерывным профилированием и корреляцией с логами и метриками.
 
-In the DevOps toolchain, APM sits between infrastructure monitoring (dashboards, host metrics) and incident response (alerts, on-call). It answers the questions that metrics dashboards raise but cannot answer: latency is up — is it our code, our database, or a third-party API? Error rate spiked — which endpoint, which user path, which downstream dependency? APM is the evidence layer that makes postmortems conclusive and debugging fast.
+В DevOps APM связывает инфраструктурный мониторинг (дашборды и метрики хостов) с реагированием на инциденты (оповещения и дежурства). Он отвечает на вопросы, которые поднимают дашборды, но не могут решить сами: выросла задержка — виноват код, база данных или сторонний API? Увеличилось число ошибок — на каком endpoint, пользовательском пути или нижележащей зависимости? APM предоставляет фактические данные для точных postmortem и быстрой отладки.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### Traces, Spans, and the Propagation Model
+### Трассировки, span и модель передачи контекста
 
 A **trace** is the complete record of a single request's journey through your system. It is identified by a globally unique `trace_id`. A **span** is one unit of work within that trace — a function call, a database query, an HTTP request to another service. Every span has:
 
@@ -412,7 +412,7 @@ In the Datadog UI, the **Code Hotspots** feature links APM spans to profiling da
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Flask API with Auto-Instrumentation and Manual Business Spans
 
@@ -764,7 +764,7 @@ curl -s "https://api.datadoghq.com/api/v1/monitor?tags=service:payment-api" \
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Instrument a Flask App and Verify Trace Structure
 
@@ -814,7 +814,7 @@ Configure this using `DatadogSampler` with `SamplingRule`. Then:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Extract the service name from a trace stub. Run: `printf 'service: payment-api\nversion: 2.1.0\nenv: prod\n' | awk '/^service:/{print $2}'`
 

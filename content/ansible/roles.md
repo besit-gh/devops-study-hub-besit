@@ -1,5 +1,5 @@
 ---
-title: Roles
+title: Роли Ansible
 module: ansible
 duration_min: 20
 difficulty: intermediate
@@ -7,12 +7,12 @@ tags: [ansible, roles, galaxy, reusability, defaults, handlers, templates]
 exercises: 4
 ---
 
-## Overview
-Roles are the packaging mechanism for Ansible. Instead of one giant playbook, you split configuration into self-contained, reusable roles — a `nginx` role, a `postgres` role, a `common` role. Each role has a standard directory structure that Ansible understands automatically. Roles can be shared via Ansible Galaxy or kept private in your organization.
+## Обзор
+Роли — механизм упаковки и повторного использования конфигурации Ansible. Вместо одного огромного playbook конфигурацию разбивают на независимые роли: `nginx`, `postgres`, `common` и другие. У каждой роли стандартная структура каталогов, которую Ansible распознаёт автоматически. Роли можно публиковать через Ansible Galaxy или хранить приватно внутри организации.
 
-## Concepts
+## Основные понятия
 
-### Role Directory Structure
+### Структура каталогов роли
 ```
 roles/
   nginx/
@@ -33,7 +33,7 @@ roles/
     README.md        # documentation
 ```
 
-Only the `tasks/` directory is required; the rest are optional.
+Обязателен только каталог `tasks/`; остальные каталоги необязательны.
 
 ### tasks/main.yml
 ```yaml
@@ -77,7 +77,7 @@ nginx_server_name: "_"             # catch-all
 nginx_extra_params: {}
 ```
 
-Defaults are the lowest-priority variables — easily overridden by the caller.
+Значения по умолчанию имеют самый низкий приоритет, поэтому вызывающий playbook легко может их переопределить.
 
 ### handlers/main.yml
 ```yaml
@@ -121,7 +121,7 @@ http {
 }
 ```
 
-### meta/main.yml — Dependencies
+### meta/main.yml — зависимости
 ```yaml
 # roles/nginx/meta/main.yml
 galaxy_info:
@@ -140,7 +140,7 @@ dependencies:
   - role: geerlingguy.git   # from Galaxy
 ```
 
-### Using Roles in Playbooks
+### Использование ролей в playbook
 ```yaml
 ---
 - name: Configure web tier
@@ -156,7 +156,7 @@ dependencies:
       when: ansible_facts.os_family == "Debian"
 ```
 
-Alternative with `import_role` / `include_role` (allows conditionals, loops):
+Альтернатива с `import_role` / `include_role` (поддерживает условия и циклы):
 ```yaml
 tasks:
   - name: Apply nginx role
@@ -172,20 +172,20 @@ tasks:
 ```
 
 ### Ansible Galaxy
-Galaxy is the public hub for community roles and collections:
+Galaxy — публичный каталог ролей и коллекций сообщества:
 
 ```bash
-# Search for a role
+# Найти роль
 ansible-galaxy search nginx
 
-# Install a role
+# Установить роль
 ansible-galaxy role install geerlingguy.nginx
 ansible-galaxy role install geerlingguy.nginx --version 3.2.0
 
-# Install from requirements.yml
+# Установить роли из requirements.yml
 ansible-galaxy install -r requirements.yml
 
-# List installed roles
+# Показать установленные роли
 ansible-galaxy role list
 ```
 
@@ -204,15 +204,15 @@ collections:
     version: "7.0.0"
 ```
 
-### Collections
-Collections bundle roles, modules, and plugins under a namespace:
+### Коллекции
+Коллекции объединяют роли, модули и плагины в пространстве имён:
 ```bash
 ansible-galaxy collection install community.postgresql
 ansible-galaxy collection install amazon.aws
 ansible-galaxy collection install -r requirements.yml
 ```
 
-After installing, use collection-qualified module names:
+После установки указывайте полные имена модулей с пространством имён коллекции:
 ```yaml
 - name: Create database
   community.postgresql.postgresql_db:
@@ -220,8 +220,8 @@ After installing, use collection-qualified module names:
     state: present
 ```
 
-### Testing Roles with Molecule
-Molecule is the standard testing framework for Ansible roles:
+### Тестирование ролей с Molecule
+Molecule — стандартный фреймворк для тестирования ролей Ansible:
 
 ```bash
 pip install molecule molecule-docker
@@ -254,9 +254,9 @@ molecule destroy                 # clean up
         timeout: 5
 ```
 
-## Examples
+## Примеры
 
-### Common Role (Applied to All Hosts)
+### Общая роль (применяется ко всем узлам)
 ```yaml
 # roles/common/tasks/main.yml
 ---
@@ -283,32 +283,32 @@ molecule destroy                 # clean up
   loop: "{{ common_sysctl_params | dict2items }}"
 ```
 
-## Exercises
+## Практические задания
 
-1. Create a `nginx` role using `ansible-galaxy role init nginx`. Implement tasks to install nginx, deploy a template-based config, and handle service management. Apply it in a playbook.
-2. Use the `defaults/main.yml` to define configurable variables (`nginx_port`, `nginx_worker_processes`). Override them from the playbook for one group of hosts and use defaults for another.
-3. Add a `meta/main.yml` with a dependency on a `common` role you also write. Verify Ansible runs `common` before `nginx` without you having to specify the order in the playbook.
-4. Write a Molecule test for your nginx role that verifies: the nginx package is installed, the service is running, and port 80 is listening. Run `molecule test` and confirm it passes.
+1. Создайте роль `nginx` командой `ansible-galaxy role init nginx`. Реализуйте задачи установки nginx, развёртывания конфигурации из шаблона и управления службой. Подключите роль в playbook.
+2. Определите настраиваемые переменные (`nginx_port`, `nginx_worker_processes`) в `defaults/main.yml`. Переопределите их из playbook для одной группы узлов, а для другой оставьте значения по умолчанию.
+3. Добавьте в `meta/main.yml` зависимость от собственной роли `common`. Убедитесь, что Ansible запускает `common` перед `nginx`, даже если порядок не указан в playbook.
+4. Напишите тест Molecule для роли nginx, проверяющий установку пакета, работу службы и прослушивание порта 80. Выполните `molecule test` и убедитесь, что тест проходит.
 
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
-5. Count standard role subdirectories. Run: `printf 'tasks\nhandlers\ndefaults\nvars\nfiles\ntemplates\nmeta\n' | wc -l`
+5. Посчитайте стандартные подкаталоги роли. Выполните: `printf 'tasks\nhandlers\ndefaults\nvars\nfiles\ntemplates\nmeta\n' | wc -l`
 
 ```expected_output
 7
 ```
 
-hint: Think about how you can generate a list of items and count how many lines it contains using standard Unix tools.
-hint: Use printf to print each role subdirectory name on its own line with \n separators, then pipe that output to wc -l to count the lines.
+Подсказка: сформируйте список элементов и посчитайте количество строк стандартными инструментами Unix.
+Подсказка: используйте `printf`, чтобы вывести имена подкаталогов по одному в строке, разделяя их через `\n`, а затем передайте вывод в `wc -l`.
 
-6. Extract the role entry-point filename from a path. Run: `echo "roles/nginx/tasks/main.yml" | awk -F/ '{print $NF}'`
+6. Извлеките имя файла точки входа роли из пути. Выполните: `echo "roles/nginx/tasks/main.yml" | awk -F/ '{print $NF}'`
 
 ```expected_output
 main.yml
 ```
 
-hint: Think about how awk can split a string into fields using a custom delimiter, then access the last field.
-hint: Use awk with -F/ to set the slash as the field separator, and reference $NF to print the last field in the record.
+Подсказка: `awk` может разделить строку на поля по заданному разделителю, а затем обратиться к последнему полю.
+Подсказка: задайте `/` разделителем полей через `awk -F/` и используйте `$NF`, чтобы вывести последнее поле.

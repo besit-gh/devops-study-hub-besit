@@ -55,9 +55,9 @@ export default function Reference() {
   if (notFound) return (
     <div className="p-6 max-w-2xl">
       <Link to={`/module/${moduleSlug}`} className="text-xs text-gray-400 dark:text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400 mb-4 inline-block">
-        ← Back to module
+        ← Назад к модулю
       </Link>
-      <p className="text-sm text-gray-500 dark:text-gray-400">No reference card available for this module yet.</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400">Для этого модуля пока нет справочной карточки.</p>
     </div>
   )
 
@@ -93,11 +93,11 @@ export default function Reference() {
         type="text"
         value={query}
         onChange={e => setQuery(e.target.value)}
-        placeholder="Filter commands…"
+        placeholder="Фильтр команд…"
         className="w-full max-w-xs text-xs px-3 py-1.5 mb-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:border-emerald-400 dark:focus:border-emerald-600"
       />
       {q && filtered.length === 0 ? (
-        <p className="text-sm text-gray-400 dark:text-gray-500">No matching sections.</p>
+        <p className="text-sm text-gray-400 dark:text-gray-500">Подходящих разделов нет.</p>
       ) : (
         <div className={proseClasses}>
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{filteredContent}</ReactMarkdown>

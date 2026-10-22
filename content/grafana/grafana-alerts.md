@@ -1,5 +1,5 @@
 ---
-title: Alerting & Notifications
+title: Оповещения и уведомления Grafana
 module: grafana
 duration_min: 30
 difficulty: intermediate
@@ -7,15 +7,15 @@ tags: [grafana, alerting, contact-points, notification-policies, silences, mute-
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Grafana Unified Alerting (introduced in Grafana 8, default from Grafana 9) is a single alerting system that handles rule evaluation, routing, and notification delivery regardless of the backing data source. Before this, Grafana only supported per-panel alerts limited to graph panels. The unified system supports Prometheus, Loki, CloudWatch, SQL, and any other data source, and replaces the legacy Grafana alerting model completely.
+Grafana Unified Alerting (появилась в Grafana 8 и стала стандартной в Grafana 9) — единая система оповещений, которая отвечает за вычисление правил, маршрутизацию и доставку уведомлений независимо от источника данных. Ранее Grafana поддерживала только оповещения отдельных графических панелей. Единая система работает с Prometheus, Loki, CloudWatch, SQL и другими источниками и полностью заменяет старую модель оповещений Grafana.
 
-The alerting pipeline has four distinct stages: rules define *what* fires, evaluation groups define *when* rules run, contact points define *how* notifications are delivered, and notification policies define *who* receives which alerts. Each stage is independently configurable — you can add a new contact point without changing any rules, or change routing without rewriting alert expressions. Understanding this separation is both operationally useful and common in interviews.
+В пайплайне оповещений четыре этапа: правила определяют, *что* вызывает оповещение; группы вычисления — *когда* запускать правила; contact points — *как* доставлять уведомления; политики уведомлений — *кто* получает конкретные оповещения. Каждый этап настраивается отдельно: можно добавить новый contact point, не меняя правила, или изменить маршрутизацию без переписывания выражений. Это разделение полезно в работе и часто встречается на собеседованиях.
 
-Grafana alerting integrates directly with Prometheus Alertmanager — Grafana can forward alerts to an external Alertmanager instance rather than using its own built-in router. In larger organizations, Alertmanager is often already the authoritative routing system, and Grafana sits in front of it as a rule editor and visualization layer. Knowing both modes makes you more versatile in mixed-tool environments.
+Оповещения Grafana напрямую интегрируются с Prometheus Alertmanager: Grafana может пересылать события внешнему экземпляру Alertmanager вместо использования собственного маршрутизатора. В крупных организациях Alertmanager часто является основной системой маршрутизации, а Grafana служит интерфейсом для редактирования правил и визуализации. Понимание обеих моделей полезно в инфраструктурах, где используются разные инструменты.
 
-## Concepts
+## Основные понятия
 
 ### Alert Rule Anatomy
 
@@ -126,7 +126,7 @@ Any state ──[evaluation error]──► Error
 
 Choose based on what missing data means for your context. A scaled-down service returning no metrics should be `OK`. A critical service with no metrics should be `Alerting`. Set this explicitly — the default `NoData` state shows in the UI but does NOT trigger notifications unless you route the `NoData` state through your policies.
 
-### Contact Points
+### Contact points — получатели уведомлений
 
 A contact point is a notification channel — Slack, email, PagerDuty, webhook, OpsGenie, etc.
 
@@ -184,7 +184,7 @@ HTTP Headers:
 Message: (uses Grafana's default JSON payload — includes all alert data)
 ```
 
-### Notification Policies
+### Политики уведомлений
 
 Notification policies are a routing tree. They match alert labels to contact points. The tree has a root policy (catch-all) and nested matchers.
 
@@ -402,7 +402,7 @@ muteTimes:
       - weekdays: [saturday, sunday]
 ```
 
-## Examples
+## Примеры
 
 **End-to-end: fire a Slack alert when error rate exceeds 1%:**
 
@@ -430,7 +430,7 @@ curl -s http://admin:admin@localhost:3000/api/prometheus/grafana/api/v1/rules \
   | jq '.data.groups[].rules[] | {name: .name, state: .state}'
 ```
 
-## Exercises
+## Практические задания
 
 1. Write a Grafana alert rule YAML (for provisioning under `/etc/grafana/provisioning/alerting/`) that fires when the 5-minute average CPU across all nodes exceeds 90% for 3 minutes. Use the expression: `100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)` for query A, and a Threshold condition step referencing A with `IS ABOVE 90`. Set `for: 3m`. Attach an annotation with `runbook_url: "https://wiki.example.com/runbooks/cpu-high"` and labels `severity=critical` and `team=platform`. Load the file and confirm the rule appears under **Alerting → Alert rules**.
 
@@ -441,7 +441,7 @@ curl -s http://admin:admin@localhost:3000/api/prometheus/grafana/api/v1/rules \
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 4. Extract the `for` duration from an alert rule stub. Run: `printf 'for: 5m\nstate: pending\ncondition: B\n' | awk '/^for:/{print $2}'`
 
