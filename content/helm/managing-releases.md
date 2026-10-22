@@ -13,15 +13,15 @@ exercises: 4
 
 Основной принцип модели релизов Helm — атомарные развёртывания с ревизиями. Каждая команда `install` или `upgrade` создаёт новую ревизию. Helm обрабатывает шаблоны с заданными values и применяет получившиеся манифесты к кластеру. Операция либо завершается успешно, либо автоматически откатывается при использовании `--atomic`. В отличие от stateless-команды `kubectl apply`, Helm помнит предыдущее развёртывание и умеет сравнивать, обновлять и откатывать его.
 
-In the broader DevOps toolchain, Helm sits between your CI/CD pipeline and the Kubernetes API. Source code is built into images by CI; Helm is the mechanism by which a specific image version, combined with environment-specific configuration, becomes a live deployment. Tools like ArgoCD, Flux, and Spinnaker all have first-class Helm integrations, making release management a foundational Helm skill regardless of which deployment platform you ultimately use.
+В цепочке DevOps Helm связывает конвейер CI/CD с API Kubernetes. CI собирает исходный код в образы, а Helm превращает конкретную версию образа вместе с настройками окружения в работающее развёртывание. Argo CD, Flux и Spinnaker полноценно интегрируются с Helm, поэтому управление релизами важно независимо от выбранной платформы развёртывания.
 
 ---
 
 ## Основные понятия
 
-### What Helm Tracks Per Release
+### Что Helm отслеживает для каждого релиза
 
-Understanding what Helm stores for each release prevents surprises when upgrading or debugging.
+Понимание того, что Helm сохраняет для каждого релиза, помогает избежать неожиданностей при обновлении и диагностике.
 
 | Stored Data | Where | How to Access |
 |---|---|---|
@@ -32,7 +32,7 @@ Understanding what Helm stores for each release prevents surprises when upgradin
 | NOTES.txt output | Kubernetes Secret | `helm get notes <release>` |
 | Release status | Kubernetes Secret | `helm status <release>` |
 
-Helm creates one Secret per revision. A release with 10 upgrades has 10 Secrets. By default Helm retains the last 10 revisions; you can change this with `--history-max` on `upgrade`.
+Для каждой ревизии Helm создаёт отдельный Secret. У релиза после десяти обновлений будет десять Secret. По умолчанию Helm хранит последние десять ревизий; это значение можно изменить параметром `--history-max` команды `upgrade`.
 
 **Gotcha:** if someone deletes the Helm Secrets manually (or the namespace is wiped), Helm loses all knowledge of the release even though the Kubernetes resources may still exist. In that scenario, `helm list` shows nothing but the Pods, Services, and Deployments are still running. Use `helm install` with a fresh release name, or rescue with `helm upgrade --install` which will adopt orphaned resources if the names match.
 
