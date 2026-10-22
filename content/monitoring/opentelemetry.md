@@ -13,15 +13,15 @@ OpenTelemetry (OTel) — стандарт CNCF для инструментиро
 
 Архитектура OTel разделяет API (то, что вызывает код приложения), SDK (реализацию, выполняющую работу) и exporter (транспортный слой). Благодаря этому авторы библиотек могут добавлять инструментирование, используя только пакет API; если приложение не настроило SDK, накладные расходы отсутствуют. Приложение подключает SDK и выбирает exporter без изменения кода библиотеки. Проект возник в результате объединения OpenCensus и OpenTracing, объединив опыт обеих систем, и стал одним из наиболее активных проектов CNCF после Kubernetes.
 
-In the DevOps toolchain, OTel sits at the instrumentation layer — between your application code and your observability backends. It replaces vendor-specific agents and libraries that previously forced a choice between vendor lock-in and observability. Paired with the OpenTelemetry Collector (a standalone process for receiving, processing, and routing telemetry), OTel gives teams a unified pipeline they control. Whether you're running a monolith, a microservices mesh, or a mix of languages, OTel provides a consistent model for how telemetry flows from code to dashboards.
+В цепочке DevOps OpenTelemetry (OTel) находится на уровне инструментирования между кодом приложения и системами наблюдаемости. Он заменяет специфичные для отдельных поставщиков агенты и библиотеки, которые раньше вынуждали выбирать между привязкой к поставщику и возможностями наблюдения. Вместе с OpenTelemetry Collector — отдельным процессом для приёма, обработки и маршрутизации телеметрии — OTel создаёт единый управляемый конвейер. Он обеспечивает согласованную модель передачи данных от кода к дашбордам для монолитов, микросервисов и приложений на разных языках.
 
 ---
 
 ## Основные понятия
 
-### The Three Signals: Traces, Metrics, Logs
+### Три сигнала: трассировки, метрики и журналы
 
-OTel provides unified instrumentation for all three observability signals, but each serves a different purpose:
+OTel обеспечивает единое инструментирование для всех трёх сигналов наблюдаемости, но каждый из них решает свою задачу:
 
 | Signal | What it answers | Cardinality | Storage cost |
 |--------|----------------|-------------|--------------|
@@ -29,7 +29,7 @@ OTel provides unified instrumentation for all three observability signals, but e
 | **Metrics** | Is the system healthy right now? What are the rates? | Low (aggregate) | Low |
 | **Logs** | What exactly happened at this moment? | Medium | Medium–High |
 
-Traces are the backbone of distributed debugging. A single user request produces one **trace** made up of many **spans** — each span representing a unit of work (an HTTP call, a database query, a function call). Spans carry a start time, duration, attributes, events, and a status code. The parent-child relationships between spans let you reconstruct the full call graph of a request across every service it touched.
+Трассировки — основа распределённой диагностики. Один пользовательский запрос образует **trace**, состоящий из множества **span**; каждый span представляет отдельную операцию (HTTP-вызов, запрос к базе данных или вызов функции). Span содержит время начала, длительность, атрибуты, события и код состояния. Связи родительских и дочерних span позволяют восстановить полный граф вызовов запроса через все затронутые сервисы.
 
 Metrics in OTel map to the same types you'd find in Prometheus: counters, histograms, gauges, and up-down counters. The key difference from raw Prometheus: metrics are defined in application code using the OTel metrics API, then exported via OTLP or converted to Prometheus format at the Collector. This means you define your metric instrumentation once and the export format is a runtime concern.
 
