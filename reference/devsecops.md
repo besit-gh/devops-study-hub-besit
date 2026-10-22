@@ -2,7 +2,7 @@
 
 ## Поиск секретов
 
-| Tool / Command | Description |
+| Инструмент / команда | Описание |
 |----------------|-------------|
 | `gitleaks detect --source .` | Просканировать репозиторий на секреты |
 | `gitleaks detect --no-git -s dir/` | Просканировать каталог вне Git-репозитория |
@@ -13,7 +13,7 @@
 
 ## SAST (статический анализ)
 
-| Tool / Command | Description |
+| Инструмент / команда | Описание |
 |----------------|-------------|
 | `bandit -r src/` | SAST-анализ Python-кода |
 | `bandit -r src/ -f json -o report.json` | Вывод в JSON |
@@ -26,48 +26,48 @@
 
 ## Безопасность контейнеров
 
-| Command | Description |
+| Command | Описание |
 |---------|-------------|
 | `docker scout cves image:tag` | Поиск CVE с помощью Docker Scout |
-| `trivy image image:tag` | Scan image for CVEs |
-| `trivy fs .` | Scan filesystem / repo |
-| `grype image:tag` | Another image CVE scanner |
-| `docker run --read-only image` | Read-only root filesystem |
-| `docker run --cap-drop ALL image` | Drop all capabilities |
-| `docker run --no-new-privileges image` | Prevent privilege escalation |
-| `docker run -u 1000:1000 image` | Run as non-root user |
+| `trivy image image:tag` | Просканировать образ на CVE |
+| `trivy fs .` | Просканировать файловую систему или репозиторий |
+| `grype image:tag` | Ещё один сканер образов на CVE |
+| `docker run --read-only image` | Корневая файловая система только для чтения |
+| `docker run --cap-drop ALL image` | Убрать все capabilities |
+| `docker run --no-new-privileges image` | Запретить повышение привилегий |
+| `docker run -u 1000:1000 image` | Запустить от непривилегированного пользователя |
 
 ## TLS / Certificates
 
-| Command | Description |
+| Command | Описание |
 |---------|-------------|
-| `openssl req -x509 -nodes -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365` | Self-signed cert |
-| `openssl x509 -in cert.pem -text -noout` | Inspect certificate |
-| `openssl s_client -connect host:443` | Test TLS handshake |
-| `openssl verify -CAfile ca.pem cert.pem` | Verify cert against CA |
+| `openssl req -x509 -nodes -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365` | Самоподписанный сертификат |
+| `openssl x509 -in cert.pem -text -noout` | Просмотреть сведения о сертификате |
+| `openssl s_client -connect host:443` | Проверить TLS-рукопожатие |
+| `openssl verify -CAfile ca.pem cert.pem` | Проверить сертификат с помощью CA |
 | `certbot certonly --standalone -d example.com` | Let's Encrypt cert |
-| `certbot renew` | Renew Let's Encrypt certs |
+| `certbot renew` | Обновить сертификаты Let's Encrypt |
 
 ## Secrets Management
 
-| Tool / Command | Description |
+| Инструмент / команда | Описание |
 |----------------|-------------|
-| `vault login -method=aws` | Authenticate to Vault |
-| `vault kv get secret/myapp` | Read a secret |
-| `vault kv put secret/myapp key=val` | Write a secret |
-| `vault kv list secret/` | List secrets |
-| `vault token lookup` | Inspect current token |
+| `vault login -method=aws` | Аутентифицироваться в Vault |
+| `vault kv get secret/myapp` | Прочитать секрет |
+| `vault kv put secret/myapp key=val` | Записать секрет |
+| `vault kv list secret/` | Список секретов |
+| `vault token lookup` | Проверить текущий токен |
 | `aws secretsmanager get-secret-value --secret-id name` | AWS Secrets Manager |
 | `aws ssm get-parameter --name /path/key --with-decryption` | AWS SSM Parameter Store |
 
 ## OWASP / Dependency Scanning
 
-| Command | Description |
+| Command | Описание |
 |---------|-------------|
-| `dependency-check --project name --scan dir/` | CVE scan for dependencies |
-| `npm audit` | Node.js dependency audit |
-| `npm audit fix` | Auto-fix low-risk issues |
-| `pip-audit` | Python dependency audit |
-| `safety check -r requirements.txt` | Python safety check |
-| `snyk test` | Snyk dependency scan |
-| `snyk container test image:tag` | Snyk container scan |
+| `dependency-check --project name --scan dir/` | Проверить зависимости на CVE |
+| `npm audit` | Аудит зависимостей Node.js |
+| `npm audit fix` | Автоматически исправить проблемы с низким риском |
+| `pip-audit` | Аудит зависимостей Python |
+| `safety check -r requirements.txt` | Проверка безопасности Python-зависимостей |
+| `snyk test` | Сканирование зависимостей с помощью Snyk |
+| `snyk container test image:tag` | Сканирование контейнера с помощью Snyk |
