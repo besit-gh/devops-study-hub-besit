@@ -6,7 +6,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { fetchLesson, markLessonComplete, resetLessonProgress, addRecentLesson, addBookmark, removeBookmark, isBookmarked } from '../store/curriculumStore'
 import CodePlayground from '../components/CodePlayground'
-import { localizeLessonTitle } from '../utils/localization'
+import { localizeLessonTitle, localizeDifficulty, localizeModuleTitle } from '../utils/localization'
 
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -25,7 +25,7 @@ function HintBox({ hints }) {
         disabled={hintCount >= hints.length}
         className="text-xs text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-700 px-2.5 py-1 rounded-md hover:bg-amber-50 dark:hover:bg-amber-950/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
-        {hintCount === 0 ? 'Hint' : hintCount >= hints.length ? 'No more hints' : 'Next hint'}
+        {hintCount === 0 ? 'Подсказка' : hintCount >= hints.length ? 'Подсказок больше нет' : 'Следующая подсказка'}
       </button>
     </div>
   )
@@ -221,10 +221,10 @@ export default function LessonViewer({ modules, progress, onProgressUpdate }) {
           to={`/module/${moduleSlug}`}
           className="text-sm text-gray-400 dark:text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
         >
-          ← Back to module
+          ← Назад к модулю
         </Link>
         <p className="mt-4 text-sm text-red-500">
-          {notFound ? 'Lesson not found.' : `Error: ${error}`}
+          {notFound ? 'Урок не найден.' : `Ошибка: ${error}`}
         </p>
       </div>
     )
@@ -270,13 +270,13 @@ export default function LessonViewer({ modules, progress, onProgressUpdate }) {
           to={`/module/${moduleSlug}`}
           className="text-sm text-gray-400 dark:text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
         >
-          ← {lesson.module_title}
+          ← {localizeModuleTitle(moduleSlug, lesson.module_title)}
         </Link>
         <Link
           to={`/reference/${moduleSlug}`}
           className="text-xs text-gray-400 dark:text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
         >
-          Reference
+          Справочник
         </Link>
       </div>
 
@@ -286,9 +286,9 @@ export default function LessonViewer({ modules, progress, onProgressUpdate }) {
         </h1>
         <div className="flex items-center gap-3">
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${DIFFICULTY_COLOR[lesson.difficulty] ?? DIFFICULTY_COLOR.beginner}`}>
-            {lesson.difficulty}
+            {localizeDifficulty(lesson.difficulty)}
           </span>
-          <span className="text-xs text-gray-400 dark:text-gray-500">~{lesson.duration_min} min read</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">~{lesson.duration_min} мин. чтения</span>
           {done && <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Завершено</span>}
           <button
             onClick={toggleBookmark}
@@ -329,7 +329,7 @@ export default function LessonViewer({ modules, progress, onProgressUpdate }) {
         </div>
       ) : (
         <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-10 text-center text-sm text-gray-400 dark:text-gray-500">
-          Content for this lesson is coming soon.
+          Материалы этого урока скоро появятся.
         </div>
       )}
 
@@ -360,7 +360,7 @@ export default function LessonViewer({ modules, progress, onProgressUpdate }) {
                           : 'bg-emerald-600 text-white hover:bg-emerald-700'
                       }`}
                     >
-                      {activeExercise === i ? 'Close' : '▶ Try it'}
+                      {activeExercise === i ? 'Закрыть' : '▶ Попробовать'}
                     </button>
                   </div>
                 </div>
@@ -409,7 +409,7 @@ export default function LessonViewer({ modules, progress, onProgressUpdate }) {
               onClick={handleReset}
               className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             >
-              Reset
+              Сбросить прогресс
             </button>
           </div>
         ) : (
@@ -417,7 +417,7 @@ export default function LessonViewer({ modules, progress, onProgressUpdate }) {
             onClick={handleComplete}
             className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
           >
-            Mark as complete
+            Отметить как пройденный
           </button>
         )}
 
@@ -427,7 +427,7 @@ export default function LessonViewer({ modules, progress, onProgressUpdate }) {
               to={`/module/${moduleSlug}/lesson/${prevLesson.slug}`}
               className="text-sm text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
             >
-              ← {prevLesson.title}
+              ← {localizeLessonTitle(prevLesson.title)}
             </Link>
           ) : <div />}
           {nextLesson ? (
@@ -435,7 +435,7 @@ export default function LessonViewer({ modules, progress, onProgressUpdate }) {
               to={`/module/${moduleSlug}/lesson/${nextLesson.slug}`}
               className="text-sm text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
             >
-              {nextLesson.title} →
+              {localizeLessonTitle(nextLesson.title)} →
             </Link>
           ) : <div />}
         </div>
