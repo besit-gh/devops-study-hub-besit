@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Translate lesson Markdown and seeded SQLite content to Russian using OpenAI."""
+"""Translate lesson Markdown and seeded SQLite content to Russian using OpenAI.
+
+The localization branch can run this script through GitHub Actions when the
+commit message contains [translate] and OPENAI_API_KEY is configured."""
 from __future__ import annotations
 import argparse, json, os, re, shutil, sqlite3, tempfile
 from pathlib import Path
