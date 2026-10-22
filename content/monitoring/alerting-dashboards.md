@@ -245,14 +245,14 @@ curl -X POST "https://api.datadoghq.com/api/v1/downtime" \
 **Метод RED** (Rate — частота запросов, Errors — ошибки, Duration — длительность) — стандартная схема панелей на уровне сервиса:
 - **Rate:** запросы в секунду — получает ли сервис трафик вообще?
 - **Errors:** доля ошибок (%) — успешно ли сервис обрабатывает запросы?
-- **Duration:** p50/p95/p99 latency — is it serving them fast enough?
+- **Duration:** задержка p50/p95/p99 — достаточно ли быстро обслуживаются запросы?
 
-**USE method** (Utilization, Saturation, Errors) — for infrastructure resources:
-- **Utilization:** what percentage of capacity is being used? (CPU 70%)
-- **Saturation:** is work queuing up? (load average, queue depth, throttled CPU)
-- **Errors:** are hardware or OS errors occurring?
+**Метод USE** (Utilization — использование, Saturation — насыщение, Errors — ошибки) — для инфраструктурных ресурсов:
+- **Utilization:** какой процент ёмкости используется? (например, CPU 70%).
+- **Saturation:** накапливается ли очередь работы? (средняя нагрузка, глубина очереди, ограничение CPU).
+- **Errors:** возникают ли ошибки оборудования или ОС?
 
-**Service dashboard layout — ordered by diagnostic value:**
+**Структура панели сервиса — в порядке диагностической ценности:**
 ```
 Row 1 — Health indicators (answer: is it broken right now?)
   • Error rate          [timeseries, threshold line at 1% warn / 5% critical]
@@ -276,7 +276,7 @@ Row 4 — Context (answer: what changed?)
   • Recent error logs  [log stream widget, filtered to service + env]
 ```
 
-**Template variables** enable a single dashboard to cover all environments and services without duplication:
+**Переменные шаблона** позволяют одной панели охватывать все окружения и сервисы без дублирования:
 
 ```
 $env     → production | staging | dev
@@ -284,15 +284,15 @@ $service → myapp | payment-service | user-service
 $region  → us-east-1 | eu-west-1
 ```
 
-Every query in the dashboard references these as tag filters:
+Каждый запрос на панели использует эти переменные как фильтры по тегам:
 
 ```
 avg:trace.flask.request.errors{env:$env,service:$service,region:$region}
 ```
 
-Switching `$env` from `production` to `staging` instantly updates every panel — no rebuilding required, and no risk of investigating the wrong environment during an incident.
+При переключении `$env` с `production` на `staging` все панели обновляются автоматически. Перестраивать панель не нужно, и во время инцидента снижается риск анализа не того окружения.
 
-**Widget type selection:**
+**Выбор типа виджета:**
 
 | Widget | Use When |
 |---|---|
@@ -304,8 +304,8 @@ Switching `$env` from `production` to `staging` instantly updates every panel �
 | **SLO Widget** | Remaining error budget and rolling compliance status |
 | **Event Timeline** | Overlaying deploys, config changes, and incidents onto metric timelines |
 
-**Dashboard anti-patterns to avoid:**
-- Panels with no threshold lines — a number without context is meaningless under pressure
+**Антипаттерны панелей, которых следует избегать:**
+- Панели без линий порогов: число без контекста мало что значит во время инцидента.
 - Most important signal buried below the fold — health indicators belong in Row 1
 - More than 20 panels on one dashboard — split into focused sub-dashboards linked from a top-level overview
 - Panels using different time ranges — forces mental reconciliation during incidents
