@@ -622,10 +622,10 @@ certbot renew --dry-run --cert-name example.com
 
 **Цель:** увидеть, как `ndots:5` влияет на разрешение имён, и понять способ исправления.
 
-1. If you have a Kubernetes cluster available: `kubectl run dns-debug --image=busybox --restart=Never -- sleep 3600` then exec into it. Otherwise, simulate by temporarily modifying your own `/etc/resolv.conf` to add `options ndots:5` and `search default.svc.cluster.local svc.cluster.local cluster.local`.
-2. Run `dig +stats api.stripe.com A` and note the number of queries made (visible in `+stats` output). Then run `dig +stats api.stripe.com. A` (with trailing dot). Compare the query counts and explain the difference.
-3. Determine the exact sequence of names the resolver tries before reaching `api.stripe.com.` for the version without the trailing dot.
-4. Find or construct an example where appending a trailing dot would break resolution (hint: think about internal-only names with short forms).
+1. Если доступен кластер Kubernetes, выполните `kubectl run dns-debug --image=busybox --restart=Never -- sleep 3600`, а затем войдите в контейнер. Иначе временно измените собственный `/etc/resolv.conf`, добавив `options ndots:5` и `search default.svc.cluster.local svc.cluster.local cluster.local`.
+2. Выполните `dig +stats api.stripe.com A` и запишите число запросов из вывода `+stats`. Затем выполните `dig +stats api.stripe.com. A` (с точкой в конце). Сравните число запросов и объясните разницу.
+3. Определите точную последовательность имён, которые проверяет резолвер перед обращением к `api.stripe.com.` в варианте без завершающей точки.
+4. Найдите или придумайте пример, в котором завершающая точка нарушит разрешение имени. Подсказка: подумайте о коротких именах, существующих только во внутренней сети.
 
 ---
 
