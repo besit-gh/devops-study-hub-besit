@@ -81,11 +81,11 @@ export default function Reference() {
     <div className="p-6 max-w-4xl">
       <div className="flex items-center justify-between mb-4">
         <Link to={`/module/${moduleSlug}`} className="text-xs text-gray-400 dark:text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-          ← Back to module
+          ← Назад к модулю
         </Link>
         {q && (
           <span className="text-xs text-gray-400 dark:text-gray-500">
-            {filtered.length} of {sections.length} sections
+            {filtered.length} из {sections.length} разделов
           </span>
         )}
       </div>
