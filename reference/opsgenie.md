@@ -2,7 +2,7 @@
 
 ## CLI Opsgenie (opsgenie-cli / ogcli)
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `ogcli get alert --id ID` | Получить сведения об оповещении |
 | `ogcli list alert` | Список открытых оповещений |
@@ -19,7 +19,7 @@
 OG_KEY="your-api-key"
 BASE="https://api.opsgenie.com/v2"
 
-# Create alert
+# Создать оповещение
 curl -X POST "$BASE/alerts" \
   -H "Authorization: GenieKey $OG_KEY" \
   -H "Content-Type: application/json" \
@@ -33,12 +33,12 @@ curl -X GET "$BASE/alerts/ID" \
 curl -X GET "$BASE/alerts?status=open&limit=20" \
   -H "Authorization: GenieKey $OG_KEY"
 
-# Acknowledge alert
+# Подтвердить получение оповещения
 curl -X POST "$BASE/alerts/ID/acknowledge" \
   -H "Authorization: GenieKey $OG_KEY" \
   -d '{"note":"Looking into it"}'
 
-# Close alert
+# Закрыть оповещение
 curl -X DELETE "$BASE/alerts/ID" \
   -H "Authorization: GenieKey $OG_KEY"
 
