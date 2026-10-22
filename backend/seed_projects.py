@@ -598,8 +598,8 @@ PROJECTS = [
                 "language": "bash",
                 "expected_output": "3",
                 "hints": [
-                    "Create the directory with `mkdir -p /tmp/mychart/templates`, create the three files with `touch`, then count with `find`.",
-                    "Use `find /tmp/mychart/templates -name '*.yaml' | wc -l` to count YAML files, stripping the trailing filename with `awk '{print $1}'` if needed.",
+                    "Создайте каталог командой `mkdir -p /tmp/mychart/templates`, создайте три файла через `touch`, затем подсчитайте их с помощью `find`.",
+                    "Используйте `find /tmp/mychart/templates -name '*.yaml' | wc -l` для подсчёта YAML-файлов; при необходимости уберите лишнее поле через `awk '{print $1}'`.",
                 ],
             },
             {
@@ -607,14 +607,14 @@ PROJECTS = [
                 "title": "Разобрать YAML values Helm",
                 "type": "sandbox",
                 "prompt": (
-                    "Write a Python one-liner that parses this Helm `values.yaml` content and prints the replica count:\n\n"
+                    "Напишите однострочную команду Python, которая разбирает содержимое Helm `values.yaml` и выводит количество реплик:\n\n"
                     "`replicaCount: 3\\nimage:\\n  repository: nginx\\n  tag: \\\"1.24\\\"\\nservice:\\n  port: 80`"
                 ),
                 "language": "python",
                 "expected_output": "3",
                 "hints": [
-                    "Use `yaml.safe_load()` on the string — the `\\n` sequences are real newlines that YAML parses into a nested dict.",
-                    "Access `yaml.safe_load(s)['replicaCount']` after `import yaml`, where `s` is the values string with `\\n` as actual newline characters.",
+                    "Передайте строку в `yaml.safe_load()`: последовательности `\\n` становятся переводами строк, а YAML преобразуется во вложенный словарь.",
+                    "После `import yaml` обратитесь к `yaml.safe_load(s)['replicaCount']`, где `s` — строка values с реальными переводами строк.",
                 ],
             },
             {
@@ -624,12 +624,12 @@ PROJECTS = [
                 "prompt": (
                     "Write a Helm chart for a stateless web service called `api-server`. "
                     "Show the content of these files:\n\n"
-                    "1. `Chart.yaml` — with `apiVersion: v2`, name, version, and appVersion\n"
+                    "1. `Chart.yaml` — с `apiVersion: v2`, именем, версией chart и версией приложения\n"
                     "2. `values.yaml` — with defaults for replicaCount, image (repository + tag + pullPolicy), "
                     "service (type + port), resources (requests + limits), and ingress (enabled flag, host, tls)\n"
                     "3. `templates/deployment.yaml` — templated with `{{ .Values.* }}` references, "
                     "including resource limits and a liveness probe\n"
-                    "4. `templates/service.yaml` — ClusterIP service using `{{ .Values.service.port }}`\n\n"
+                    "4. `templates/service.yaml` — сервис ClusterIP с использованием `{{ .Values.service.port }}`\n\n"
                     "Use `{{ include \"api-server.fullname\" . }}` for naming and show the `_helpers.tpl` snippet "
                     "that defines it."
                 ),
@@ -637,7 +637,7 @@ PROJECTS = [
                 "expected_output": None,
                 "hints": [
                     "The `_helpers.tpl` defines named templates with `{{- define \"api-server.fullname\" -}}`; the deployment uses `{{ include \"api-server.fullname\" . }}` for the name and `{{ include \"api-server.labels\" . | nindent 4 }}` for labels.",
-                    "In `values.yaml` set `replicaCount: 1` and `image.pullPolicy: IfNotPresent`; wrap the ingress section in `deployment.yaml` with `{{- if .Values.ingress.enabled }}` and add resources from `{{ toYaml .Values.resources | nindent 12 }}`.",
+                    "В `values.yaml` задайте `replicaCount: 1` и `image.pullPolicy: IfNotPresent`. Оберните ingress-раздел в `deployment.yaml` условием `{{- if .Values.ingress.enabled }}` и добавьте ресурсы через `{{ toYaml .Values.resources | nindent 12 }}`.",
                 ],
             },
             {
@@ -647,7 +647,7 @@ PROJECTS = [
                 "prompt": (
                     "Describe a strategy for deploying the same Helm chart to dev, staging, and production "
                     "environments with different values.\n\n"
-                    "1. Show the file structure for per-environment values files\n"
+                    "1. Покажите структуру файлов values для каждого окружения\n"
                     "2. Write the `helm upgrade --install` commands for each environment, "
                     "explaining the flags used\n"
                     "3. Explain what `helm rollback` does vs manually reverting the values file in Git — "
@@ -658,8 +658,8 @@ PROJECTS = [
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Standard pattern: `values.yaml` (base defaults), `values-dev.yaml`, `values-staging.yaml`, `values-prod.yaml`; override with `helm upgrade --install -f values-<env>.yaml`.",
-                    "`helm rollback` reverts cluster state using Helm's release history (fast, emergency use); reverting the Git values file is the GitOps approach with audit trail — prefer Git revert for planned rollbacks.",
+                    "Стандартная схема: `values.yaml` со значениями по умолчанию, `values-dev.yaml`, `values-staging.yaml`, `values-prod.yaml`. Переопределяйте значения через `helm upgrade --install -f values-<env>.yaml`.",
+                    "`helm rollback` восстанавливает состояние кластера по истории релизов Helm и подходит для экстренного отката. Возврат values-файла в Git — подход GitOps с полной историей аудита; для плановых откатов предпочтителен `git revert`.",
                 ],
             },
         ],
