@@ -45,7 +45,7 @@ exercises: 3
 /etc/apt/sources.list.d/       # drop-in directory — one file per third-party repo
 ```
 
-A `sources.list` entry looks like:
+Запись в `sources.list` выглядит так:
 ```
 deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu jammy stable
 #  ^type ^options                                         ^base URL                              ^codename ^component
@@ -60,7 +60,7 @@ deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.
 /etc/yum.repos.d/          # one .repo file per repository
 ```
 
-A `.repo` file looks like:
+Файл `.repo` выглядит так:
 ```ini
 [docker-ce-stable]
 name=Docker CE Stable - $basearch
@@ -113,7 +113,7 @@ dnf downgrade nginx                     # roll back to the previous available ve
 dnf reinstall nginx                     # reinstall current version (useful if files are corrupted)
 ```
 
-**`remove` vs `purge` (apt):** `remove` leaves config files behind, which is useful if you plan to reinstall — your existing config will be preserved. `purge` is the clean slate option. In automated environments and Dockerfiles, prefer `purge` to avoid config drift between deploys.
+**`remove` и `purge` в apt:** `remove` оставляет файлы конфигурации, что удобно при повторной установке: настройки сохранятся. `purge` удаляет их и начинает с чистого состояния. В автоматизированных окружениях и Dockerfile предпочитайте `purge`, чтобы избежать расхождений конфигурации между развёртываниями.
 
 **`upgrade` vs `dist-upgrade` (apt):** `upgrade` will never remove an installed package. `dist-upgrade` is smarter — it can remove packages if that's what the dependency resolution requires (e.g., a package was renamed or split). Use `dist-upgrade` when upgrading a system to a new release. On day-to-day servers, `upgrade` is the safer default.
 
