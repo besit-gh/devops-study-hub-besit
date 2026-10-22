@@ -96,15 +96,15 @@ Cron намеренно устроен минималистично: кажда�
 
 **`/etc/cron.d/` — подходящее место для заданий приложения в production.** При развёртывании через пакет, Ansible или Chef поместите в `/etc/cron.d/` файл с именем приложения. Так задания проще находить, проверять и хранить в системе контроля версий. Файлы в `/etc/cron.d/` должны принадлежать root и не должны быть доступны для записи всем пользователям: cron молча игнорирует файлы, не прошедшие проверку прав.
 
-**`crontab -e` is for personal or ad hoc jobs.** Jobs installed this way live in `/var/spool/cron/crontabs/<username>`. They disappear if the user is deleted. Avoid using personal crontabs for production workloads — no one else knows they exist.
+**`crontab -e` предназначен для личных или разовых задач.** Такие задания хранятся в `/var/spool/cron/crontabs/<username>` и исчезают при удалении пользователя. Не используйте личные crontab для production-нагрузок: другие администраторы могут даже не знать об этих заданиях.
 
-The `cron.daily/` directories run at a time defined in `/etc/crontab` (often `6:25 AM` on Debian/Ubuntu). The exact time is controlled by `anacron` on desktop systems, which compensates for machines that aren't running 24/7. On servers you typically want explicit times via `cron.d` rather than relying on the daily/weekly directories.
+Каталоги `cron.daily/` запускаются во время, заданное в `/etc/crontab` (на Debian/Ubuntu часто в 06:25). На настольных системах точное время контролирует `anacron`, учитывающий, что компьютер может быть выключен. На серверах обычно лучше задавать точное расписание через `cron.d`, а не полагаться на каталоги daily/weekly.
 
 ---
 
-### The Environment Problem
+### Проблема окружения
 
-This is the single most common source of cron failures. When cron runs a job, it does **not** load your shell's startup files. There is no `~/.bashrc`, no `~/.profile`, no `/etc/profile`. The environment is nearly empty.
+Это самая частая причина сбоев cron. При запуске задания cron **не** загружает стартовые файлы shell: ни `~/.bashrc`, ни `~/.profile`, ни `/etc/profile`. Окружение почти пустое.
 
 **Default cron environment (approximate):**
 ```
@@ -115,12 +115,12 @@ SHELL=/bin/sh       (not bash — /bin/sh)
 PATH=/usr/bin:/bin  (nothing else)
 ```
 
-This causes two categories of failures:
+Это приводит к двум типам сбоев:
 
-1. **Command not found** — `/usr/local/bin/python3`, `aws`, `node`, `docker` are not in `/usr/bin:/bin`
-2. **Wrong behavior** — the script works interactively because it sources config that sets `AWS_REGION`, `JAVA_HOME`, `VIRTUAL_ENV`, etc.
+1. **Команда не найдена** — `/usr/local/bin/python3`, `aws`, `node` и `docker` отсутствуют в `/usr/bin:/bin`
+2. **Неправильное поведение** — скрипт работает в интерактивном режиме, потому что загружает конфигурацию, задающую `AWS_REGION`, `JAVA_HOME`, `VIRTUAL_ENV` и другие переменные.
 
-**Fix 1 — set variables explicitly at the top of the crontab:**
+**Решение 1 — явно задайте переменные в начале crontab:**
 
 ```bash
 # /etc/cron.d/myapp
@@ -132,13 +132,13 @@ AWS_DEFAULT_REGION=us-east-1
 30 2 * * * deploy /usr/local/bin/backup.sh
 ```
 
-**Fix 2 — use absolute paths everywhere in the command itself:**
+**Решение 2 — используйте абсолютные пути во всех командах:**
 
 ```bash
 30 2 * * * deploy /usr/bin/aws s3 sync /data s3://mybucket/ >> /var/log/backup.log 2>&1
 ```
 
-**Fix 3 — source the environment inside the script:**
+**Решение 3 — загрузите окружение внутри скрипта:**
 
 ```bash
 #!/bin/bash
@@ -148,19 +148,19 @@ export JAVA_HOME=/usr/lib/jvm/java-17
 # ... rest of script
 ```
 
-**Debugging tip:** If a job works manually but fails under cron, reproduce the minimal environment with:
+**Совет по диагностике:** если задание работает вручную, но падает в cron, воспроизведите минимальное окружение командой:
 
 ```bash
 env -i HOME=/root SHELL=/bin/bash PATH=/usr/bin:/bin /bin/bash --noprofile --norc /usr/local/bin/yourscript.sh
 ```
 
-This strips the environment down to roughly what cron sees and usually reveals the missing variable or binary immediately.
+Команда очищает окружение примерно до того состояния, в котором его видит cron, и обычно сразу выявляет отсутствующую переменную или бинарный файл.
 
 ---
 
-### Handling Output and Logging
+### Обработка вывода и журналирование
 
-By default, if a cron job produces any output (stdout or stderr), cron tries to email it to the user via the local MTA. On most servers there is no MTA, so the output is silently discarded. On servers that do have one, you get flooded with emails. Either way, you need an explicit output strategy.
+По умолчанию, если задача cron что-либо выводит в stdout или stderr, cron пытается отправить вывод пользователю по электронной почте через локальный MTA. На большинстве серверов MTA отсутствует, поэтому вывод молча теряется. На серверах с MTA почта может быстро переполниться. В обоих случаях нужна явная стратегия обработки вывода.
 
 ```bash
 # BAD — output goes to local mail or nowhere. You'll never know if it failed.
@@ -180,9 +180,9 @@ MAILTO=alerts@example.com
 30 2 * * * /usr/bin/backup.sh > /dev/null  # stdout suppressed; stderr mailed
 ```
 
-**`2>&1` order matters.** It must appear after the redirect: `>> /var/log/backup.log 2>&1`. The reverse — `2>&1 >> /var/log/backup.log` — redirects stderr to the terminal first, then redirects stdout to the file. Stderr ends up in the wrong place and you lose error output.
+**Порядок `2>&1` важен.** Он должен идти после перенаправления: `>> /var/log/backup.log 2>&1`. Обратный порядок — `2>&1 >> /var/log/backup.log` — сначала направляет stderr в терминал, а затем stdout в файл. В результате ошибки оказываются не там, где ожидалось, и теряются из журнала.
 
-**Log rotation** — if your cron job appends to a log file indefinitely, the file will grow unboundedly. Either manage this inside the script, or add a logrotate config in `/etc/logrotate.d/`:
+**Ротация журналов:** если cron бесконечно добавляет записи в файл, тот будет расти без ограничений. Реализуйте ротацию в самом скрипте или добавьте конфигурацию logrotate в `/etc/logrotate.d/`.
 
 ```
 /var/log/backup.log {
@@ -197,11 +197,11 @@ MAILTO=alerts@example.com
 
 ---
 
-### Preventing Overlapping Runs
+### Предотвращение параллельных запусков
 
-Cron has no awareness of whether a previous instance of a job is still running. If your backup job takes 70 minutes and runs at 2 AM daily, it will still try to start a new instance at 3 AM — two backup processes competing for the same database, the same lock files, or the same output path.
+Cron не проверяет, работает ли предыдущий экземпляр задания. Если резервное копирование длится 70 минут и запускается ежедневно в 02:00, в 03:00 cron всё равно попытается запустить его снова. Два процесса будут конкурировать за одну базу данных, файлы блокировок или путь вывода.
 
-**Use `flock` for file-based locking:**
+**Используйте `flock` для блокировки через файл:**
 
 ```bash
 # -n = non-blocking (exit immediately if lock is held, don't queue)
@@ -209,14 +209,14 @@ Cron has no awareness of whether a previous instance of a job is still running. 
 30 2 * * * flock -n /tmp/backup.lock /usr/bin/backup.sh >> /var/log/backup.log 2>&1
 ```
 
-**Use `flock` with a timeout:**
+**Используйте `flock` с тайм-аутом:**
 
 ```bash
 # Wait up to 10 seconds for the lock; if still held, give up
 30 2 * * * flock -w 10 /tmp/backup.lock /usr/bin/backup.sh >> /var/log/backup.log 2>&1
 ```
 
-**Self-locking pattern inside a script:**
+**Шаблон блокировки внутри скрипта:**
 
 ```bash
 #!/bin/bash
@@ -230,7 +230,7 @@ flock -n 9 || { echo "[$(date -Iseconds)] Already running, exiting."; exit 1; }
 echo "[$(date -Iseconds)] Starting backup..."
 ```
 
-**`flock` gotcha:** the lock is tied to the file descriptor, not the file path. The lock is released automatically when the process exits — even abnormally (crash, kill signal). This means no stale lock files to clean up manually, unlike `mkdir`-based or `pidfile`-based locking patterns that require cleanup logic.
+**Особенность `flock`:** блокировка привязана к файловому дескриптору, а не к пути файла. Она автоматически снимается при завершении процесса, в том числе аварийном (сбой или сигнал kill). Поэтому не остаётся устаревших файлов блокировки, которые нужно удалять вручную, в отличие от подходов с `mkdir` или `pidfile`.
 
 | Locking method | Stale lock risk | Works across scripts | Notes |
 |---------------|----------------|----------------------|-------|
