@@ -718,59 +718,59 @@ alias: '{{ .GroupLabels.alertname }}-{{ .GroupLabels.cluster }}'
      -H "Authorization: GenieKey YOUR_API_KEY" | jq '.data.onCallParticipants'
    ```
 3. Observe the empty result (the gap). Now add a fallback rotation via the UI with no time restriction and a single participant (yourself or a test user).
-4. Re-run the same API query and confirm the fallback participant appears.
-5. **Explain in your own words:** Why does having a gap in a schedule result in a silent failure rather than an error? What are the operational consequences of an undetected gap in a production environment?
+4. Повторите тот же API-запрос и убедитесь, что резервный участник появился в результате.
+5. **Объясните своими словами:** почему пробел в расписании приводит к незаметному отказу, а не к ошибке? К каким эксплуатационным последствиям может привести необнаруженный пробел в production?
 
 ---
 
-### Exercise 2: Design an Escalation Policy for an SLA Constraint
+### Задание 2. Спроектируйте политику эскалации с учётом SLA
 
-**Goal:** Translate a business requirement into escalation policy configuration.
+**Цель:** преобразовать бизнес-требование в конфигурацию политики эскалации.
 
-Your team has an SLA that states: *"P1 alerts must reach an engineer within 5 minutes and a manager within 15 minutes, 24/7."*
+У вашей команды есть SLA: *«Оповещение P1 должно дойти до инженера в течение 5 минут, а до менеджера — в течение 15 минут, круглосуточно».*
 
-1. Design the escalation policy steps on paper (or in a text file) before touching the UI. Specify:
-   - How many steps the policy needs
-   - The wait time between each step
-   - Who each step notifies (on-call from schedule vs. named user)
-   - Why each choice satisfies or risks violating the SLA
-2. Create the policy in the Opsgenie UI under your team.
-3. Verify the cumulative timing: if step 1 fires at 0 min, what is the total elapsed time when the manager is first contacted?
-4. **Gotcha challenge:** Change your policy so that step 2 has a 12-minute wait. Does this still satisfy the "manager within 15 minutes" SLA? Show your math. If it doesn't, what is the minimum wait you can set at step 2 given a 5-minute step 1 wait?
+1. До настройки интерфейса спроектируйте шаги политики на бумаге или в текстовом файле. Укажите:
+   - Сколько шагов требуется политике.
+   - Время ожидания между шагами.
+   - Кого уведомляет каждый шаг (дежурного из расписания или конкретного пользователя).
+   - Почему выбранная схема соблюдает SLA или создаёт риск его нарушения.
+2. Создайте политику в интерфейсе Opsgenie для своей команды.
+3. Проверьте суммарное время: если шаг 1 срабатывает в момент 0, сколько времени пройдёт до первого уведомления менеджера?
+4. **Задание со звёздочкой:** измените политику так, чтобы ожидание шага 2 составляло 12 минут. Выполняется ли SLA «менеджер в течение 15 минут»? Покажите расчёт. Если нет, какое минимальное ожидание можно задать для шага 2 при пятиминутном ожидании шага 1?
 
 ---
 
-### Exercise 3: Automate a Shift Swap via the API
+### Задание 3. Автоматизируйте обмен сменами через API
 
-**Goal:** Use the Opsgenie override API to handle a real-world shift swap scenario without touching the UI.
+**Цель:** использовать API переопределения Opsgenie для реального сценария обмена сменами без интерфейса.
 
-**Scenario:** Alice is on call this week (weekly rotation). She has a dentist appointment on Wednesday from 10:00–13:00 UTC and has asked Bob to cover. You need to:
+**Сценарий:** на этой неделе дежурит Alice (недельная ротация). В среду с 10:00 до 13:00 UTC у неё приём у стоматолога, и она попросила Bob подменить её. Нужно:
 
-1. Write a `curl` command to create an override replacing Alice with Bob for exactly that window on the next occurring Wednesday.
-2. After creating the override, query the on-call endpoint for **Wednesday at 11:30 UTC** and confirm Bob appears.
-3. Query again for **Wednesday at 14:00 UTC** (after the override ends) and confirm Alice has resumed.
-4. Delete the override using its returned ID:
+1. Написать команду `curl`, создающую переопределение: Bob заменяет Alice ровно на этот интервал в ближайшую среду.
+2. После создания переопределения запросить endpoint дежурств на **среду, 11:30 UTC** и убедиться, что в ответе указан Bob.
+3. Повторить запрос для **среды, 14:00 UTC** (после окончания переопределения) и убедиться, что дежурство вернулось к Alice.
+4. Удалить переопределение по полученному ID:
    ```bash
    curl -X DELETE \
      "https://api.opsgenie.com/v2/schedules/YOUR_SCHEDULE/overrides/OVERRIDE_ALIAS_OR_ID?scheduleIdentifierType=name" \
      -H "Authorization: GenieKey YOUR_API_KEY"
    ```
-5. Query **Wednesday at 11:30 UTC** once more and confirm Alice is back on call (override deleted, rotation restored).
-6. **Reflection question:** If your escalation policy hardcoded `alice@company.com` instead of referencing the schedule, would step 2 have shown Bob? Why or why not? What does this tell you about escalation policy design?
+5. Ещё раз запросить состояние на **среду, 11:30 UTC** и убедиться, что снова дежурит Alice (переопределение удалено, ротация восстановлена).
+6. **Вопрос для размышления:** если бы политика эскалации содержала жёстко заданный `alice@company.com`, а не ссылку на расписание, был бы Bob показан на шаге 2? Почему? Что это говорит о проектировании политик эскалации?
 
 ---
 
-### Exercise 4: Map an Alert Source to the Correct Escalation Policy
+### Задание 4. Направьте оповещение источника в правильную политику эскалации
 
-**Goal:** Understand routing rules by building an end-to-end alert path from source to engineer.
+**Цель:** понять правила маршрутизации, построив полный путь оповещения от источника до инженера.
 
-1. In Opsgenie, create two escalation policies for your team:
-   - `High-Priority` — three steps, 5-minute waits, phone call on step 3
-   - `Low-Priority` — one step, no repeat
-2. Create two routing rules for your team:
-   - Rule 1: If alert tags contain `env:production` → route to `High-Priority`
-   - Rule 2 (catch-all): All other alerts → route to `Low-Priority`
-3. Use the Opsgenie API to create a test alert with the `env:production` tag:
+1. Создайте в Opsgenie две политики эскалации для своей команды:
+   - `High-Priority` — три шага, ожидание по 5 минут, телефонный звонок на третьем шаге.
+   - `Low-Priority` — один шаг без повторов.
+2. Создайте два правила маршрутизации для команды:
+   - Правило 1: если теги оповещения содержат `env:production`, направлять в `High-Priority`.
+   - Правило 2 (универсальное): все остальные оповещения направлять в `Low-Priority`.
+3. Используйте API Opsgenie, чтобы создать тестовое оповещение с тегом `env:production`:
    ```bash
    curl -X POST "https://api.opsgenie.com/v2/alerts" \
      -H "Authorization: GenieKey YOUR_API_KEY" \
@@ -782,9 +782,9 @@ Your team has an SLA that states: *"P1 alerts must reach an engineer within 5 mi
        "details": {"source": "exercise-4"}
      }'
    ```
-4. In the Opsgenie UI, find the alert and confirm it was routed to `High-Priority`. Check the alert's **Activity Log** tab to see which escalation steps fired.
-5. Create a second alert *without* the `env:production` tag and verify it routes to `Low-Priority`.
-6. **Reflection question:** What would happen if you reversed the order of your routing rules (catch-all first, specific rule second)? Test it and explain the result.
+4. Найдите оповещение в интерфейсе Opsgenie и подтвердите, что оно направлено в `High-Priority`. На вкладке **Activity Log** проверьте, какие шаги эскалации сработали.
+5. Создайте второе оповещение *без* тега `env:production` и проверьте, что оно направляется в `Low-Priority`.
+6. **Вопрос для размышления:** что произойдёт, если поменять правила местами (сначала универсальное, затем конкретное)? Проверьте и объясните результат.
 
 ---
 
