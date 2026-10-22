@@ -2,7 +2,7 @@
 
 ## Основы kubectl
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `kubectl get pods` | Список pod в текущем пространстве имён |
 | `kubectl get pods -A` | Список pod во всех пространствах имён |
@@ -16,7 +16,7 @@
 
 ## Пространства имён и контекст
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `kubectl config get-contexts` | Список контекстов |
 | `kubectl config use-context ctx` | Переключить контекст |
@@ -28,7 +28,7 @@
 
 ## Рабочие нагрузки
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `kubectl create deployment name --image=img` | Создать Deployment |
 | `kubectl scale deploy name --replicas=3` | Изменить число реплик Deployment |
@@ -41,7 +41,7 @@
 
 ## Сервисы и сеть
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `kubectl get svc` | Список Service |
 | `kubectl expose deploy name --port=80 --type=ClusterIP` | Опубликовать Deployment как Service |
@@ -52,7 +52,7 @@
 
 ## Отладка
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `kubectl logs pod NAME` | Журналы pod |
 | `kubectl logs -f pod NAME` | Следить за журналом |
@@ -66,7 +66,7 @@
 
 ## Config & Secrets
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `kubectl get configmap` | List ConfigMaps |
 | `kubectl describe configmap NAME` | Show ConfigMap data |
@@ -77,7 +77,7 @@
 
 ## Resource Management
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `kubectl get nodes` | List cluster nodes |
 | `kubectl describe node NAME` | Node details + capacity |
