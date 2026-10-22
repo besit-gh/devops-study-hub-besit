@@ -1,5 +1,5 @@
 ---
-title: Playbook и inventory Ansible
+title: Плейбуки и inventory Ansible
 module: ansible
 duration_min: 20
 difficulty: beginner
@@ -8,17 +8,19 @@ exercises: 4
 ---
 
 ## Обзор
-Ansible автоматизирует управление конфигурацией и развёртывание приложений сразу на множестве серверов через SSH, без установки агента на управляемых узлах. **Playbook** описывает, что нужно сделать, а **inventory** — на каких узлах это выполнить. Все операции запускаются с управляющего узла — например, ноутбука или CI-сервера, — который передаёт изменения по SSH. В уроке разбираются основы обоих компонентов.
+
+Ansible автоматизирует управление конфигурацией и развёртывание приложений сразу на множестве серверов через SSH, без установки агента на управляемых узлах. **Плейбук (playbook)** описывает, что нужно сделать, а **inventory** — на каких узлах это выполнить. Все операции запускаются с управляющего узла — например, ноутбука или CI-сервера, — который передаёт изменения по SSH. В уроке разбираются основы обоих компонентов.
 
 ## Основные понятия
 
 ### Основные принципы
 - **Без агентов** — на управляемых узлах нужны только SSH и Python
-- **Идемпотентность** — повторный запуск playbook приводит к тому же результату без нежелательных побочных эффектов
+- **Идемпотентность** — повторный запуск плейбука приводит к тому же результату без нежелательных побочных эффектов
 - **Декларативность** — вы описываете желаемое состояние, а Ansible определяет, что нужно изменить
 - **Модель push** — управляющий узел подключается к управляемым (в отличие от модели pull в Puppet/Chef)
 
 ### Inventory — список узлов
+
 Inventory сообщает Ansible, какими узлами нужно управлять:
 
 ```ini
@@ -31,11 +33,11 @@ web02.example.com
 [databases]
 db01.example.com ansible_user=ubuntu ansible_port=22
 
-[production:children]  # group of groups
+[production:children]  # группа групп
 webservers
 databases
 
-[all:vars]  # variables for all hosts
+[all:vars]  # переменные для всех узлов
 ansible_user=deploy
 ansible_python_interpreter=/usr/bin/python3
 ```
@@ -67,80 +69,82 @@ ansible -i inventory.ini webservers --list-hosts
 # Проверить доступность всех узлов с помощью ping
 ansible -i inventory.ini all -m ping
 
-# Выполнить ad-hoc-команду
+# Выполнить разовую команду
 ansible -i inventory.ini webservers -m shell -a "uptime"
-ansible -i inventory.ini all -m shell -a "df -h" -b   # -b: become (sudo)
+ansible -i inventory.ini all -m shell -a "df -h" -b   # -b: повысить привилегии (sudo)
 ```
 
-### Структура playbook
+### Структура плейбука
+
 ```yaml
 # deploy.yml
 ---
-- name: Deploy web application        # play name
-  hosts: webservers                   # target hosts/group
-  become: true                        # use sudo for all tasks
+- name: Развернуть веб-приложение
+  hosts: webservers                   # целевые узлы или группа
+  become: true                        # использовать sudo для всех задач
   vars:
     app_version: "1.2.3"
     app_dir: /opt/myapp
 
   tasks:
-    - name: Ensure nginx is installed
+    - name: Убедиться, что nginx установлен
       ansible.builtin.package:
         name: nginx
-        state: present                # present = installed, absent = removed
+        state: present                # present = установлен, absent = удалён
 
-    - name: Ensure nginx is started and enabled
+    - name: Убедиться, что nginx запущен и включён в автозапуск
       ansible.builtin.service:
         name: nginx
         state: started
         enabled: true
 
-    - name: Copy application config
+    - name: Скопировать конфигурацию приложения
       ansible.builtin.template:
         src: templates/nginx.conf.j2
         dest: /etc/nginx/sites-enabled/myapp.conf
         owner: root
         group: root
         mode: "0644"
-      notify: Reload nginx             # triggers handler
+      notify: Перезагрузить nginx     # запускает обработчик
 
   handlers:
-    - name: Reload nginx
+    - name: Перезагрузить nginx
       ansible.builtin.service:
         name: nginx
         state: reloaded
 ```
 
 ```bash
-# Запустить playbook
+# Запустить плейбук
 ansible-playbook -i inventory.ini deploy.yml
 
-# Пробный запуск (показать предполагаемые изменения)
+# Пробный запуск: показать предполагаемые изменения
 ansible-playbook -i inventory.ini deploy.yml --check
 
 # Ограничить выполнение выбранными узлами
 ansible-playbook -i inventory.ini deploy.yml --limit web01.example.com
 
 # Подробный вывод
-ansible-playbook -i inventory.ini deploy.yml -v    # -vvv for maximum verbosity
+ansible-playbook -i inventory.ini deploy.yml -v    # -vvv — максимальная подробность
 ```
 
 ### Основные модули
+
 ```yaml
 tasks:
   # Управление пакетами
-  - name: Install packages
-    ansible.builtin.package:         # auto-detects apt/yum/dnf
+  - name: Установить пакеты
+    ansible.builtin.package:         # автоматически выбирает apt/yum/dnf
       name: [nginx, curl, git]
       state: present
 
-  - name: Install specific apt packages
+  - name: Установить определённые пакеты apt
     ansible.builtin.apt:
       name: nginx=1.24.0*
-      update_cache: true             # apt-get update first
+      update_cache: true             # сначала выполнить apt-get update
 
   # Операции с файлами
-  - name: Create directory
+  - name: Создать каталог
     ansible.builtin.file:
       path: /opt/myapp
       state: directory               # file, directory, absent, link
@@ -148,29 +152,29 @@ tasks:
       group: myapp
       mode: "0755"
 
-  - name: Copy file
+  - name: Скопировать файл
     ansible.builtin.copy:
-      src: files/app.conf            # relative to playbook
+      src: files/app.conf            # путь относительно плейбука
       dest: /etc/myapp/app.conf
       mode: "0644"
 
-  - name: Render template
+  - name: Создать файл из шаблона
     ansible.builtin.template:
-      src: templates/config.j2       # Jinja2 template
+      src: templates/config.j2       # шаблон Jinja2
       dest: /etc/myapp/config.conf
 
   # Команды
-  - name: Run a command
+  - name: Выполнить команду
     ansible.builtin.command:
       cmd: /opt/myapp/bin/migrate
-      creates: /opt/myapp/.migrated  # skip if this file exists (idempotency)
+      creates: /opt/myapp/.migrated  # пропустить задачу, если файл существует (идемпотентность)
 
-  - name: Run a shell command (supports pipes, redirection)
+  - name: Выполнить команду оболочки (поддерживает конвейеры и перенаправления)
     ansible.builtin.shell:
       cmd: "ps aux | grep nginx | grep -v grep"
 
   # Пользователи
-  - name: Create user
+  - name: Создать пользователя
     ansible.builtin.user:
       name: myapp
       shell: /bin/bash
@@ -178,7 +182,7 @@ tasks:
       create_home: true
 
   # Git
-  - name: Clone/update repo
+  - name: Клонировать или обновить репозиторий
     ansible.builtin.git:
       repo: https://github.com/org/myapp.git
       dest: /opt/myapp
@@ -187,6 +191,7 @@ tasks:
 ```
 
 ### Переменные и факты
+
 ```yaml
 vars:
   app_port: 8080
@@ -195,38 +200,40 @@ vars:
 # Доступ к фактам: {{ ansible_facts['os_family'] }} → "Debian" или "RedHat"
 
 tasks:
-  - name: Gather facts
-    ansible.builtin.setup:    # runs automatically at play start
+  - name: Собрать факты о системе
+    ansible.builtin.setup:    # запускается автоматически в начале play
 
-  - name: Print OS
+  - name: Вывести информацию об ОС
     ansible.builtin.debug:
-      msg: "OS: {{ ansible_facts.distribution }} {{ ansible_facts.distribution_version }}"
+      msg: "ОС: {{ ansible_facts.distribution }} {{ ansible_facts.distribution_version }}"
 
-  - name: Task only for Debian systems
+  - name: Задача только для систем Debian
     ansible.builtin.apt:
       name: nginx
       state: present
     when: ansible_facts.os_family == "Debian"
 ```
 
-### Handlers
-Handlers запускаются только после уведомления и только один раз в конце play:
+### Обработчики (handlers)
+
+Обработчики запускаются только после уведомления и только один раз в конце play:
+
 ```yaml
 tasks:
-  - name: Update nginx config
+  - name: Обновить конфигурацию nginx
     ansible.builtin.template:
       src: nginx.conf.j2
       dest: /etc/nginx/nginx.conf
-    notify: Reload nginx    # fires the handler IF this task changed
+    notify: Перезагрузить nginx    # запускает обработчик, только если задача внесла изменения
 
-  - name: Update another nginx file
+  - name: Обновить ещё один файл nginx
     ansible.builtin.copy:
       src: mime.types
       dest: /etc/nginx/mime.types
-    notify: Reload nginx    # same handler, still only fires once
+    notify: Перезагрузить nginx    # тот же обработчик запустится всё равно только один раз
 
 handlers:
-  - name: Reload nginx
+  - name: Перезагрузить nginx
     ansible.builtin.service:
       name: nginx
       state: reloaded
@@ -234,10 +241,11 @@ handlers:
 
 ## Примеры
 
-### Playbook для настройки nginx
+### Плейбук для настройки nginx
+
 ```yaml
 ---
-- name: Configure nginx web server
+- name: Настроить веб-сервер nginx
   hosts: webservers
   become: true
 
@@ -246,12 +254,12 @@ handlers:
     document_root: /var/www/html
 
   tasks:
-    - name: Install nginx
+    - name: Установить nginx
       ansible.builtin.package:
         name: nginx
         state: present
 
-    - name: Create document root
+    - name: Создать корневой каталог сайта
       ansible.builtin.file:
         path: "{{ document_root }}"
         state: directory
@@ -259,27 +267,27 @@ handlers:
         group: www-data
         mode: "0755"
 
-    - name: Deploy site config
+    - name: Развернуть конфигурацию сайта
       ansible.builtin.template:
         src: templates/site.conf.j2
         dest: /etc/nginx/sites-available/mysite.conf
-      notify: Reload nginx
+      notify: Перезагрузить nginx
 
-    - name: Enable site
+    - name: Включить сайт
       ansible.builtin.file:
         src: /etc/nginx/sites-available/mysite.conf
         dest: /etc/nginx/sites-enabled/mysite.conf
         state: link
-      notify: Reload nginx
+      notify: Перезагрузить nginx
 
-    - name: Ensure nginx is running
+    - name: Убедиться, что nginx запущен
       ansible.builtin.service:
         name: nginx
         state: started
         enabled: true
 
   handlers:
-    - name: Reload nginx
+    - name: Перезагрузить nginx
       ansible.builtin.service:
         name: nginx
         state: reloaded
@@ -287,17 +295,16 @@ handlers:
 
 ## Практические задания
 
-1. Создайте inventory-файл с двумя группами (`webservers` и `databases`), указав хотя бы один узел в каждой. Выполните `ansible -i inventory.ini all -m ping`, чтобы проверить соединение. Затем запустите ad-hoc-команду `uptime` для одной из групп.
-2. Напишите playbook, который устанавливает `nginx` на узлах группы `webservers`, обеспечивает запуск службы и её автозапуск, а также создаёт простой файл `index.html`. Сначала используйте режим `--check`, чтобы просмотреть предполагаемые изменения.
-3. Добавьте задачу `template`, создающую конфигурацию nginx из шаблона Jinja2 и использующую переменную inventory для `server_name`. Используйте handler для перезагрузки nginx при изменении конфигурации.
+1. Создайте inventory-файл с двумя группами (`webservers` и `databases`), указав хотя бы один узел в каждой. Выполните `ansible -i inventory.ini all -m ping`, чтобы проверить соединение. Затем запустите разовую команду `uptime` для одной из групп.
+2. Напишите плейбук, который устанавливает `nginx` на узлах группы `webservers`, обеспечивает запуск службы и её автозапуск, а также создаёт простой файл `index.html`. Сначала используйте режим `--check`, чтобы просмотреть предполагаемые изменения.
+3. Добавьте задачу `template`, создающую конфигурацию nginx из шаблона Jinja2 и использующую переменную inventory для `server_name`. Используйте обработчик для перезагрузки nginx при изменении конфигурации.
 4. Добавьте условную задачу установки `htop` в системах на базе Debian и RedHat (пакет одинаковый, менеджеры пакетов разные), используя условие `when: ansible_facts.os_family`.
-
 
 ---
 
 ### Быстрая проверка
 
-5. Посчитайте задачи в примере Ansible play. Выполните: `printf '- name: Install nginx\n  apt:\n- name: Start nginx\n  service:\n- name: Copy config\n  template:\n' | grep -c '^- name:'`
+5. Посчитайте задачи в примере Ansible play. Выполните: `printf '- name: Install nginx\\n  apt:\\n- name: Start nginx\\n  service:\\n- name: Copy config\\n  template:\\n' | grep -c '^- name:'`
 
 ```expected_output
 3
@@ -306,7 +313,7 @@ handlers:
 Подсказка: найдите заданный шаблон в текстовом выводе и посчитайте число его вхождений.
 Подсказка: используйте `grep -c`, чтобы посчитать строки, соответствующие шаблону `^- name:`, в выводе `printf`, переданном через конвейер.
 
-6. Извлеките значение целевых узлов из play. Выполните: `printf '---\n- name: Deploy\n  hosts: webservers\n  become: true\n' | awk '/hosts:/{print $2}'`
+6. Извлеките значение целевых узлов из play. Выполните: `printf '---\\n- name: Deploy\\n  hosts: webservers\\n  become: true\\n' | awk '/hosts:/{print $2}'`
 
 ```expected_output
 webservers
