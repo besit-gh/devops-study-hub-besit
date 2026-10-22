@@ -36,11 +36,11 @@ pipeline.batch.delay: 50     # ms; default 50 is reasonable for most workloads
 
 **Правила настройки — применяйте по порядку:**
 
-1. **CPU at 100%, throughput still low:** Don't add more workers past the point of diminishing returns. Add Logstash nodes. Worker threads beyond 2× vCPU count rarely help and increase lock contention.
-2. **Elasticsearch is the bottleneck (slow bulk API, high indexing latency):** Increase `pipeline.workers` so more threads push bulk requests concurrently. Each worker generates one bulk request per batch.
-3. **Memory pressure or OOM errors:** Lower `pipeline.batch.size`. Each in-flight event occupies its full field map in heap — a 1 KB event × 250 batch size × 4 workers = 1 MB minimum, but grok-parsed events with many fields can be 10–50× larger.
-4. **Heavy grok filters on complex patterns, CPU not saturated:** Add workers. Filter stages are CPU-bound and fully parallelised.
-5. **Many small events from a bursty input:** Increase `pipeline.batch.delay` to let batches fill before processing. Reduces per-event overhead.
+1. **CPU загружен на 100%, но пропускная способность остаётся низкой:** не увеличивайте число workers после достижения точки убывающей отдачи. Добавьте узлы Logstash. Потоки сверх удвоенного числа vCPU редко помогают и усиливают конкуренцию за блокировки.
+2. **Узкое место — Elasticsearch (медленный Bulk API, высокая задержка индексации):** увеличьте `pipeline.workers`, чтобы больше потоков отправляли пакетные запросы параллельно. Каждый worker формирует один bulk-запрос на пакет.
+3. **Нехватка памяти или ошибки OOM:** уменьшите `pipeline.batch.size`. Каждое событие в обработке занимает в куче память под все свои поля: событие 1 КБ × пакет из 250 событий × 4 workers — минимум около 1 МБ. После разбора grok события с множеством полей могут быть в 10–50 раз больше.
+4. **Сложные фильтры grok нагружают CPU, но он не насыщен:** добавьте workers. Этапы фильтрации зависят от вычислений и хорошо распараллеливаются.
+5. **Много небольших событий поступает всплесками:** увеличьте `pipeline.batch.delay`, чтобы пакеты успевали заполняться перед обработкой. Это снижает накладные расходы на каждое событие.
 
 **Gotcha:** `pipeline.workers` only parallelises filter and output stages. The input stage runs in its own thread(s) regardless. A single slow input plugin will not benefit from more workers.
 
