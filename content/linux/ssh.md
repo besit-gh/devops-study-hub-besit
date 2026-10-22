@@ -51,11 +51,11 @@ ssh-keygen -R 203.0.113.50      # also works with IP addresses
 Подключитесь повторно и подтвердите новый отпечаток. **Никогда** не отключайте `StrictHostKeyChecking` глобально: это полностью убирает защиту от MITM. Если в автоматизации невозможно заранее заполнить `known_hosts`, используйте `ssh-keyscan`, чтобы получить и записать отпечатки до подключения, а не отключайте проверку.
 
 ```bash
-# Pre-populate known_hosts in a CI pipeline before using the host
+# Заранее заполнить known_hosts в CI-конвейере
 ssh-keyscan -H 203.0.113.50 >> ~/.ssh/known_hosts
 
-# Hash the hostname so the file doesn't leak your infrastructure topology
-# -H hashes entries; the IP/hostname is not readable in plaintext
+# Хешировать имя хоста, чтобы не раскрывать топологию инфраструктуры
+# -H хеширует записи: IP и имя хоста нельзя прочитать напрямую
 ssh-keyscan -H bastion.example.com >> ~/.ssh/known_hosts
 ```
 
@@ -63,29 +63,29 @@ ssh-keyscan -H bastion.example.com >> ~/.ssh/known_hosts
 
 ### Типы ключей
 
-| Type | Flag | Key size | Security | When to use |
+| Тип | Флаг | Размер ключа | Безопасность | Когда использовать |
 |------|------|----------|----------|-------------|
-| **Ed25519** | `-t ed25519` | 256-bit (fixed) | Excellent | Default choice — any modern system |
-| **RSA** | `-t rsa -b 4096` | 4096-bit | Good | Legacy systems, FIPS environments |
-| **ECDSA** | `-t ecdsa -b 521` | 256–521-bit | Good | Rarely needed; Ed25519 is better |
-| **DSA** | `-t dsa` | 1024-bit (fixed) | Broken | Never use — deprecated since OpenSSH 7.0 |
+| **Ed25519** | `-t ed25519` | 256 бит (фиксированный) | Отличная | По умолчанию для современных систем |
+| **RSA** | `-t rsa -b 4096` | 4096 бит | Хорошая | Устаревшие системы, среды с требованиями FIPS |
+| **ECDSA** | `-t ecdsa -b 521` | 256–521 бит | Хорошая | Обычно не нужен; Ed25519 предпочтительнее |
+| **DSA** | `-t dsa` | 1024 бита (фиксированный) | Небезопасный | Не использовать — устарел с OpenSSH 7.0 |
 
 **Ed25519 — предпочтительный выбор** для систем с OpenSSH 6.5 и новее (выпущен в 2014 году). Ключи короче, вычисления быстрее, а реализация имеет меньшую поверхность атаки, чем RSA. RSA длиной 4096 бит допустим для GitHub Enterprise, старого сетевого оборудования или сред с требованиями FIPS, где кривые Ed25519 ещё не разрешены.
 
 ```bash
-# Generate an Ed25519 key — preferred
+# Создать ключ Ed25519 — рекомендуемый вариант
 ssh-keygen -t ed25519 -C "user@workstation"
 
-# Generate RSA 4096 for legacy compatibility
+# Создать RSA-ключ длиной 4096 бит для совместимости со старыми системами
 ssh-keygen -t rsa -b 4096 -C "user@workstation"
 
-# Generate a named key for a specific purpose (never clobber your default)
+# Создать отдельный ключ для конкретной задачи (не перезаписывайте ключ по умолчанию)
 ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_github -C "github-personal"
 
-# Change the passphrase on an existing key (does not change the key itself)
+# Изменить парольную фразу существующего ключа (сам ключ не меняется)
 ssh-keygen -p -f ~/.ssh/id_ed25519
 
-# Display the fingerprint of a key — useful for verifying identity before trusting
+# Показать отпечаток ключа — полезно для проверки перед тем, как ему доверять
 ssh-keygen -lf ~/.ssh/id_ed25519.pub
 # 256 SHA256:abc123xyz... user@workstation (ED25519)
 ```
@@ -114,45 +114,45 @@ SSH строго проверяет права доступа к файлам. �
 Сам каталог `~/.ssh/` должен иметь права `chmod 700`. Если группа или остальные пользователи могут изменять его содержимое, SSH откажется использовать находящиеся внутри ключи: это считается признаком возможной подмены файлов.
 
 ```bash
-# Fix permissions after copying keys between machines
+# Исправить права доступа после копирования ключей между машинами
 chmod 700 ~/.ssh
 chmod 600 ~/.ssh/id_ed25519
 chmod 644 ~/.ssh/id_ed25519.pub
 chmod 600 ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/config
 
-# Verify with ls -la
+# Проверить командой ls -la
 ls -la ~/.ssh/
 ```
 
 **`authorized_keys` на сервере:** здесь хранятся публичные ключи пользователей, которым разрешён доступ. Один ключ на строку. Перед ключом можно указать параметры, ограничивающие способы его использования — это особенно полезно для автоматизации:
 
 ```
-# ~/.ssh/authorized_keys on the server
+# ~/.ssh/authorized_keys на сервере
 
-# Standard entry — unrestricted
+# Стандартная запись без ограничений
 ssh-ed25519 AAAA...base64... user@workstation
 
-# Deployment key — can only run one specific script, no interactive terminal
+# Ключ развёртывания: разрешён только один скрипт, интерактивный терминал запрещён
 command="/usr/local/bin/deploy.sh",no-pty,no-agent-forwarding,no-x11-forwarding ssh-ed25519 AAAA...base64... ci-deploy-key
 
-# Restrict to specific source IP range — access denied from anywhere else
+# Ограничить определённым диапазоном исходных IP; из остальных сетей доступ запрещён
 from="203.0.113.0/24" ssh-ed25519 AAAA...base64... restricted-user
 
-# Restrict to a single command AND a single IP — belt and suspenders for sensitive automation
+# Ограничить одной командой и одним IP — дополнительная защита для чувствительной автоматизации
 from="10.0.0.5",command="/usr/bin/rsync --server -vlogDtpre.iLsfxC . /var/www/",no-pty ssh-ed25519 AAAA...base64... rsync-deploy
 ```
 
 **Безопасное добавление публичного ключа на удалённый сервер:**
 
 ```bash
-# ssh-copy-id handles permissions automatically — prefer this over manual pasting
+# ssh-copy-id автоматически задаёт права; предпочтительнее ручного копирования ключа
 ssh-copy-id -i ~/.ssh/id_ed25519.pub user@server
 
-# If the server uses a non-standard port
+# Если сервер использует нестандартный порт
 ssh-copy-id -i ~/.ssh/id_ed25519.pub -p 2222 user@server
 
-# Manual equivalent when ssh-copy-id is unavailable
+# Ручной вариант, если ssh-copy-id недоступен
 cat ~/.ssh/id_ed25519.pub | ssh user@server \
   "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 ```
@@ -163,39 +163,39 @@ cat ~/.ssh/id_ed25519.pub | ssh user@server \
 
 ### Конфигурационный файл SSH
 
-`~/.ssh/config` is one of the highest-leverage files in a DevOps engineer's toolkit. Every `ssh`, `scp`, `rsync`, and `git` command reads it automatically. A well-built config eliminates long command lines, documents your infrastructure topology, and makes bastion-hop setups completely transparent.
+`~/.ssh/config` — один из самых полезных файлов в арсенале DevOps-инженера. Команды `ssh`, `scp`, `rsync` и `git` читают его автоматически. Хорошо настроенный файл избавляет от длинных команд, документирует топологию инфраструктуры и делает подключения через bastion прозрачными.
 
 ```
 # ~/.ssh/config
 
-# ── Global defaults ─────────────────────────────────────────────────────────
+# ── Глобальные значения по умолчанию ───────────────────────────────────────
 Host *
     ServerAliveInterval 60        # keepalive every 60s — prevents idle connection drops
     ServerAliveCountMax 3         # drop connection after 3 missed keepalives
     AddKeysToAgent yes            # auto-add to agent on first use
     IdentitiesOnly yes            # only offer keys listed in this file; don't dump entire agent
 
-# ── Production web server ────────────────────────────────────────────────────
+# ── Production-веб-сервер ───────────────────────────────────────────────────
 Host prod-web
     HostName 203.0.113.50
     User ubuntu
     IdentityFile ~/.ssh/id_ed25519_prod
     Port 22
 
-# ── AWS bastion host ─────────────────────────────────────────────────────────
+# ── Bastion-хост AWS ────────────────────────────────────────────────────────
 Host bastion
     HostName 203.0.113.10
     User ec2-user
     IdentityFile ~/.ssh/id_ed25519_aws
 
-# ── Private DB reachable only through bastion ────────────────────────────────
+# ── Приватная БД, доступная только через bastion ────────────────────────────
 Host prod-db
     HostName 10.0.1.20
     User ubuntu
     IdentityFile ~/.ssh/id_ed25519_aws
     ProxyJump bastion             # SSH opens bastion first, then forwards to this host
 
-# ── GitHub (useful when managing multiple GitHub accounts) ───────────────────
+# ── GitHub (полезно при работе с несколькими аккаунтами) ────────────────────
 Host github-work
     HostName github.com
     User git
@@ -223,29 +223,29 @@ Host github-personal
 SSH-agent — фоновый процесс, который хранит расшифрованные приватные ключи в памяти. Парольную фразу нужно ввести один раз при добавлении ключа; после этого инструменты SSH — `ssh`, `scp`, `git`, Ansible и Terraform — выполняют аутентификацию без повторного запроса.
 
 ```bash
-# Start the agent (desktop environments usually start it automatically at login)
+# Запустить agent (графические окружения обычно запускают его при входе)
 eval "$(ssh-agent -s)"
-# Output: Agent pid 12345
+# Вывод: Agent pid 12345
 
-# Add default key — prompts for passphrase once
+# Добавить основной ключ — парольная фраза запрашивается один раз
 ssh-add ~/.ssh/id_ed25519
 
-# Add with a time limit — auto-removed after 4 hours
-# Useful for production keys you don't want resident all day
+# Добавить с ограничением времени — удалить автоматически через 4 часа
+# Полезно для production-ключей, которые не должны оставаться загруженными весь день
 ssh-add -t 4h ~/.ssh/id_ed25519_prod
 
-# List keys currently loaded in the agent
+# Показать ключи, загруженные в agent
 ssh-add -l
 # 256 SHA256:abc123... user@workstation (ED25519)
 # 3072 SHA256:def456... user@workstation (RSA)
 
-# Show full public key of a loaded key (useful for adding to authorized_keys)
+# Показать полный публичный ключ из agent (например, для добавления в authorized_keys)
 ssh-add -L
 
-# Remove one key from the agent
+# Удалить один ключ из agent
 ssh-add -d ~/.ssh/id_ed25519_github
 
-# Remove all keys
+# Удалить все ключи
 ssh-add -D
 ```
 
@@ -372,70 +372,70 @@ systemctl status sshd
 
 ---
 
-### Copying Files with SCP and Rsync over SSH
+### Копирование файлов через SCP и Rsync по SSH
 
-Both tools use SSH as the transport layer and respect your `~/.ssh/config` aliases.
+Оба инструмента используют SSH в качестве транспорта и учитывают алиасы из `~/.ssh/config`.
 
 ```bash
 # ── scp — simple file copy ────────────────────────────────────────────────────
-# Local → remote
+# Локальная машина → удалённая
 scp ./app.tar.gz ubuntu@prod-web:/tmp/
 
-# Remote → local
+# Удалённая машина → локальная
 scp ubuntu@prod-web:/var/log/app.log ./
 
-# Recursive directory copy
+# Рекурсивное копирование каталога
 scp -r ./dist/ ubuntu@prod-web:/var/www/html/
 
-# Use a non-default key
+# Использовать нестандартный ключ
 scp -i ~/.ssh/id_ed25519_prod ./config.yml ubuntu@prod-web:/etc/app/
 
 # ── rsync — efficient incremental sync ───────────────────────────────────────
-# -a: archive mode (preserves permissions, timestamps, symlinks)
-# -v: verbose   -z: compress in transit   --delete: remove files deleted locally
+# -a: режим архива (сохраняет права, временные метки и символические ссылки)
+# -v: подробный вывод   -z: сжатие при передаче   --delete: удалять файлы, удалённые локально
 rsync -avz --delete ./dist/ ubuntu@prod-web:/var/www/html/
 
-# rsync over a custom SSH port
+# rsync через нестандартный SSH-порт
 rsync -avz -e "ssh -p 2222" ./dist/ ubuntu@prod-web:/var/www/html/
 
-# Dry run first — shows what would change without doing it
+# Сначала пробный запуск — показывает изменения, не применяя их
 rsync -avz --dry-run --delete ./dist/ ubuntu@prod-web:/var/www/html/
 
-# Use your ssh config alias — rsync reads it automatically
+# Используйте алиас из ssh config — rsync прочитает его автоматически
 rsync -avz ./dist/ prod-web:/var/www/html/
 ```
 
-**scp vs. rsync:** use `scp` for quick one-off transfers of individual files. Use `rsync` for directories, deployments, or anything you run repeatedly — it sends only changed bytes after the first transfer. On a slow link or large codebase, `rsync` can be 100x faster than `scp` for incremental updates.
+**scp и rsync:** используйте `scp` для разовой передачи отдельных файлов. Для каталогов, развёртываний и повторяющихся передач выбирайте `rsync`: после первой передачи он отправляет только изменившиеся данные. На медленном канале или при большом коде инкрементальное обновление через `rsync` может быть в 100 раз быстрее `scp`.
 
-**`scp` deprecation note:** OpenSSH 9.0+ deprecated the legacy `scp` protocol by default, switching to SFTP internally. The command still works but you may see warnings on older servers. For scripted transfers, `rsync` or `sftp` are preferable.
+**Устаревший протокол `scp`:** начиная с OpenSSH 9.0 по умолчанию используется SFTP вместо старого протокола scp. Команда продолжает работать, но при подключении к старым серверам могут появляться предупреждения. Для скриптовой передачи предпочтительнее `rsync` или `sftp`.
 
 ---
 
 ## Примеры
 
-### Example 1: Set Up Key-Based Access to a New Server from Scratch
+### Пример 1: настройка доступа к новому серверу по ключу с нуля
 
-**Scenario:** you've just launched a fresh Ubuntu EC2 instance. AWS gave you a `.pem` file. You want to convert to your standard Ed25519 workflow and disable password auth.
+**Сценарий:** вы только что запустили новый экземпляр Ubuntu EC2. AWS выдал файл `.pem`. Нужно перейти на стандартную схему с Ed25519 и отключить парольную аутентификацию.
 
 ```bash
-# Step 1 — Connect with the AWS-provided PEM key (RSA format)
+# Шаг 1 — подключиться с PEM-ключом AWS (формат RSA)
 chmod 400 ~/Downloads/my-instance.pem
 ssh -i ~/Downloads/my-instance.pem ubuntu@203.0.113.50
 
-# Step 2 — On the server, add your Ed25519 public key
-# (run this from your laptop, not the server)
+# Шаг 2 — добавить публичный ключ Ed25519 на сервер
+# (выполните на ноутбуке, а не на сервере)
 ssh-copy-id -i ~/.ssh/id_ed25519.pub -o "IdentityFile=~/Downloads/my-instance.pem" ubuntu@203.0.113.50
 
-# Step 3 — Verify the new key works BEFORE disabling password/pem access
+# Шаг 3 — проверить новый ключ ДО отключения пароля и PEM-доступа
 ssh -i ~/.ssh/id_ed25519 ubuntu@203.0.113.50
-# Confirm you get a shell
+# Убедиться, что открылась оболочка
 
-# Step 4 — Harden sshd (on the server)
+# Шаг 4 — усилить настройки sshd на сервере
 sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
 sudo sed -i 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
 sudo sshd -t && sudo systemctl reload sshd
 
-# Step 5 — Add to your local ~/.ssh/config for convenience
+# Шаг 5 — добавить настройки в локальный ~/.ssh/config
 cat >> ~/.ssh/config <<'EOF'
 
 Host my-ec2
@@ -444,17 +444,17 @@ Host my-ec2
     IdentityFile ~/.ssh/id_ed25519
 EOF
 
-# Step 6 — Verify the alias works
+# Шаг 6 — проверить работу алиаса
 ssh my-ec2
 ```
 
-**Verification:** `ssh my-ec2` connects without a password prompt. Attempting `ssh -o PasswordAuthentication=yes ubuntu@203.0.113.50` should return `Permission denied`.
+**Проверка:** `ssh my-ec2` подключается без запроса пароля. Команда `ssh -o PasswordAuthentication=yes ubuntu@203.0.113.50` должна вернуть `Permission denied`.
 
 ---
 
-### Example 2: Reach a Private Database Through a Bastion Host
+### Пример 2: доступ к приватной базе данных через bastion
 
-**Scenario:** your PostgreSQL database lives in a private subnet (10.0.1.50:5432). It has no public IP. A bastion host at 203.0.113.10 is the only way in.
+**Сценарий:** база PostgreSQL находится в приватной подсети (`10.0.1.50:5432`) и не имеет публичного IP. Единственный путь доступа — bastion с адресом `203.0.113.10`.
 
 ```bash
 # Step 1 — Add both hosts to ~/.ssh/config
@@ -493,13 +493,13 @@ ss -tlnp | grep 5433
 pkill -f "ssh.*5433"
 ```
 
-**Why `ProxyJump` here instead of `ForwardAgent`:** the bastion never sees your private key. SSH on your laptop opens a raw TCP channel to 10.0.1.50 through the bastion, then performs the full key authentication handshake directly with the destination. The bastion is just a pipe.
+**Почему здесь `ProxyJump`, а не `ForwardAgent`:** bastion никогда не получает ваш приватный ключ. SSH на ноутбуке открывает TCP-канал к `10.0.1.50` через bastion, а затем выполняет полную аутентификацию ключом непосредственно с целевым узлом. Bastion служит лишь каналом передачи.
 
 ---
 
-### Example 3: Deploy a Web App via CI/CD Using a Restricted Deploy Key
+### Пример 3: развёртывание веб-приложения через CI/CD с ограниченным ключом
 
-**Scenario:** your GitHub Actions pipeline needs to `rsync` built assets to a production server. You want to scope the key so it can only run the deploy script — nothing else.
+**Сценарий:** pipeline GitHub Actions должен передать собранные файлы на production-сервер через `rsync`. Ключ должен позволять запускать только скрипт развёртывания и ничего больше.
 
 ```bash
 # Step 1 — Generate a dedicated deploy key with no passphrase
@@ -566,13 +566,13 @@ jobs:
         run: rm -f ~/.ssh/id_ed25519_deploy
 ```
 
-**Verification:** SSHing manually with the deploy key should run the script and exit — no shell prompt, no other commands possible. Attempt `ssh -i ~/.ssh/id_ed25519_ci_deploy ubuntu@203.0.113.50 "cat /etc/passwd"` — the server ignores the argument and runs `deploy.sh` instead.
+**Проверка:** при ручном подключении deploy-ключом должен выполниться скрипт и завершиться без shell-приглашения и возможности запускать другие команды. Попробуйте `ssh -i ~/.ssh/id_ed25519_ci_deploy ubuntu@203.0.113.50 "cat /etc/passwd"`: сервер проигнорирует переданную команду и вместо неё запустит `deploy.sh`.
 
 ---
 
-### Example 4: Audit and Rotate Keys Across Multiple Servers
+### Пример 4: аудит и ротация ключей на нескольких серверах
 
-**Scenario:** a team member left. You need to remove their key from all servers and verify no access remains.
+**Сценарий:** сотрудник покинул команду. Нужно удалить его ключ со всех серверов и убедиться, что доступ отозван.
 
 ```bash
 # Step 1 — Identify the key to remove (get the fingerprint or comment)
@@ -601,7 +601,7 @@ ansible all -m shell -a "grep 'alice@laptop' ~/.ssh/authorized_keys && echo FOUN
   -i inventory/production
 ```
 
-**Key rotation vs. key revocation:** SSH has no built-in certificate revocation like TLS. Revocation means manually removing the public key from every `authorized_keys` file on every server. This is why key hygiene (one key per person per purpose, meaningful comments, centralised inventory) matters — and why larger organisations move toward SSH Certificate Authorities (OpenSSH has `ssh-keygen -s` for this) or tools like HashiCorp Vault's SSH secrets engine, which issue short-lived certificates instead of long-lived keys.
+**Ротация и отзыв ключей:** в SSH нет встроенного отзыва сертификатов, как в TLS. Отзыв означает ручное удаление публичного ключа из каждого `authorized_keys` на каждом сервере. Поэтому важны правила хранения ключей: отдельный ключ на человека и назначение, осмысленные комментарии и централизованный реестр. Крупные организации переходят к SSH Certificate Authority (в OpenSSH для этого есть `ssh-keygen -s`) или к инструментам вроде SSH secrets engine в HashiCorp Vault, выдающим короткоживущие сертификаты вместо долгоживущих ключей.
 
 ---
 
