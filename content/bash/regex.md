@@ -13,26 +13,26 @@ exercises: 4
 
 Принцип regex — декларативный поиск по шаблону: вы описываете форму нужного текста, а движок находит совпадения. Большинство знакомых инструментов (`grep`, `sed`, `awk`, Python, Go, JavaScript, Terraform, GitHub Actions) используют близкие наборы регулярных выражений с небольшими различиями. Освоение POSIX ERE и расширений, совместимых с Perl, покрывает почти весь DevOps-стек.
 
-Regex fits into DevOps in several layers: interactive shell work (grep, awk), scripted automation (bash `=~`, sed in pipelines), log aggregation (Fluentd, Logstash, Promtail `pipeline_stages`), and platform configuration (nginx `location ~`, Kubernetes admission webhooks, OPA policies). The investment in learning regex has one of the highest returns of any technical skill at this level.
+Регулярные выражения используются в DevOps на нескольких уровнях: интерактивная работа в shell (`grep`, `awk`), скриптовая автоматизация (`=~` в Bash, sed в конвейерах), сбор журналов (Fluentd, Logstash, `pipeline_stages` Promtail) и конфигурация платформ (nginx `location ~`, admission webhooks Kubernetes, политики OPA). Изучение regex — один из самых выгодных способов вложить время в технические навыки.
 
 ---
 
 ## Основные понятия
 
-### Two Flavors: BRE and ERE
+### Два варианта: BRE и ERE
 
-Every POSIX tool implements one of two regex dialects. Knowing which dialect a tool defaults to prevents maddening "why doesn't my `+` work?" bugs.
+Инструменты POSIX используют один из двух диалектов regex. Знание диалекта по умолчанию помогает избежать раздражающих ошибок вроде «почему `+` не работает?».
 
-| Feature | BRE (grep default) | ERE (grep -E, egrep) |
+| Возможность | BRE (по умолчанию в grep) | ERE (grep -E, egrep) |
 |---|---|---|
-| Grouping | `\(abc\)` | `(abc)` |
-| Alternation | `\|` | `\|` |
-| One-or-more | `\+` | `+` |
-| Zero-or-one | `\?` | `?` |
-| Repetition | `\{3\}` | `{3}` |
-| Backreferences | `\1` | `\1` |
+| Группировка | `\(abc\)` | `(abc)` |
+| Альтернатива | `\|` | `\|` |
+| Один или больше | `\+` | `+` |
+| Ноль или один | `\?` | `?` |
+| Повторение | `\{3\}` | `{3}` |
+| Обратные ссылки | `\1` | `\1` |
 
-**Rule of thumb:** always use `grep -E` (ERE). The syntax is cleaner, less backslash-heavy, and matches what most other tools expect. Use `grep -P` for Perl-compatible regex (PCRE) when you need lookaheads, lookbehinds, `\d`, `\s`, or `\K` (match-reset). PCRE is not available on all systems — macOS ships without it in grep by default.
+**Практическое правило:** используйте `grep -E` (ERE). Синтаксис чище и требует меньше обратных косых черт, а также совпадает с ожиданиями большинства инструментов. `grep -P` нужен для Perl-совместимых выражений (PCRE), когда требуются lookahead, lookbehind, `\d`, `\s` или `\K`. PCRE доступен не во всех системах: например, стандартный grep в macOS его не поддерживает.
 
 ```bash
 # BRE — clunky
@@ -45,13 +45,13 @@ grep -E "^(ERROR|WARN)+" app.log
 grep -P "(?<=\[)\d{4}-\d{2}-\d{2}" app.log
 ```
 
-**`sed` uses BRE by default.** Use `sed -E` (GNU) or `sed -r` (older GNU) to switch to ERE. `awk` uses its own ERE-like dialect and does not need a flag.
+**`sed` по умолчанию использует BRE.** Для ERE применяйте `sed -E` или `sed -r` в старых версиях GNU sed. `awk` использует собственный диалект, похожий на ERE, и не требует отдельного флага.
 
 ---
 
 ### Классы символов
 
-Character classes define a set of acceptable characters at a single position.
+Классы символов задают набор допустимых символов в одной позиции.
 
 ```
 .          any character except newline
@@ -63,17 +63,17 @@ Character classes define a set of acceptable characters at a single position.
 [a-zA-Z0-9_]  word characters (same as \w in PCRE)
 ```
 
-**POSIX named classes** are portable across locales and available in both BRE and ERE inside `[...]`:
+**Именованные классы POSIX** переносимы между локалями и доступны в BRE и ERE внутри `[...]`:
 
-| Class | Meaning |
+| Класс | Значение |
 |---|---|
-| `[:alpha:]` | Letters (locale-aware) |
+| `[:alpha:]` | Буквы (с учётом локали) |
 | `[:digit:]` | `0-9` |
-| `[:alnum:]` | Letters and digits |
-| `[:space:]` | Whitespace including tab, newline |
-| `[:upper:]` | Uppercase letters |
-| `[:lower:]` | Lowercase letters |
-| `[:punct:]` | Punctuation characters |
+| `[:alnum:]` | Буквы и цифры |
+| `[:space:]` | Пробельные символы, включая табуляцию и перевод строки |
+| `[:upper:]` | Заглавные буквы |
+| `[:lower:]` | Строчные буквы |
+| `[:punct:]` | Знаки пунктуации |
 
 ```bash
 # POSIX class usage — note the double brackets: one for the class, one for the character class
@@ -81,9 +81,9 @@ grep "[[:digit:]]\{3\}-[[:digit:]]\{4\}" contacts.txt   # BRE phone pattern
 grep -E "[[:alpha:]][[:digit:]]+" codes.txt              # ERE: letter then digits
 ```
 
-**PCRE shorthand classes** (require `grep -P` or Python/Go/JavaScript/etc.):
+**Сокращённые классы PCRE** (требуют `grep -P`, Python, Go, JavaScript и т. п.):
 
-| Shorthand | Equivalent |
+| Сокращение | Эквивалент |
 |---|---|
 | `\d` | `[0-9]` |
 | `\D` | `[^0-9]` |
@@ -92,23 +92,130 @@ grep -E "[[:alpha:]][[:digit:]]+" codes.txt              # ERE: letter then digi
 | `\s` | `[ \t\r\n\f]` |
 | `\S` | `[^ \t\r\n\f]` |
 
-**`.` matches everything except newline.** A common mistake is using `.` when you mean a literal dot — for example, in IP address patterns. `192.168.1.1` as a regex matches `192X168Y1Z1`. Always escape literal dots: `192\.168\.1\.1`.
+**`.` совпадает с любым символом, кроме перевода строки.** Частая ошибка — использовать точку как буквальный символ, например в IP-адресе. Regex `192.168.1.1` также совпадёт с `192X168Y1Z1`. Экранируйте точки: `192\.168\.1\.1`.
 
-**Locale gotcha:** POSIX classes like `[:alpha:]` are locale-aware. In a `C` locale they match only ASCII. In a `UTF-8` locale they may match accented characters. For infrastructure scripting, set `LC_ALL=C` at the top of scripts to get deterministic behavior: `export LC_ALL=C`.
+**Особенность локали:** POSIX-классы вроде `[:alpha:]` учитывают локаль. В локали `C` они совпадают только с ASCII, а в `UTF-8` могут включать символы с диакритикой. Для предсказуемого поведения инфраструктурных скриптов задавайте в начале `export LC_ALL=C`.
 
 ---
 
-### Anchors and Boundaries
+### Якоря и границы
 
-Anchors match a position in the string, not a character. They consume zero width.
+Якоря соответствуют позиции в строке, а не символу, и не занимают ширину.
 
-| Anchor | Meaning | Notes |
+| Якорь | Значение | Примечания |
 |---|---|---|
-| `^` | Start of line | Matches after `\n` in multiline mode |
-| `$` | End of line | Matches before `\n` |
-| `\b` | Word boundary | PCRE (`grep -P`) or ERE on GNU grep |
-| `\<` | Start of word | GNU grep BRE/ERE |
-| `\>` | End of word | GNU grep BRE/ERE |
+| `^` | Начало строки | В многострочном режиме совпадает после `\n` |
+| `---
+title: Регулярные выражения
+module: bash
+duration_min: 20
+difficulty: intermediate
+tags: [bash, regex, grep, egrep, sed, patterns, ERE, BRE]
+exercises: 4
+---
+
+## Обзор
+
+Регулярные выражения — универсальный язык описания текстовых шаблонов. В DevOps они используются ежедневно: поиск ошибок в логах приложений, извлечение IP из access-логов, проверка значений конфигурации, фильтрация вывода `kubectl`, написание правил `location` в nginx и построение пайплайнов оповещений. Хорошее владение regex позволяет писать точные и быстрые однострочные команды без множества лишних вызовов `awk`.
+
+Принцип regex — декларативный поиск по шаблону: вы описываете форму нужного текста, а движок находит совпадения. Большинство знакомых инструментов (`grep`, `sed`, `awk`, Python, Go, JavaScript, Terraform, GitHub Actions) используют близкие наборы регулярных выражений с небольшими различиями. Освоение POSIX ERE и расширений, совместимых с Perl, покрывает почти весь DevOps-стек.
+
+Регулярные выражения используются в DevOps на нескольких уровнях: интерактивная работа в shell (`grep`, `awk`), скриптовая автоматизация (`=~` в Bash, sed в конвейерах), сбор журналов (Fluentd, Logstash, `pipeline_stages` Promtail) и конфигурация платформ (nginx `location ~`, admission webhooks Kubernetes, политики OPA). Изучение regex — один из самых выгодных способов вложить время в технические навыки.
+
+---
+
+## Основные понятия
+
+### Два варианта: BRE и ERE
+
+Инструменты POSIX используют один из двух диалектов regex. Знание диалекта по умолчанию помогает избежать раздражающих ошибок вроде «почему `+` не работает?».
+
+| Возможность | BRE (по умолчанию в grep) | ERE (grep -E, egrep) |
+|---|---|---|
+| Группировка | `\(abc\)` | `(abc)` |
+| Альтернатива | `\|` | `\|` |
+| Один или больше | `\+` | `+` |
+| Ноль или один | `\?` | `?` |
+| Повторение | `\{3\}` | `{3}` |
+| Обратные ссылки | `\1` | `\1` |
+
+**Практическое правило:** используйте `grep -E` (ERE). Синтаксис чище и требует меньше обратных косых черт, а также совпадает с ожиданиями большинства инструментов. `grep -P` нужен для Perl-совместимых выражений (PCRE), когда требуются lookahead, lookbehind, `\d`, `\s` или `\K`. PCRE доступен не во всех системах: например, стандартный grep в macOS его не поддерживает.
+
+```bash
+# BRE — clunky
+grep "^\(ERROR\|WARN\)\{1,\}" app.log
+
+# ERE — equivalent, readable
+grep -E "^(ERROR|WARN)+" app.log
+
+# PCRE — when you need lookahead or \d
+grep -P "(?<=\[)\d{4}-\d{2}-\d{2}" app.log
+```
+
+**`sed` по умолчанию использует BRE.** Для ERE применяйте `sed -E` или `sed -r` в старых версиях GNU sed. `awk` использует собственный диалект, похожий на ERE, и не требует отдельного флага.
+
+---
+
+### Классы символов
+
+Классы символов задают набор допустимых символов в одной позиции.
+
+```
+.          any character except newline
+[abc]      literal a, b, or c
+[^abc]     anything except a, b, or c
+[a-z]      lowercase letters a through z
+[A-Z]      uppercase letters
+[0-9]      digits 0–9
+[a-zA-Z0-9_]  word characters (same as \w in PCRE)
+```
+
+**Именованные классы POSIX** переносимы между локалями и доступны в BRE и ERE внутри `[...]`:
+
+| Класс | Значение |
+|---|---|
+| `[:alpha:]` | Буквы (с учётом локали) |
+| `[:digit:]` | `0-9` |
+| `[:alnum:]` | Буквы и цифры |
+| `[:space:]` | Пробельные символы, включая табуляцию и перевод строки |
+| `[:upper:]` | Заглавные буквы |
+| `[:lower:]` | Строчные буквы |
+| `[:punct:]` | Знаки пунктуации |
+
+```bash
+# POSIX class usage — note the double brackets: one for the class, one for the character class
+grep "[[:digit:]]\{3\}-[[:digit:]]\{4\}" contacts.txt   # BRE phone pattern
+grep -E "[[:alpha:]][[:digit:]]+" codes.txt              # ERE: letter then digits
+```
+
+**Сокращённые классы PCRE** (требуют `grep -P`, Python, Go, JavaScript и т. п.):
+
+| Сокращение | Эквивалент |
+|---|---|
+| `\d` | `[0-9]` |
+| `\D` | `[^0-9]` |
+| `\w` | `[a-zA-Z0-9_]` |
+| `\W` | `[^a-zA-Z0-9_]` |
+| `\s` | `[ \t\r\n\f]` |
+| `\S` | `[^ \t\r\n\f]` |
+
+**`.` совпадает с любым символом, кроме перевода строки.** Частая ошибка — использовать точку как буквальный символ, например в IP-адресе. Regex `192.168.1.1` также совпадёт с `192X168Y1Z1`. Экранируйте точки: `192\.168\.1\.1`.
+
+**Особенность локали:** POSIX-классы вроде `[:alpha:]` учитывают локаль. В локали `C` они совпадают только с ASCII, а в `UTF-8` могут включать символы с диакритикой. Для предсказуемого поведения инфраструктурных скриптов задавайте в начале `export LC_ALL=C`.
+
+---
+
+### Якоря и границы
+
+Якоря соответствуют позиции в строке, а не символу, и не занимают ширину.
+
+| Якорь | Значение | Примечания |
+|---|---|---|
+| `^` | Начало строки | В многострочном режиме совпадает после `\n` |
+ | Конец строки | Совпадает перед `\n` |
+| `\b` | Граница слова | PCRE (`grep -P`) или ERE в GNU grep |
+| `\<` | Начало слова | GNU grep BRE/ERE |
+| `\>` | Конец слова | GNU grep BRE/ERE |
 
 ```bash
 # Only lines that are ONLY an IP address (nothing else on the line)
@@ -126,27 +233,734 @@ grep -E "^\s*$" file.txt      # empty or whitespace-only (GNU ERE supports \s)
 grep -E "^[^#[:space:]]" config.conf
 ```
 
-**`^` and `$` inside `[...]` mean something different.** `[^abc]` means "not a, b, or c". `^` only means start-of-line when it is the first character of the overall pattern or a group, not inside a character class.
+**`^` и `---
+title: Регулярные выражения
+module: bash
+duration_min: 20
+difficulty: intermediate
+tags: [bash, regex, grep, egrep, sed, patterns, ERE, BRE]
+exercises: 4
+---
 
-**`$` matches before a trailing newline.** In a file, `grep "end$"` matches lines ending in "end" even though the actual last byte on the line is `\n`. This is intentional POSIX behavior — the newline is the line terminator, not part of the content.
+## Обзор
+
+Регулярные выражения — универсальный язык описания текстовых шаблонов. В DevOps они используются ежедневно: поиск ошибок в логах приложений, извлечение IP из access-логов, проверка значений конфигурации, фильтрация вывода `kubectl`, написание правил `location` в nginx и построение пайплайнов оповещений. Хорошее владение regex позволяет писать точные и быстрые однострочные команды без множества лишних вызовов `awk`.
+
+Принцип regex — декларативный поиск по шаблону: вы описываете форму нужного текста, а движок находит совпадения. Большинство знакомых инструментов (`grep`, `sed`, `awk`, Python, Go, JavaScript, Terraform, GitHub Actions) используют близкие наборы регулярных выражений с небольшими различиями. Освоение POSIX ERE и расширений, совместимых с Perl, покрывает почти весь DevOps-стек.
+
+Регулярные выражения используются в DevOps на нескольких уровнях: интерактивная работа в shell (`grep`, `awk`), скриптовая автоматизация (`=~` в Bash, sed в конвейерах), сбор журналов (Fluentd, Logstash, `pipeline_stages` Promtail) и конфигурация платформ (nginx `location ~`, admission webhooks Kubernetes, политики OPA). Изучение regex — один из самых выгодных способов вложить время в технические навыки.
 
 ---
 
-### Quantifiers
+## Основные понятия
 
-Quantifiers apply to the preceding atom (character, class, or group).
+### Два варианта: BRE и ERE
 
-| Quantifier | Meaning | Dialect |
+Инструменты POSIX используют один из двух диалектов regex. Знание диалекта по умолчанию помогает избежать раздражающих ошибок вроде «почему `+` не работает?».
+
+| Возможность | BRE (по умолчанию в grep) | ERE (grep -E, egrep) |
 |---|---|---|
-| `*` | Zero or more (greedy) | BRE + ERE |
-| `+` | One or more (greedy) | ERE (BRE: `\+`) |
-| `?` | Zero or one (greedy) | ERE (BRE: `\?`) |
-| `{n}` | Exactly n | ERE (BRE: `\{n\}`) |
-| `{n,}` | n or more | ERE |
-| `{n,m}` | Between n and m (inclusive) | ERE |
-| `*?` `+?` `??` | Non-greedy variants | PCRE only |
+| Группировка | `\(abc\)` | `(abc)` |
+| Альтернатива | `\|` | `\|` |
+| Один или больше | `\+` | `+` |
+| Ноль или один | `\?` | `?` |
+| Повторение | `\{3\}` | `{3}` |
+| Обратные ссылки | `\1` | `\1` |
 
-**Greedy vs. non-greedy:** standard regex is greedy — it matches as much as possible while still allowing the overall pattern to succeed. This matters when extracting content between delimiters.
+**Практическое правило:** используйте `grep -E` (ERE). Синтаксис чище и требует меньше обратных косых черт, а также совпадает с ожиданиями большинства инструментов. `grep -P` нужен для Perl-совместимых выражений (PCRE), когда требуются lookahead, lookbehind, `\d`, `\s` или `\K`. PCRE доступен не во всех системах: например, стандартный grep в macOS его не поддерживает.
+
+```bash
+# BRE — clunky
+grep "^\(ERROR\|WARN\)\{1,\}" app.log
+
+# ERE — equivalent, readable
+grep -E "^(ERROR|WARN)+" app.log
+
+# PCRE — when you need lookahead or \d
+grep -P "(?<=\[)\d{4}-\d{2}-\d{2}" app.log
+```
+
+**`sed` по умолчанию использует BRE.** Для ERE применяйте `sed -E` или `sed -r` в старых версиях GNU sed. `awk` использует собственный диалект, похожий на ERE, и не требует отдельного флага.
+
+---
+
+### Классы символов
+
+Классы символов задают набор допустимых символов в одной позиции.
+
+```
+.          any character except newline
+[abc]      literal a, b, or c
+[^abc]     anything except a, b, or c
+[a-z]      lowercase letters a through z
+[A-Z]      uppercase letters
+[0-9]      digits 0–9
+[a-zA-Z0-9_]  word characters (same as \w in PCRE)
+```
+
+**Именованные классы POSIX** переносимы между локалями и доступны в BRE и ERE внутри `[...]`:
+
+| Класс | Значение |
+|---|---|
+| `[:alpha:]` | Буквы (с учётом локали) |
+| `[:digit:]` | `0-9` |
+| `[:alnum:]` | Буквы и цифры |
+| `[:space:]` | Пробельные символы, включая табуляцию и перевод строки |
+| `[:upper:]` | Заглавные буквы |
+| `[:lower:]` | Строчные буквы |
+| `[:punct:]` | Знаки пунктуации |
+
+```bash
+# POSIX class usage — note the double brackets: one for the class, one for the character class
+grep "[[:digit:]]\{3\}-[[:digit:]]\{4\}" contacts.txt   # BRE phone pattern
+grep -E "[[:alpha:]][[:digit:]]+" codes.txt              # ERE: letter then digits
+```
+
+**Сокращённые классы PCRE** (требуют `grep -P`, Python, Go, JavaScript и т. п.):
+
+| Сокращение | Эквивалент |
+|---|---|
+| `\d` | `[0-9]` |
+| `\D` | `[^0-9]` |
+| `\w` | `[a-zA-Z0-9_]` |
+| `\W` | `[^a-zA-Z0-9_]` |
+| `\s` | `[ \t\r\n\f]` |
+| `\S` | `[^ \t\r\n\f]` |
+
+**`.` совпадает с любым символом, кроме перевода строки.** Частая ошибка — использовать точку как буквальный символ, например в IP-адресе. Regex `192.168.1.1` также совпадёт с `192X168Y1Z1`. Экранируйте точки: `192\.168\.1\.1`.
+
+**Особенность локали:** POSIX-классы вроде `[:alpha:]` учитывают локаль. В локали `C` они совпадают только с ASCII, а в `UTF-8` могут включать символы с диакритикой. Для предсказуемого поведения инфраструктурных скриптов задавайте в начале `export LC_ALL=C`.
+
+---
+
+### Якоря и границы
+
+Якоря соответствуют позиции в строке, а не символу, и не занимают ширину.
+
+| Якорь | Значение | Примечания |
+|---|---|---|
+| `^` | Начало строки | В многострочном режиме совпадает после `\n` |
+| `---
+title: Регулярные выражения
+module: bash
+duration_min: 20
+difficulty: intermediate
+tags: [bash, regex, grep, egrep, sed, patterns, ERE, BRE]
+exercises: 4
+---
+
+## Обзор
+
+Регулярные выражения — универсальный язык описания текстовых шаблонов. В DevOps они используются ежедневно: поиск ошибок в логах приложений, извлечение IP из access-логов, проверка значений конфигурации, фильтрация вывода `kubectl`, написание правил `location` в nginx и построение пайплайнов оповещений. Хорошее владение regex позволяет писать точные и быстрые однострочные команды без множества лишних вызовов `awk`.
+
+Принцип regex — декларативный поиск по шаблону: вы описываете форму нужного текста, а движок находит совпадения. Большинство знакомых инструментов (`grep`, `sed`, `awk`, Python, Go, JavaScript, Terraform, GitHub Actions) используют близкие наборы регулярных выражений с небольшими различиями. Освоение POSIX ERE и расширений, совместимых с Perl, покрывает почти весь DevOps-стек.
+
+Регулярные выражения используются в DevOps на нескольких уровнях: интерактивная работа в shell (`grep`, `awk`), скриптовая автоматизация (`=~` в Bash, sed в конвейерах), сбор журналов (Fluentd, Logstash, `pipeline_stages` Promtail) и конфигурация платформ (nginx `location ~`, admission webhooks Kubernetes, политики OPA). Изучение regex — один из самых выгодных способов вложить время в технические навыки.
+
+---
+
+## Основные понятия
+
+### Два варианта: BRE и ERE
+
+Инструменты POSIX используют один из двух диалектов regex. Знание диалекта по умолчанию помогает избежать раздражающих ошибок вроде «почему `+` не работает?».
+
+| Возможность | BRE (по умолчанию в grep) | ERE (grep -E, egrep) |
+|---|---|---|
+| Группировка | `\(abc\)` | `(abc)` |
+| Альтернатива | `\|` | `\|` |
+| Один или больше | `\+` | `+` |
+| Ноль или один | `\?` | `?` |
+| Повторение | `\{3\}` | `{3}` |
+| Обратные ссылки | `\1` | `\1` |
+
+**Практическое правило:** используйте `grep -E` (ERE). Синтаксис чище и требует меньше обратных косых черт, а также совпадает с ожиданиями большинства инструментов. `grep -P` нужен для Perl-совместимых выражений (PCRE), когда требуются lookahead, lookbehind, `\d`, `\s` или `\K`. PCRE доступен не во всех системах: например, стандартный grep в macOS его не поддерживает.
+
+```bash
+# BRE — clunky
+grep "^\(ERROR\|WARN\)\{1,\}" app.log
+
+# ERE — equivalent, readable
+grep -E "^(ERROR|WARN)+" app.log
+
+# PCRE — when you need lookahead or \d
+grep -P "(?<=\[)\d{4}-\d{2}-\d{2}" app.log
+```
+
+**`sed` по умолчанию использует BRE.** Для ERE применяйте `sed -E` или `sed -r` в старых версиях GNU sed. `awk` использует собственный диалект, похожий на ERE, и не требует отдельного флага.
+
+---
+
+### Классы символов
+
+Классы символов задают набор допустимых символов в одной позиции.
+
+```
+.          any character except newline
+[abc]      literal a, b, or c
+[^abc]     anything except a, b, or c
+[a-z]      lowercase letters a through z
+[A-Z]      uppercase letters
+[0-9]      digits 0–9
+[a-zA-Z0-9_]  word characters (same as \w in PCRE)
+```
+
+**Именованные классы POSIX** переносимы между локалями и доступны в BRE и ERE внутри `[...]`:
+
+| Класс | Значение |
+|---|---|
+| `[:alpha:]` | Буквы (с учётом локали) |
+| `[:digit:]` | `0-9` |
+| `[:alnum:]` | Буквы и цифры |
+| `[:space:]` | Пробельные символы, включая табуляцию и перевод строки |
+| `[:upper:]` | Заглавные буквы |
+| `[:lower:]` | Строчные буквы |
+| `[:punct:]` | Знаки пунктуации |
+
+```bash
+# POSIX class usage — note the double brackets: one for the class, one for the character class
+grep "[[:digit:]]\{3\}-[[:digit:]]\{4\}" contacts.txt   # BRE phone pattern
+grep -E "[[:alpha:]][[:digit:]]+" codes.txt              # ERE: letter then digits
+```
+
+**Сокращённые классы PCRE** (требуют `grep -P`, Python, Go, JavaScript и т. п.):
+
+| Сокращение | Эквивалент |
+|---|---|
+| `\d` | `[0-9]` |
+| `\D` | `[^0-9]` |
+| `\w` | `[a-zA-Z0-9_]` |
+| `\W` | `[^a-zA-Z0-9_]` |
+| `\s` | `[ \t\r\n\f]` |
+| `\S` | `[^ \t\r\n\f]` |
+
+**`.` совпадает с любым символом, кроме перевода строки.** Частая ошибка — использовать точку как буквальный символ, например в IP-адресе. Regex `192.168.1.1` также совпадёт с `192X168Y1Z1`. Экранируйте точки: `192\.168\.1\.1`.
+
+**Особенность локали:** POSIX-классы вроде `[:alpha:]` учитывают локаль. В локали `C` они совпадают только с ASCII, а в `UTF-8` могут включать символы с диакритикой. Для предсказуемого поведения инфраструктурных скриптов задавайте в начале `export LC_ALL=C`.
+
+---
+
+### Якоря и границы
+
+Якоря соответствуют позиции в строке, а не символу, и не занимают ширину.
+
+| Якорь | Значение | Примечания |
+|---|---|---|
+| `^` | Начало строки | В многострочном режиме совпадает после `\n` |
+ | Конец строки | Совпадает перед `\n` |
+| `\b` | Граница слова | PCRE (`grep -P`) или ERE в GNU grep |
+| `\<` | Начало слова | GNU grep BRE/ERE |
+| `\>` | Конец слова | GNU grep BRE/ERE |
+
+```bash
+# Only lines that are ONLY an IP address (nothing else on the line)
+grep -E "^([0-9]{1,3}\.){3}[0-9]{1,3}$" ips.txt
+
+# Match "error" as a whole word — not "errors" or "terror"
+grep -P "\berror\b" app.log
+grep -w "error" app.log       # -w is equivalent for simple words
+
+# Lines that are blank
+grep "^$" file.txt            # truly empty
+grep -E "^\s*$" file.txt      # empty or whitespace-only (GNU ERE supports \s)
+
+# Lines that do NOT start with a comment or blank (common config parsing pattern)
+grep -E "^[^#[:space:]]" config.conf
+```
+
+ внутри `[...]` имеют другое значение.** `[^abc]` означает «любой символ, кроме a, b или c». `^` обозначает начало строки только в начале всего шаблона или группы, но не внутри класса символов.
+
+**`---
+title: Регулярные выражения
+module: bash
+duration_min: 20
+difficulty: intermediate
+tags: [bash, regex, grep, egrep, sed, patterns, ERE, BRE]
+exercises: 4
+---
+
+## Обзор
+
+Регулярные выражения — универсальный язык описания текстовых шаблонов. В DevOps они используются ежедневно: поиск ошибок в логах приложений, извлечение IP из access-логов, проверка значений конфигурации, фильтрация вывода `kubectl`, написание правил `location` в nginx и построение пайплайнов оповещений. Хорошее владение regex позволяет писать точные и быстрые однострочные команды без множества лишних вызовов `awk`.
+
+Принцип regex — декларативный поиск по шаблону: вы описываете форму нужного текста, а движок находит совпадения. Большинство знакомых инструментов (`grep`, `sed`, `awk`, Python, Go, JavaScript, Terraform, GitHub Actions) используют близкие наборы регулярных выражений с небольшими различиями. Освоение POSIX ERE и расширений, совместимых с Perl, покрывает почти весь DevOps-стек.
+
+Регулярные выражения используются в DevOps на нескольких уровнях: интерактивная работа в shell (`grep`, `awk`), скриптовая автоматизация (`=~` в Bash, sed в конвейерах), сбор журналов (Fluentd, Logstash, `pipeline_stages` Promtail) и конфигурация платформ (nginx `location ~`, admission webhooks Kubernetes, политики OPA). Изучение regex — один из самых выгодных способов вложить время в технические навыки.
+
+---
+
+## Основные понятия
+
+### Два варианта: BRE и ERE
+
+Инструменты POSIX используют один из двух диалектов regex. Знание диалекта по умолчанию помогает избежать раздражающих ошибок вроде «почему `+` не работает?».
+
+| Возможность | BRE (по умолчанию в grep) | ERE (grep -E, egrep) |
+|---|---|---|
+| Группировка | `\(abc\)` | `(abc)` |
+| Альтернатива | `\|` | `\|` |
+| Один или больше | `\+` | `+` |
+| Ноль или один | `\?` | `?` |
+| Повторение | `\{3\}` | `{3}` |
+| Обратные ссылки | `\1` | `\1` |
+
+**Практическое правило:** используйте `grep -E` (ERE). Синтаксис чище и требует меньше обратных косых черт, а также совпадает с ожиданиями большинства инструментов. `grep -P` нужен для Perl-совместимых выражений (PCRE), когда требуются lookahead, lookbehind, `\d`, `\s` или `\K`. PCRE доступен не во всех системах: например, стандартный grep в macOS его не поддерживает.
+
+```bash
+# BRE — clunky
+grep "^\(ERROR\|WARN\)\{1,\}" app.log
+
+# ERE — equivalent, readable
+grep -E "^(ERROR|WARN)+" app.log
+
+# PCRE — when you need lookahead or \d
+grep -P "(?<=\[)\d{4}-\d{2}-\d{2}" app.log
+```
+
+**`sed` по умолчанию использует BRE.** Для ERE применяйте `sed -E` или `sed -r` в старых версиях GNU sed. `awk` использует собственный диалект, похожий на ERE, и не требует отдельного флага.
+
+---
+
+### Классы символов
+
+Классы символов задают набор допустимых символов в одной позиции.
+
+```
+.          any character except newline
+[abc]      literal a, b, or c
+[^abc]     anything except a, b, or c
+[a-z]      lowercase letters a through z
+[A-Z]      uppercase letters
+[0-9]      digits 0–9
+[a-zA-Z0-9_]  word characters (same as \w in PCRE)
+```
+
+**Именованные классы POSIX** переносимы между локалями и доступны в BRE и ERE внутри `[...]`:
+
+| Класс | Значение |
+|---|---|
+| `[:alpha:]` | Буквы (с учётом локали) |
+| `[:digit:]` | `0-9` |
+| `[:alnum:]` | Буквы и цифры |
+| `[:space:]` | Пробельные символы, включая табуляцию и перевод строки |
+| `[:upper:]` | Заглавные буквы |
+| `[:lower:]` | Строчные буквы |
+| `[:punct:]` | Знаки пунктуации |
+
+```bash
+# POSIX class usage — note the double brackets: one for the class, one for the character class
+grep "[[:digit:]]\{3\}-[[:digit:]]\{4\}" contacts.txt   # BRE phone pattern
+grep -E "[[:alpha:]][[:digit:]]+" codes.txt              # ERE: letter then digits
+```
+
+**Сокращённые классы PCRE** (требуют `grep -P`, Python, Go, JavaScript и т. п.):
+
+| Сокращение | Эквивалент |
+|---|---|
+| `\d` | `[0-9]` |
+| `\D` | `[^0-9]` |
+| `\w` | `[a-zA-Z0-9_]` |
+| `\W` | `[^a-zA-Z0-9_]` |
+| `\s` | `[ \t\r\n\f]` |
+| `\S` | `[^ \t\r\n\f]` |
+
+**`.` совпадает с любым символом, кроме перевода строки.** Частая ошибка — использовать точку как буквальный символ, например в IP-адресе. Regex `192.168.1.1` также совпадёт с `192X168Y1Z1`. Экранируйте точки: `192\.168\.1\.1`.
+
+**Особенность локали:** POSIX-классы вроде `[:alpha:]` учитывают локаль. В локали `C` они совпадают только с ASCII, а в `UTF-8` могут включать символы с диакритикой. Для предсказуемого поведения инфраструктурных скриптов задавайте в начале `export LC_ALL=C`.
+
+---
+
+### Якоря и границы
+
+Якоря соответствуют позиции в строке, а не символу, и не занимают ширину.
+
+| Якорь | Значение | Примечания |
+|---|---|---|
+| `^` | Начало строки | В многострочном режиме совпадает после `\n` |
+| `---
+title: Регулярные выражения
+module: bash
+duration_min: 20
+difficulty: intermediate
+tags: [bash, regex, grep, egrep, sed, patterns, ERE, BRE]
+exercises: 4
+---
+
+## Обзор
+
+Регулярные выражения — универсальный язык описания текстовых шаблонов. В DevOps они используются ежедневно: поиск ошибок в логах приложений, извлечение IP из access-логов, проверка значений конфигурации, фильтрация вывода `kubectl`, написание правил `location` в nginx и построение пайплайнов оповещений. Хорошее владение regex позволяет писать точные и быстрые однострочные команды без множества лишних вызовов `awk`.
+
+Принцип regex — декларативный поиск по шаблону: вы описываете форму нужного текста, а движок находит совпадения. Большинство знакомых инструментов (`grep`, `sed`, `awk`, Python, Go, JavaScript, Terraform, GitHub Actions) используют близкие наборы регулярных выражений с небольшими различиями. Освоение POSIX ERE и расширений, совместимых с Perl, покрывает почти весь DevOps-стек.
+
+Регулярные выражения используются в DevOps на нескольких уровнях: интерактивная работа в shell (`grep`, `awk`), скриптовая автоматизация (`=~` в Bash, sed в конвейерах), сбор журналов (Fluentd, Logstash, `pipeline_stages` Promtail) и конфигурация платформ (nginx `location ~`, admission webhooks Kubernetes, политики OPA). Изучение regex — один из самых выгодных способов вложить время в технические навыки.
+
+---
+
+## Основные понятия
+
+### Два варианта: BRE и ERE
+
+Инструменты POSIX используют один из двух диалектов regex. Знание диалекта по умолчанию помогает избежать раздражающих ошибок вроде «почему `+` не работает?».
+
+| Возможность | BRE (по умолчанию в grep) | ERE (grep -E, egrep) |
+|---|---|---|
+| Группировка | `\(abc\)` | `(abc)` |
+| Альтернатива | `\|` | `\|` |
+| Один или больше | `\+` | `+` |
+| Ноль или один | `\?` | `?` |
+| Повторение | `\{3\}` | `{3}` |
+| Обратные ссылки | `\1` | `\1` |
+
+**Практическое правило:** используйте `grep -E` (ERE). Синтаксис чище и требует меньше обратных косых черт, а также совпадает с ожиданиями большинства инструментов. `grep -P` нужен для Perl-совместимых выражений (PCRE), когда требуются lookahead, lookbehind, `\d`, `\s` или `\K`. PCRE доступен не во всех системах: например, стандартный grep в macOS его не поддерживает.
+
+```bash
+# BRE — clunky
+grep "^\(ERROR\|WARN\)\{1,\}" app.log
+
+# ERE — equivalent, readable
+grep -E "^(ERROR|WARN)+" app.log
+
+# PCRE — when you need lookahead or \d
+grep -P "(?<=\[)\d{4}-\d{2}-\d{2}" app.log
+```
+
+**`sed` по умолчанию использует BRE.** Для ERE применяйте `sed -E` или `sed -r` в старых версиях GNU sed. `awk` использует собственный диалект, похожий на ERE, и не требует отдельного флага.
+
+---
+
+### Классы символов
+
+Классы символов задают набор допустимых символов в одной позиции.
+
+```
+.          any character except newline
+[abc]      literal a, b, or c
+[^abc]     anything except a, b, or c
+[a-z]      lowercase letters a through z
+[A-Z]      uppercase letters
+[0-9]      digits 0–9
+[a-zA-Z0-9_]  word characters (same as \w in PCRE)
+```
+
+**Именованные классы POSIX** переносимы между локалями и доступны в BRE и ERE внутри `[...]`:
+
+| Класс | Значение |
+|---|---|
+| `[:alpha:]` | Буквы (с учётом локали) |
+| `[:digit:]` | `0-9` |
+| `[:alnum:]` | Буквы и цифры |
+| `[:space:]` | Пробельные символы, включая табуляцию и перевод строки |
+| `[:upper:]` | Заглавные буквы |
+| `[:lower:]` | Строчные буквы |
+| `[:punct:]` | Знаки пунктуации |
+
+```bash
+# POSIX class usage — note the double brackets: one for the class, one for the character class
+grep "[[:digit:]]\{3\}-[[:digit:]]\{4\}" contacts.txt   # BRE phone pattern
+grep -E "[[:alpha:]][[:digit:]]+" codes.txt              # ERE: letter then digits
+```
+
+**Сокращённые классы PCRE** (требуют `grep -P`, Python, Go, JavaScript и т. п.):
+
+| Сокращение | Эквивалент |
+|---|---|
+| `\d` | `[0-9]` |
+| `\D` | `[^0-9]` |
+| `\w` | `[a-zA-Z0-9_]` |
+| `\W` | `[^a-zA-Z0-9_]` |
+| `\s` | `[ \t\r\n\f]` |
+| `\S` | `[^ \t\r\n\f]` |
+
+**`.` совпадает с любым символом, кроме перевода строки.** Частая ошибка — использовать точку как буквальный символ, например в IP-адресе. Regex `192.168.1.1` также совпадёт с `192X168Y1Z1`. Экранируйте точки: `192\.168\.1\.1`.
+
+**Особенность локали:** POSIX-классы вроде `[:alpha:]` учитывают локаль. В локали `C` они совпадают только с ASCII, а в `UTF-8` могут включать символы с диакритикой. Для предсказуемого поведения инфраструктурных скриптов задавайте в начале `export LC_ALL=C`.
+
+---
+
+### Якоря и границы
+
+Якоря соответствуют позиции в строке, а не символу, и не занимают ширину.
+
+| Якорь | Значение | Примечания |
+|---|---|---|
+| `^` | Начало строки | В многострочном режиме совпадает после `\n` |
+ | Конец строки | Совпадает перед `\n` |
+| `\b` | Граница слова | PCRE (`grep -P`) или ERE в GNU grep |
+| `\<` | Начало слова | GNU grep BRE/ERE |
+| `\>` | Конец слова | GNU grep BRE/ERE |
+
+```bash
+# Only lines that are ONLY an IP address (nothing else on the line)
+grep -E "^([0-9]{1,3}\.){3}[0-9]{1,3}$" ips.txt
+
+# Match "error" as a whole word — not "errors" or "terror"
+grep -P "\berror\b" app.log
+grep -w "error" app.log       # -w is equivalent for simple words
+
+# Lines that are blank
+grep "^$" file.txt            # truly empty
+grep -E "^\s*$" file.txt      # empty or whitespace-only (GNU ERE supports \s)
+
+# Lines that do NOT start with a comment or blank (common config parsing pattern)
+grep -E "^[^#[:space:]]" config.conf
+```
+
+**`^` и `---
+title: Регулярные выражения
+module: bash
+duration_min: 20
+difficulty: intermediate
+tags: [bash, regex, grep, egrep, sed, patterns, ERE, BRE]
+exercises: 4
+---
+
+## Обзор
+
+Регулярные выражения — универсальный язык описания текстовых шаблонов. В DevOps они используются ежедневно: поиск ошибок в логах приложений, извлечение IP из access-логов, проверка значений конфигурации, фильтрация вывода `kubectl`, написание правил `location` в nginx и построение пайплайнов оповещений. Хорошее владение regex позволяет писать точные и быстрые однострочные команды без множества лишних вызовов `awk`.
+
+Принцип regex — декларативный поиск по шаблону: вы описываете форму нужного текста, а движок находит совпадения. Большинство знакомых инструментов (`grep`, `sed`, `awk`, Python, Go, JavaScript, Terraform, GitHub Actions) используют близкие наборы регулярных выражений с небольшими различиями. Освоение POSIX ERE и расширений, совместимых с Perl, покрывает почти весь DevOps-стек.
+
+Регулярные выражения используются в DevOps на нескольких уровнях: интерактивная работа в shell (`grep`, `awk`), скриптовая автоматизация (`=~` в Bash, sed в конвейерах), сбор журналов (Fluentd, Logstash, `pipeline_stages` Promtail) и конфигурация платформ (nginx `location ~`, admission webhooks Kubernetes, политики OPA). Изучение regex — один из самых выгодных способов вложить время в технические навыки.
+
+---
+
+## Основные понятия
+
+### Два варианта: BRE и ERE
+
+Инструменты POSIX используют один из двух диалектов regex. Знание диалекта по умолчанию помогает избежать раздражающих ошибок вроде «почему `+` не работает?».
+
+| Возможность | BRE (по умолчанию в grep) | ERE (grep -E, egrep) |
+|---|---|---|
+| Группировка | `\(abc\)` | `(abc)` |
+| Альтернатива | `\|` | `\|` |
+| Один или больше | `\+` | `+` |
+| Ноль или один | `\?` | `?` |
+| Повторение | `\{3\}` | `{3}` |
+| Обратные ссылки | `\1` | `\1` |
+
+**Практическое правило:** используйте `grep -E` (ERE). Синтаксис чище и требует меньше обратных косых черт, а также совпадает с ожиданиями большинства инструментов. `grep -P` нужен для Perl-совместимых выражений (PCRE), когда требуются lookahead, lookbehind, `\d`, `\s` или `\K`. PCRE доступен не во всех системах: например, стандартный grep в macOS его не поддерживает.
+
+```bash
+# BRE — clunky
+grep "^\(ERROR\|WARN\)\{1,\}" app.log
+
+# ERE — equivalent, readable
+grep -E "^(ERROR|WARN)+" app.log
+
+# PCRE — when you need lookahead or \d
+grep -P "(?<=\[)\d{4}-\d{2}-\d{2}" app.log
+```
+
+**`sed` по умолчанию использует BRE.** Для ERE применяйте `sed -E` или `sed -r` в старых версиях GNU sed. `awk` использует собственный диалект, похожий на ERE, и не требует отдельного флага.
+
+---
+
+### Классы символов
+
+Классы символов задают набор допустимых символов в одной позиции.
+
+```
+.          any character except newline
+[abc]      literal a, b, or c
+[^abc]     anything except a, b, or c
+[a-z]      lowercase letters a through z
+[A-Z]      uppercase letters
+[0-9]      digits 0–9
+[a-zA-Z0-9_]  word characters (same as \w in PCRE)
+```
+
+**Именованные классы POSIX** переносимы между локалями и доступны в BRE и ERE внутри `[...]`:
+
+| Класс | Значение |
+|---|---|
+| `[:alpha:]` | Буквы (с учётом локали) |
+| `[:digit:]` | `0-9` |
+| `[:alnum:]` | Буквы и цифры |
+| `[:space:]` | Пробельные символы, включая табуляцию и перевод строки |
+| `[:upper:]` | Заглавные буквы |
+| `[:lower:]` | Строчные буквы |
+| `[:punct:]` | Знаки пунктуации |
+
+```bash
+# POSIX class usage — note the double brackets: one for the class, one for the character class
+grep "[[:digit:]]\{3\}-[[:digit:]]\{4\}" contacts.txt   # BRE phone pattern
+grep -E "[[:alpha:]][[:digit:]]+" codes.txt              # ERE: letter then digits
+```
+
+**Сокращённые классы PCRE** (требуют `grep -P`, Python, Go, JavaScript и т. п.):
+
+| Сокращение | Эквивалент |
+|---|---|
+| `\d` | `[0-9]` |
+| `\D` | `[^0-9]` |
+| `\w` | `[a-zA-Z0-9_]` |
+| `\W` | `[^a-zA-Z0-9_]` |
+| `\s` | `[ \t\r\n\f]` |
+| `\S` | `[^ \t\r\n\f]` |
+
+**`.` совпадает с любым символом, кроме перевода строки.** Частая ошибка — использовать точку как буквальный символ, например в IP-адресе. Regex `192.168.1.1` также совпадёт с `192X168Y1Z1`. Экранируйте точки: `192\.168\.1\.1`.
+
+**Особенность локали:** POSIX-классы вроде `[:alpha:]` учитывают локаль. В локали `C` они совпадают только с ASCII, а в `UTF-8` могут включать символы с диакритикой. Для предсказуемого поведения инфраструктурных скриптов задавайте в начале `export LC_ALL=C`.
+
+---
+
+### Якоря и границы
+
+Якоря соответствуют позиции в строке, а не символу, и не занимают ширину.
+
+| Якорь | Значение | Примечания |
+|---|---|---|
+| `^` | Начало строки | В многострочном режиме совпадает после `\n` |
+| `---
+title: Регулярные выражения
+module: bash
+duration_min: 20
+difficulty: intermediate
+tags: [bash, regex, grep, egrep, sed, patterns, ERE, BRE]
+exercises: 4
+---
+
+## Обзор
+
+Регулярные выражения — универсальный язык описания текстовых шаблонов. В DevOps они используются ежедневно: поиск ошибок в логах приложений, извлечение IP из access-логов, проверка значений конфигурации, фильтрация вывода `kubectl`, написание правил `location` в nginx и построение пайплайнов оповещений. Хорошее владение regex позволяет писать точные и быстрые однострочные команды без множества лишних вызовов `awk`.
+
+Принцип regex — декларативный поиск по шаблону: вы описываете форму нужного текста, а движок находит совпадения. Большинство знакомых инструментов (`grep`, `sed`, `awk`, Python, Go, JavaScript, Terraform, GitHub Actions) используют близкие наборы регулярных выражений с небольшими различиями. Освоение POSIX ERE и расширений, совместимых с Perl, покрывает почти весь DevOps-стек.
+
+Регулярные выражения используются в DevOps на нескольких уровнях: интерактивная работа в shell (`grep`, `awk`), скриптовая автоматизация (`=~` в Bash, sed в конвейерах), сбор журналов (Fluentd, Logstash, `pipeline_stages` Promtail) и конфигурация платформ (nginx `location ~`, admission webhooks Kubernetes, политики OPA). Изучение regex — один из самых выгодных способов вложить время в технические навыки.
+
+---
+
+## Основные понятия
+
+### Два варианта: BRE и ERE
+
+Инструменты POSIX используют один из двух диалектов regex. Знание диалекта по умолчанию помогает избежать раздражающих ошибок вроде «почему `+` не работает?».
+
+| Возможность | BRE (по умолчанию в grep) | ERE (grep -E, egrep) |
+|---|---|---|
+| Группировка | `\(abc\)` | `(abc)` |
+| Альтернатива | `\|` | `\|` |
+| Один или больше | `\+` | `+` |
+| Ноль или один | `\?` | `?` |
+| Повторение | `\{3\}` | `{3}` |
+| Обратные ссылки | `\1` | `\1` |
+
+**Практическое правило:** используйте `grep -E` (ERE). Синтаксис чище и требует меньше обратных косых черт, а также совпадает с ожиданиями большинства инструментов. `grep -P` нужен для Perl-совместимых выражений (PCRE), когда требуются lookahead, lookbehind, `\d`, `\s` или `\K`. PCRE доступен не во всех системах: например, стандартный grep в macOS его не поддерживает.
+
+```bash
+# BRE — clunky
+grep "^\(ERROR\|WARN\)\{1,\}" app.log
+
+# ERE — equivalent, readable
+grep -E "^(ERROR|WARN)+" app.log
+
+# PCRE — when you need lookahead or \d
+grep -P "(?<=\[)\d{4}-\d{2}-\d{2}" app.log
+```
+
+**`sed` по умолчанию использует BRE.** Для ERE применяйте `sed -E` или `sed -r` в старых версиях GNU sed. `awk` использует собственный диалект, похожий на ERE, и не требует отдельного флага.
+
+---
+
+### Классы символов
+
+Классы символов задают набор допустимых символов в одной позиции.
+
+```
+.          any character except newline
+[abc]      literal a, b, or c
+[^abc]     anything except a, b, or c
+[a-z]      lowercase letters a through z
+[A-Z]      uppercase letters
+[0-9]      digits 0–9
+[a-zA-Z0-9_]  word characters (same as \w in PCRE)
+```
+
+**Именованные классы POSIX** переносимы между локалями и доступны в BRE и ERE внутри `[...]`:
+
+| Класс | Значение |
+|---|---|
+| `[:alpha:]` | Буквы (с учётом локали) |
+| `[:digit:]` | `0-9` |
+| `[:alnum:]` | Буквы и цифры |
+| `[:space:]` | Пробельные символы, включая табуляцию и перевод строки |
+| `[:upper:]` | Заглавные буквы |
+| `[:lower:]` | Строчные буквы |
+| `[:punct:]` | Знаки пунктуации |
+
+```bash
+# POSIX class usage — note the double brackets: one for the class, one for the character class
+grep "[[:digit:]]\{3\}-[[:digit:]]\{4\}" contacts.txt   # BRE phone pattern
+grep -E "[[:alpha:]][[:digit:]]+" codes.txt              # ERE: letter then digits
+```
+
+**Сокращённые классы PCRE** (требуют `grep -P`, Python, Go, JavaScript и т. п.):
+
+| Сокращение | Эквивалент |
+|---|---|
+| `\d` | `[0-9]` |
+| `\D` | `[^0-9]` |
+| `\w` | `[a-zA-Z0-9_]` |
+| `\W` | `[^a-zA-Z0-9_]` |
+| `\s` | `[ \t\r\n\f]` |
+| `\S` | `[^ \t\r\n\f]` |
+
+**`.` совпадает с любым символом, кроме перевода строки.** Частая ошибка — использовать точку как буквальный символ, например в IP-адресе. Regex `192.168.1.1` также совпадёт с `192X168Y1Z1`. Экранируйте точки: `192\.168\.1\.1`.
+
+**Особенность локали:** POSIX-классы вроде `[:alpha:]` учитывают локаль. В локали `C` они совпадают только с ASCII, а в `UTF-8` могут включать символы с диакритикой. Для предсказуемого поведения инфраструктурных скриптов задавайте в начале `export LC_ALL=C`.
+
+---
+
+### Якоря и границы
+
+Якоря соответствуют позиции в строке, а не символу, и не занимают ширину.
+
+| Якорь | Значение | Примечания |
+|---|---|---|
+| `^` | Начало строки | В многострочном режиме совпадает после `\n` |
+ | Конец строки | Совпадает перед `\n` |
+| `\b` | Граница слова | PCRE (`grep -P`) или ERE в GNU grep |
+| `\<` | Начало слова | GNU grep BRE/ERE |
+| `\>` | Конец слова | GNU grep BRE/ERE |
+
+```bash
+# Only lines that are ONLY an IP address (nothing else on the line)
+grep -E "^([0-9]{1,3}\.){3}[0-9]{1,3}$" ips.txt
+
+# Match "error" as a whole word — not "errors" or "terror"
+grep -P "\berror\b" app.log
+grep -w "error" app.log       # -w is equivalent for simple words
+
+# Lines that are blank
+grep "^$" file.txt            # truly empty
+grep -E "^\s*$" file.txt      # empty or whitespace-only (GNU ERE supports \s)
+
+# Lines that do NOT start with a comment or blank (common config parsing pattern)
+grep -E "^[^#[:space:]]" config.conf
+```
+
+ внутри `[...]` имеют другое значение.** `[^abc]` означает «любой символ, кроме a, b или c». `^` обозначает начало строки только в начале всего шаблона или группы, но не внутри класса символов.
+
+ совпадает перед завершающим переводом строки.** В файле `grep "end$"` найдёт строки, заканчивающиеся на `end`, хотя последний байт строки — `\n`. Это предусмотренное поведение POSIX: перевод строки завершает строку и не считается её содержимым.
+
+---
+
+### Квантификаторы
+
+Квантификаторы применяются к предыдущему элементу: символу, классу или группе.
+
+| Квантификатор | Значение | Диалект |
+|---|---|---|
+| `*` | Ноль или больше (жадный) | BRE и ERE |
+| `+` | Один или больше (жадный) | ERE (в BRE: `\+`) |
+| `?` | Ноль или один (жадный) | ERE (в BRE: `\?`) |
+| `{n}` | Ровно n раз | ERE (в BRE: `\{n\}`) |
+| `{n,}` | n или больше | ERE |
+| `{n,m}` | От n до m включительно | ERE |
+| `*?` `+?` `??` | Нежадные варианты | Только PCRE |
+
+**Жадные и нежадные квантификаторы:** обычные квантификаторы жадные — они захватывают максимально возможный фрагмент, при котором весь шаблон остаётся успешным. Это важно при извлечении текста между разделителями.
 
 ```bash
 # Greedy: matches from FIRST < to LAST > on the line — often wrong
@@ -158,15 +972,15 @@ echo "<b>bold</b> and <i>italic</i>" | grep -oP "<.+?>"
 # Output: <b>  </b>  <i>  </i>  (four separate matches)
 ```
 
-**`{n,m}` has no spaces.** `{3, 5}` is treated as a literal string in most engines, not a quantifier. Write `{3,5}`.
+**В `{n,m}` не должно быть пробелов.** Большинство движков воспринимают `{3, 5}` как буквальную строку, а не квантификатор. Правильно: `{3,5}`.
 
-**`*` on an empty match loops forever in some engines.** `(a*)*` is a pathological pattern that causes catastrophic backtracking. In log processing pipelines, a runaway regex can pin a CPU core. Keep quantifiers specific.
+**`*` для пустого совпадения может вызвать бесконечную работу некоторых движков.** Шаблон `(a*)*` способен вызвать катастрофический backtracking. В конвейере обработки журналов такая regex может занять целое ядро CPU. Делайте квантификаторы конкретными.
 
 ---
 
-### Groups and Alternation
+### Группы и альтернативы
 
-Groups serve two purposes: scoping quantifiers and capturing submatches for backreferences or extraction.
+Группы нужны для двух задач: ограничения области действия квантификаторов и захвата подстрок для обратных ссылок или извлечения.
 
 ```bash
 # Alternation scoped to a group — match lines with any of three severity levels
@@ -181,7 +995,7 @@ grep -P "(?:ERROR|WARN): (.+)" app.log
 # Only the content after ": " is captured in group \1
 ```
 
-**Backreferences** let you reference a previously captured group within the same pattern. In `sed`, they enable field rearrangement:
+**Обратные ссылки** позволяют ссылаться на ранее захваченную группу внутри того же шаблона. В `sed` это позволяет переставлять поля:
 
 ```bash
 # Swap first and last name: "Smith, John" → "John Smith"
@@ -194,17 +1008,17 @@ echo "2024-01-15" | sed -E 's/([0-9]{4})-([0-9]{2})-([0-9]{2})/\3\/\2\/\1/'
 grep -E "\b([a-z]+) \1\b" document.txt
 ```
 
-**Alternation binds loosely — this is a common bug.** `cat|dog food` matches "cat" OR "dog food", not "cat food" OR "dog food". Always use groups to scope alternation: `(cat|dog) food`.
+**Альтернатива имеет низкий приоритет — это частая ошибка.** `cat|dog food` соответствует `cat` ИЛИ `dog food`, а не `cat food` ИЛИ `dog food`. Используйте группу: `(cat|dog) food`.
 
-**Capture group numbering** follows left-parenthesis order, left to right. In `(a(b))(c)`: group 1 = `ab`, group 2 = `b`, group 3 = `c`. Non-capturing groups `(?:...)` do not consume a number.
+**Нумерация групп захвата** идёт слева направо по открывающим скобкам. В `(a(b))(c)`: группа 1 = `ab`, группа 2 = `b`, группа 3 = `c`. Незахватывающие группы `(?:...)` не получают номер.
 
 ---
 
-### grep in Practice
+### Практическое использование grep
 
-`grep` is the primary tool for searching logs and command output. Know these flags by heart.
+`grep` — основной инструмент поиска в журналах и выводе команд. Важно знать эти флаги наизусть.
 
-| Flag | Effect |
+| Флаг | Действие |
 |---|---|
 | `-E` | Use ERE dialect |
 | `-P` | Use PCRE dialect |
