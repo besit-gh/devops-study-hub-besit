@@ -5,6 +5,13 @@ import remarkGfm from 'remark-gfm'
 
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
+function localizeReferenceHeaders(markdown) {
+  return markdown
+    .replace(/\|\s*Command\s*\|\s*Description\s*\|/g, '| Команда | Назначение |')
+    .replace(/\|\s*Pattern\s*\|\s*Description\s*\|/g, '| Шаблон | Назначение |')
+    .replace(/\|\s*Instruction\s*\|\s*Description\s*\|/g, '| Инструкция | Назначение |')
+}
+
 function splitSections(markdown) {
   const parts = markdown.split(/\n(?=## )/)
   return {
@@ -26,7 +33,7 @@ export default function Reference() {
     setQuery('')
     fetch(`${API}/reference/${moduleSlug}`)
       .then(r => { if (!r.ok) { setNotFound(true); return null } return r.json() })
-      .then(d => { if (d) setContent(d.content) })
+      .then(d => { if (d) setContent(localizeReferenceHeaders(d.content)) })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false))
   }, [moduleSlug])
