@@ -17,19 +17,19 @@ exercises: 4
 roles/
   nginx/
     tasks/
-      main.yml       # entry point — tasks auto-loaded
+      main.yml       # точка входа — задачи загружаются автоматически
     handlers/
-      main.yml       # handlers auto-loaded
+      main.yml       # обработчики загружаются автоматически
     templates/
-      nginx.conf.j2  # Jinja2 templates
+      nginx.conf.j2  # шаблоны Jinja2
     files/
-      mime.types     # static files (used with copy module)
+      mime.types     # статические файлы (используются модулем copy)
     vars/
-      main.yml       # role variables (high precedence, not easily overridden)
+      main.yml       # переменные роли (высокий приоритет, их сложнее переопределить)
     defaults/
-      main.yml       # default values (low precedence, easily overridden by caller)
+      main.yml       # значения по умолчанию (низкий приоритет, вызывающая конфигурация легко их переопределяет)
     meta/
-      main.yml       # role dependencies, metadata
+      main.yml       # зависимости и метаданные роли
     README.md        # documentation
 ```
 
@@ -39,26 +39,26 @@ roles/
 ```yaml
 # roles/nginx/tasks/main.yml
 ---
-- name: Install nginx
+- name: Установить nginx
   ansible.builtin.package:
     name: nginx
     state: present
 
-- name: Create log directory
+- name: Создать каталог журналов
   ansible.builtin.file:
     path: "{{ nginx_log_dir }}"
     state: directory
     owner: www-data
     mode: "0755"
 
-- name: Deploy nginx configuration
+- name: Развернуть конфигурацию nginx
   ansible.builtin.template:
-    src: nginx.conf.j2              # Ansible looks in roles/nginx/templates/
+    src: nginx.conf.j2              # Ansible ищет файл в roles/nginx/templates/
     dest: /etc/nginx/nginx.conf
-    validate: nginx -t -c %s       # validate before installing
-  notify: Reload nginx
+    validate: nginx -t -c %s       # проверить конфигурацию перед установкой
+  notify: Перезагрузить nginx
 
-- name: Start and enable nginx
+- name: Запустить nginx и включить автозапуск
   ansible.builtin.service:
     name: nginx
     state: started
@@ -73,7 +73,7 @@ nginx_worker_connections: 1024
 nginx_log_dir: /var/log/nginx
 nginx_user: www-data
 nginx_port: 80
-nginx_server_name: "_"             # catch-all
+nginx_server_name: "_"             # обработка запросов для любого имени хоста
 nginx_extra_params: {}
 ```
 
@@ -83,12 +83,12 @@ nginx_extra_params: {}
 ```yaml
 # roles/nginx/handlers/main.yml
 ---
-- name: Reload nginx
+- name: Перезагрузить nginx
   ansible.builtin.service:
     name: nginx
     state: reloaded
 
-- name: Restart nginx
+- name: Перезапустить nginx
   ansible.builtin.service:
     name: nginx
     state: restarted
@@ -126,7 +126,7 @@ http {
 # roles/nginx/meta/main.yml
 galaxy_info:
   author: developer
-  description: Nginx web server role
+  description: Роль для настройки веб-сервера Nginx
   license: MIT
   min_ansible_version: "2.14"
   platforms:
@@ -136,21 +136,21 @@ galaxy_info:
       versions: [8, 9]
 
 dependencies:
-  - role: common        # runs before this role
+  - role: common        # выполняется перед этой ролью
   - role: geerlingguy.git   # from Galaxy
 ```
 
 ### Использование ролей в playbook
 ```yaml
 ---
-- name: Configure web tier
+- name: Настроить веб-уровень
   hosts: webservers
   become: true
   roles:
     - role: common
     - role: nginx
       vars:
-        nginx_port: 8080              # override defaults for this play
+        nginx_port: 8080              # переопределить значения по умолчанию для этого play
         nginx_server_name: api.example.com
     - role: certbot
       when: ansible_facts.os_family == "Debian"
@@ -159,13 +159,13 @@ dependencies:
 Альтернатива с `import_role` / `include_role` (поддерживает условия и циклы):
 ```yaml
 tasks:
-  - name: Apply nginx role
+  - name: Применить роль nginx
     ansible.builtin.import_role:
       name: nginx
     vars:
       nginx_port: 8080
 
-  - name: Apply app role on primary only
+  - name: Применить роль приложения только на основном узле
     ansible.builtin.include_role:
       name: myapp
     when: inventory_hostname == groups['webservers'][0]
@@ -226,29 +226,29 @@ Molecule — стандартный фреймворк для тестирова
 ```bash
 pip install molecule molecule-docker
 cd roles/nginx
-molecule init scenario           # creates molecule/default/ structure
-molecule test                    # lint → create → converge → verify → destroy
-molecule converge                # create + apply role (without destroying)
-molecule verify                  # run tests only
-molecule destroy                 # clean up
+molecule init scenario           # создать структуру каталогов molecule/default/
+molecule test                    # проверка стиля → создание → применение роли → проверка → удаление
+molecule converge                # создать окружение и применить роль (без удаления)
+molecule verify                  # выполнить только тесты
+molecule destroy                 # очистить окружение
 ```
 
 ```yaml
 # molecule/default/verify.yml
 ---
-- name: Verify nginx role
+- name: Проверить роль nginx
   hosts: all
   tasks:
-    - name: Check nginx is running
+    - name: Проверить, что nginx запущен
       ansible.builtin.service_facts:
 
-    - name: Assert nginx is active
+    - name: Убедиться, что nginx активен
       ansible.builtin.assert:
         that:
           - "'nginx' in services"
           - "services.nginx.state == 'running'"
 
-    - name: Check nginx port 80
+    - name: Проверить порт 80 nginx
       ansible.builtin.wait_for:
         port: 80
         timeout: 5
@@ -260,7 +260,7 @@ molecule destroy                 # clean up
 ```yaml
 # roles/common/tasks/main.yml
 ---
-- name: Install common packages
+- name: Установить общие пакеты
   ansible.builtin.package:
     name:
       - curl
@@ -270,11 +270,11 @@ molecule destroy                 # clean up
       - python3-pip
     state: present
 
-- name: Set timezone
+- name: Настроить часовой пояс
   community.general.timezone:
     name: "{{ common_timezone }}"
 
-- name: Configure sysctl
+- name: Настроить параметры sysctl
   ansible.posix.sysctl:
     name: "{{ item.key }}"
     value: "{{ item.value }}"
