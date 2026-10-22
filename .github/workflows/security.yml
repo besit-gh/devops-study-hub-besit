@@ -41,6 +41,10 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
       - name: npm audit
         working-directory: frontend
         # --omit=dev: esbuild/vite/vitest are dev-only tools, never served to users.
