@@ -17,7 +17,7 @@ API Opsgenie — основа интеграций. Понимание его р
 
 Base URL: `https://api.opsgenie.com/v2/`
 
-Authentication: API key in the `Authorization` header.
+Аутентификация: API-ключ в заголовке `Authorization`.
 
 ```bash
 # Создать оповещение через REST API
@@ -51,7 +51,7 @@ curl -X GET "https://api.opsgenie.com/v2/alerts?query=status:open AND tag:produc
 
 Поле `alias` служит ключом дедупликации: два оповещения с одинаковым псевдонимом считаются одним и тем же оповещением.
 
-### Integrations Overview
+### Обзор интеграций
 
 Интеграции Opsgenie настраиваются для каждой команды и создают **ключ API интеграции**, на который внешний инструмент отправляет оповещения.
 
@@ -72,7 +72,7 @@ curl -X GET "https://api.opsgenie.com/v2/alerts?query=status:open AND tag:produc
 | PagerDuty migration | Import tool | Migrate schedules/escalations |
 | Generic webhook | Generic API | For anything not natively supported |
 
-### Prometheus / Alertmanager Integration
+### Интеграция с Prometheus / Alertmanager
 В Prometheus срабатывают правила оповещений → Alertmanager выполняет маршрутизацию → Opsgenie.
 
 Alertmanager configuration:
