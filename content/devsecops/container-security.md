@@ -77,7 +77,7 @@ docker scout compare myapp:v1.1 --to myapp:v1.0        # diff vulnerabilities be
     sarif_file: 'trivy-results.sarif'
 ```
 
-**Gotcha:** `trivy image` on a locally built image scans the image in the Docker daemon. If you push first and scan the registry URL, Trivy pulls and scans the exact digest that will be deployed — these can differ if the push step re-tags or alters the image. In CI, scan the local image immediately after build, before push.
+**Важно:** `trivy image` для локально собранного образа сканирует образ в Docker daemon. Если сначала отправить образ в реестр, а затем сканировать URL реестра, Trivy скачает и проверит конкретный digest, который будет развёрнут. Он может отличаться, если при отправке образ перемаркировали или изменили. В CI сканируйте локальный образ сразу после сборки, до отправки в реестр.
 
 | Scanner | Where it runs | Continuous monitoring | SBOM output | Config scanning |
 |---|---|---|---|---|
@@ -88,13 +88,13 @@ docker scout compare myapp:v1.1 --to myapp:v1.0        # diff vulnerabilities be
 
 ---
 
-### Dockerfile Hardening
+### Усиление безопасности Dockerfile
 
-A hardened Dockerfile reduces the attack surface of the resulting image. The goal is to produce an image that contains only what the application needs to run — nothing that helps an attacker move laterally or escalate privileges.
+Защищённый Dockerfile уменьшает поверхность атаки итогового образа. Цель — оставить в образе только то, что нужно приложению для работы, и ничего, что помогло бы злоумышленнику перемещаться по системе или повышать привилегии.
 
-#### Non-Root User
+#### Пользователь без прав root
 
-Running as root inside a container is dangerous even with namespace isolation. If a container escape vulnerability exists, a root container is far more likely to achieve host root. Always create a dedicated user.
+Запуск от root внутри контейнера опасен даже при изоляции пространствами имён. При наличии уязвимости выхода из контейнера процесс с правами root с большей вероятностью получит root-доступ на хосте. Всегда создавайте отдельного пользователя.
 
 ```dockerfile
 FROM python:3.12-slim
@@ -116,11 +116,11 @@ EXPOSE 8000
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-**Gotcha:** `EXPOSE` does not publish the port — it is documentation only. Ports below 1024 require `CAP_NET_BIND_SERVICE`. If your app binds to port 80 or 443, either change it to 8080/8443 (preferred) or grant the capability explicitly in the SecurityContext — never run the process as root just to bind a privileged port.
+**Важно:** `EXPOSE` не публикует порт, а лишь документирует его. Для портов ниже 1024 требуется `CAP_NET_BIND_SERVICE`. Если приложение слушает порт 80 или 443, предпочтительно перенести его на 8080/8443 либо явно выдать capability в SecurityContext. Не запускайте процесс от root только ради привилегированного порта.
 
-#### Minimal Base Images
+#### Минимальные базовые образы
 
-Every package in a base image is a potential CVE. Distroless images contain only the language runtime and the application — no shell, no package manager, no `curl`.
+Каждый пакет в базовом образе может содержать уязвимость CVE. Образы distroless включают только среду выполнения языка и приложение — без оболочки, менеджера пакетов и `curl`.
 
 ```dockerfile
 # Multi-stage build: build in a full image, copy artifacts into distroless
