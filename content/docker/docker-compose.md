@@ -1,5 +1,5 @@
 ---
-title: Docker Compose
+title: Docker Compose — запуск многоконтейнерных приложений
 module: docker
 duration_min: 20
 difficulty: intermediate
@@ -26,15 +26,15 @@ services:
       - app
 
   app:
-    build: .                  # build from Dockerfile in current dir
+    build: .                  # собрать образ по Dockerfile в текущем каталоге
     environment:
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_PASSWORD=${DB_PASSWORD}   # from .env file or shell env
+      - DB_PASSWORD=${DB_PASSWORD}   # из файла .env или переменной окружения оболочки
     depends_on:
       db:
-        condition: service_healthy  # wait for healthcheck to pass
-        restart: true               # restart app if db restarts (Compose 2.17+)
+        condition: service_healthy  # дождаться успешной проверки состояния
+        restart: true               # перезапустить приложение, если перезапустилась БД (Compose 2.17+)
 
   db:
     image: postgres:17
@@ -43,7 +43,7 @@ services:
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - postgres_data:/var/lib/postgresql/data   # named volume
+      - postgres_data:/var/lib/postgresql/data   # именованный том
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U myuser"]
       interval: 5s
@@ -51,7 +51,7 @@ services:
       retries: 5
 
 volumes:
-  postgres_data:   # named volumes persist across container restarts
+  postgres_data:   # именованный томs persist across container restarts
 ```
 
 ### Основные команды
@@ -118,7 +118,7 @@ services:
 networks:
   frontend:
   backend:
-    internal: true   # no internet access
+    internal: true   # без доступа в интернет
 ```
 
 ### Тома
@@ -144,24 +144,24 @@ volumes:
 
 ### Переменные окружения
 ```yaml
-# Способ 1: список в строке
+# Способ 1: список строк
 environment:
   - DB_HOST=db
   - APP_ENV=development
 
-# Способ 2: отображение (нагляднее)
+# Способ 2: отображение ключей и значений (нагляднее)
 environment:
   DB_HOST: db
   APP_ENV: development
 
-# Способ 3: из окружения shell (без значения — взять его из shell)
+# Способ 3: переменная из окружения оболочки (без значения — взять его из окружения)
 environment:
   - SECRET_KEY
 
-# Способ 4: env_file (загрузить из файла)
+# Способ 4: env_file (загрузить переменные из файла)
 env_file:
   - .env
-  - .env.local   # overrides .env
+  - .env.local   # переопределяет значения из .env
 ```
 
 Файл `.env` (загружается автоматически, если находится в том же каталоге, что и `compose.yaml`):
@@ -182,12 +182,12 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
-    profiles: [tools]   # only starts when --profile tools is used
+    profiles: [tools]   # запускается только при использовании --profile tools
 ```
 
 ```bash
-docker compose up -d                    # starts app + db only
-docker compose up -d --profile tools   # starts all including pgadmin
+docker compose up -d                    # запустить только app и db
+docker compose up -d --profile tools   # запустить все сервисы, включая pgadmin
 ```
 
 ### Проверки состояния и зависимости
@@ -199,13 +199,13 @@ db:
     interval: 5s
     timeout: 3s
     retries: 5
-    start_period: 10s   # grace period before healthcheck starts
+    start_period: 10s   # период ожидания перед началом проверки состояния
 
 app:
   depends_on:
     db:
-      condition: service_healthy   # won't start until db is healthy
-      restart: true                # restart app if db restarts (Compose 2.17+)
+      condition: service_healthy   # не запускать, пока БД не будет готова
+      restart: true                # перезапустить приложение, если перезапустилась БД (Compose 2.17+)
 ```
 
 ## Примеры
@@ -226,7 +226,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     volumes:
-      - ./backend:/app   # live code reload in dev
+      - ./backend:/app   # изменения кода сразу видны в контейнере при разработке
     environment:
       - DATABASE_URL=postgresql://user:${DB_PASS}@db:5432/myapp
       - REDIS_URL=redis://redis:6379
