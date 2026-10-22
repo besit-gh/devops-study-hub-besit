@@ -270,7 +270,7 @@ User "system:serviceaccount:production:ci-deployer" cannot update resource
 
 ### Пример 1. CI/CD-конвейер с ограниченными правами на развёртывание
 
-A CI pipeline needs to update Deployments and read ConfigMaps and Secrets in the `production` namespace — nothing else, nowhere else.
+CI-конвейеру нужно обновлять Deployment и читать ConfigMap и Secret только в пространстве имён `production`. Другие ресурсы и пространства имён ему не нужны.
 
 ```yaml
 # ci-deployer-rbac.yaml
@@ -338,9 +338,9 @@ kubectl auth can-i get pods -n staging \
 # Expected: no
 ```
 
-### Example 2: Monitoring Agent with Cluster-Wide Read Access
+### Пример 2. Агент мониторинга с правом чтения во всём кластере
 
-Prometheus needs read access to pods, services, and endpoints across all namespaces, plus node metrics and non-resource URLs. This is a legitimate ClusterRoleBinding use case because monitoring is inherently cluster-wide.
+Prometheus требуется доступ на чтение Pod, Service и Endpoint во всех пространствах имён, а также метрик узлов и URL, не являющихся ресурсами Kubernetes. Это подходящий случай для ClusterRoleBinding, поскольку мониторинг охватывает весь кластер.
 
 ```yaml
 # prometheus-rbac.yaml
@@ -399,7 +399,7 @@ kubectl auth can-i get /metrics \
 # Expected: yes
 ```
 
-### Example 3: Developer Namespace Access Using ClusterRole Reuse
+### Пример 3. Доступ разработчика к пространству имён с повторным использованием ClusterRole
 
 A platform team wants all developers to have `edit` access within their team's namespace, but not outside it. Rather than creating identical Roles in each namespace, they bind the built-in `edit` ClusterRole via a namespace-scoped `RoleBinding`.
 
