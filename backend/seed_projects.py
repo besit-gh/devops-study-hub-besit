@@ -531,8 +531,8 @@ PROJECTS = [
                 "language": "python",
                 "expected_output": "247",
                 "hints": [
-                    "Use `json.loads()` to parse the string, then navigate the nested dict to find the total hits count.",
-                    "Access `json.loads(s)['hits']['total']['value']` after `import json`.",
+                    "Разберите строку через `json.loads()`, затем найдите общее число совпадений во вложенном словаре.",
+                    "После `import json` обратитесь к `json.loads(s)['hits']['total']['value']`.",
                 ],
             },
             {
@@ -540,19 +540,19 @@ PROJECTS = [
                 "title": "Создать pipeline Logstash для логов Apache",
                 "type": "ai",
                 "prompt": (
-                    "Write a complete Logstash pipeline configuration (`logstash.conf`) that:\n"
-                    "1. **Input**: reads from a file `/var/log/apache2/access.log` with `sincedb_path => /dev/null`\n"
+                    "Напишите полную конфигурацию pipeline Logstash (`logstash.conf`), которая:\n"
+                    "1. **Input**: читает файл `/var/log/apache2/access.log` с параметром `sincedb_path => /dev/null`\n"
                     "2. **Filter**: uses `grok` to parse the Apache Combined Log Format, extracts `clientip`, `verb`, `request`, `response`, `bytes`; "
                     "uses `date` to parse the timestamp into `@timestamp`; adds a `geoip` lookup on `clientip`; "
                     "drops health-check requests where `request == '/health'`\n"
-                    "3. **Output**: sends to Elasticsearch index `apache-logs-%%{+YYYY.MM.dd}`\n\n"
-                    "Explain what the `sincedb_path => /dev/null` setting does and when you would remove it in production."
+                    "3. **Output**: отправляет данные в индекс Elasticsearch `apache-logs-%%{+YYYY.MM.dd}`\n\n"
+                    "Объясните, что делает настройка `sincedb_path => /dev/null` и почему в production её следует убрать."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Cover the three pipeline sections: `input` (file plugin with sincedb), `filter` (grok with `%{COMBINEDAPACHELOG}` + date + geoip + conditional drop), `output` (elasticsearch plugin).",
-                    "`sincedb_path => /dev/null` makes Logstash re-read the file from the start on every restart (useful for testing); remove it in production so Logstash tracks its read position.",
+                    "Опишите три секции pipeline: `input` (file-плагин с sincedb), `filter` (`grok` с `%{COMBINEDAPACHELOG}`, date, geoip и условным отбрасыванием), `output` (плагин Elasticsearch).",
+                    "`sincedb_path => /dev/null` заставляет Logstash перечитывать файл с начала при каждом перезапуске, что удобно для тестов. В production уберите этот параметр, чтобы Logstash сохранял позицию чтения.",
                 ],
             },
             {
@@ -560,10 +560,10 @@ PROJECTS = [
                 "title": "Спроектировать жизненный цикл индекса и дашборд Kibana",
                 "type": "ai",
                 "prompt": (
-                    "Design an Elasticsearch Index Lifecycle Management (ILM) policy for the Apache log index that:\n"
-                    "- Rolls over at 50GB or 30 days (whichever comes first)\n"
-                    "- Moves to warm phase after 7 days (force merge to 1 segment, set replicas to 0)\n"
-                    "- Deletes after 90 days\n\n"
+                    "Спроектируйте политику Index Lifecycle Management (ILM) для индекса логов Apache, которая:\n"
+                    "- Выполняет rollover при достижении 50 ГБ или 30 дней — в зависимости от того, что наступит раньше\n"
+                    "- Переводит индекс в фазу warm через 7 дней (force merge до одного сегмента, число реплик — 0)\n"
+                    "- Удаляет индекс через 90 дней\n\n"
                     "Then describe a Kibana dashboard for a web ops team — name the panels, "
                     "the visualisation type for each (e.g. area chart, data table, metric), "
                     "and what question each panel answers.\n\n"
@@ -573,8 +573,8 @@ PROJECTS = [
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "An ILM policy has phases: `hot` (rollover trigger), `warm` (force merge + replica reduction), `delete`; the rollover uses `max_size` and `max_age` on the hot phase.",
-                    "For the Kibana dashboard, key panels: a metric tile (total requests), an area chart (request rate over time), a data table (top URLs by 5xx count), and a bar chart (status code distribution).",
+                    "Политика ILM состоит из фаз `hot` (условие rollover), `warm` (force merge и уменьшение числа реплик) и `delete`. В фазе hot для rollover используются `max_size` и `max_age`.",
+                    "Для дашборда Kibana добавьте основные панели: метрику общего числа запросов, area chart частоты запросов во времени, таблицу URL с наибольшим количеством ошибок 5xx и bar chart распределения кодов состояния.",
                 ],
             },
         ],
