@@ -174,16 +174,16 @@ PROJECTS = [
                 "title": "Найти файлы, доступные для записи всем",
                 "type": "sandbox",
                 "prompt": (
-                    "Write a bash script that:\n"
-                    "1. Creates a temp directory `/tmp/audit_test`\n"
-                    "2. Creates `safe.conf` (permissions 644) and `danger.conf` (permissions 777) inside it\n"
-                    "3. Finds and prints only the filename (not the full path) of any world-writable file in that directory"
+                    "Напишите Bash-скрипт, который:\n"
+                    "1. Создаёт временный каталог `/tmp/audit_test`\n"
+                    "2. Создаёт в нём `safe.conf` с правами 644 и `danger.conf` с правами 777\n"
+                    "3. Находит и выводит только имя файла (без полного пути), доступного для записи всем пользователям"
                 ),
                 "language": "bash",
                 "expected_output": "danger.conf",
                 "hints": [
-                    "The `find` command has a `-perm` flag for matching file permissions — world-writable means the 'other' write bit is set.",
-                    "Use `find /tmp/audit_test -perm -o+w` to match world-writable files, then pipe to `xargs basename` to strip the directory path.",
+                    "У команды `find` есть флаг `-perm` для поиска по правам. World-writable означает, что установлен бит записи для категории «остальные».",
+                    "Используйте `find /tmp/audit_test -perm -o+w`, затем передайте результат в `xargs basename`, чтобы убрать путь к каталогу.",
                 ],
             },
             {
@@ -200,8 +200,8 @@ PROJECTS = [
                 "language": "bash",
                 "expected_output": "root\nadmin",
                 "hints": [
-                    "The `/etc/passwd` format uses `:` as a delimiter — the UID is the third field and the username is the first.",
-                    "Use `awk -F: '$3 == 0 {print $1}'` to filter lines where the third field is 0 and print the username.",
+                    "В формате `/etc/passwd` поля разделены `:`. UID находится в третьем поле, имя пользователя — в первом.",
+                    "Используйте `awk -F: '$3 == 0 {print $1}'`, чтобы выбрать строки с нулевым значением третьего поля и вывести имя пользователя.",
                 ],
             },
             {
@@ -217,8 +217,8 @@ PROJECTS = [
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Focus on four attack surfaces: authentication method (keys only, no passwords), root access, idle session timeouts, and strong ciphers/algorithms.",
-                    "Key directives to include: `PermitRootLogin no`, `PasswordAuthentication no`, `PubkeyAuthentication yes`, `ClientAliveInterval`, `ClientAliveCountMax`, `AllowUsers`, and `KexAlgorithms`.",
+                    "Сосредоточьтесь на четырёх направлениях: способ аутентификации (только ключи, без паролей), доступ root, тайм-ауты бездействия и надёжные шифры/алгоритмы.",
+                    "Добавьте директивы `PermitRootLogin no`, `PasswordAuthentication no`, `PubkeyAuthentication yes`, `ClientAliveInterval`, `ClientAliveCountMax`, `AllowUsers` и `KexAlgorithms`.",
                 ],
             },
             {
@@ -226,18 +226,18 @@ PROJECTS = [
                 "title": "Спроектировать ротацию журналов",
                 "type": "ai",
                 "prompt": (
-                    "Design a complete log rotation strategy for a web server generating logs in `/var/log/myapp/`.\n\n"
-                    "Include:\n"
-                    "1. A cron expression that runs at 2:30 AM daily\n"
+                    "Спроектируйте полную стратегию ротации логов веб-сервера, который записывает их в `/var/log/myapp/`.\n\n"
+                    "Включите:\n"
+                    "1. Выражение cron для ежедневного запуска в 02:30\n"
                     "2. A bash script that compresses logs older than 7 days, deletes logs older than 30 days, "
                     "and sends a webhook alert if disk usage on the partition exceeds 80%\n\n"
-                    "Explain each decision, including why you chose those retention thresholds."
+                    "Объясните каждое решение, в том числе выбор сроков хранения."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Cover all three components: the cron schedule (minute, hour fields), the `find -mtime` commands for compression and deletion, and a `df` check piped to `awk` for disk usage.",
-                    "Cron expression for 2:30 AM daily is `30 2 * * *`; use `find /var/log/myapp -mtime +7 -exec gzip {} \\;` and `find ... -mtime +30 -delete`; send the webhook with `curl -X POST`.",
+                    "Охватите все три компонента: расписание cron (поля минут и часов), команды `find -mtime` для сжатия и удаления, а также проверку `df` с передачей результата в `awk` для определения использования диска.",
+                    "Выражение cron для ежедневного запуска в 02:30 — `30 2 * * *`. Используйте `find /var/log/myapp -mtime +7 -exec gzip {} \\;` для сжатия и `find ... -mtime +30 -delete` для удаления; webhook отправляйте через `curl -X POST`.",
                 ],
             },
         ],
