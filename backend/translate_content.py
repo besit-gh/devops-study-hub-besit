@@ -154,9 +154,13 @@ def main():
     parser = argparse.ArgumentParser(description="Перевод учебного контента DevOps Study Hub на русский")
     parser.add_argument("--apply", action="store_true", help="перевести и записать изменения")
     parser.add_argument("--dry-run", action="store_true", help="показать объём работ без вызова API")
+    parser.add_argument("--markdown-only", action="store_true", help="переводить только Markdown-файлы")
+    parser.add_argument("--database-only", action="store_true", help="переводить только записи существующей базы данных")
     args = parser.parse_args()
     load_dotenv(ROOT / "backend" / ".env")
-    files = sorted((ROOT / "content").rglob("*.md")) + sorted((ROOT / "reference").rglob("*.md"))
+    if args.markdown_only and args.database_only:
+        raise SystemExit("Выберите только один режим: --markdown-only или --database-only.")
+    files = [] if args.database_only else sorted((ROOT / "content").rglob("*.md")) + sorted((ROOT / "reference").rglob("*.md"))
     if args.dry_run or not args.apply:
         print(f"Markdown-файлов для проверки: {len(files)}")
         print(f"База данных: {DB_PATH}")
@@ -166,6 +170,8 @@ def main():
         return
     if not os.getenv("OPENAI_API_KEY"):
         raise SystemExit("Не задан OPENAI_API_KEY. Укажите его в backend/.env.")
+    if args.database_only and not DB_PATH.exists():
+        raise SystemExit(f"Не найдена база данных: {DB_PATH}. Сначала запустите backend один раз.")
     backup = Path(tempfile.mkdtemp(prefix="devops-hub-translation-backup-"))
     if DB_PATH.exists():
         shutil.copy2(DB_PATH, backup / "hub.db")
@@ -181,7 +187,7 @@ def main():
         path.write_text(translate_text(client, original), encoding="utf-8")
         translated_count += 1
         print(f"[Markdown] {path.relative_to(ROOT)}")
-    stats = translate_database(client) if DB_PATH.exists() else {}
+    stats = translate_database(client) if not args.markdown_only and DB_PATH.exists() else {}
     print(f"Обработано Markdown-файлов: {translated_count}/{len(files)}")
     if stats:
         print("Обработаны записи БД: " + ", ".join(f"{k}={v}" for k, v in stats.items()))
