@@ -2,7 +2,7 @@
 
 ## grafana-cli
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `grafana-cli plugins list-remote` | Список доступных плагинов |
 | `grafana-cli plugins install plugin-id` | Установить плагин |
@@ -19,21 +19,21 @@ GRAFANA="http://admin:password@localhost:3000"
 # Health check
 curl "$GRAFANA/api/health"
 
-# List dashboards
+# Список дашбордов
 curl "$GRAFANA/api/search?type=dash-db"
 
-# Get dashboard by UID
+# Получить дашборд по UID
 curl "$GRAFANA/api/dashboards/uid/DASHBOARD_UID"
 
-# Import dashboard
+# Импортировать дашборд
 curl -X POST "$GRAFANA/api/dashboards/import" \
   -H "Content-Type: application/json" \
   -d @dashboard.json
 
-# List data sources
+# Список источников данных
 curl "$GRAFANA/api/datasources"
 
-# List alert rules
+# Список правил оповещения
 curl "$GRAFANA/api/v1/provisioning/alert-rules"
 
 # Silence an alert
@@ -68,9 +68,9 @@ datasources:
     url: http://loki:3100
 ```
 
-## Common Variables in Dashboards
+## Common Переменнаяs in Dashboards
 
-| Variable | Description |
+| Переменная | Описание |
 |----------|-------------|
 | `$__timeFilter(column)` | SQL time filter from dashboard range |
 | `$__interval` | Auto-calculated interval |
@@ -82,7 +82,7 @@ datasources:
 
 ## LogQL (Loki) Quick Reference
 
-| Query | Description |
+| Query | Описание |
 |-------|-------------|
 | `{service="nginx"}` | All logs from nginx |
 | `{service="nginx"} \|= "ERROR"` | Filter for "ERROR" string |
