@@ -19,7 +19,7 @@ Bash — связующий слой DevOps-инфраструктуры. Это
 
 ### Shebang, строгий режим и права доступа
 
-The shebang line tells the kernel which interpreter to use. Without it, the script runs in whatever shell the user happens to be in — which may not be bash at all.
+Строка shebang указывает ядру, какой интерпретатор использовать. Без неё скрипт запускается в текущей оболочке пользователя, которая может быть не Bash.
 
 ```bash
 #!/bin/bash
@@ -29,21 +29,21 @@ The shebang line tells the kernel which interpreter to use. Without it, the scri
 # Portable — finds bash in $PATH. Preferred for cross-platform scripts.
 ```
 
-Immediately after the shebang, set strict mode:
+Сразу после shebang включите строгий режим:
 
 ```bash
 set -euo pipefail
 ```
 
-| Flag | Meaning | Why it matters |
+| Флаг | Значение | Зачем нужен |
 |------|---------|----------------|
-| `-e` | Exit on any unhandled non-zero return code | Prevents silent failures from propagating |
-| `-u` | Treat unset variables as errors | Catches typos in variable names before they cause damage |
-| `-o pipefail` | Pipeline fails if any command in it fails | Without this, `false \| true` exits 0 |
+| `-e` | Завершаться при необработанном ненулевом коде | Не позволяет ошибкам оставаться незамеченными |
+| `-u` | Считать незаданные переменные ошибкой | Находит опечатки в именах переменных до появления последствий |
+| `-o pipefail` | Конвейер завершается с ошибкой, если не сработала любая команда | Без него `false \| true` возвращает 0 |
 
-**`-e` gotcha:** it does not trigger inside `if` conditions, `while` conditions, or expressions after `&&`/`||`. That's by design — those contexts explicitly handle failure. But it means `set -e` is not a complete safety net. You still need explicit checks for critical operations.
+**Особенность `-e`:** он не срабатывает в условиях `if`, `while` и выражениях после `&&`/`||`. Это сделано намеренно: в этих контекстах ошибка обрабатывается явно. Поэтому `set -e` не обеспечивает полной защиты — критические операции всё равно нужно проверять.
 
-Make the script executable and run it:
+Сделайте скрипт исполняемым и запустите его:
 
 ```bash
 chmod +x deploy.sh
@@ -53,13 +53,13 @@ chmod +x deploy.sh
 bash deploy.sh
 ```
 
-**Prefer `./script.sh` over `bash script.sh`** in production. The former uses the shebang, so the script controls its own interpreter version. `bash script.sh` ignores the shebang entirely.
+**В production предпочитайте `./script.sh`, а не `bash script.sh`.** Первый вариант использует shebang, поэтому скрипт сам определяет интерпретатор. Команда `bash script.sh` полностью игнорирует shebang.
 
 ---
 
-### Variables: Assignment, Quoting, and Scope
+### Переменные: присваивание, кавычки и область видимости
 
-Variable assignment has no spaces around `=`. This is not a style choice — spaces are a syntax error.
+При присваивании переменной вокруг `=` не должно быть пробелов. Это не вопрос стиля: пробелы приводят к синтаксической ошибке.
 
 ```bash
 NAME="nginx"           # string
@@ -77,7 +77,7 @@ echo "${NAME}_backup"  # "nginx_backup" — without braces, bash looks for $NAME
 echo "$NAME_backup"    # empty or wrong — $NAME_backup is a different variable
 ```
 
-**Always double-quote variable expansions.** Unquoted variables undergo word splitting (split on spaces/tabs/newlines) and glob expansion (a `*` expands to filenames). This causes bugs that only appear with certain inputs.
+**Всегда заключайте подстановки переменных в двойные кавычки.** Без кавычек происходит разбиение на слова по пробелам, табуляции и переводам строк, а также раскрытие glob-шаблонов (`*` превращается в имена файлов). Такие ошибки проявляются только на некоторых входных данных.
 
 ```bash
 FILE="my report.pdf"
@@ -86,7 +86,7 @@ rm $FILE    # runs: rm my report.pdf — two arguments, tries to delete "my" and
 rm "$FILE"  # runs: rm "my report.pdf" — correct
 ```
 
-**Variable scope:** all variables are global by default. Inside functions, use `local` to prevent collisions.
+**Область видимости переменных:** по умолчанию все переменные глобальные. В функциях используйте `local`, чтобы избежать конфликтов.
 
 ```bash
 RESULT="outer"
@@ -100,17 +100,17 @@ my_func
 echo "$RESULT"            # prints "outer"
 ```
 
-Bash also supports several parameter expansion forms for setting defaults and transforming values:
+Bash также поддерживает несколько форм раскрытия параметров для задания значений по умолчанию и преобразования значений:
 
-| Syntax | Behavior |
+| Синтаксис | Поведение |
 |--------|----------|
-| `${VAR:-default}` | Use `default` if `VAR` is unset or empty |
-| `${VAR:=default}` | Assign and use `default` if `VAR` is unset or empty |
-| `${VAR:?message}` | Exit with `message` if `VAR` is unset or empty |
-| `${VAR:+other}` | Use `other` if `VAR` is set and non-empty; otherwise empty |
-| `${#VAR}` | Length of `VAR` |
-| `${VAR%%pattern}` | Strip longest matching suffix |
-| `${VAR##pattern}` | Strip longest matching prefix |
+| `${VAR:-default}` | Использовать `default`, если `VAR` не задана или пуста |
+| `${VAR:=default}` | Присвоить и использовать `default`, если `VAR` не задана или пуста |
+| `${VAR:?message}` | Завершиться с сообщением `message`, если `VAR` не задана или пуста |
+| `${VAR:+other}` | Использовать `other`, если `VAR` задана и не пуста; иначе пустая строка |
+| `${#VAR}` | Длина `VAR` |
+| `${VAR%%pattern}` | Удалить самый длинный совпавший суффикс |
+| `${VAR##pattern}` | Удалить самый длинный совпавший префикс |
 
 ```bash
 # Common DevOps patterns
@@ -121,24 +121,24 @@ LOG_DIR="${LOG_DIR:=/var/log/app}"    # set and use default
 
 ---
 
-### Special Variables
+### Специальные переменные
 
-These are set by bash itself and are read-only (or have special behavior on assignment):
+Эти переменные задаются самим Bash и доступны только для чтения либо имеют особое поведение при присваивании:
 
-| Variable | Value |
+| Переменная | Значение |
 |----------|-------|
-| `$0` | Script name (path as invoked) |
-| `$1`, `$2`, ... | Positional arguments |
-| `$@` | All positional arguments as separate words |
-| `$*` | All positional arguments as a single word |
-| `$#` | Number of positional arguments |
-| `$?` | Exit code of the last command |
-| `$$` | PID of the current shell |
-| `$!` | PID of the last background process |
-| `$SECONDS` | Seconds since the shell started |
-| `$LINENO` | Current line number (useful in error messages) |
+| `$0` | Имя скрипта (путь, с которым он был запущен) |
+| `$1`, `$2`, ... | Позиционные аргументы |
+| `$@` | Все позиционные аргументы как отдельные слова |
+| `$*` | Все позиционные аргументы как одно слово |
+| `$#` | Количество позиционных аргументов |
+| `$?` | Код завершения последней команды |
+| `$` | PID текущей оболочки |
+| `$!` | PID последнего фонового процесса |
+| `$SECONDS` | Секунды с момента запуска оболочки |
+| `$LINENO` | Номер текущей строки (полезен в сообщениях об ошибках) |
 
-**`$@` vs `$*`:** always use `"$@"` when forwarding arguments to another command. `"$@"` preserves argument boundaries; `"$*"` collapses all args into one string.
+**`$@` и `$*`:** при передаче аргументов другой команде всегда используйте `"$@"`. Он сохраняет границы аргументов, а `"$*"` объединяет их в одну строку.
 
 ```bash
 # Correct: each argument passed as a separate word
@@ -158,9 +158,9 @@ run_command() {
 
 ---
 
-### Command Substitution and Exit Codes
+### Подстановка команд и коды завершения
 
-Command substitution captures the stdout of a command into a variable:
+Подстановка команды сохраняет stdout команды в переменную:
 
 ```bash
 DATE=$(date +%Y-%m-%d)
@@ -168,9 +168,9 @@ BRANCH=$(git rev-parse --abbrev-ref HEAD)
 FREE_MB=$(df -m / | awk 'NR==2{print $4}')
 ```
 
-**The backtick syntax `` `command` `` is legacy.** Use `$(...)` — it's easier to read and can be nested.
+**Синтаксис с обратными кавычками `` `command` `` устарел.** Используйте `$(...)`: он читается проще и допускает вложенность.
 
-Exit codes are the primary way commands signal success or failure:
+Код завершения — основной способ, которым команда сообщает об успехе или ошибке:
 
 ```bash
 cp source.txt dest.txt
@@ -186,7 +186,7 @@ if ! cp source.txt dest.txt; then
 fi
 ```
 
-**Always send error messages to stderr** with `>&2`. This keeps stdout clean for piping and lets the caller separate diagnostic output from data output.
+**Всегда отправляйте сообщения об ошибках в stderr** через `>&2`. Так stdout остаётся чистым для конвейеров, а вызывающая сторона может отделить диагностику от данных.
 
 ```bash
 error() {
@@ -198,13 +198,13 @@ info() {
 }
 ```
 
-**Exit code conventions:**
+**Соглашения о кодах завершения:**
 
-| Code | Meaning |
+| Код | Значение |
 |------|---------|
-| `0` | Success |
-| `1` | General error |
-| `2` | Misuse of shell or command (bad arguments) |
+| `0` | Успех |
+| `1` | Общая ошибка |
+| `2` | Неверное использование shell или команды (ошибочные аргументы) |
 | `126` | Command found but not executable |
 | `127` | Command not found |
 | `128+N` | Fatal signal N received (e.g., `130` = Ctrl-C, SIGINT) |
