@@ -38,10 +38,10 @@ functions-framework==3.*
 ```
 
 ```bash
-# Local testing
+# Локальное тестирование
 functions-framework --target hello_http --debug
 
-# Deploy (2nd gen)
+# Развернуть функцию второго поколения
 gcloud functions deploy hello-http \
   --gen2 \
   --runtime python312 \
@@ -55,7 +55,7 @@ gcloud functions deploy hello-http \
   --min-instances 0 \
   --max-instances 10
 
-# Invoke
+# Вызвать функцию
 gcloud functions call hello-http \
   --region us-central1 \
   --data '{"name": "Alice"}'
@@ -70,15 +70,15 @@ import json
 @functions_framework.cloud_event
 def process_message(cloud_event):
     """Triggered by a Pub/Sub message."""
-    # Pub/Sub message data is base64-encoded
+    # Данные сообщения Pub/Sub закодированы в Base64
     data = base64.b64decode(cloud_event.data["message"]["data"]).decode("utf-8")
     message = json.loads(data)
     print(f"Processing: {message}")
-    # Return None (Pub/Sub functions don't return a response)
+    # Вернуть None (функции Pub/Sub не возвращают ответ)
 ```
 
 ```bash
-# Deploy with Pub/Sub trigger
+# Развернуть функцию с триггером Pub/Sub
 gcloud functions deploy process-message \
   --gen2 \
   --runtime python312 \
@@ -88,7 +88,7 @@ gcloud functions deploy process-message \
   --trigger-topic my-topic \
   --memory 512Mi
 
-# Send a test message
+# Отправить тестовое сообщение
 gcloud pubsub topics publish my-topic \
   --message '{"key": "value"}'
 ```
@@ -107,7 +107,7 @@ def on_file_upload(cloud_event):
 
     print(f"File uploaded: gs://{bucket_name}/{file_name}")
 
-    # Process the file
+    # Обработать файл
     client = storage.Client()
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(file_name)
@@ -116,7 +116,7 @@ def on_file_upload(cloud_event):
 ```
 
 ```bash
-# Deploy with Cloud Storage trigger via Eventarc
+# Развернуть функцию с триггером Cloud Storage через Eventarc
 gcloud functions deploy on-file-upload \
   --gen2 \
   --runtime python312 \
@@ -130,11 +130,11 @@ gcloud functions deploy on-file-upload \
 
 ### Переменные окружения и секреты
 ```bash
-# Set environment variables at deploy time
+# Задать переменные окружения при развёртывании
 gcloud functions deploy myfunction \
   --set-env-vars API_URL=https://api.example.com,APP_ENV=production
 
-# Reference Secret Manager secrets (recommended for sensitive values)
+# Подключить секреты Secret Manager (рекомендуется для чувствительных данных)
 gcloud functions deploy myfunction \
   --set-secrets DB_PASSWORD=projects/my-project/secrets/db-password:latest
 ```
@@ -151,12 +151,12 @@ def handler(request):
 
 ### Сервисные аккаунты и IAM
 ```bash
-# Deploy with a specific service account
+# Развернуть с определённым сервисным аккаунтом
 gcloud functions deploy myfunction \
   --service-account myfunction-sa@my-project.iam.gserviceaccount.com \
   ...
 
-# Grant the function's SA access to GCS
+# Предоставить сервисному аккаунту функции доступ к GCS
 gcloud projects add-iam-policy-binding my-project \
   --member serviceAccount:myfunction-sa@my-project.iam.gserviceaccount.com \
   --role roles/storage.objectAdmin
@@ -171,7 +171,7 @@ gcloud functions deploy secure-function \
   --trigger-http
   # no --allow-unauthenticated
 
-# Call with an identity token
+# Вызвать с identity token
 TOKEN=$(gcloud auth print-identity-token)
 curl -H "Authorization: Bearer $TOKEN" \
   https://us-central1-my-project.cloudfunctions.net/secure-function
@@ -191,18 +191,18 @@ gcloud functions deploy myfunction \
 
 ### Журналы и мониторинг
 ```bash
-# View function logs
+# Просмотреть журналы функции
 gcloud functions logs read hello-http \
   --region us-central1 \
   --limit 50
 
-# Stream logs (follow)
+# Следить за журналами в реальном времени
 gcloud functions logs read hello-http \
   --region us-central1 \
   --limit 50 \
   --format json | jq '.[]'
 
-# View via gcloud logging
+# Просмотреть через gcloud logging
 gcloud logging read 'resource.type=cloud_function AND resource.labels.function_name=hello-http' \
   --limit 20 \
   --format 'value(timestamp, textPayload)'
@@ -210,18 +210,18 @@ gcloud logging read 'resource.type=cloud_function AND resource.labels.function_n
 
 ### Локальная разработка
 ```bash
-# Install the Functions Framework
+# Установить Functions Framework
 pip install functions-framework
 
-# Test HTTP function locally
+# Локально протестировать HTTP-функцию
 functions-framework --target hello_http --port 8080
 
-# Send test request
+# Отправить тестовый запрос
 curl -X POST http://localhost:8080 \
   -H "Content-Type: application/json" \
   -d '{"name": "test"}'
 
-# Test event function locally
+# Локально протестировать функцию обработки событий
 functions-framework --target process_message \
   --signature-type cloudevent
 ```
@@ -230,7 +230,7 @@ functions-framework --target process_message \
 
 ### Конвейер обработки изображений
 ```python
-# main.py — triggered when an image is uploaded to a raw bucket
+# main.py — запускается при загрузке изображения в исходный бакет
 import functions_framework
 from google.cloud import storage
 from PIL import Image
