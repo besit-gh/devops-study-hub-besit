@@ -21,7 +21,7 @@ Application Performance Monitoring (APM) показывает выполнени
 
 ### Трассировки, span и модель передачи контекста
 
-A **trace** is the complete record of a single request's journey through your system. It is identified by a globally unique `trace_id`. A **span** is one unit of work within that trace — a function call, a database query, an HTTP request to another service. Every span has:
+**Трассировка (trace)** — полная запись пути одного запроса через систему. Её идентифицирует глобально уникальный `trace_id`. **Спан (span)** — отдельная операция внутри трассировки: вызов функции, запрос к базе данных или HTTP-запрос к другому сервису. Каждый спан содержит:
 
 | Field | Description |
 |---|---|
@@ -34,9 +34,9 @@ A **trace** is the complete record of a single request's journey through your sy
 | `error` | Boolean; triggers error highlighting in Datadog UI |
 | `tags` (meta) | Arbitrary string key-value pairs |
 
-Spans are connected into a tree by `parent_id`. The root span (no parent) is created by the entry point — your API gateway or web server. Child spans are created automatically by instrumented libraries or manually by your code.
+Спаны связываются в дерево с помощью `parent_id`. Корневой спан (без родителя) создаётся точкой входа — API-шлюзом или веб-сервером. Дочерние спаны создаются автоматически инструментированными библиотеками или вручную кодом приложения.
 
-**Propagation** is how trace context crosses service boundaries. When service A calls service B over HTTP, the `ddtrace` client injects the trace and span IDs into request headers:
+**Передача контекста (propagation)** позволяет контексту трассировки пересекать границы сервисов. Когда сервис A вызывает сервис B по HTTP, клиент `ddtrace` добавляет идентификаторы трассировки и спана в заголовки запроса:
 
 ```
 traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
@@ -45,7 +45,7 @@ x-datadog-parent-id: 67667974448284343
 x-datadog-sampling-priority: 1
 ```
 
-Service B's instrumented HTTP server reads those headers automatically and creates its spans as children of the incoming span. **If a service does not propagate headers — for example, an uninstrumented Lambda or a background worker that drops context — the trace breaks into disconnected fragments.** This is one of the most common APM debugging problems.
+Инструментированный HTTP-сервер сервиса B автоматически читает эти заголовки и создаёт спаны как дочерние по отношению к входящему спану. **Если сервис не передаёт заголовки — например, Lambda без инструментирования или фоновый обработчик теряет контекст, — трассировка распадается на несвязанные фрагменты.** Это одна из частых проблем при диагностике APM.
 
 ```python
 # Manually extracting and injecting context when using a non-standard transport
@@ -63,11 +63,11 @@ with tracer.start_span("sqs.process", child_of=context) as span:
     process_message(body)
 ```
 
-**Span kind matters for async boundaries.** When a producer publishes to a queue, the outbound span should be tagged `span.kind=producer`. The consumer's span should be `span.kind=consumer` and linked via the extracted context. Without explicit linking, the two halves appear as separate root traces with no relationship in the UI.
+**Тип спана важен для асинхронных границ.** Когда производитель отправляет сообщение в очередь, исходящий спан должен иметь метку `span.kind=producer`. Спан потребителя должен иметь `span.kind=consumer` и быть связан с извлечённым контекстом. Без явной связи обе части отображаются как отдельные корневые трассировки.
 
-### Datadog Agent Setup
+### Настройка агента Datadog
 
-The Datadog Agent is the local process that receives traces from your application (on port `8126` by default), batches them, and forwards them to Datadog's backend. Your application never sends data directly to `datadoghq.com` — it sends to the local agent. This keeps latency low and lets the agent apply sampling decisions.
+Агент Datadog — локальный процесс, который принимает трассировки приложения (по умолчанию порт `8126`), объединяет их в пакеты и пересылает в backend Datadog. Приложение отправляет данные не напрямую на `datadoghq.com`, а локальному агенту. Это уменьшает задержку и позволяет агенту принимать решения о семплировании.
 
 ```bash
 # Install Datadog Agent on Linux
