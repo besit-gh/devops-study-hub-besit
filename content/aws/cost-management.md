@@ -255,9 +255,9 @@ aws autoscaling create-auto-scaling-group \
   }'
 ```
 
-#### Savings Plans
+#### Программы Savings Plans
 
-Savings Plans commit to a minimum hourly spend (e.g., $1.50/hour) across any eligible compute in exchange for a discount. They are more flexible than Reserved Instances and the recommended path for most teams today.
+Savings Plans предполагают обязательство расходовать минимум определённую сумму в час (например, 1,50 доллара в час) на любые подходящие вычислительные ресурсы в обмен на скидку. Они гибче зарезервированных инстансов и сегодня подходят большинству команд.
 
 ```bash
 # Check current Savings Plans utilization — are you getting full value from your commitment?
@@ -280,7 +280,7 @@ aws ce get-savings-plans-purchase-recommendation \
   }'
 ```
 
-**Compute Savings Plans vs EC2 Instance Savings Plans:**
+**Compute Savings Plans и EC2 Instance Savings Plans:**
 
 | | Compute SP | EC2 Instance SP |
 |-|-----------|-----------------|
@@ -289,13 +289,13 @@ aws ce get-savings-plans-purchase-recommendation \
 | Flexibility | Any instance type, region, OS | Locked to family; can change size within family |
 | Best for | Teams that resize or migrate regions | Workloads stable for 1-3 years |
 
-**All-Upfront vs No-Upfront:** All-Upfront gives the deepest discount and eliminates monthly billing complexity. No-Upfront preserves cash flow at a slightly lower discount. For most engineering teams, No-Upfront 1-year Compute SP is the practical starting point — commit conservatively to your guaranteed baseline, let spikes run On-Demand.
+**All-Upfront и No-Upfront:** при полной предоплате скидка максимальна, а ежемесячные расчёты проще. Без предоплаты сохраняется денежный поток, но скидка немного меньше. Для большинства инженерных команд разумная отправная точка — Compute Savings Plan на год без предоплаты: фиксируйте только гарантированную базовую нагрузку, а пики оплачивайте по On-Demand.
 
-**Savings Plans apply automatically to eligible usage.** You do not configure which instances they cover. AWS applies the discount to the most expensive eligible usage first. This means an underutilized Savings Plan is pure waste — the committed hourly spend is charged whether or not you have instances running.
+**Savings Plans автоматически применяются к подходящему потреблению.** Не нужно вручную выбирать инстансы. AWS сначала применяет скидку к наиболее дорогому подходящему потреблению. Поэтому недоиспользуемый Savings Plan — это прямые потери: обязательная почасовая сумма списывается независимо от того, запущены ли инстансы.
 
 ---
 
-### S3 Storage Classes
+### Классы хранения S3
 
 S3 costs have two components: **storage cost per GB** and **request/retrieval fees**. Choosing the wrong storage class for access patterns wastes money in both directions — Standard is expensive for cold data; Glacier has retrieval costs that exceed storage savings if you access data frequently.
 
