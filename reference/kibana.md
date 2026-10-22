@@ -2,7 +2,7 @@
 
 ## KQL (язык запросов Kibana)
 
-| Query | Description |
+| Query | Описание |
 |-------|-------------|
 | `status: 404` | Точное совпадение поля |
 | `status: 4*` | Совпадение по шаблону |
@@ -16,9 +16,9 @@
 | `_exists_: user.id` | Поле существует |
 | `NOT _exists_: error_code` | Поле отсутствует |
 
-## Синтаксис запросов Lucene (альтернатива в Discover)
+## Синтаксис запросов Lucene (альтернатива в Discover — поиск и исследование данных)
 
-| Query | Description |
+| Query | Описание |
 |-------|-------------|
 | `field:value` | Совпадение термина |
 | `field:"exact phrase"` | Phrase match |
@@ -47,13 +47,13 @@ FROM metrics-*
 | STATS avg_ms = AVG(response_ms), p95 = PERCENTILE(response_ms, 95) BY endpoint
 ```
 
-## Dashboard URLs (Dev Tools Console)
+## Дашборд URLs (Dev Tools Console)
 
 ```
-# Discover
+# Discover — поиск и исследование данных
 /app/discover
 
-# Dashboard
+# Дашборд
 /app/dashboards
 
 # Dev Tools (run Elasticsearch queries directly)
@@ -77,7 +77,7 @@ FROM metrics-*
 
 | Action | Location |
 |--------|----------|
-| Create data view | Stack Management → Data Views → Create |
+| Создать data view | Stack Management → Data Views → Create |
 | Set default data view | Click star on data view |
 | Refresh field list | Edit data view → Refresh |
 | Field format override | Edit data view → field → edit format |
