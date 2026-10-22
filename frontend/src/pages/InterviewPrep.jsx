@@ -210,7 +210,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
           {Object.entries(counts).map(([score, n]) => (
             <div key={score} className={`flex-1 text-center py-3 rounded-lg border text-sm font-medium ${SCORE_STYLE[score]}`}>
               <div className="text-2xl font-bold">{n}</div>
-              <div>{score}</div>
+              <div>{localizeScore(score)}</div>
             </div>
           ))}
         </div>
@@ -243,7 +243,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
       <div ref={topRef} className="p-6 max-w-2xl">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{card.module_title} · Due for Review</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{card.module_title} · К повторению</p>
             <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
               Вопрос {reviewIndex + 1} из {reviewQueue.length}
             </h1>
@@ -299,7 +299,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${SCORE_STYLE[reviewEval.score]}`}>
-                {reviewEval.score}
+                {localizeScore(reviewEval.score)}
               </div>
               {reviewEval.xp_earned > 0 && (
                 <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">+{reviewEval.xp_earned} XP</span>
@@ -346,7 +346,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
 
   if (phase === 'idle' || phase === 'loading') return (
     <div className="p-6 max-w-2xl">
-      <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-1">Interview Prep</h1>
+      <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-1">Подготовка к собеседованию</h1>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
         Тренируйтесь отвечать на реальные вопросы DevOps-собеседований. ИИ оценит ответ и покажет пример сильного ответа.
       </p>
@@ -427,7 +427,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
           {Object.entries(counts).map(([score, n]) => (
             <div key={score} className={`flex-1 text-center py-3 rounded-lg border text-sm font-medium ${SCORE_STYLE[score]}`}>
               <div className="text-2xl font-bold">{n}</div>
-              <div>{score}</div>
+              <div>{localizeScore(score)}</div>
             </div>
           ))}
         </div>
@@ -438,7 +438,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
               <div className="flex items-start justify-between gap-2 mb-1">
                 <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">{r.question}</p>
                 <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full border font-medium ${SCORE_STYLE[r.score]}`}>
-                  {r.score}
+                  {localizeScore(r.score)}
                 </span>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">{r.feedback}</p>
@@ -450,7 +450,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
           onClick={reset}
           className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
         >
-          New Session
+          Новая сессия
         </button>
       </div>
     )
@@ -511,7 +511,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
                 value={answer}
                 onChange={e => setAnswer(e.target.value)}
                 disabled={phase === 'evaluating'}
-                placeholder="Type your answer here…"
+                placeholder="Введите свой ответ…"
                 rows={6}
                 className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-3"
               />
@@ -577,7 +577,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${SCORE_STYLE[evaluation.score]}`}>
-              {evaluation.score}
+              {localizeScore(evaluation.score)}
             </div>
             {evaluation.xp_earned > 0 && (
               <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">+{evaluation.xp_earned} XP</span>
@@ -591,12 +591,12 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
           </div>
 
           <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Your answer</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Ваш ответ</p>
             <p className="text-sm text-gray-600 dark:text-gray-400 italic leading-relaxed">{answer}</p>
           </div>
 
           <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Feedback</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Обратная связь</p>
             <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{evaluation.feedback}</p>
           </div>
 
@@ -618,7 +618,7 @@ export default function InterviewPrep({ modules, onXpEarned, interviewQueue: que
             onClick={advance}
             className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
           >
-            {qIndex + 1 >= questions.length ? 'Finish Session' : 'Next Question'}
+            {qIndex + 1 >= questions.length ? 'Завершить сессию' : 'Следующий вопрос'}
           </button>
         </div>
       )}
