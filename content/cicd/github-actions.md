@@ -1,5 +1,5 @@
 ---
-title: GitHub Actions
+title: GitHub Actions — автоматизация CI/CD
 module: cicd
 duration_min: 30
 difficulty: intermediate
@@ -23,8 +23,8 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 6 * * 1'        # every Monday at 06:00 UTC
-  workflow_dispatch:             # allow manual trigger from the UI
+    - cron: '0 6 * * 1'        # каждый понедельник в 06:00 UTC
+  workflow_dispatch:             # разрешить ручной запуск из интерфейса GitHub
 
 jobs:
   test:
@@ -32,21 +32,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Настроить Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Install dependencies
+      - name: Установить зависимости
         run: pip install -r requirements.txt
 
-      - name: Run tests
+      - name: Запустить тесты
         run: pytest --tb=short
 ```
 
 ### Исполнители (runner)
 ```yaml
-# GitHub-hosted (бесплатный лимит для публичных репозиториев — 2000 минут в месяц)
+# Исполнители GitHub-hosted (для публичных репозиториев действует бесплатный лимит — 2000 минут в месяц)
 runs-on: ubuntu-24.04
 runs-on: ubuntu-22.04
 runs-on: macos-14
@@ -65,10 +65,10 @@ jobs:
   deploy:
     runs-on: ubuntu-24.04
     env:
-      APP_ENV: production         # workflow-level env var
+      APP_ENV: production         # переменная окружения уровня workflow
 
     steps:
-      - name: Deploy
+      - name: Развернуть приложение
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -81,7 +81,7 @@ jobs:
 
 ### Кэширование
 ```yaml
-- name: Cache pip packages
+- name: Кэшировать пакеты pip
   uses: actions/cache@v4
   with:
     path: ~/.cache/pip
@@ -89,7 +89,7 @@ jobs:
     restore-keys: |
       ${{ runner.os }}-pip-
 
-- name: Cache Node modules
+- name: Кэшировать модули Node.js
   uses: actions/cache@v4
   with:
     path: ~/.npm
@@ -100,10 +100,10 @@ jobs:
 
 ### Артефакты
 ```yaml
-- name: Build
+- name: Собрать проект
   run: npm run build
 
-- name: Upload build artifact
+- name: Загрузить артефакт сборки
   uses: actions/upload-artifact@v4
   with:
     name: dist
@@ -126,7 +126,7 @@ jobs:
       matrix:
         python-version: ['3.10', '3.11', '3.12']
         os: [ubuntu-24.04, macos-14]
-      fail-fast: false   # don't cancel other matrix jobs on first failure
+      fail-fast: false   # не отменять остальные задания матрицы при первой ошибке
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/setup-python@v5
@@ -142,12 +142,12 @@ jobs:
     steps: [...]
 
   build:
-    needs: test          # only runs if 'test' passes
+    needs: test          # запускать, только если задание test завершилось успешно
     runs-on: ubuntu-24.04
     steps: [...]
 
   deploy:
-    needs: [test, build]   # waits for both
+    needs: [test, build]   # дождаться завершения обоих заданий
     runs-on: ubuntu-24.04
     steps: [...]
 ```
@@ -159,7 +159,7 @@ jobs:
     runs-on: ubuntu-24.04
     environment:
       name: production
-      url: https://myapp.com   # shown in the GitHub UI
+      url: https://myapp.com   # отображается в интерфейсе GitHub
     steps:
       - run: ./deploy.sh
 ```
@@ -202,15 +202,15 @@ jobs:
 
 ### Условные шаги
 ```yaml
-- name: Deploy to prod
+- name: Развернуть приложение to prod
   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
   run: ./deploy.sh
 
-- name: Notify on failure
+- name: Уведомить об ошибке
   if: failure()
   run: ./notify-slack.sh "Pipeline failed"
 
-- name: Always clean up
+- name: Всегда выполнить очистку
   if: always()
   run: docker compose down
 ```
@@ -252,11 +252,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build Docker image
+      - name: Собрать проект Docker image
         run: |
           docker build -t myapp:${{ github.sha }} .
 
-      - name: Push to ECR
+      - name: Отправить образ в ECR
         if: github.ref == 'refs/heads/main'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -274,7 +274,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy to EKS
+      - name: Развернуть приложение to EKS
         env:
           KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_BASE64 }}
         run: |
