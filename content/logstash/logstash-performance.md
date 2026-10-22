@@ -13,13 +13,13 @@ Logstash находится в центре многих пайплайнов EL
 
 Настройка Logstash сводится к подбору трёх ресурсов под характер нагрузки: CPU (число pipeline workers), память (heap JVM и размер batch) и дисковый ввод-вывод (пропускная способность persistent queue). Эти параметры взаимосвязаны: увеличение batch повышает пропускную способность, но усиливает давление на heap; добавление workers увеличивает параллелизм, но может усилить конкуренцию за блокировки очередей. Monitoring API позволяет опираться на измерения, а не на догадки.
 
-In the broader DevOps toolchain, Logstash occupies the transformation tier between data collection (Filebeat, Fluentd, syslog) and storage/analysis (Elasticsearch, Kafka, S3). It is not always the right choice — Elasticsearch ingest node pipelines and Filebeat processors handle simple transformations with less operational overhead. Knowing when Logstash earns its place, and when it is unnecessary complexity, is as important as knowing how to tune it.
+В цепочке DevOps Logstash выполняет преобразование данных между сбором (Filebeat, Fluentd, syslog) и хранением или анализом (Elasticsearch, Kafka, S3). Он нужен не всегда: конвейеры ingest-узлов Elasticsearch и процессоры Filebeat справляются с простыми преобразованиями с меньшими эксплуатационными затратами. Важно понимать не только настройку Logstash, но и когда он оправдан, а когда лишь усложняет систему.
 
 ## Основные понятия
 
-### Pipeline workers vs Batch Size
+### Рабочие потоки конвейера и размер пакета
 
-These two settings are the primary performance levers and are frequently confused because both affect throughput. They operate at different stages of the pipeline and have distinct resource implications.
+Эти два параметра сильнее всего влияют на производительность, и их часто путают, поскольку оба меняют пропускную способность. Они действуют на разных этапах конвейера и по-разному расходуют ресурсы.
 
 | Setting | Controls | Effect of increasing |
 |---|---|---|
@@ -34,7 +34,7 @@ pipeline.batch.size: 250     # 2× the default of 125; raise for high-volume ES 
 pipeline.batch.delay: 50     # ms; default 50 is reasonable for most workloads
 ```
 
-**Tuning rules — apply in order:**
+**Правила настройки — применяйте по порядку:**
 
 1. **CPU at 100%, throughput still low:** Don't add more workers past the point of diminishing returns. Add Logstash nodes. Worker threads beyond 2× vCPU count rarely help and increase lock contention.
 2. **Elasticsearch is the bottleneck (slow bulk API, high indexing latency):** Increase `pipeline.workers` so more threads push bulk requests concurrently. Each worker generates one bulk request per batch.
