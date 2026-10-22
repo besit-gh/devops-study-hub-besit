@@ -339,7 +339,7 @@ Or set `Storage=persistent` in `/etc/systemd/journald.conf`.
 
 ### Переопределение unit-файлов пакетов
 
-The correct override workflow is drop-in files, not editing `/lib/systemd/system/` directly (package upgrades will overwrite your changes with no warning).
+Правильный способ переопределения настроек — drop-in-файлы, а не прямое редактирование `/lib/systemd/system/`: обновление пакета может перезаписать изменения без предупреждения.
 
 ```bash
 # Preferred: use systemctl edit — opens $EDITOR, saves to the right place automatically
@@ -352,7 +352,7 @@ systemctl edit --full nginx
 # Warning: you now own the full file — upstream changes won't reach you
 ```
 
-A drop-in only needs the stanzas you want to change. systemd merges them on top of the base file:
+В drop-in-файле достаточно указать только те секции, которые требуется изменить. systemd объединит их с исходным файлом:
 
 ```ini
 # /etc/systemd/system/nginx.service.d/limits.conf
@@ -370,7 +370,7 @@ ExecStart=
 ExecStart=/usr/sbin/nginx -c /etc/nginx/nginx-custom.conf
 ```
 
-After any unit file change:
+После любого изменения файла unit:
 
 ```bash
 systemctl daemon-reload    # re-read all unit files from disk
@@ -381,7 +381,7 @@ systemctl restart nginx    # apply changes to the running service
 
 ### Диагностика загрузки и проблем зависимостей
 
-When a service fails to start, the debugging sequence follows a predictable path:
+Если сервис не запускается, следуйте последовательному алгоритму диагностики:
 
 ```bash
 # Step 1: Check status — shows last few log lines inline
@@ -663,7 +663,7 @@ systemctl start myapp.service
 
 ### Задание 1: создать и развернуть собственный unit службы
 
-Create a minimal web server using Python's built-in HTTP server and manage it as a proper systemd service.
+Создайте минимальный веб-сервер на встроенном HTTP-сервере Python и настройте управление им как полноценной службой systemd.
 
 1. Создайте системного пользователя `webdemo` без login shell.
 2. Создайте `/etc/systemd/system/webdemo.service`, который:
