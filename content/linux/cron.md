@@ -292,9 +292,9 @@ journalctl -u cron --since today --grep "backup"
 # Jun 15 02:30:01 server CRON[12345]: (root) CMD (/usr/bin/backup.sh >> /var/log/backup.log 2>&1)
 ```
 
-The syslog entry confirms cron *launched* the job. Whether the job *succeeded* is a separate question — you need the job's own log output or exit code for that. A common pattern is to emit a final `echo "SUCCESS $(date -Iseconds)"` at the end of a script and then grep for it to confirm completion.
+Запись в syslog подтверждает, что cron *запустил* задачу, но не доказывает её успешное завершение. Для этого нужны собственный журнал задачи или её код возврата. Распространённый подход — в конце скрипта вывести `echo "SUCCESS $(date -Iseconds)"`, а затем искать эту отметку через `grep`.
 
-**Checking for silent failures:**
+**Проверка незаметных сбоев:**
 
 ```bash
 # Confirm the last run left a success marker
@@ -304,7 +304,7 @@ grep "SUCCESS" /var/log/backup.log | tail -1
 find /var/log/backup.log -mmin +1500 && echo "ALERT: backup may not have run"
 ```
 
-**Dead Man's Snitch / Healthchecks.io pattern:** For critical cron jobs, send an HTTP ping to an external monitoring service at the end of the script. If the ping doesn't arrive within the expected window, the service alerts you. This catches both missed runs and silent failures.
+**Подход Dead Man's Snitch / Healthchecks.io:** для критичных задач cron отправляйте HTTP-пинг во внешнюю систему мониторинга в конце скрипта. Если пинг не поступит в ожидаемый интервал, система отправит оповещение. Так обнаруживаются и пропущенные запуски, и незаметные сбои.
 
 ```bash
 #!/bin/bash
@@ -317,9 +317,9 @@ curl -fsS --retry 3 https://hc-ping.com/your-uuid-here > /dev/null
 
 ---
 
-### Cron Security Considerations
+### Безопасность заданий cron
 
-Cron jobs run with real user permissions. A misconfigured job can be a privilege escalation vector.
+Задания cron выполняются с реальными правами пользователя. Неправильно настроенное задание может стать способом повышения привилегий.
 
 **`/etc/cron.allow` and `/etc/cron.deny`** control which users may use `crontab`. If `/etc/cron.allow` exists, only listed users can schedule jobs. If only `/etc/cron.deny` exists, everyone except listed users can. If neither exists, behavior is implementation-defined (usually root-only or all users depending on distro).
 
