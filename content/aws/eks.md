@@ -13,15 +13,15 @@ Amazon EKS (Elastic Kubernetes Service) — управляемый AWS-серв�
 
 Две основные причины выбирать EKS вместо самостоятельно управляемого Kubernetes — автоматические обновления control plane и встроенная интеграция с экосистемой AWS: IAM для учётных данных Pod, ALB для Ingress, EBS/EFS для постоянного хранения и CloudWatch для наблюдаемости. Эти интеграции не просто удобство: IAM Roles for Service Accounts (IRSA) решает важную задачу безопасности — как предоставить Pod учётные данные AWS без жёстко заданных секретов и чрезмерных прав на уровне узла.
 
-In the DevOps toolchain, EKS sits at the intersection of infrastructure provisioning (Terraform or eksctl to create the cluster), CI/CD (GitHub Actions or CodePipeline pushing images and applying manifests), and platform engineering (managing addons, autoscaling, and upgrade cadence). Understanding EKS means understanding Kubernetes itself *plus* the AWS-specific surface area: IAM trust policies, VPC networking, and the addon lifecycle. Both halves matter for production operations.
+В цепочке DevOps EKS объединяет подготовку инфраструктуры (создание кластера через Terraform или eksctl), CI/CD (публикацию образов и применение манифестов через GitHub Actions или CodePipeline) и платформенную инженерию (управление дополнениями, автомасштабированием и обновлениями). Для понимания EKS нужно знать Kubernetes и особенности AWS: доверительные политики IAM, сеть VPC и жизненный цикл дополнений. Обе части важны для эксплуатации production.
 
 ---
 
 ## Основные понятия
 
-### Control Plane vs. Data Plane
+### Управляющая плоскость и плоскость данных
 
-Understanding what AWS manages versus what you manage prevents a whole class of operational mistakes.
+Понимание границы между обязанностями AWS и вашей команды помогает предотвратить целый класс эксплуатационных ошибок.
 
 | Layer | Who manages it | What it includes |
 |---|---|---|
@@ -30,11 +30,11 @@ Understanding what AWS manages versus what you manage prevents a whole class of 
 | **Data plane (Fargate)** | AWS (mostly) | Underlying EC2, kubelet — you manage pod spec only |
 | **Addons** | Shared | CoreDNS, kube-proxy, VPC CNI, EBS CSI — AWS provides versions, you install/upgrade |
 
-**You cannot access the control plane nodes.** There are no SSH keys, no EC2 instances visible in your account. All interaction is through `kubectl` (which talks to the managed API server endpoint) and the EKS API (for cluster-level operations like upgrades).
+**У вас нет доступа к узлам управляющей плоскости.** В аккаунте не отображаются соответствующие EC2-инстансы и SSH-ключи. Взаимодействие выполняется через `kubectl` (обращается к управляемой конечной точке API-сервера) и API EKS для операций уровня кластера, например обновлений.
 
-**The control plane and data plane versions can drift by up to two minor versions**, but this is a support boundary, not a hard limit. Always upgrade the control plane first, then node groups, then addons — in that order. Reversing that sequence can cause addon incompatibilities that are difficult to recover from without downtime.
+**Версии управляющей плоскости и плоскости данных могут различаться максимум на две минорные версии** в рамках поддерживаемой конфигурации. Сначала обновляйте управляющую плоскость, затем группы узлов и после них дополнения. Нарушение порядка может привести к несовместимости дополнений, которую сложно устранить без простоя.
 
-**Control plane logging is opt-in.** By default, none of the API server, audit, authenticator, controller manager, or scheduler logs are sent to CloudWatch. Enable them explicitly — especially `audit` logs — before anything goes wrong, not after.
+**Журналы управляющей плоскости по умолчанию отключены.** Журналы API-сервера, аудита, аутентификатора, менеджера контроллеров и планировщика не отправляются в CloudWatch автоматически. Включите их явно — особенно `audit` — заранее, а не после возникновения проблемы.
 
 ```bash
 # Enable all control plane log types for a cluster
@@ -44,18 +44,18 @@ aws eks update-cluster-config \
   --logging '{"clusterLogging":[{"types":["api","audit","authenticator","controllerManager","scheduler"],"enabled":true}]}'
 ```
 
-### Cluster Creation with eksctl
+### Создание кластера с помощью eksctl
 
-`eksctl` is the official CLI for EKS cluster management. It wraps CloudFormation under the hood, so every `eksctl` operation creates or modifies a CloudFormation stack. This matters: if you manually modify resources that `eksctl` created, drift can cause future `eksctl` operations to fail.
+`eksctl` — официальный CLI для управления кластерами EKS. Внутри он использует CloudFormation, поэтому каждая операция `eksctl` создаёт или изменяет стек CloudFormation. Если вручную менять созданные `eksctl` ресурсы, расхождение конфигурации может привести к сбою последующих операций `eksctl`.
 
-**Install eksctl:**
+**Установите eksctl:**
 ```bash
 curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz"
 tar -xzf eksctl_Linux_amd64.tar.gz && sudo mv eksctl /usr/local/bin
 eksctl version
 ```
 
-**Cluster config file (preferred over CLI flags for reproducibility):**
+**Файл конфигурации кластера (предпочтительнее флагов CLI для воспроизводимости):**
 ```yaml
 # cluster.yaml
 apiVersion: eksctl.io/v1alpha5
@@ -109,11 +109,11 @@ eksctl create cluster -f cluster.yaml
 kubectl get nodes -o wide
 ```
 
-**`withOIDC: true` is not optional in practice.** Without an OIDC provider, IRSA does not work, and IRSA is the correct mechanism for giving pods AWS permissions. Enable it at cluster creation time — adding it later requires updating the cluster and re-creating service accounts.
+**На практике `withOIDC: true` обязателен.** Без провайдера OIDC IRSA не работает, а IRSA — правильный способ выдавать Pod разрешения AWS. Включайте OIDC при создании кластера: добавление позже требует обновления кластера и повторного создания сервисных аккаунтов.
 
-**eksctl vs Terraform for EKS:** eksctl is purpose-built for EKS and faster for getting a cluster running. Terraform (via the `aws_eks_cluster` resource or the community EKS module) is preferred when the cluster is part of a larger IaC codebase that also manages VPCs, RDS, and other resources. Don't mix both tools to manage the same cluster — pick one and stick with it.
+**eksctl или Terraform для EKS:** eksctl специально создан для EKS и позволяет быстрее запустить кластер. Terraform (через ресурс `aws_eks_cluster` или общественный модуль EKS) предпочтителен, если кластер входит в более крупную IaC-кодовую базу, которая также управляет VPC, RDS и другими ресурсами. Не управляйте одним кластером одновременно обоими инструментами — выберите один.
 
-### Managed Node Groups vs. Self-Managed vs. Fargate
+### Управляемые группы узлов, самостоятельное управление и Fargate
 
 | Feature | Managed Node Group | Self-Managed | Fargate |
 |---|---|---|---|
@@ -127,9 +127,9 @@ kubectl get nodes -o wide
 | Pricing model | On-demand or Spot | On-demand or Spot | Per vCPU/memory/second |
 | Best for | General workloads | Custom AMIs, bootstrapping | Batch, serverless-style |
 
-**Managed node groups respect Pod Disruption Budgets (PDBs) during updates.** If a node drain would violate a PDB, the upgrade pauses and waits. Self-managed node groups have no such safety net — you drain manually and must write your own eviction logic.
+**Управляемые группы узлов учитывают Pod Disruption Budget (PDB) при обновлениях.** Если вывод узла нарушит PDB, обновление приостанавливается и ждёт. У самостоятельно управляемых групп такой защиты нет: выводить узлы нужно вручную и самостоятельно обеспечивать корректное выселение Pod.
 
-**Fargate gotcha:** Each Fargate pod runs on its own dedicated micro-VM. Pods that share an EC2 node can benefit from CPU/memory bursting headroom on the node; Fargate pods cannot. Fargate also does not support the EBS CSI driver — use EFS instead if you need persistent storage on Fargate. DaemonSets are silently ignored on Fargate profiles, which means tools like Fluentd, Datadog agents, or node exporters deployed as DaemonSets will not run on Fargate pods — you must use sidecar containers instead.
+**Особенность Fargate:** каждый Pod Fargate запускается в отдельной микро-ВМ. Pod на общем узле EC2 могут использовать запас ресурсов CPU и памяти узла, а Pod Fargate — нет. Fargate также не поддерживает драйвер EBS CSI: для постоянного хранения используйте EFS. DaemonSet в профилях Fargate игнорируются, поэтому Fluentd, агенты Datadog и экспортёры узлов, развёрнутые как DaemonSet, не запустятся; вместо них используйте sidecar-контейнеры.
 
 ```bash
 # Common node group operations
@@ -155,13 +155,13 @@ eksctl delete nodegroup \
   --drain
 ```
 
-### IRSA — IAM Roles for Service Accounts
+### IRSA — роли IAM для сервисных аккаунтов
 
-IRSA is the mechanism for giving pods fine-grained AWS IAM permissions without using static credentials or node-level roles. Without IRSA, the only alternative is node-level IAM roles — meaning every pod on that node gets the same permissions. IRSA solves this by binding an IAM role to a Kubernetes service account via OIDC federation.
+IRSA позволяет выдавать Pod точечные разрешения AWS IAM без статических учётных данных и ролей уровня узла. Без IRSA альтернативой остаются роли IAM узлов, из-за чего все Pod на узле получают одинаковые разрешения. IRSA решает проблему, связывая роль IAM с сервисным аккаунтом Kubernetes через федерацию OIDC.
 
 **How it works:**
-1. EKS exposes an OIDC endpoint for the cluster.
-2. You create an IAM role with a trust policy that permits tokens from that OIDC endpoint, scoped to a specific namespace and service account name.
+1. EKS предоставляет кластеру конечную точку OIDC.
+2. Создайте роль IAM с доверительной политикой, разрешающей токены этой конечной точки OIDC только для заданного пространства имён и имени сервисного аккаунта.
 3. EKS injects a projected service account token into the pod (via a volume mount at `/var/run/secrets/eks.amazonaws.com/serviceaccount/token`).
 4. The AWS SDK in the pod exchanges that token for temporary STS credentials using `AssumeRoleWithWebIdentity`.
 
