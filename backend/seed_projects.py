@@ -18,15 +18,15 @@ PROJECTS = [
                 "title": "Создать файл requirements",
                 "type": "sandbox",
                 "prompt": (
-                    "Write a bash command that creates `/tmp/requirements.txt` containing exactly two lines:\n\n"
+                    "Напишите Bash-команду, которая создаёт `/tmp/requirements.txt` ровно с двумя строками:\n\n"
                     "```\nflask==3.0.0\ngunicorn==21.2.0\n```\n\n"
-                    "Then print the number of lines in the file."
+                    "Затем выведите количество строк в файле."
                 ),
                 "language": "bash",
                 "expected_output": "2",
                 "hints": [
-                    "Use `printf` or `echo -e` with `\\n` to write both lines to the file at once.",
-                    "Count lines with `wc -l` and pipe through `awk '{print $1}'` to strip the filename from the count.",
+                    "Используйте `printf` или `echo -e` с `\\n`, чтобы записать обе строки за один раз.",
+                    "Подсчитайте строки с помощью `wc -l`, затем передайте результат в `awk '{print $1}'`, чтобы убрать имя файла из вывода.",
                 ],
             },
             {
@@ -34,15 +34,15 @@ PROJECTS = [
                 "title": "Разобрать конфигурацию приложения",
                 "type": "sandbox",
                 "prompt": (
-                    "Write a Python one-liner that parses this YAML string and prints the value of `port`:\n\n"
+                    "Напишите однострочную команду Python, которая разбирает эту строку YAML и выводит значение `port`:\n\n"
                     '`name: my-app\\nport: 8080\\ndebug: false`\n\n'
-                    "Import `yaml` from the standard PyYAML library."
+                    "Импортируйте `yaml` из библиотеки PyYAML."
                 ),
                 "language": "python",
                 "expected_output": "8080",
                 "hints": [
-                    "Call `yaml.safe_load()` on the string — the `\\n` characters in the string are real newlines that YAML will parse correctly.",
-                    "Access the result like a Python dict: `yaml.safe_load('name: my-app\\nport: 8080\\ndebug: false')['port']`.",
+                    "Передайте строку в `yaml.safe_load()`: символы `\\n` обозначают реальные переводы строк, которые YAML корректно обработает.",
+                    "Обратитесь к результату как к словарю Python: `yaml.safe_load('name: my-app\\nport: 8080\\ndebug: false')['port']`.",
                 ],
             },
             {
@@ -50,17 +50,17 @@ PROJECTS = [
                 "title": "Написать production Dockerfile",
                 "type": "ai",
                 "prompt": (
-                    "Write a multi-stage Dockerfile for a Python Flask application.\n\n"
-                    "Stage 1 (builder): install dependencies from requirements.txt into a virtualenv.\n"
-                    "Stage 2 (runtime): copy only the virtualenv and app code into a minimal base image.\n\n"
+                    "Напишите многоэтапный Dockerfile для приложения Flask на Python.\n\n"
+                    "Этап 1 (builder): установите зависимости из requirements.txt в virtualenv.\n"
+                    "Этап 2 (runtime): скопируйте в минимальный базовый образ только virtualenv и код приложения.\n\n"
                     "Include best practices: non-root user, no dev packages in the final image, "
                     "a HEALTHCHECK instruction, and explicit EXPOSE."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Cover the two-stage pattern: stage 1 installs deps into a virtualenv, stage 2 copies only the venv. Add a non-root user with `useradd` or `adduser`.",
-                    "Key directives to include: `COPY --from=builder /opt/venv /opt/venv`, `ENV PATH=/opt/venv/bin:$PATH`, `USER`, `EXPOSE`, and `HEALTHCHECK CMD curl -f http://localhost/ || exit 1`.",
+                    "Опишите два этапа: на первом зависимости устанавливаются в virtualenv, на втором копируется только окружение. Создайте непривилегированного пользователя с помощью `useradd` или `adduser`.",
+                    "Добавьте директивы `COPY --from=builder /opt/venv /opt/venv`, `ENV PATH=/opt/venv/bin:$PATH`, `USER`, `EXPOSE` и `HEALTHCHECK CMD curl -f http://localhost/ || exit 1`.",
                 ],
             },
             {
@@ -68,18 +68,18 @@ PROJECTS = [
                 "title": "Спроектировать CI-пайплайн",
                 "type": "ai",
                 "prompt": (
-                    "Write a GitHub Actions workflow (`.github/workflows/ci.yml`) that:\n"
-                    "1. Triggers on push to `main` and on pull requests\n"
-                    "2. Runs `pytest` with pip caching\n"
-                    "3. Builds and pushes a Docker image to GitHub Container Registry (GHCR) only on merge to `main`\n"
-                    "4. Caches Docker layers between runs\n\n"
-                    "Explain briefly why you structured the jobs the way you did."
+                    "Создайте workflow GitHub Actions (`.github/workflows/ci.yml`), который:\n"
+                    "1. Запускается при push в `main` и при открытии pull request\n"
+                    "2. Запускает `pytest` с кэшированием pip\n"
+                    "3. Собирает и отправляет Docker-образ в GitHub Container Registry (GHCR) только после слияния в `main`\n"
+                    "4. Кэширует слои Docker между запусками\n\n"
+                    "Кратко объясните, почему вы разделили задачи именно таким образом."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Split into two jobs: `test` (runs on all events) and `publish` (runs only on push to `main`, with `needs: test` so it only fires after tests pass).",
-                    "Key actions: `actions/cache` for pip, `docker/login-action` with `${{ secrets.GITHUB_TOKEN }}` for GHCR, `docker/build-push-action` with `cache-from: type=gha` for Docker layer caching.",
+                    "Разделите workflow на две job: `test` (запускается при всех событиях) и `publish` (только при push в `main`, с `needs: test`, чтобы публикация происходила после успешных тестов).",
+                    "Используйте `actions/cache` для pip, `docker/login-action` с `${{ secrets.GITHUB_TOKEN }}` для GHCR и `docker/build-push-action` с `cache-from: type=gha` для кэширования слоёв Docker.",
                 ],
             },
         ],
