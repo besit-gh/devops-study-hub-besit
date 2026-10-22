@@ -14,16 +14,16 @@ Terraform — один из основных инструментов Infrastruc
 
 ### Основной рабочий процесс
 ```bash
-terraform init     # download providers and modules
-terraform plan     # show what will be created/changed/destroyed
-terraform apply    # apply the plan (prompts for confirmation)
-terraform destroy  # destroy all managed resources (prompts)
+terraform init     # загрузить провайдеры и модули
+terraform plan     # показать, что будет создано, изменено или удалено
+terraform apply    # применить план (потребуется подтверждение)
+terraform destroy  # удалить все управляемые ресурсы (потребуется подтверждение)
 ```
 
-Always review `plan` output before `apply`. Terraform shows additions (+), changes (~), and destructions (-).
+Всегда проверяйте вывод `plan` перед запуском `apply`. Terraform показывает добавления (+), изменения (~) и удаления (-).
 
 ### Провайдеры
-Providers are plugins that know how to talk to a specific API (AWS, GCP, Azure, Kubernetes, GitHub, etc.):
+Провайдеры — это плагины, которые взаимодействуют с определённым API (AWS, GCP, Azure, Kubernetes, GitHub и другими):
 
 ```hcl
 terraform {
@@ -31,19 +31,19 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"   # any 5.x version
+      version = "~> 5.0"   # любая версия 5.x
     }
   }
 }
 
 provider "aws" {
   region = "us-east-1"
-  # Credentials: AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY env vars, or ~/.aws/credentials
+  # Учётные данные: переменные AWS_ACCESS_KEY_ID и AWS_SECRET_ACCESS_KEY либо файл ~/.aws/credentials
 }
 ```
 
 ### Ресурсы
-Resources are the infrastructure objects Terraform manages:
+Ресурсы — это объекты инфраструктуры, которыми управляет Terraform:
 
 ```hcl
 # resource "<provider>_<type>" "<local_name>" { ... }
@@ -58,7 +58,7 @@ resource "aws_s3_bucket" "app_assets" {
 }
 
 resource "aws_s3_bucket_versioning" "app_assets_versioning" {
-  bucket = aws_s3_bucket.app_assets.id   # reference to another resource
+  bucket = aws_s3_bucket.app_assets.id   # ссылка на другой ресурс
 
   versioning_configuration {
     status = "Enabled"
@@ -66,13 +66,13 @@ resource "aws_s3_bucket_versioning" "app_assets_versioning" {
 }
 ```
 
-Reference syntax: `<resource_type>.<local_name>.<attribute>`
+Формат ссылки: `<resource_type>.<local_name>.<attribute>`
 
 ### Переменные
 ```hcl
 # variables.tf
 variable "region" {
-  description = "AWS region to deploy into"
+  description = "Регион AWS для развёртывания"
   type        = string
   default     = "us-east-1"
 }
@@ -84,7 +84,7 @@ variable "instance_count" {
 
 variable "db_password" {
   type      = string
-  sensitive = true    # masked in plan output and logs
+  sensitive = true    # скрывается в выводе plan и журналах
 }
 
 variable "tags" {
@@ -100,7 +100,7 @@ variable "allowed_cidrs" {
 }
 ```
 
-Provide variable values:
+Передать значения переменных можно так:
 ```bash
 terraform apply -var="region=eu-west-1"
 terraform apply -var-file="prod.tfvars"
@@ -119,7 +119,7 @@ Or via environment: `TF_VAR_region=eu-west-1 terraform apply`
 ```hcl
 # outputs.tf
 output "bucket_name" {
-  description = "S3 bucket name"
+  description = "Имя бакета S3"
   value       = aws_s3_bucket.app_assets.bucket
 }
 
@@ -135,10 +135,10 @@ output "db_endpoint" {
 
 ```bash
 terraform output bucket_name
-terraform output -json   # all outputs as JSON
+terraform output -json   # все выходные значения в формате JSON
 ```
 
-### Locals
+### Локальные значения
 ```hcl
 locals {
   common_tags = merge(var.tags, {
@@ -155,11 +155,11 @@ resource "aws_instance" "web" {
 }
 ```
 
-### Data Sources
-Data sources read existing infrastructure (not managed by this config):
+### Источники данных
+Источники данных считывают сведения об уже существующей инфраструктуре, которой эта конфигурация не управляет:
 
 ```hcl
-# Look up the latest Amazon Linux AMI
+# Найти актуальный AMI Amazon Linux
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["amazon"]
@@ -175,7 +175,7 @@ resource "aws_instance" "web" {
   instance_type = "t3.micro"
 }
 
-# Look up an existing VPC by tag
+# Найти существующую VPC по тегу
 data "aws_vpc" "main" {
   tags = {
     Name = "production-vpc"
@@ -183,18 +183,18 @@ data "aws_vpc" "main" {
 }
 ```
 
-### Expressions and Functions
+### Выражения и функции
 ```hcl
-# String interpolation
+# Интерполяция строк
 name = "myapp-${var.environment}"
 
-# Conditional
+# Условное выражение
 instance_type = var.environment == "prod" ? "t3.medium" : "t3.micro"
 
-# For expressions
+# Выражения for
 security_group_ids = [for sg in var.security_groups : sg.id]
 
-# Functions
+# Функции
 cidr_block   = cidrsubnet("10.0.0.0/16", 8, 1)   # 10.0.1.0/24
 name         = lower(replace(var.name, " ", "-"))
 merged_tags  = merge(var.tags, local.extra_tags)
@@ -202,7 +202,7 @@ merged_tags  = merge(var.tags, local.extra_tags)
 
 ## Примеры
 
-### EC2 Instance with Security Group
+### Экземпляр EC2 с группой безопасности
 ```hcl
 # main.tf
 
@@ -258,30 +258,30 @@ output "instance_ips" {
 
 ## Практические задания
 
-1. Write a Terraform configuration that creates an S3 bucket with versioning enabled. Run `terraform init`, `terraform plan`, and `terraform apply`. Then inspect the state with `terraform show`.
-2. Add an `environment` variable (type: string, no default) and use it in the bucket name and tags. Apply with `-var="environment=dev"` and then with `staging` — observe the plan differences.
-3. Add an output that prints the bucket's ARN and website endpoint. Run `terraform output` after applying to view them.
-4. Use a data source to look up an existing resource (e.g. `data "aws_caller_identity"` to get your AWS account ID). Use it in a local variable to construct a globally unique bucket name.
+1. Напишите конфигурацию Terraform, которая создаёт бакет S3 с включённым версионированием. Выполните `terraform init`, `terraform plan` и `terraform apply`. Затем изучите состояние командой `terraform show`.
+2. Добавьте переменную `environment` (тип `string`, без значения по умолчанию) и используйте её в имени бакета и тегах. Выполните применение с `-var="environment=dev"`, а затем со значением `staging` — сравните планы.
+3. Добавьте выходные значения для ARN бакета и его веб-эндпоинта. После применения выполните `terraform output`, чтобы посмотреть значения.
+4. Используйте источник данных для получения сведений о существующем ресурсе (например, `data "aws_caller_identity"`, чтобы узнать ID аккаунта AWS). Примените результат в локальной переменной, чтобы сформировать глобально уникальное имя бакета.
 
 
 ---
 
 ### Быстрая проверка
 
-5. Count `resource` blocks in an HCL stub. Run: `printf 'resource "aws_instance" "web" {}\nresource "aws_s3_bucket" "logs" {}\n' | grep -c '^resource'`
+5. Посчитайте блоки `resource` в примере HCL. Выполните: `printf 'resource "aws_instance" "web" {}\nresource "aws_s3_bucket" "logs" {}\n' | grep -c '^resource'`
 
 ```expected_output
 2
 ```
 
-hint: Think about how you can filter lines that start with a specific keyword and count the matches in one step.
-hint: Use grep with the -c flag and anchor your pattern with ^ to match only lines beginning with 'resource'.
+Подсказка: подумайте, как отфильтровать строки, начинающиеся с заданного ключевого слова, и сразу посчитать совпадения.
+Подсказка: используйте `grep` с флагом `-c` и якорем `^`, чтобы учитывать только строки, начинающиеся с `resource`.
 
-6. Extract a variable default value from HCL. Run: `printf 'variable "instance_type" {\n  default = "t3.micro"\n}\n' | awk '/default =/{gsub(/"/, "", $3); print $3}'`
+6. Извлеките значение `default` переменной из HCL. Выполните: `printf 'variable "instance_type" {\n  default = "t3.micro"\n}\n' | awk '/default =/{gsub(/"/, "", $3); print $3}'`
 
 ```expected_output
 t3.micro
 ```
 
-hint: Think about how you can use a text-processing tool to match a specific line in the HCL output and extract a particular field from it.
-hint: Use awk to match lines containing 'default =', then apply gsub() to strip double-quote characters from the third field ($3) before printing it.
+Подсказка: используйте инструмент обработки текста, чтобы найти нужную строку HCL и извлечь из неё определённое поле.
+Подсказка: используйте `awk` для поиска строк с `default =`, затем вызовите `gsub()`, чтобы убрать двойные кавычки из третьего поля (`$3`) перед выводом.
