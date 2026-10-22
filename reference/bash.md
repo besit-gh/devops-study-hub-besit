@@ -91,7 +91,7 @@
 | `[[ -f file ]]` | Проверить существование файла |
 | `[[ -d dir ]]` | Проверить существование каталога |
 | `[[ -z "$var" ]]` | Проверить, пуста ли строка |
-| `[[ -n "$var" ]]` | Test if string is non-empty |
-| `for f in *.log; do ...; done` | Loop over files |
-| `while IFS= read -r line; do ...; done < file` | Read file line by line |
-| `trap 'cleanup' EXIT` | Run cleanup on exit |
+| `[[ -n "$var" ]]` | Проверить, что строка не пуста |
+| `for f in *.log; do ...; done` | Цикл по файлам |
+| `while IFS= read -r line; do ...; done < file` | Читать файл построчно |
+| `trap 'cleanup' EXIT` | Выполнить очистку при выходе |
