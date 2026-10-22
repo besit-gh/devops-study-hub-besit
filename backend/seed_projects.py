@@ -430,8 +430,8 @@ PROJECTS = [
                 "language": "bash",
                 "expected_output": "3",
                 "hints": [
-                    "Think about what unique text pattern marks the start of each task definition in the playbook snippet.",
-                    "Use `grep -c '- name:'` to count lines matching the task name pattern in the input.",
+                    "Определите уникальный текстовый шаблон, с которого начинается описание каждой задачи в playbook.",
+                    "Используйте `grep -c '- name:'`, чтобы подсчитать строки с шаблоном имени задачи.",
                 ],
             },
             {
@@ -447,8 +447,8 @@ PROJECTS = [
                 "language": "python",
                 "expected_output": "3",
                 "hints": [
-                    "Split the string on `\\n`, find the `[webservers]` line, then collect lines until the next group header.",
-                    "Split on `\\n`, slice from the index after `[webservers]` up to the first line starting with `[`, then count the non-empty lines in that slice.",
+                    "Разделите строку по `\\n`, найдите строку `[webservers]`, затем соберите строки до следующего заголовка группы.",
+                    "Разделите строку по `\\n`, возьмите фрагмент после `[webservers]` до первой строки, начинающейся с `[`, и подсчитайте непустые строки.",
                 ],
             },
             {
@@ -456,20 +456,20 @@ PROJECTS = [
                 "title": "Создать роль Ansible для Nginx",
                 "type": "ai",
                 "prompt": (
-                    "Write an Ansible role called `nginx` that:\n"
-                    "1. Installs Nginx via the OS package manager\n"
-                    "2. Deploys a Jinja2 template for `nginx.conf` with variables for `worker_processes` and `server_name`\n"
-                    "3. Ensures Nginx is enabled and started\n"
-                    "4. Uses a `handler` to reload Nginx only when the config changes\n\n"
+                    "Создайте роль Ansible `nginx`, которая:\n"
+                    "1. Устанавливает Nginx через менеджер пакетов ОС\n"
+                    "2. Развёртывает шаблон Jinja2 для `nginx.conf` с переменными `worker_processes` и `server_name`\n"
+                    "3. Включает автозапуск Nginx и запускает службу\n"
+                    "4. Использует `handler` для перезагрузки Nginx только при изменении конфигурации\n\n"
                     "Show the full role directory structure with content for: `tasks/main.yml`, "
                     "`handlers/main.yml`, `templates/nginx.conf.j2`, and `defaults/main.yml`.\n\n"
-                    "Explain why using a handler for config reload is preferable to an unconditional service restart."
+                    "Объясните, почему handler для перезагрузки конфигурации лучше безусловного перезапуска службы."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Cover the four required files: tasks/main.yml (install + template + service), handlers/main.yml (reload), templates/nginx.conf.j2 (with `{{ worker_processes }}`), defaults/main.yml (variable defaults).",
-                    "The handler is triggered by `notify: Reload nginx` on the template task; it uses `state: reloaded` (not restarted) to apply config changes without dropping connections.",
+                    "Покажите четыре файла: tasks/main.yml (установка, шаблон и служба), handlers/main.yml (перезагрузка), templates/nginx.conf.j2 (с `{{ worker_processes }}`) и defaults/main.yml (значения переменных по умолчанию).",
+                    "Шаблонная задача вызывает handler через `notify: Reload nginx`. Для применения конфигурации используйте `state: reloaded`, а не `restarted`, чтобы не разрывать соединения.",
                 ],
             },
             {
@@ -479,10 +479,10 @@ PROJECTS = [
                 "prompt": (
                     "Write an Ansible playbook that manages a team of engineers across a fleet of servers. "
                     "The playbook should:\n"
-                    "1. Create user accounts from a `users` list variable (each with name, groups, and SSH public key)\n"
-                    "2. Remove users who appear in a `removed_users` list\n"
-                    "3. Ensure sudo access for users in the `admins` group\n"
-                    "4. Deploy each user's SSH authorized key\n\n"
+                    "1. Создавать пользователей из списка `users` (для каждого заданы имя, группы и публичный SSH-ключ)\n"
+                    "2. Удалять пользователей из списка `removed_users`\n"
+                    "3. Обеспечивать доступ через sudo пользователям группы `admins`\n"
+                    "4. Устанавливать авторизованный SSH-ключ каждого пользователя\n\n"
                     "The playbook must be fully idempotent — running it twice must produce no changes on the second run. "
                     "Show the playbook YAML and a sample `group_vars/all.yml`. "
                     "Explain how Ansible's `user` module achieves idempotency for account management."
@@ -490,8 +490,8 @@ PROJECTS = [
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Use `ansible.builtin.user` (state: present/absent), `ansible.posix.authorized_key` for SSH keys, and `loop` over the `users` and `removed_users` variables.",
-                    "Idempotency comes from Ansible's declarative model — `user` checks existence before creating; verify with `--check` mode which shows `changed=0` when nothing has drifted.",
+                    "Используйте `ansible.builtin.user` с `state: present/absent`, `ansible.posix.authorized_key` для SSH-ключей и `loop` по переменным `users` и `removed_users`.",
+                    "Идемпотентность обеспечивается декларативной моделью Ansible: модуль `user` проверяет наличие пользователя перед созданием. Проверьте это через `--check`: при отсутствии drift результат должен показывать `changed=0`.",
                 ],
             },
         ],
