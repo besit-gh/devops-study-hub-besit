@@ -135,7 +135,7 @@ git push origin --delete hotfix/1.4.1-fix-auth-bypass
 
 ---
 
-### Trunk-Based Development (TBD)
+### Trunk-based development (TBD)
 
 In trunk-based development, `main` (the trunk) is the only permanent branch. All developers integrate directly to `main`, or via feature branches that live no longer than one or two days. There are no `develop` or `release` branches — instead, every commit to `main` is expected to be deployable, and incomplete features are hidden behind feature flags rather than isolated on branches.
 
@@ -373,7 +373,7 @@ fi
 
 ---
 
-### Branch Protection Rules
+### Правила защиты веток
 
 Branch protection rules are the enforcement layer for your branching strategy. Without them, the strategy is a social agreement that breaks under deadline pressure — someone will push directly to `main` at 11pm during an incident and bypass every process.
 
