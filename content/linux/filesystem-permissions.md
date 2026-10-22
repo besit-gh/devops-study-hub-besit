@@ -44,23 +44,23 @@ exercises: 4
 ### Чтение прав доступа
 
 ```bash
-# Detailed listing: permissions, links, owner, group, size, date, name
+# Подробный список: права, ссылки, владелец, группа, размер, дата и имя
 ls -la /var/www/
 
-# Output:
+# Пример вывода:
 # drwxr-xr-x  4 root    www-data 4096 Jan 15 10:00 .
 # -rw-r--r--  1 root    root      253 Jan 15 10:00 index.html
 # -rwxr-xr-x  1 ubuntu  www-data  512 Jan 15 10:00 deploy.sh
 # lrwxrwxrwx  1 root    root       12 Jan 15 10:00 logs -> /var/log/nginx
 
-# First character indicates file type:
-# -  regular file
-# d  directory
-# l  symbolic link
-# b  block device (disks)
-# c  character device (terminals)
-# p  named pipe (FIFO)
-# s  socket
+# Первый символ обозначает тип файла:
+# - обычный файл
+# d каталог
+# l символическая ссылка
+# b блочное устройство (диск)
+# c символьное устройство (терминал)
+# p именованный канал (FIFO)
+# s сокет
 ```
 
 Для **каталогов** бит `x` означает возможность *войти* в каталог (пройти по пути), а не выполнить его. Каталог с правами `r--` можно просмотреть, но нельзя открыть. Каталог с `--x` можно открыть по известному пути, но нельзя получить список содержимого.
@@ -71,57 +71,57 @@ ls -la /var/www/
 
 **Восьмеричный режим:**
 ```bash
-# Owner: full access | Group: read+execute | Others: read+execute
+# Владелец: полный доступ | Группа: чтение и выполнение | Остальные: чтение и выполнение
 chmod 755 deploy.sh
 
-# Owner: read+write | Group: read only | Others: read only
+# Владелец: чтение и запись | Группа: только чтение | Остальные: только чтение
 chmod 644 config.yaml
 
-# Owner: full access | Group: full access | Others: none
+# Владелец: полный доступ | Группа: полный доступ | Остальные: без доступа
 chmod 770 shared-dir/
 
-# Only owner can read+write, no one else can see it
+# Только владелец может читать и записывать; остальные не имеют доступа
 chmod 600 ~/.ssh/id_ed25519     # private key MUST be 600
 chmod 644 ~/.ssh/id_ed25519.pub # public key: world-readable is fine
 ```
 
 **Символьный режим — удобнее для точечных изменений:**
 ```bash
-# Add execute for owner
+# Добавить право выполнения владельцу
 chmod u+x script.sh
 
-# Remove write from group and others
+# Убрать право записи у группы и остальных
 chmod go-w important.conf
 
-# Give everyone execute (use carefully)
+# Дать право выполнения всем (используйте осторожно)
 chmod a+x runme.sh
 
-# Set exact permissions symbolically
+# Точно задать права в символьном формате
 chmod u=rwx,g=rx,o= deploy.sh
 
-# Recursive: apply to directory and all contents
+# Рекурсивно применить к каталогу и всему его содержимому
 chmod -R 755 /var/www/html/
 ```
 
 ### chown и chgrp — изменение владельца
 
 ```bash
-# Change owner and group
+# Изменить владельца и группу
 chown ubuntu:www-data /var/www/html
 
-# Change owner only (group stays the same)
+# Изменить только владельца (группа останется прежней)
 chown ubuntu deploy.sh
 
-# Change group only
+# Изменить только группу
 chgrp www-data /var/www/html
 
-# Recursive ownership change
+# Рекурсивно изменить владельца и группу
 chown -R ubuntu:www-data /var/www/
 
-# Same as chown ubuntu:ubuntu (use current user's primary group)
+# Аналог chown ubuntu:ubuntu (используется основная группа пользователя)
 chown ubuntu: deploy.sh
 
-# Reference another file's ownership
+# Скопировать сведения о владельце и группе другого файла
 chown --reference=/etc/nginx/nginx.conf target.conf
 ```
 
@@ -140,9 +140,9 @@ chown --reference=/etc/nginx/nginx.conf target.conf
 # Программы с setuid выполняются от имени владельца файла, а не пользователя, который их запустил
 ls -la /usr/bin/passwd
 # -rwsr-xr-x 1 root root /usr/bin/passwd
-#      ^--- 's' means setuid + execute; 'S' means setuid but NOT executable
+#      ^--- 's' означает setuid и выполнение; 'S' — setuid без права выполнения
 
-# Set setuid (add 4 to the front of octal)
+# Установить setuid (добавить 4 перед восьмеричным значением прав)
 chmod 4755 /usr/bin/myapp     # rwsr-xr-x
 chmod u+s /usr/bin/myapp      # symbolic
 ```
@@ -151,29 +151,29 @@ chmod u+s /usr/bin/myapp      # symbolic
 
 **setgid (`s` в позиции бита выполнения группы):**
 ```bash
-# Set setgid on a directory — new files inherit the directory's group
+# Установить setgid для каталога — новые файлы унаследуют его группу
 mkdir /shared
 chgrp devs /shared
 chmod 2775 /shared            # rwxrwsr-x
 chmod g+s /shared             # symbolic
 
-# Now any file created in /shared gets group 'devs', regardless of creator's primary group
+# Теперь каждый файл в /shared получит группу devs независимо от основной группы создателя
 touch /shared/newfile
 ls -la /shared/newfile
-# -rw-rw-r-- 1 ubuntu devs newfile     ← group is 'devs', not ubuntu's primary group
+# -rw-rw-r-- 1 ubuntu devs newfile     ← группа devs, а не основная группа ubuntu
 ```
 
 Полезно для общих каталогов проектов, в которых разработчикам нужно работать с файлами друг друга.
 
 **sticky bit (`t` в позиции бита выполнения для остальных):**
 ```bash
-# Classic example: /tmp is world-writable but sticky
+# Классический пример: /tmp доступен для записи всем, но имеет sticky bit
 ls -ld /tmp
 # drwxrwxrwt 20 root root /tmp
-#          ^--- 't' means sticky + execute; 'T' means sticky but NOT executable
+#          ^--- 't' означает sticky и выполнение; 'T' — sticky без права выполнения
 
-# In a sticky directory, you can only delete files you own
-# (even if you have write permission on the directory)
+# В каталоге со sticky bit можно удалять только собственные файлы
+# (даже если у вас есть право записи в каталог)
 chmod 1777 /tmp          # standard /tmp permissions
 chmod o+t /shared-dir    # symbolic
 ```
@@ -182,13 +182,13 @@ Sticky bit не позволяет пользователям удалять ч�
 
 **Поиск файлов со специальными битами:**
 ```bash
-# Find all setuid files (potential security concern — audit these)
+# Найти все файлы с setuid (потенциальный риск безопасности — проверьте их)
 find / -perm -4000 -type f 2>/dev/null
 
-# Find all setgid files
+# Найти все файлы с setgid
 find / -perm -2000 -type f 2>/dev/null
 
-# Find world-writable files (excluding /proc, /sys)
+# Найти файлы, доступные для записи всем (кроме /proc и /sys)
 find / -perm -o+w -not \( -path /proc -prune -o -path /sys -prune \) 2>/dev/null
 ```
 
@@ -197,22 +197,22 @@ find / -perm -o+w -not \( -path /proc -prune -o -path /sys -prune \) 2>/dev/null
 `umask` определяет, какие биты прав будут **убраны** у новых файлов и каталогов. Это маска: биты, установленные в umask, отключаются.
 
 ```bash
-# Check current umask
+# Проверить текущий umask
 umask         # e.g., 0022
 umask -S      # symbolic: u=rwx,g=rx,o=rx
 
-# Default umask is 022:
-# New file max:       666 (files can't start executable)
-# minus umask:       -022
-# Result:             644 → owner rw, group r, others r
+# Umask по умолчанию — 022:
+# Максимальные права нового файла: 666 (файлы не создаются исполняемыми)
+# Вычитаем umask:       -022
+# Результат:             644 → владелец rw, группа r, остальные r
 
-# New directory max:  777
-# minus umask:       -022
-# Result:             755 → owner rwx, group rx, others rx
+# Максимальные права нового каталога: 777
+# Вычитаем umask:       -022
+# Результат:             755 → владелец rwx, группа rx, остальные rx
 ```
 
 ```bash
-# Change umask for current session
+# Изменить umask для текущего сеанса
 umask 027     # files: 640, dirs: 750 (group can read, others get nothing)
 umask 077     # files: 600, dirs: 700 (only owner)
 ```
@@ -226,11 +226,11 @@ umask 077     # files: 600, dirs: 700 (only owner)
 Стандартные права Unix предусматривают одного владельца, одну группу и категорию «все остальные». ACL расширяют эту модель и позволяют назначать права дополнительным пользователям и группам без смены владельца.
 
 ```bash
-# Check if ACL support is available
+# Проверить поддержку ACL
 mount | grep acl
-# Or check filesystem mount options: defaults,acl
+# Либо проверить параметры монтирования файловой системы: defaults,acl
 
-# View ACLs on a file
+# Просмотреть ACL файла
 getfacl /var/www/html/
 # file: var/www/html/
 # owner: root
@@ -239,26 +239,26 @@ getfacl /var/www/html/
 # group::r-x
 # other::r-x
 
-# Grant a specific user read+write access
+# Предоставить конкретному пользователю права чтения и записи
 setfacl -m u:appuser:rw /var/www/html/config.json
 
-# Grant a specific group execute on a directory
+# Предоставить конкретной группе право прохода по каталогу
 setfacl -m g:deploy:rx /var/www/html/
 
-# Set default ACL on a directory (inherited by new files/subdirs)
+# Задать ACL по умолчанию для каталога (наследуется новыми файлами и подкаталогами)
 setfacl -d -m u:appuser:rw /var/www/html/
 
-# Remove a specific ACL entry
+# Удалить конкретную запись ACL
 setfacl -x u:appuser /var/www/html/config.json
 
-# Remove all ACLs, revert to standard permissions
+# Удалить все ACL и вернуться к стандартным правам
 setfacl -b /var/www/html/config.json
 ```
 
 Если для файла настроен ACL, `ls -la` показывает знак `+` после строки прав:
 ```
 -rw-rw-r--+ 1 root www-data config.json
-#         ^--- + means ACL is set
+#         ^--- + означает, что настроен ACL
 ```
 
 ### Атрибуты файлов — chattr и lsattr
@@ -266,24 +266,24 @@ setfacl -b /var/www/html/config.json
 Помимо прав доступа, файловые системы Linux (ext4, xfs) поддерживают атрибуты файлов, определяющие, как ядро может работать с файлом:
 
 ```bash
-# View attributes
+# Просмотреть атрибуты
 lsattr /etc/resolv.conf
 # ----i--------e-- /etc/resolv.conf
-#     ^--- 'i' means immutable
+#     ^--- 'i' означает неизменяемый атрибут
 
-# Make a file immutable (even root can't modify or delete it)
+# Сделать файл неизменяемым (даже root не сможет изменить или удалить его)
 chattr +i /etc/resolv.conf
 
-# Remove immutable attribute
+# Снять атрибут неизменяемости
 chattr -i /etc/resolv.conf
 
-# Append-only (useful for log files — can grow but not be truncated)
+# Только добавление (полезно для журналов: файл можно увеличивать, но нельзя обрезать)
 chattr +a /var/log/audit/audit.log
 
-# Useful attributes:
-# i  immutable — no writes, no deletion, no rename, no hard links
-# a  append-only — only append writes allowed
-# e  extent format — informational, set automatically
+# Полезные атрибуты:
+# i — неизменяемый: запрещены запись, удаление, переименование и создание жёстких ссылок
+# a — только добавление: разрешена запись только в конец файла
+# e — формат extent; информационный атрибут, устанавливается автоматически
 ```
 
 `chattr +i` используют инструменты усиления безопасности для защиты критически важных файлов конфигурации, например `/etc/passwd` и `/etc/resolv.conf`. Это один из немногих механизмов, который защищает файл даже от `rm -rf`, запущенного от root.
@@ -291,29 +291,29 @@ chattr +a /var/log/audit/audit.log
 ### Повышение привилегий — sudo и su
 
 ```bash
-# Run a single command as root
+# Выполнить одну команду от имени root
 sudo apt update
 
-# Open a root shell (prefer -i over -s for a login shell)
+# Открыть оболочку root (для login shell предпочтительнее -i, а не -s)
 sudo -i
 
-# Run as another user
+# Выполнить от имени другого пользователя
 sudo -u www-data /usr/bin/php artisan migrate
 
-# Check what sudo privileges you have
+# Проверить доступные вам привилегии sudo
 sudo -l
 
-# Switch to root (requires root password, or don't use on cloud VMs)
+# Переключиться на root (нужен пароль root; не используйте этот способ на облачных ВМ без необходимости)
 su -
 
-# Switch to another user
+# Переключиться на другого пользователя
 su - www-data
 ```
 
 Файл `/etc/sudoers` определяет, кто и какие команды может выполнять от имени других пользователей. Всегда редактируйте его через `visudo`: перед сохранением команда проверяет синтаксис.
 ```
 # /etc/sudoers
-# Format: who  where=(as_whom) commands
+# Формат: кто где=(от_чьего_имени) какие_команды
 ubuntu  ALL=(ALL:ALL) NOPASSWD: /usr/bin/systemctl restart nginx
 deploy  ALL=(ALL) NOPASSWD: /usr/local/bin/deploy.sh
 ```
@@ -323,25 +323,25 @@ deploy  ALL=(ALL) NOPASSWD: /usr/local/bin/deploy.sh
 ### Поиск файлов по правам доступа
 
 ```bash
-# Files world-writable
+# Файлы, доступные для записи всем
 find /etc -perm -o+w 2>/dev/null
 
-# Files with exact permissions 777
+# Файлы с точными правами 777
 find /var/www -perm 777
 
-# Files where group has write (regardless of other bits)
+# Файлы, в которых группе разрешена запись (независимо от остальных битов)
 find /home -perm -g+w 2>/dev/null
 
-# Find all SUID binaries (audit these — common attack vector)
+# Найти все SUID-бинарники (проверьте их: это распространённый вектор атаки)
 find / -perm -4000 -type f 2>/dev/null | sort
 
-# Files NOT owned by any current user (orphaned — clean these up)
+# Файлы без действующего владельца (осиротевшие — проверьте и очистите)
 find / -nouser 2>/dev/null
 
-# Files modified in the last 24 hours
+# Файлы, изменённые за последние 24 часа
 find /etc -mtime -1 -type f
 
-# Find SSH authorized_keys files (check for unauthorized entries)
+# Найти файлы SSH authorized_keys и проверить наличие посторонних ключей
 find /home -name authorized_keys 2>/dev/null -exec ls -la {} \;
 ```
 
