@@ -1,5 +1,5 @@
 ---
-title: Ansible и Terraform: сравнение
+title: Ansible и Terraform: сравнение и выбор инструмента
 module: ansible
 duration_min: 15
 difficulty: intermediate
@@ -13,7 +13,7 @@ Ansible и Terraform относятся к Infrastructure as Code, но реша
 
 Главное архитектурное различие — работа с состоянием. Terraform хранит файл `.tfstate`, описывающий последнее известное состояние инфраструктуры. При `terraform apply` он сравнивает конфигурацию с state и реальными ресурсами, затем выполняет только необходимые API-вызовы. У Ansible такого файла нет: при каждом запуске playbook он проверяет текущее состояние систем и выполняет действия, если нужное состояние ещё не достигнуто. Это помогает устранять configuration drift, но Ansible не хранит историю облачных ресурсов, созданных ранее.
 
-In the broader DevOps toolchain, these tools occupy adjacent but distinct layers. Terraform sits at the infrastructure layer — it's often run in CI pipelines during environment provisioning or by platform engineers managing shared infrastructure. Ansible sits at the configuration and deployment layer — it's invoked during application releases, OS hardening runs, and operational tasks. In Kubernetes-centric shops, Helm partially displaces Ansible for application delivery, but Ansible remains essential for everything that isn't a container: CI runners, bastion hosts, bare-metal nodes, legacy workloads. Knowing when to reach for each tool — and when they're being misused — is one of the most practical and frequently tested skills in a DevOps interview.
+В общей цепочке DevOps эти инструменты находятся на соседних, но разных уровнях. Terraform работает на уровне инфраструктуры: его часто запускают в CI-пайплайнах при создании окружений или используют инженеры платформы для управления общей инфраструктурой. Ansible отвечает за настройку и развёртывание: его запускают при выпуске приложений, усилении защиты ОС и выполнении операционных задач. В командах, активно использующих Kubernetes, Helm частично заменяет Ansible при доставке приложений, однако Ansible остаётся важен для всего, что не является контейнером: CI-исполнителей, bastion-хостов, физических серверов и устаревших приложений. Умение выбрать подходящий инструмент и распознать его неправильное применение — один из самых практичных навыков на собеседовании DevOps.
 
 ## Основные понятия
 
@@ -36,7 +36,7 @@ The most important row is **state tracking**. Terraform's state file is what all
 
 ### Terraform's Strengths
 
-Terraform excels at any task where you need to create a resource, record that it exists, understand the dependency order between resources, and potentially destroy it cleanly later.
+Terraform особенно хорош для задач, в которых нужно создать ресурс, зафиксировать факт его существования, учитывать зависимости между ресурсами и при необходимости корректно удалить всё созданное.
 
 ```hcl
 # terraform/main.tf
@@ -79,7 +79,7 @@ output "web_private_ip" {
 }
 ```
 
-Terraform's strongest use cases:
+Наиболее подходящие задачи для Terraform:
 - Creating VPCs, subnets, route tables, security groups
 - Provisioning cloud databases (RDS, CloudSQL, Aurora)
 - Managing DNS records (Route53, Cloudflare)
@@ -89,11 +89,11 @@ Terraform's strongest use cases:
 - S3 buckets with policies and lifecycle rules
 - **Any resource where creation order or circular dependencies matter**
 
-**Key insight:** `terraform destroy` cleanly removes everything it created, in reverse dependency order. Ansible has no equivalent — it can't reliably reverse a playbook run against cloud resources because it has no record of what it created or in what order. This asymmetry alone justifies separating infrastructure provisioning into Terraform.
+**Главная мысль:** `terraform destroy` корректно удаляет все созданные ресурсы в обратном порядке зависимостей. У Ansible нет полноценного аналога: он не может надёжно отменить выполнение плейбука для облачных ресурсов, поскольку не хранит сведения о том, что именно и в каком порядке было создано. Уже этого различия достаточно, чтобы поручать создание инфраструктуры Terraform.
 
 ### Ansible's Strengths
 
-Ansible excels at anything that happens *on* a server after it exists: installing software, writing files, starting services, running commands in sequence, deploying code.
+Ansible особенно хорошо подходит для действий *на уже существующем* сервере: установки ПО, записи файлов, запуска служб, последовательного выполнения команд и развёртывания кода.
 
 ```yaml
 # ansible/deploy.yml
@@ -160,7 +160,7 @@ Ansible excels at anything that happens *on* a server after it exists: installin
         state: reloaded
 ```
 
-Ansible's strongest use cases:
+Наиболее подходящие задачи для Ansible:
 - Installing and pinning OS packages across a fleet
 - Writing templated config files (nginx, systemd units, app config)
 - Managing services: start, stop, enable, disable, reload
@@ -170,7 +170,7 @@ Ansible's strongest use cases:
 - Rolling deployments with `serial: 1` to update one server at a time
 - Bootstrapping new hosts before a full config management system is in place
 
-**Handlers are a key Ansible pattern.** They only fire if the task that notified them reported a change — so `reload nginx` won't run on every playbook execution, only when the config template actually changed. Handlers also deduplicate: if five tasks all notify the same handler, it fires once at the end of the play. This makes playbooks efficient and safe to re-run repeatedly.
+**Обработчики (handlers) — важный шаблон Ansible.** Они запускаются только тогда, когда уведомившая их задача сообщила об изменении. Поэтому `reload nginx` не выполняется при каждом запуске плейбука, а только после фактического изменения шаблона конфигурации. Обработчики также устраняют дублирование: если пять задач уведомили один обработчик, он выполнится один раз в конце play. Благодаря этому плейбуки эффективны и безопасны при повторном запуске.
 
 ### The Overlap Zone
 
@@ -190,11 +190,11 @@ Both tools can technically do what the other does. Neither does it well when use
 
 **Terraform provisioners (`remote-exec`, `local-exec`) are a trap.** They run scripts after a resource is created, but Terraform does not re-run them on subsequent `terraform apply` calls — only on resource creation. If the script fails midway, Terraform marks the resource as *tainted* and tries to recreate it on the next apply, which may cause data loss or downtime. The Terraform documentation explicitly labels provisioners a "last resort." Any non-trivial configuration work should be handed off to Ansible.
 
-**Ansible lacks cloud resource state**, which creates real operational problems at scale. If an Ansible task creates an EC2 instance and you run the playbook again, it may try to create a second instance depending on the module's idempotency implementation. If you delete the resource manually, Ansible doesn't know. You cannot run `ansible-playbook destroy.yml` and expect it to reliably clean up cloud resources the way `terraform destroy` does.
+**Ansible не хранит состояние облачных ресурсов**, что создаёт реальные операционные проблемы при масштабировании. Если задача Ansible создаёт экземпляр EC2, повторный запуск плейбука может создать второй экземпляр — это зависит от реализации идемпотентности модуля. Если удалить ресурс вручную, Ansible об этом не узнает. Нельзя запустить `ansible-playbook destroy.yml` и ожидать, что он надёжно удалит облачные ресурсы так же, как `terraform destroy`.
 
 ### The Standard Integration Pattern
 
-The canonical pattern in production environments: Terraform provisions, outputs relevant information, and Ansible consumes those outputs to configure what Terraform created.
+Типовой подход для production-среды: Terraform создаёт инфраструктуру и выводит нужные значения, а Ansible использует их для настройки созданных ресурсов.
 
 ```
 ┌─────────────────────────────┐     ┌─────────────────────────────┐
@@ -213,7 +213,7 @@ The canonical pattern in production environments: Terraform provisions, outputs 
 └─────────────────────────────┘     └─────────────────────────────┘
 ```
 
-The handoff point is Terraform outputs. After `terraform apply`, you extract outputs and pass them to Ansible as inventory variables or extra vars:
+Точка передачи данных между инструментами — выходные значения Terraform. После `terraform apply` извлеките их и передайте Ansible как переменные inventory или дополнительные переменные:
 
 ```bash
 # pipeline.sh — the glue between Terraform and Ansible
@@ -255,7 +255,7 @@ ansible-playbook \
   deploy.yml
 ```
 
-For more sophisticated setups, the `cloud.terraform` Ansible collection provides a dynamic inventory plugin that reads directly from Terraform state without manual extraction:
+Для более сложных конфигураций коллекция Ansible `cloud.terraform` предоставляет плагин динамического inventory, который читает данные непосредственно из состояния Terraform без ручного извлечения значений:
 
 ```yaml
 # ansible/inventory/terraform.yml
@@ -270,11 +270,11 @@ project_path: ../infra/
 
 ### Idempotency: Where Each Tool Stands
 
-Idempotency means running the same operation multiple times produces the same result. Both tools aim for this, but through different mechanisms — and each has specific failure modes worth knowing.
+Идемпотентность означает, что многократное выполнение одной операции приводит к одному и тому же результату. Оба инструмента стремятся к этому, но используют разные механизмы; у каждого есть характерные ошибки, о которых важно знать.
 
-**Terraform idempotency** is handled at the engine level. The state file plus a live API read (the "refresh" step) tells Terraform exactly what exists. If the resource matches the config, no API call is made. This is reliable by default — you don't have to write defensive HCL.
+**Идемпотентность Terraform** обеспечивается самим движком. Файл состояния вместе с чтением актуального состояния через API (этап refresh) показывает Terraform, какие ресурсы существуют. Если ресурс соответствует конфигурации, API-вызов не выполняется. Это поведение предусмотрено по умолчанию — не нужно писать дополнительную защитную логику в HCL.
 
-**Ansible idempotency** is module-by-module. Well-written modules check before they act:
+**Идемпотентность Ansible** зависит от конкретного модуля. Хорошо написанные модули проверяют состояние перед выполнением действий:
 - `ansible.builtin.apt` checks if the package is already at the right version
 - `ansible.builtin.template` checksums the rendered file against what's on disk
 - `ansible.builtin.service` reads current service state before issuing start/stop
@@ -314,7 +314,7 @@ The idempotency traps in Ansible all involve `command` and `shell`:
     creates: /opt/myapp/public/assets/manifest.json
 ```
 
-**The `changed_when: false` pattern** is useful for read-only commands like health checks or status queries that you never want to show as changes:
+**Шаблон `changed_when: false`** полезен для команд только на чтение — например, проверок работоспособности или запросов статуса, которые не должны отмечаться как изменения:
 
 ```yaml
 - name: Check cluster node count
@@ -663,7 +663,7 @@ ansible webservers -i inventory/production.ini \
 
 ### Example 4: Using Terraform `user_data` vs Ansible for Bootstrap — Seeing the Difference
 
-This example illustrates why `user_data` is inadequate for configuration management and when Ansible is the right follow-up.
+Этот пример показывает, почему `user_data` не подходит для полноценного управления конфигурацией и когда после него следует использовать Ansible.
 
 ```hcl
 # infra/userdata.tf
@@ -708,7 +708,7 @@ ansible-playbook -i "${WEB_IP}," -u ec2-user \
 
 ### Exercise 1: Identify Misused Tools in a Pipeline Script
 
-Read the following CI pipeline fragment and identify every instance where the wrong tool is being used. For each one, explain what the problem is and how you would fix it.
+Прочитайте фрагмент CI-пайплайна и найдите каждый случай, когда используется неподходящий инструмент. Для каждого случая объясните проблему и предложите исправление.
 
 ```bash
 #!/bin/bash
@@ -737,13 +737,13 @@ terraform apply -auto-approve \
   # Terraform null_resource runs remote-exec to git clone the app
 ```
 
-Your answer should address: which steps belong in Terraform, which belong in Ansible, and why the `user_data` approach for nginx is a maintenance problem. No code submission needed — write your analysis as bullet points.
+В ответе укажите, какие шаги должны выполняться Terraform, какие — Ansible, и почему настройка nginx через `user_data` усложняет сопровождение. Код сдавать не нужно — оформите анализ списком.
 
 ---
 
 ### Exercise 2: Write an Idempotent Ansible Task Block
 
-The following task block contains three idempotency bugs. Fix all three without changing what the tasks are trying to accomplish.
+В следующем блоке задач есть три ошибки, нарушающие идемпотентность. Исправьте их, не меняя назначения задач.
 
 ```yaml
 tasks:
@@ -764,13 +764,13 @@ tasks:
         -subj "/CN=myapp.internal"
 ```
 
-Hint: use `ansible.builtin.file`, `ansible.builtin.lineinfile`, and the `creates:` parameter where appropriate. After your fix, running the playbook twice should show `changed=0` on the second run.
+Подсказка: где уместно, используйте `ansible.builtin.file`, `ansible.builtin.lineinfile` и параметр `creates:`. После исправления второй запуск плейбука должен завершиться с `changed=0`.
 
 ---
 
 ### Exercise 3: Build the Terraform-to-Ansible Handoff
 
-Set up a minimal working integration between Terraform and Ansible using LocalStack (a local AWS emulator) or a real AWS account.
+Настройте минимальную рабочую интеграцию Terraform и Ansible с помощью LocalStack (локального эмулятора AWS) или настоящего аккаунта AWS.
 
 1. Write a `main.tf` that creates one EC2 instance (or LocalStack equivalent) and outputs its IP address and a fake `db_host` value using a `local_file` resource if you don't have AWS credentials.
 2. Write a `pipeline.sh` that:
@@ -782,7 +782,7 @@ Set up a minimal working integration between Terraform and Ansible using LocalSt
 3. Write an `install.yml` playbook that installs nginx and writes a file to `/tmp/db_host.txt` containing the value of `{{ db_host }}`.
 4. Verify: after running `pipeline.sh`, SSH to the server and confirm `/tmp/db_host.txt` contains the expected value.
 
-**What to observe:** run `pipeline.sh` twice. On the second run, Terraform should show no changes. Ansible should show `changed=0` or `changed=1` only for tasks where the state actually differed.
+**На что обратить внимание:** запустите `pipeline.sh` дважды. При втором запуске Terraform не должен показывать изменений. Ansible должен выводить `changed=0` или `changed=1` только для задач, в которых состояние действительно отличалось от требуемого.
 
 ---
 
@@ -797,7 +797,7 @@ This exercise builds intuition for the state gap between the two tools.
 5. Run the same Ansible playbook — observe what happens when Ansible tries to reach the terminated instance (it fails; Ansible has no awareness that the instance is gone).
 6. Run `terraform destroy` — observe that it cleanly removes both instances (recreating the missing one first if you didn't run apply, or just destroying the remaining one).
 
-Write a one-paragraph explanation of what you observed about how each tool handles external state changes, and what that means for which tool should own the lifecycle of cloud resources.
+В одном абзаце объясните, как каждый инструмент реагирует на внешние изменения состояния и что это означает для выбора инструмента, который должен управлять жизненным циклом облачных ресурсов.
 
 ---
 
