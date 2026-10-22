@@ -485,7 +485,7 @@ pm.test("Response time has not regressed by more than 50%", () => {
 }
 ```
 
-**POST /users — Tests tab:**
+**POST /users — вкладка Tests:**
 ```javascript
 pm.test("201 Created", () => pm.response.to.have.status(201));
 
@@ -505,7 +505,7 @@ pm.test("Response body has id, name, email", () => {
 });
 ```
 
-**GET /users/{{user_id}} — Tests tab:**
+**GET /users/{{user_id}} — вкладка Tests:**
 ```javascript
 pm.test("200 OK and email matches created user", () => {
     pm.response.to.have.status(200);
@@ -514,7 +514,7 @@ pm.test("200 OK and email matches created user", () => {
 });
 ```
 
-**DELETE /users/{{user_id}} — Tests tab:**
+**DELETE /users/{{user_id}} — вкладка Tests:**
 ```javascript
 pm.test("204 No Content on delete", () => pm.response.to.have.status(204));
 pm.test("Body is empty after delete", () => {
@@ -539,7 +539,7 @@ echo "Exit code: $?"
 
 **Подготовка:** создайте папку `POST /users — Error Cases` с тремя запросами, каждый из которых заранее настроен на своё некорректное тело.
 
-**Request 1: Missing email — Tests tab:**
+**Запрос 1: отсутствует email — вкладка Tests:**
 ```javascript
 pm.test("400 for missing email", () => pm.response.to.have.status(400));
 pm.test("Error body is JSON with message field referencing email", () => {
@@ -549,7 +549,7 @@ pm.test("Error body is JSON with message field referencing email", () => {
 });
 ```
 
-**Request 2: Duplicate email — Tests tab:**
+**Запрос 2: повторяющийся email — вкладка Tests:**
 ```javascript
 pm.test("409 Conflict for duplicate email", () => pm.response.to.have.status(409));
 pm.test("error_code is DUPLICATE_EMAIL", () => {
@@ -557,7 +557,7 @@ pm.test("error_code is DUPLICATE_EMAIL", () => {
 });
 ```
 
-**Request 3: Malformed JSON body — Tests tab:**
+**Запрос 3: некорректное тело JSON — вкладка Tests:**
 ```javascript
 pm.test("400 for unparseable body", () => pm.response.to.have.status(400));
 pm.test("Response is JSON even for malformed input", () => {
@@ -586,7 +586,7 @@ nonexistent@myapp.com,any-password,401
 admin@myapp.com,,400
 ```
 
-**POST /auth/login — Tests tab:**
+**POST /auth/login — вкладка Tests:**
 ```javascript
 // pm.iterationData accesses the current CSV row
 pm.test(`Status is ${pm.iterationData.get("expected_status")}`, () => {
@@ -732,26 +732,26 @@ jobs:
 4. Публикует результаты через `mikepenz/action-junit-report@v4` с `if: always()`.
 5. Загружает XML как артефакт через `actions/upload-artifact@v4` с `if: always()`.
 
-Push a commit that intentionally fails a test (e.g., assert a field name that does not exist). Verify in the GitHub Actions UI that: the job is red, the test report appears in the PR checks tab, and the artifact is still present despite the failure.
+Отправьте коммит, который намеренно проваливает тест (например, проверяет несуществующее поле). В интерфейсе GitHub Actions убедитесь, что задача отмечена красным, отчёт о тестах появился во вкладке проверок PR, а артефакт загружен несмотря на ошибку.
 
 ---
 
 ### Быстрая проверка
 
-6. Count test assertions in a Postman script stub. Run: `printf 'pm.test("Status 200", fn1);\npm.test("Has id", fn2);\npm.test("Content-Type", fn3);\n' | grep -c 'pm.test'`
+6. Посчитайте проверки в примере скрипта Postman. Выполните: `printf 'pm.test("Status 200", fn1);\npm.test("Has id", fn2);\npm.test("Content-Type", fn3);\n' | grep -c 'pm.test'`
 
 ```expected_output
 3
 ```
 
-hint: Think about how you can search for a specific pattern in text and count how many lines match it directly.
-hint: Use grep with the -c flag, which counts matching lines instead of printing them, to find occurrences of 'pm.test' in the piped input.
+Подсказка: найдите в тексте нужный шаблон и подсчитайте число совпадающих строк.
+Подсказка: используйте `grep -c`, чтобы посчитать строки с `pm.test` в тексте, переданном через конвейер.
 
-7. Extract the expected status code from a test snippet. Run: `echo 'pm.response.to.have.status(201);' | sed 's/.*status(\([0-9]*\)).*/\1/'`
+7. Извлеките ожидаемый код статуса из фрагмента теста. Выполните: `echo 'pm.response.to.have.status(201);' | sed 's/.*status(\([0-9]*\)).*/\1/'`
 
 ```expected_output
 201
 ```
 
-hint: Think about how you can use a stream editor to search for a pattern and extract just a portion of the matched text.
-hint: Use sed with a capturing group in the regex — the pattern \([0-9]*\) captures the digits inside status(), and \1 in the replacement refers back to that captured group.
+Подсказка: используйте потоковый редактор, чтобы найти шаблон и извлечь из совпадения только нужную часть.
+Подсказка: используйте в `sed` группу захвата `\([0-9]*\)`: она захватывает цифры внутри `status()`, а `\1` в замене ссылается на захваченную группу.
