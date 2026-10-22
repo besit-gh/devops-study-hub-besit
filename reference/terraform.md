@@ -2,7 +2,7 @@
 
 ## Основной рабочий процесс
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `terraform init` | Инициализировать провайдеры и модули |
 | `terraform fmt` | Форматировать файлы HCL |
@@ -17,7 +17,7 @@
 
 ## Управление состоянием
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `terraform show` | Вывести текущее состояние |
 | `terraform state list` | Список всех ресурсов в состоянии |
@@ -30,7 +30,7 @@
 
 ## Рабочие пространства
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `terraform workspace list` | Список рабочих пространств |
 | `terraform workspace new name` | Создать рабочее пространство |
@@ -40,7 +40,7 @@
 
 ## Выбор ресурсов и просмотр
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `terraform plan -target=res.name` | Построить план для конкретного ресурса |
 | `terraform apply -target=res.name` | Применить изменения для конкретного ресурса |
@@ -52,7 +52,7 @@
 
 ## Шаблоны HCL
 
-| Pattern | Description |
+| Pattern | Описание |
 |---------|-------------|
 | `variable "name" { default = "val" }` | Входная переменная |
 | `var.name` | Ссылка на переменную |
@@ -63,5 +63,5 @@
 | `module "name" { source = "./modules/x" }` | Вызов модуля |
 | `count = var.enabled ? 1 : 0` | Условное создание ресурса |
 | `for_each = toset(var.list)` | Создать ресурс для каждого элемента списка |
-| `depends_on = [res.other]` | Explicit dependency |
-| `lifecycle { prevent_destroy = true }` | Protect from destroy |
+| `depends_on = [res.other]` | Явная зависимость |
+| `lifecycle { prevent_destroy = true }` | Защитить ресурс от удаления |
