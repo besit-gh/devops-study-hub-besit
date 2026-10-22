@@ -16,7 +16,7 @@ Jenkins — один из наиболее распространённых open
 ```groovy
 // Jenkinsfile
 pipeline {
-    agent any   // run on any available agent
+    agent any   // запустить на любом доступном агенте
 
     environment {
         APP_NAME = 'myapp'
@@ -66,15 +66,15 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline succeeded'
+            echo 'Конвейер выполнен успешно'
         }
         failure {
             mail to: 'team@example.com',
-                 subject: "Build ${BUILD_NUMBER} failed",
-                 body: "Check ${BUILD_URL}"
+                 subject: "Сборка ${BUILD_NUMBER} завершилась ошибкой",
+                 body: "Проверьте ${BUILD_URL}"
         }
         always {
-            cleanWs()   // clean workspace after every run
+            cleanWs()   // очищать рабочий каталог после каждого запуска
         }
     }
 }
@@ -82,16 +82,16 @@ pipeline {
 
 ### Агенты
 ```groovy
-// Any available agent
+// Любой доступный агент
 agent any
 
-// No default agent — each stage declares its own
+// Агент по умолчанию не задан — каждый этап определяет свой
 agent none
 
-// Specific label (run on agents tagged 'docker')
+// Конкретная метка (запуск на агентах с меткой 'docker')
 agent { label 'docker' }
 
-// Docker agent (runs the stage inside a container)
+// Docker-агент (выполняет этап внутри контейнера)
 agent {
     docker {
         image 'python:3.12-slim'
@@ -99,7 +99,7 @@ agent {
     }
 }
 
-// Kubernetes pod template
+// Шаблон pod Kubernetes
 agent {
     kubernetes {
         yaml '''
@@ -118,7 +118,7 @@ spec:
 
 ### Учётные данные
 ```groovy
-// Bind credentials to environment variables
+// Передать учётные данные через переменные окружения
 withCredentials([
     usernamePassword(
         credentialsId: 'aws-ecr-creds',
@@ -129,7 +129,7 @@ withCredentials([
     sh 'aws ecr get-login-password | docker login ...'
 }
 
-// SSH key
+// SSH-ключ
 withCredentials([sshUserPrivateKey(
     credentialsId: 'deploy-key',
     keyFileVariable: 'SSH_KEY'
@@ -137,7 +137,7 @@ withCredentials([sshUserPrivateKey(
     sh 'ssh -i $SSH_KEY user@server ./deploy.sh'
 }
 
-// Secret text (e.g. API token)
+// Секретный текст, например токен API
 withCredentials([string(credentialsId: 'slack-token', variable: 'SLACK_TOKEN')]) {
     sh 'curl -H "Authorization: Bearer $SLACK_TOKEN" ...'
 }
@@ -147,19 +147,19 @@ withCredentials([string(credentialsId: 'slack-token', variable: 'SLACK_TOKEN')])
 
 ### Параллельные этапы
 ```groovy
-stage('Test and Lint') {
+stage('Тесты и линтинг') {
     parallel {
-        stage('Unit Tests') {
+        stage('Модульные тесты') {
             steps {
                 sh 'pytest tests/unit'
             }
         }
-        stage('Integration Tests') {
+        stage('Интеграционные тесты') {
             steps {
                 sh 'pytest tests/integration'
             }
         }
-        stage('Lint') {
+        stage('Проверка стиля') {
             steps {
                 sh 'ruff check . && mypy src/'
             }
@@ -170,15 +170,15 @@ stage('Test and Lint') {
 
 ### Условное выполнение
 ```groovy
-stage('Deploy to Prod') {
+stage('Развёртывание в production') {
     when {
         allOf {
             branch 'main'
-            not { changeRequest() }    // not a PR
+            not { changeRequest() }    // это не pull request
         }
     }
     steps {
-        input message: 'Deploy to production?', ok: 'Deploy'
+        input message: 'Развернуть в production?', ok: 'Развернуть'
         sh './deploy-prod.sh'
     }
 }
@@ -190,15 +190,15 @@ stage('Deploy to Prod') {
 Общие библиотеки позволяют вынести повторно используемую логику в библиотеку Groovy, хранящуюся в отдельном репозитории.
 
 ```groovy
-// In your Jenkinsfile:
-@Library('my-shared-lib@main') _   // load the library
+// В Jenkinsfile проекта:
+@Library('my-shared-lib@main') _   // загрузить библиотеку
 
 pipeline {
     agent any
     stages {
         stage('Build') {
             steps {
-                // call a function from the shared library
+                // вызвать функцию из общей библиотеки
                 buildAndPushDocker(image: 'myapp', tag: env.BUILD_NUMBER)
             }
         }
@@ -207,7 +207,7 @@ pipeline {
 ```
 
 ```groovy
-// vars/buildAndPushDocker.groovy (in the shared library repo):
+// vars/buildAndPushDocker.groovy (в репозитории общей библиотеки):
 def call(Map args) {
     sh "docker build -t ${args.image}:${args.tag} ."
     sh "docker push ${args.image}:${args.tag}"
@@ -221,13 +221,13 @@ def call(Map args) {
 
 ### Переменные окружения
 ```groovy
-// Built-in Jenkins variables
+// Встроенные переменные Jenkins
 env.BUILD_NUMBER       // "42"
-env.BUILD_URL          // full URL to this build
+env.BUILD_URL          // полный URL этой сборки
 env.JOB_NAME           // "myapp/main"
 env.GIT_COMMIT         // git SHA
 env.GIT_BRANCH         // "origin/main"
-env.WORKSPACE          // path to the build workspace
+env.WORKSPACE          // путь к рабочему каталогу сборки
 ```
 
 ## Примеры
@@ -245,7 +245,7 @@ pipeline {
     }
 
     stages {
-        stage('Build & Test') {
+        stage('Сборка и тесты') {
             agent {
                 docker { image 'python:3.12-slim' }
             }
@@ -255,13 +255,13 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
+        stage('Сборка Docker-образа') {
             steps {
                 sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
 
-        stage('Push to ECR') {
+        stage('Отправка в ECR') {
             when { branch 'main' }
             steps {
                 withCredentials([[
