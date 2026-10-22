@@ -21,25 +21,25 @@ exercises: 4
 
 ### Файловые дескрипторы
 
-Every process inherits three open file descriptors from its parent:
+Каждый процесс наследует от родительского процесса три открытых файловых дескриптора:
 
-| FD | Name   | Default destination | Typical use |
+| FD | Имя | Назначение по умолчанию | Типичное применение |
 |----|--------|---------------------|-------------|
-| 0  | stdin  | Keyboard / terminal | Input data, prompts |
-| 1  | stdout | Terminal            | Normal output, results |
-| 2  | stderr | Terminal            | Errors, warnings, diagnostics |
+| 0 | stdin | Клавиатура / терминал | Входные данные, запросы ввода |
+| 1 | stdout | Терминал | Обычный вывод и результаты |
+| 2 | stderr | Терминал | Ошибки, предупреждения и диагностика |
 
-File descriptors are just integers. The kernel maps them to an underlying resource — a terminal, a file, a pipe, a socket, or `/dev/null`. Redirects change that mapping. When you write `> file`, you are telling the kernel: "for this process, file descriptor 1 should point to `file` instead of the terminal." The process itself calls `write(1, ...)` exactly as it always would — it has no idea the destination changed.
+Файловые дескрипторы — это целые числа. Ядро связывает их с ресурсом: терминалом, файлом, каналом, сокетом или `/dev/null`. Перенаправление меняет эту связь. Команда `> file` сообщает ядру: «для этого процесса дескриптор 1 должен указывать на `file`, а не на терминал». Сам процесс продолжает вызывать `write(1, ...)` как обычно и не знает, что назначение изменилось.
 
-**Why stderr is separate from stdout:** Tools output results on stdout and diagnostics on stderr so that downstream consumers (other commands or files) receive clean data. If `grep` mixed its "no matches" message into its output stream, scripts that pipe grep's results into further processing would silently corrupt data. Always respect this convention in your own scripts: use `echo "error message" >&2` for errors, not plain `echo`.
+**Зачем stderr отделён от stdout:** инструменты выводят результаты в stdout, а диагностику — в stderr, чтобы следующие команды получали чистые данные. Если бы `grep` помещал сообщение «совпадений нет» в поток результатов, конвейеры могли бы незаметно испортить данные. Соблюдайте это соглашение и в своих скриптах: для ошибок используйте `echo "error message" >&2`, а не обычный `echo`.
 
-**File descriptors beyond 0/1/2:** Bash lets you open and use arbitrary FDs (3, 4, ...) with `exec`. This is useful in scripts that need to log to a file while also reading user input, or that maintain a long-lived connection. You will rarely need this at first, but knowing it exists prevents confusion when you see `>&3` in advanced scripts.
+**Дескрипторы помимо 0/1/2:** Bash позволяет открывать и использовать произвольные FD (3, 4 и далее) через `exec`. Это полезно, когда скрипт одновременно пишет журнал в файл и читает ввод пользователя или поддерживает длительное соединение. Сначала это требуется редко, но знание механизма поможет разобраться в продвинутых скриптах с `>&3`.
 
 ---
 
-### Output Redirection
+### Перенаправление вывода
 
-Redirection operators tell the shell where to send a file descriptor before the command runs.
+Операторы перенаправления указывают shell, куда направить файловый дескриптор до запуска команды.
 
 ```bash
 # Overwrite stdout to a file (creates or truncates)
@@ -68,7 +68,7 @@ rm -f /tmp/cache 2>/dev/null
 noisy_command &>/dev/null
 ```
 
-**Order matters — this is the most common redirect mistake:**
+**Порядок важен — это самая частая ошибка перенаправления:**
 
 ```bash
 # WRONG — redirects stderr to terminal (current stdout), THEN moves stdout to file
@@ -80,9 +80,9 @@ command 2>&1 > file.txt
 command > file.txt 2>&1
 ```
 
-The shell processes redirects left to right. `2>&1` means "point FD 2 at whatever FD 1 currently points to *right now*." If you write `2>&1` before `> file`, FD 1 still points to the terminal at that moment, so stderr goes to the terminal. Use `&>` to avoid this confusion entirely in bash scripts.
+Shell обрабатывает перенаправления слева направо. `2>&1` означает «направить FD 2 туда, куда FD 1 указывает *в данный момент*». Если написать `2>&1` перед `> file`, FD 1 всё ещё указывает на терминал, поэтому stderr попадёт в терминал. В Bash-скриптах используйте `&>`, чтобы избежать этой путаницы.
 
-**Truncation on redirect open:** The `>` operator opens and truncates the file before the command runs. This means `sort file > file` will destroy the file's contents before `sort` reads it — you get an empty output file. Use a temp file or `sponge` (from `moreutils`) when transforming a file in place:
+**Обрезание файла при перенаправлении:** оператор `>` открывает файл и обнуляет его содержимое до запуска команды. Поэтому `sort file > file` уничтожит содержимое файла ещё до того, как `sort` его прочитает, и результатом станет пустой файл. Для изменения файла используйте временный файл или `sponge` из пакета `moreutils`.
 
 ```bash
 # Safe in-place sort using a temp file
@@ -94,9 +94,9 @@ sort file.txt | sponge file.txt
 
 ---
 
-### Input Redirection
+### Перенаправление ввода
 
-Input redirection feeds a file (or inline text) into a command's stdin.
+Перенаправление ввода передаёт файл (или встроенный текст) в stdin команды.
 
 ```bash
 # Feed a file as stdin — functionally equivalent to: cat schema.sql | mysql mydb
@@ -122,7 +122,131 @@ cat <<-MSG
 MSG
 ```
 
-**Here-doc quoting rules:** If the delimiter is unquoted (`<< EOF`), variable expansion and command substitution happen inside the body. Quote the delimiter (`<< 'EOF'`) to treat the body as a literal string — critical when heredoc content contains `$` signs you do not want expanded (SQL queries, Kubernetes YAML, Terraform configs):
+**Правила кавычек в here-doc:** если разделитель не заключён в кавычки (`<< EOF`), внутри тела выполняются подстановка переменных и команд. Заключите разделитель в кавычки (`<< 'EOF'`), чтобы трактовать тело как буквальную строку. Это важно, если внутри есть символы `---
+title: Конвейеры и перенаправление потоков
+module: bash
+duration_min: 10
+difficulty: beginner
+tags: [bash, pipes, redirects, stdin, stdout, stderr, tee]
+exercises: 4
+---
+
+## Обзор
+
+Конвейеры и перенаправления — основа композиционности Unix: небольшие специализированные инструменты можно объединять в более сложные цепочки. Вместо монолитных программ Unix предоставляет механизмы, позволяющие `grep`, `awk`, `sort`, `cut` и сотням других утилит обмениваться потоками данных. Для DevOps это не абстрактная теория: парсеры логов, скрипты развёртывания, health checks и шаги CI-пайплайнов зависят от правильной передачи данных между процессами. Ошибка может незаметно отбросить сообщения об ошибках, сломать конвейер или выдать вводящий в заблуждение результат.
+
+В основе лежит файловый дескриптор — числовой идентификатор открытого ресурса, назначаемый ядром процессу. По умолчанию у каждого процесса есть три стандартных дескриптора: stdin, stdout и stderr. Перенаправление меняет назначение дескриптора, а конвейер соединяет stdout одного процесса со stdin другого через буфер ядра. Эти механизмы работают одинаково в локальном скрипте, удалённой SSH-команде и entrypoint контейнера, поэтому применимы во всём DevOps-стеке.
+
+В DevOps конвейеры и перенаправления используются в скриптах CI/CD (сбор вывода сборки и отделение ошибок от обычных сообщений), обработке логов, автоматизации инфраструктуры (передаче конфигурации в `mysql`, `kubectl` или `terraform`) и процессах наблюдаемости. Владение этими приёмами значительно повышает эффективность любой работы с Bash.
+
+---
+
+## Основные понятия
+
+### Файловые дескрипторы
+
+Каждый процесс наследует от родительского процесса три открытых файловых дескриптора:
+
+| FD | Имя | Назначение по умолчанию | Типичное применение |
+|----|--------|---------------------|-------------|
+| 0 | stdin | Клавиатура / терминал | Входные данные, запросы ввода |
+| 1 | stdout | Терминал | Обычный вывод и результаты |
+| 2 | stderr | Терминал | Ошибки, предупреждения и диагностика |
+
+Файловые дескрипторы — это целые числа. Ядро связывает их с ресурсом: терминалом, файлом, каналом, сокетом или `/dev/null`. Перенаправление меняет эту связь. Команда `> file` сообщает ядру: «для этого процесса дескриптор 1 должен указывать на `file`, а не на терминал». Сам процесс продолжает вызывать `write(1, ...)` как обычно и не знает, что назначение изменилось.
+
+**Зачем stderr отделён от stdout:** инструменты выводят результаты в stdout, а диагностику — в stderr, чтобы следующие команды получали чистые данные. Если бы `grep` помещал сообщение «совпадений нет» в поток результатов, конвейеры могли бы незаметно испортить данные. Соблюдайте это соглашение и в своих скриптах: для ошибок используйте `echo "error message" >&2`, а не обычный `echo`.
+
+**Дескрипторы помимо 0/1/2:** Bash позволяет открывать и использовать произвольные FD (3, 4 и далее) через `exec`. Это полезно, когда скрипт одновременно пишет журнал в файл и читает ввод пользователя или поддерживает длительное соединение. Сначала это требуется редко, но знание механизма поможет разобраться в продвинутых скриптах с `>&3`.
+
+---
+
+### Перенаправление вывода
+
+Операторы перенаправления указывают shell, куда направить файловый дескриптор до запуска команды.
+
+```bash
+# Overwrite stdout to a file (creates or truncates)
+ls -la > files.txt
+
+# Append stdout — never truncates
+echo "$(date) deploy ok" >> deploy.log
+
+# Redirect stderr only — stdout still goes to terminal
+make 2> build_errors.txt
+
+# Redirect stderr to wherever stdout currently points
+ls /nonexistent 2>&1 | grep "No such"
+
+# Redirect both stdout and stderr to the same file (two equivalent forms)
+command > output.txt 2>&1   # POSIX-compatible — works in sh and bash
+command &> output.txt       # bash shorthand — not available in /bin/sh
+
+# Discard stdout (useful for commands run purely for side effects)
+apt-get update > /dev/null
+
+# Discard stderr (suppress error noise from expected failures)
+rm -f /tmp/cache 2>/dev/null
+
+# Discard everything (completely silent execution)
+noisy_command &>/dev/null
+```
+
+**Порядок важен — это самая частая ошибка перенаправления:**
+
+```bash
+# WRONG — redirects stderr to terminal (current stdout), THEN moves stdout to file
+# Result: stderr still goes to terminal, stdout goes to file
+command 2>&1 > file.txt
+
+# RIGHT — redirects stdout to file first, then stderr to wherever stdout now points
+# Result: both stdout and stderr go to file
+command > file.txt 2>&1
+```
+
+Shell обрабатывает перенаправления слева направо. `2>&1` означает «направить FD 2 туда, куда FD 1 указывает *в данный момент*». Если написать `2>&1` перед `> file`, FD 1 всё ещё указывает на терминал, поэтому stderr попадёт в терминал. В Bash-скриптах используйте `&>`, чтобы избежать этой путаницы.
+
+**Обрезание файла при перенаправлении:** оператор `>` открывает файл и обнуляет его содержимое до запуска команды. Поэтому `sort file > file` уничтожит содержимое файла ещё до того, как `sort` его прочитает, и результатом станет пустой файл. Для изменения файла используйте временный файл или `sponge` из пакета `moreutils`.
+
+```bash
+# Safe in-place sort using a temp file
+sort file.txt > file.txt.tmp && mv file.txt.tmp file.txt
+
+# Or with sponge — buffers entire input before writing
+sort file.txt | sponge file.txt
+```
+
+---
+
+### Перенаправление ввода
+
+Перенаправление ввода передаёт файл (или встроенный текст) в stdin команды.
+
+```bash
+# Feed a file as stdin — functionally equivalent to: cat schema.sql | mysql mydb
+mysql mydb < schema.sql
+
+# Here-string: pass a single string as stdin (no file needed)
+base64 <<< "hello world"
+wc -w <<< "count these words"
+
+# Here-document: multiline inline input; delimiter must appear alone on a line
+mysql mydb << SQL
+  CREATE TABLE IF NOT EXISTS events (
+    id   INT AUTO_INCREMENT PRIMARY KEY,
+    msg  TEXT NOT NULL,
+    ts   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+SQL
+
+# Indented here-doc (<<-): strips leading tabs (not spaces) for readable scripts
+cat <<-MSG
+	This line has a leading tab that will be stripped.
+	So does this one.
+MSG
+```
+
+, которые нельзя раскрывать (SQL-запросы, YAML Kubernetes, конфигурации Terraform).
 
 ```bash
 # Variables expand — $USER and $(hostname) are substituted at runtime
@@ -137,13 +261,13 @@ This is useful for generating scripts that contain their own variables.
 EOF
 ```
 
-**`< file` vs `cat file |`:** Using `< file` avoids spawning an extra `cat` process and is called avoiding "useless use of cat" (UUOC). It is not catastrophic, but adds process overhead and is considered poor style. Prefer `command < file` when the command accepts stdin directly.
+**`< file` и `cat file |`:** перенаправление `< file` не запускает дополнительный процесс `cat`; это называют «бесполезным использованием cat» (UUOC). Это не катастрофа, но добавляет накладные расходы и считается плохим стилем. Если команда читает stdin, предпочитайте `command < file`.
 
 ---
 
-### Pipes
+### Конвейеры
 
-A pipe (`|`) connects stdout of the left command to stdin of the right command through a kernel buffer. Both processes run concurrently — the left writes, the right reads, and the kernel manages flow control. This is fundamentally different from capturing output to a variable and processing it; pipes are streaming and memory-efficient for large inputs.
+Конвейер (`|`) соединяет stdout левой команды со stdin правой через буфер ядра. Оба процесса работают одновременно: левый записывает, правый читает, а ядро управляет потоком данных. Это принципиально отличается от сохранения вывода в переменную: конвейеры передают данные потоково и экономно используют память на больших входах.
 
 ```bash
 # Count error lines in an application log
@@ -169,7 +293,7 @@ awk '{print $9}' /var/log/nginx/access.log \
     | sort -rn
 ```
 
-**Exit codes in pipelines:** By default, a pipeline's exit code is the exit code of the *last* command only. If `grep` finds nothing (exit 1) but `wc -l` succeeds (exit 0), the pipeline exits 0 — the upstream failure is invisible. This is dangerous in scripts using `set -e`.
+**Коды завершения в конвейерах:** по умолчанию код конвейера равен коду *последней* команды. Если `grep` ничего не нашёл (код 1), но `wc -l` завершился успешно (код 0), весь конвейер вернёт 0 — ошибка предыдущей команды останется незаметной. Это опасно в скриптах с `set -e`.
 
 ```bash
 # Default behavior — pipeline exit code = exit code of wc -l (0), grep failure ignored
@@ -183,7 +307,7 @@ set -o pipefail
 grep "PATTERN" file.log | wc -l
 ```
 
-**`set -o pipefail` interaction with grep:** `grep` exits 1 when it finds no matches — not a program error, but a non-zero exit. With `pipefail` and `set -e` both active, a zero-match grep inside a pipe will abort your script. Handle this explicitly when zero matches is a valid outcome:
+**Взаимодействие `set -o pipefail` с grep:** `grep` возвращает 1, если совпадений нет. Это не ошибка программы, но код ненулевой. Если одновременно включены `pipefail` и `set -e`, `grep` без совпадений в конвейере остановит скрипт. Обрабатывайте такой случай явно, если отсутствие совпадений допустимо:
 
 ```bash
 # || true prevents a no-match from aborting the script
@@ -191,7 +315,7 @@ count=$(grep "PATTERN" file.log | wc -l || true)
 echo "Found $count matches"
 ```
 
-**Pipes and subshells:** Each side of a pipe runs in a subshell. Variables set inside a pipe stage do not propagate to the parent shell — this is one of the most common bash bugs in production scripts:
+**Конвейеры и subshell:** каждая сторона конвейера выполняется в отдельном subshell. Переменные, установленные внутри этапа конвейера, не передаются родительской оболочке. Это одна из частых ошибок Bash-скриптов в production:
 
 ```bash
 count=0
@@ -210,9 +334,9 @@ echo "$count"  # correctly prints the error count
 
 ---
 
-### tee — Write to File AND Continue the Pipe
+### tee — запись в файл с продолжением конвейера
 
-`tee` reads stdin and writes it to both stdout and one or more files simultaneously. It is named after the T-junction pipe fitting. It is indispensable when you want to capture output to a file for later review while still seeing it in real time — or when you need to branch a pipeline.
+`tee` читает stdin и одновременно записывает данные в stdout и один или несколько файлов. Название происходит от Т-образного соединителя труб. Инструмент незаменим, когда нужно сохранить вывод в файл для последующего анализа и одновременно видеть его в реальном времени, либо разветвить конвейер.
 
 ```bash
 # Show output on terminal AND save to file
@@ -230,7 +354,7 @@ curl -s https://api.example.com/metrics \
     | jq '.[] | select(.value > 100)'
 ```
 
-**Capturing stderr through tee:** `tee` only sees what arrives on its stdin, which is connected to the previous command's stdout. To capture stderr as well, merge it into stdout before the pipe:
+**Захват stderr через tee:** `tee` получает только данные из stdin, связанного со stdout предыдущей команды. Чтобы захватить stderr, объедините его со stdout до конвейера:
 
 ```bash
 # Without 2>&1: stderr bypasses tee and goes directly to terminal, not the log
@@ -240,7 +364,7 @@ curl -s https://api.example.com/metrics \
 ./deploy.sh 2>&1 | tee -a deploy.log     # stderr and stdout both in log
 ```
 
-**Using `tee` as a script-wide logger:** The `exec` builtin can rewire the script's own file descriptors, routing all subsequent output through `tee` without annotating every `echo`:
+**Использование tee для журналирования всего скрипта:** встроенная команда `exec` может перенаправить дескрипторы самого скрипта и направлять весь последующий вывод через `tee`, без добавления перенаправления к каждому `echo`:
 
 ```bash
 #!/usr/bin/env bash
@@ -256,13 +380,13 @@ echo "Deployment started at $(date)"
 # All subsequent output — including errors — is automatically logged
 ```
 
-**`> >(tee ...)` explained:** `>(tee -a "$LOGFILE")` is process substitution — bash creates a background `tee` process and returns a path like `/dev/fd/63`. `exec > /dev/fd/63` then points the script's stdout at that pipe input. This is the canonical pattern for adding logging to an existing script without modifying every output statement.
+**Как работает `> >(tee ...)`:** `>(tee -a "$LOGFILE")` — это подстановка процесса: Bash создаёт фоновый процесс `tee` и возвращает путь вроде `/dev/fd/63`. Затем `exec > /dev/fd/63` направляет stdout скрипта в этот канал. Это стандартный способ добавить журналирование существующему скрипту без изменения каждого оператора вывода.
 
 ---
 
-### Process Substitution
+### Подстановка процесса
 
-Process substitution lets you use a command's output as if it were a file. Bash creates a named pipe or `/dev/fd/N` handle and passes its path to the outer command. This is useful when a command requires filename arguments and does not accept stdin, or when you need to feed two live data streams into a command that expects two files.
+Подстановка процесса позволяет использовать вывод команды как файл. Bash создаёт именованный канал или дескриптор `/dev/fd/N` и передаёт его путь внешней команде. Это полезно, если команда принимает имена файлов, но не stdin, либо если нужно передать два потока данных команде, ожидающей два файла.
 
 ```bash
 # Compare /etc/hosts across two servers without creating temp files
@@ -278,22 +402,22 @@ diff <(dpkg --get-selections | sort) <(sort baseline_packages.txt)
 sort -m <(grep "ERROR" app1.log) <(grep "ERROR" app2.log)
 ```
 
-**`<(...)` vs `$(...)` vs `|` — choosing the right form:**
+**`<(...)`, `$(...)` и `|` — выбор подходящей формы:**
 
-| Form | What it produces | Use when |
+| Форма | Что создаёт | Когда использовать |
 |------|-----------------|----------|
-| `$(cmd)` | String (captured output) | You need the result as a variable or inline argument |
-| `\| cmd` | Pipe connected to next command's stdin | Single linear pipeline, one data stream |
-| `<(cmd)` | File-like path to command's output stream | Command needs a filename, or you need two input streams |
-| `>(cmd)` | File-like path to command's input stream | Command needs a filename to write output to |
+| `$(cmd)` | Строка (захваченный вывод) | Результат нужен как переменная или встроенный аргумент |
+| `\| cmd` | Канал в stdin следующей команды | Обычный линейный конвейер с одним потоком данных |
+| `<(cmd)` | Путь, похожий на файл, к потоку вывода команды | Команда ожидает имя файла или два входных потока |
+| `>(cmd)` | Путь, похожий на файл, к входу команды | Команда ожидает имя файла для записи вывода |
 
-**Process substitution is bash-specific.** It does not work in POSIX `sh`. If portability matters and your shebang is `#!/bin/sh`, use temp files with `mktemp` instead. Always use `#!/usr/bin/env bash` when you need process substitution.
+**Подстановка процесса специфична для Bash.** В POSIX `sh` она не работает. Если нужна переносимость и shebang — `#!/bin/sh`, используйте временные файлы через `mktemp`. Если нужна подстановка процесса, укажите `#!/usr/bin/env bash`.
 
 ---
 
-### Named Pipes (FIFOs)
+### Именованные каналы (FIFO)
 
-A FIFO (First In, First Out) is a special file that acts like a pipe but has a name in the filesystem. It allows unrelated processes — even ones started at different times — to communicate through a common path, which anonymous pipes cannot do.
+FIFO (First In, First Out) — специальный файл, работающий как канал, но имеющий имя в файловой системе. Он позволяет взаимодействовать несвязанным процессам, даже запущенным в разное время, через общий путь. Анонимные каналы так работать не могут.
 
 ```bash
 # Create a named pipe
@@ -309,18 +433,18 @@ grep --line-buffered "ERROR" < /tmp/logpipe >> /tmp/errors.log
 rm /tmp/logpipe
 ```
 
-FIFOs block: a writer blocks until a reader opens the other end, and vice versa. This makes them a natural synchronization primitive for producer/consumer patterns.
+FIFO блокирует операции: писатель ждёт, пока читатель откроет другой конец, и наоборот. Поэтому FIFO удобно использовать для синхронизации producer/consumer.
 
-**When to use FIFOs vs anonymous pipes:**
+**Когда использовать FIFO, а когда анонимный канал:**
 
-| Scenario | Use |
+| Сценарий | Решение |
 |----------|-----|
-| Linear single-script pipeline | Anonymous pipe (`\|`) |
-| Two unrelated processes communicating | FIFO (`mkfifo`) |
-| Command needs a filename, not stdin | Process substitution `<(...)` |
-| Persistent cross-session channel | FIFO |
+| Линейный конвейер в одном скрипте | Анонимный канал (`\|`) |
+| Обмен данными между несвязанными процессами | FIFO (`mkfifo`) |
+| Команда ожидает имя файла, а не stdin | Подстановка процесса `<(...)` |
+| Канал между сессиями | FIFO |
 
-In most DevOps scripts, process substitution covers the use cases where you might otherwise reach for FIFOs. Reserve FIFOs for situations involving separate processes that cannot be expressed as a single bash pipeline.
+В большинстве DevOps-скриптов подстановка процесса заменяет FIFO. Используйте FIFO, когда нужно связать отдельные процессы, которые нельзя выразить одним Bash-конвейером.
 
 ---
 
