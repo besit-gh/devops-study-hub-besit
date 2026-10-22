@@ -60,9 +60,9 @@ gcloud container clusters create prod-cluster \
 
 **Особенность Autopilot:** GKE требует задавать запросы ресурсов для каждого контейнера. Если не указать `requests`, GKE подставит значения по умолчанию. Pod без явных запросов могут тарифицироваться по более высоким автоматически заданным значениям, чем вы рассчитывали. В кластерах Autopilot всегда задавайте `requests` и `limits` явно.
 
-**Standard gotcha:** Creating a cluster without `--enable-ip-alias` (routes-based networking) disables Workload Identity, Private Google Access for pods, and several other features. Always use VPC-native (`--enable-ip-alias`) for new Standard clusters.
+**Важный нюанс Standard:** создание кластера без `--enable-ip-alias` (с маршрутизацией на основе маршрутов) отключает Workload Identity, Private Google Access для Pod и ряд других возможностей. Для новых кластеров Standard всегда используйте VPC-native (`--enable-ip-alias`).
 
-**Release channel reference:**
+**Справка по каналам выпуска:**
 
 | Channel | Kubernetes version lag | Auto-upgrade cadence | Best for |
 |---|---|---|---|
@@ -71,9 +71,9 @@ gcloud container clusters create prod-cluster \
 | Stable | ~5-6 months behind rapid | Quarterly | Conservative production |
 | None | Pinned | Manual only | Compliance, strict change control |
 
-### Connecting kubectl
+### Подключение kubectl
 
-After cluster creation, `kubectl` needs credentials. GKE uses the `gke-gcloud-auth-plugin` to handle token refresh — this replaced the old embedded credential approach in kubectl 1.26+.
+После создания кластера `kubectl` нужны учётные данные. GKE использует `gke-gcloud-auth-plugin` для обновления токенов. Начиная с kubectl 1.26 этот механизм заменил прежний встроенный способ получения учётных данных.
 
 ```bash
 # Install the auth plugin (required since kubectl 1.26+)
