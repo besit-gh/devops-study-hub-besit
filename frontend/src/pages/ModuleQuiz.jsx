@@ -76,13 +76,13 @@ export default function ModuleQuiz({ modules }) {
       <div className="mt-6">
         <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-1">Тест по модулю</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-          {questions.length} questions across all lessons in {mod?.title}.
+          {questions.length} вопросов по всем урокам модуля «{mod?.title}».
         </p>
         <button
           onClick={start}
           className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
         >
-          Start Quiz
+          Начать тест
         </button>
       </div>
     </div>
@@ -106,13 +106,13 @@ export default function ModuleQuiz({ modules }) {
               onClick={start}
               className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
-              Retake
+              Пройти ещё раз
             </button>
             <Link
               to={`/module/${moduleSlug}`}
               className="px-5 py-2 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 text-sm font-medium rounded-lg transition-colors"
             >
-              Back to module
+              Назад к модулю
             </Link>
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function ModuleQuiz({ modules }) {
             onClick={next}
             className="self-end px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
           >
-            {index + 1 >= questions.length ? 'Finish' : 'Next →'}
+            {index + 1 >= questions.length ? 'Завершить' : 'Далее →'}
           </button>
         </div>
       )}
