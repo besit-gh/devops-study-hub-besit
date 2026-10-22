@@ -324,9 +324,9 @@ done < hosts.txt
 **`while IFS= read -r LINE`** — стандартный шаблон для чтения файлов:
 - `IFS=` не позволяет удалять пробелы в начале и конце строки.
 - `-r` запрещает интерпретировать обратную косую черту как управляющую последовательность.
-- `< file` redirects the file into the loop without a subshell
+- `< file` передаёт файл в цикл без создания subshell.
 
-**Subshell trap:** a pipeline like `cat file | while read LINE` runs the `while` loop in a subshell. Variables set inside the loop are invisible after it ends. Always use `while read ... done < file` or process substitution `< <(command)` to keep the loop in the current shell.
+**Ловушка subshell:** конвейер вроде `cat file | while read LINE` выполняет цикл `while` в дочерней оболочке. Переменные, заданные внутри цикла, после его завершения недоступны. Используйте `while read ... done < file` или подстановку процесса `< <(command)`, чтобы цикл выполнялся в текущей оболочке.
 
 ```bash
 # Wrong — COUNT is lost after loop ends
@@ -343,13 +343,13 @@ done < hosts.txt
 echo "Processed $COUNT hosts"  # correct
 ```
 
-**`break` and `continue`:** `break` exits the innermost loop; `continue` skips to the next iteration. Both accept a numeric argument to affect outer loops: `break 2` exits two levels of nested loops.
+**`break` и `continue`:** `break` завершает ближайший цикл, а `continue` переходит к следующей итерации. Числовой аргумент позволяет воздействовать на внешние циклы: `break 2` выходит сразу из двух уровней вложенности.
 
 ---
 
 ### Functions
 
-Functions are defined before they are called. There is no forward declaration.
+Функции определяются до вызова. Предварительных объявлений функций в Bash нет.
 
 ```bash
 # Both syntax forms are valid; the first is more portable
