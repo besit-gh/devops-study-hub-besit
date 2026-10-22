@@ -15,7 +15,7 @@ LETTER_RE = re.compile(r"[A-Za-zА-Яа-яЁё]")
 
 def looks_russian(text):
     letters = len(LETTER_RE.findall(text))
-    return letters > 0 and len(CYRILLIC_RE.findall(text)) / letters > 0.08
+    return letters > 0 and len(CYRILLIC_RE.findall(text)) / letters > 0.60
 
 def extract_json(text):
     text = text.strip()
