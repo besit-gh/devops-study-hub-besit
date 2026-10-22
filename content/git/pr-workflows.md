@@ -21,7 +21,7 @@ Pull Request (PR; в GitLab — Merge Request) — основной механи
 
 ### Модель fork и модель веток
 
-The two dominant PR collaboration models differ on whether contributors share a single repository or work in isolated copies.
+Две основные модели совместной работы через PR различаются тем, работают ли участники в одном репозитории или в отдельных копиях.
 
 | Dimension | Fork Model | Branch Model |
 |---|---|---|
@@ -54,15 +54,15 @@ git push origin fix/typo-in-readme
 # → PR: YOUR_USER/upstream-repo:fix/typo-in-readme → original-org/upstream-repo:main
 ```
 
-**Fork model gotcha:** if you forget to add the `upstream` remote, `git pull` will only update your fork — not the original. Always add `upstream` immediately after cloning your fork. Regularly run `git fetch upstream && git rebase upstream/main` before starting new work.
+**Подводный камень модели fork:** если забыть добавить удалённый репозиторий `upstream`, команда `git pull` будет обновлять только ваш форк, но не исходный репозиторий. Добавляйте `upstream` сразу после клонирования форка. Перед началом новой работы регулярно выполняйте `git fetch upstream && git rebase upstream/main`.
 
 ---
 
 ### Anatomy of a Good PR
 
-A PR description is documentation. Six months from now, someone will `git log --oneline`, see a merge commit, and click through to the PR to understand why a change was made. A poor description says "fix bug." A good description answers four questions:
+Описание PR — это документация. Через полгода кто-то выполнит `git log --oneline`, увидит коммит слияния и откроет PR, чтобы понять причину изменения. Плохое описание гласит «исправление ошибки». Хорошее отвечает на четыре вопроса:
 
-1. **What changed?** — a short, scannable title and a summary of the diff
+1. **Что изменилось?** — короткий понятный заголовок и краткое описание diff
 2. **Why?** — motivation, linked issue, business or operational context
 3. **How do I verify it?** — concrete testing steps reviewers can reproduce
 4. **What are the risks?** — database migrations, breaking changes, performance implications, rollback plan
