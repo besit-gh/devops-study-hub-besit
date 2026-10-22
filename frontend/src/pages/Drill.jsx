@@ -184,7 +184,7 @@ export default function Drill({ onXpEarned }) {
             disabled={submitting}
             className="self-end px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
           >
-            {index + 1 >= questions.length ? 'Finish' : 'Next →'}
+            {index + 1 >= questions.length ? 'Завершить' : 'Далее →'}
           </button>
         </div>
       )}
