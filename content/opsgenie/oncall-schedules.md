@@ -379,7 +379,7 @@ Routing Rule: "Default (catch-all)"
 
 ### Example 1: Follow-the-Sun Schedule via API
 
-A platform team with engineers in London (EU) and New York (US East) wants continuous 24/7 weekday coverage. A team lead handles weekends.
+Платформенной команде с инженерами в Лондоне (Европа) и Нью-Йорке (восток США) нужно непрерывное покрытие дежурств 24/7 в будни. Выходные закрывает руководитель команды.
 
 ```bash
 # Step 1: Create the schedule shell
@@ -461,13 +461,13 @@ curl -X GET \
 # Expected: "Team Lead" (fallback rotation, Saturday 02:00 UTC)
 ```
 
-The 14:00–15:00 UTC overlap between EU and US East rotations means both the outgoing EU engineer and the incoming US East engineer are technically on call simultaneously — a deliberate handoff window. The escalation policy should target the schedule (not individual users) so it automatically picks up whoever the current slot owner is.
+Перекрытие ротаций Европы и востока США с 14:00 до 15:00 UTC означает, что уходящий европейский инженер и заступающий инженер из США формально дежурят одновременно. Это специально предусмотренное окно передачи смены. Политика эскалации должна ссылаться на расписание, а не на отдельных пользователей, чтобы автоматически выбирать владельца текущего слота.
 
 ---
 
-### Example 2: Multi-Step Escalation Policy with Priority Tiers
+### Пример 2. Многошаговая политика эскалации с уровнями приоритета
 
-This example creates two escalation policies — one for P1 and one for P3 — and wires them to the schedule from Example 1.
+В этом примере создаются две политики эскалации — для P1 и P3 — и связываются с расписанием из примера 1.
 
 ```bash
 # Create P1 escalation policy: aggressive, short windows
@@ -555,9 +555,9 @@ curl -X GET \
 
 ---
 
-### Example 3: Automated Override for a Holiday Blackout Period
+### Пример 3. Автоматическое переопределение на период праздничных выходных
 
-A script that reads a CSV of planned time-off and creates Opsgenie overrides in bulk. Useful for managing a whole quarter of vacation schedules at once.
+Скрипт читает CSV с запланированными отпусками и массово создаёт переопределения в Opsgenie. Это удобно для одновременного управления графиками отпусков на целый квартал.
 
 ```bash
 #!/usr/bin/env bash
@@ -615,9 +615,9 @@ curl -s "https://api.opsgenie.com/v2/schedules/Platform%20Team%20-%20Global/on-c
 
 ---
 
-### Example 4: Prometheus Alertmanager → Opsgenie Integration
+### Пример 4. Интеграция Prometheus Alertmanager с Opsgenie
 
-Connect an existing Alertmanager deployment to route alerts into Opsgenie with the correct priority mapping.
+Подключите существующий Alertmanager, чтобы направлять оповещения в Opsgenie с правильным соответствием приоритетов.
 
 ```yaml
 # alertmanager.yml
@@ -696,7 +696,7 @@ amtool alert add \
 # Check: Teams → Platform Team → Alert Activity
 ```
 
-**Gotcha:** Alertmanager's `repeat_interval: 12h` means if an alert fires and is not resolved, Alertmanager re-sends it to Opsgenie every 12 hours. If the Opsgenie alert is already acknowledged, the repeat sends create a *new* alert rather than updating the existing one, depending on your deduplication key (`alias` field). Set `alias` in `opsgenie_configs` to a deterministic value based on alert labels to enable deduplication:
+**Важно:** `repeat_interval: 12h` в Alertmanager означает, что неразрешённое оповещение повторно отправляется в Opsgenie каждые 12 часов. В зависимости от ключа дедупликации (`alias`) повтор может создать *новое* оповещение вместо обновления существующего, даже если исходное уже подтверждено. Чтобы включить дедупликацию, задайте в `opsgenie_configs` детерминированный `alias`, основанный на метках оповещения:
 
 ```yaml
 alias: '{{ .GroupLabels.alertname }}-{{ .GroupLabels.cluster }}'
@@ -706,18 +706,18 @@ alias: '{{ .GroupLabels.alertname }}-{{ .GroupLabels.cluster }}'
 
 ## Практические задания
 
-### Exercise 1: Audit a Schedule for Coverage Gaps
+### Задание 1. Проверьте расписание на пробелы в покрытии
 
-**Goal:** Practice identifying and fixing gaps using the API.
+**Цель:** отработать обнаружение и устранение пробелов с помощью API.
 
-1. Create a schedule via the Opsgenie UI with a single weekly rotation restricted to **Monday–Friday, 09:00–17:00 UTC** with two participants. Do not add a fallback rotation.
-2. Use the API to query who is on call on a **Saturday at 14:00 UTC**:
+1. Создайте в интерфейсе Opsgenie расписание с одной недельной ротацией, ограниченной **понедельником–пятницей, 09:00–17:00 UTC**, и двумя участниками. Не добавляйте резервную ротацию.
+2. Используйте API, чтобы узнать, кто дежурит **в субботу в 14:00 UTC**:
    ```bash
    curl -X GET \
      "https://api.opsgenie.com/v2/schedules/YOUR_SCHEDULE_NAME/on-calls?scheduleIdentifierType=name&flat=true&date=2024-06-15T14:00:00Z" \
      -H "Authorization: GenieKey YOUR_API_KEY" | jq '.data.onCallParticipants'
    ```
-3. Observe the empty result (the gap). Now add a fallback rotation via the UI with no time restriction and a single participant (yourself or a test user).
+3. Убедитесь, что результат пуст (пробел в расписании). Затем добавьте через интерфейс резервную ротацию без временных ограничений и с одним участником (вы сами или тестовый пользователь).
 4. Повторите тот же API-запрос и убедитесь, что резервный участник появился в результате.
 5. **Объясните своими словами:** почему пробел в расписании приводит к незаметному отказу, а не к ошибке? К каким эксплуатационным последствиям может привести необнаруженный пробел в production?
 
@@ -790,20 +790,20 @@ alias: '{{ .GroupLabels.alertname }}-{{ .GroupLabels.cluster }}'
 
 ### Быстрая проверка
 
-7. Calculate hours in a 7-day on-call rotation. Run: `python3 -c "print(7 * 24)"`
+7. Рассчитайте количество часов в семидневном дежурстве. Выполните: `python3 -c "print(7 * 24)"`
 
 ```expected_output
 168
 ```
 
-hint: Think about how you can use Python's inline execution flag to evaluate a mathematical expression directly from the terminal.
-hint: Use python3 -c to run a short print statement that multiplies the number of days by the number of hours in a day.
+Подсказка: используйте режим выполнения Python-команды прямо из терминала, чтобы вычислить математическое выражение.
+Подсказка: используйте `python3 -c` и короткую команду `print`, перемножающую количество дней и часов в сутках.
 
-8. Count participants in an on-call schedule stub. Run: `printf 'participants:\n- user: alice\n- user: bob\n- user: carol\n- user: dave\n' | grep -c '^- user:'`
+8. Посчитайте участников в примере расписания дежурств. Выполните: `printf 'participants:\n- user: alice\n- user: bob\n- user: carol\n- user: dave\n' | grep -c '^- user:'`
 
 ```expected_output
 4
 ```
 
-hint: Think about how grep can be used not just to find matches, but also to report the number of matching lines directly.
-hint: Use grep with the -c flag, which counts the number of lines matching a given pattern, such as the line prefix '^- user:'.
+Подсказка: `grep` умеет не только находить совпадения, но и сразу сообщать число подходящих строк.
+Подсказка: используйте флаг `grep -c`, который считает строки по шаблону, например по префиксу `^- user:`.
