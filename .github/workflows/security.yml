@@ -3,8 +3,28 @@ name: Security Checks
 on:
   push:
     branches: [master]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/**'
+      - 'docker-compose.yml'
+      - 'setup.sh'
+      - 'start.sh'
+      - 'backend/.env.example'
+      - '.nvmrc'
+      - '.python-version'
   pull_request:
     branches: [master]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/**'
+      - 'docker-compose.yml'
+      - 'setup.sh'
+      - 'start.sh'
+      - 'backend/.env.example'
+      - '.nvmrc'
+      - '.python-version'
 
 jobs:
   python-security:
