@@ -124,7 +124,7 @@ export default function SearchModal({ modules, progress = {}, onClose }) {
                   : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400'
               }`}
             >
-              All
+              Все разделы
             </button>
             {GROUP_ORDER.filter(g => allResults.some(r => moduleGroupMap[r.moduleSlug] === g)).map(g => (
               <button
@@ -136,7 +136,7 @@ export default function SearchModal({ modules, progress = {}, onClose }) {
                     : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400'
                 }`}
               >
-                {g}
+                {localizeGroupTitle(g)}
               </button>
             ))}
           </div>
