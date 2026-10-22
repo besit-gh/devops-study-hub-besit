@@ -75,7 +75,7 @@ export default function Review({ onXpEarned, onComplete }) {
         <div>
           <div className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-2">{due}</div>
           <div className="text-sm text-gray-500 dark:text-gray-400">
-            {due === 0 ? 'All caught up — no cards due' : `card${due === 1 ? '' : 's'} due for review`}
+            {due === 0 ? 'Повторять пока нечего' : `карточек к повторению: ${due}`}
           </div>
         </div>
         {due > 0 && (
@@ -97,9 +97,9 @@ export default function Review({ onXpEarned, onComplete }) {
       <div className="flex flex-col items-center justify-center h-full gap-4 px-8 text-center">
         <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Сессия завершена</div>
         <div className={`text-5xl font-bold ${color}`}>{pct}%</div>
-        <div className="text-sm text-gray-500 dark:text-gray-400">{score} / {queue.length} correct</div>
+        <div className="text-sm text-gray-500 dark:text-gray-400">{score} из {queue.length} правильных ответов</div>
         {xpEarned > 0 && (
-          <div className="text-xs font-medium text-amber-600 dark:text-amber-400">+{xpEarned} XP earned</div>
+          <div className="text-xs font-medium text-amber-600 dark:text-amber-400">+{xpEarned} XP получено</div>
         )}
         <button
           onClick={() => {
@@ -111,7 +111,7 @@ export default function Review({ onXpEarned, onComplete }) {
           }}
           className="mt-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
         >
-          Done
+          Готово
         </button>
       </div>
     )
@@ -153,7 +153,7 @@ export default function Review({ onXpEarned, onComplete }) {
           onClick={() => setRevealed(true)}
           className="self-start px-5 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
         >
-          Reveal Answer
+          Показать ответ
         </button>
       ) : (
         <div className="flex flex-col gap-2">
