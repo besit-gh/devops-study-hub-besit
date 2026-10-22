@@ -11,15 +11,15 @@ exercises: 4
 
 AWS Lambda — serverless-сервис вычислений, запускающий код в ответ на события и автоматически управляющий инфраструктурой. Для DevOps он позволяет не заниматься подготовкой, обновлением и масштабированием серверов для событийных или периодических задач. Оплата начисляется только за использованное время вычислений (с шагом в 1 мс), что выгодно для задач, ради которых иначе пришлось бы держать EC2 постоянно включёнными. Автоматическое масштабирование Lambda — от нуля до тысяч параллельных запусков за секунды — снимает значительную часть задач планирования мощности.
 
-Lambda's design is shaped by three principles: statelessness (each invocation is independent — no shared memory between calls), event-driven execution (Lambda reacts to triggers from dozens of AWS services), and ephemeral compute (execution environments are created and destroyed automatically). These constraints drive the patterns you'll use: caching state in external stores like DynamoDB or ElastiCache, structuring code to handle idempotent retries, and keeping packages small to minimize cold start latency. Understanding these constraints upfront prevents entire classes of bugs that appear only in production under concurrency.
+Архитектура Lambda основана на трёх принципах: отсутствие состояния (каждый вызов независим, общей памяти между вызовами нет), событийное выполнение (Lambda реагирует на триггеры десятков сервисов AWS) и временные вычислительные окружения (они создаются и удаляются автоматически). Поэтому состояние кэшируют во внешних хранилищах вроде DynamoDB или ElastiCache, код проектируют с учётом идемпотентных повторных запусков, а пакеты делают небольшими, чтобы уменьшить задержку холодного старта. Понимание этих ограничений заранее помогает избежать ошибок, проявляющихся только под production-нагрузкой.
 
-In the DevOps toolchain, Lambda fills several roles simultaneously. It acts as glue code connecting AWS services (S3 → Lambda → DynamoDB), as a backend for API Gateway HTTP endpoints, as a consumer for SQS and Kinesis streams, as a scheduled task runner via EventBridge, and increasingly as the execution engine for infrastructure automation — rotating secrets, enforcing compliance rules, and responding to CloudWatch alarms. Mastering Lambda means understanding not just the function itself, but the entire event-driven substrate that AWS is built on.
+В DevOps-стеке Lambda выполняет сразу несколько ролей: связывает сервисы AWS (S3 → Lambda → DynamoDB), обслуживает HTTP-эндпоинты API Gateway, обрабатывает очереди SQS и потоки Kinesis, запускает задачи по расписанию через EventBridge и выполняет автоматизацию инфраструктуры — ротацию секретов, контроль соответствия требованиям и реакцию на сигналы CloudWatch. Освоить Lambda — значит понимать не только саму функцию, но и событийную инфраструктуру, на которой построен AWS.
 
 ## Основные понятия
 
-### Function Anatomy
+### Устройство функции
 
-Every Lambda function receives two arguments: `event` and `context`. The `event` is the trigger payload — its shape depends entirely on the source (S3, SQS, API Gateway, etc.). The `context` object provides runtime metadata: request ID, function name, remaining execution time, and the CloudWatch log stream for this invocation.
+Каждая функция Lambda получает два аргумента: `event` и `context`. `event` содержит данные триггера, структура которых зависит от источника (S3, SQS, API Gateway и т. д.). Объект `context` предоставляет метаданные выполнения: ID запроса, имя функции, оставшееся время выполнения и поток журналов CloudWatch для этого вызова.
 
 ```python
 # handler.py
@@ -51,9 +51,9 @@ def handler(event, context):
     }
 ```
 
-**Return value semantics:** for API Gateway integrations, return a dict with `statusCode`, `headers`, and `body`. For SQS triggers, return a `batchItemFailures` list. For S3, SNS, and EventBridge triggers, the return value is ignored — side effects are what matter. Returning the wrong shape for an API Gateway integration produces a `502 Bad Gateway` with no clear error message — always validate the response format.
+**Формат возвращаемого значения:** для интеграции с API Gateway верните словарь с `statusCode`, `headers` и `body`. Для триггеров SQS верните список `batchItemFailures`. Для S3, SNS и EventBridge возвращаемое значение игнорируется — важны побочные эффекты. Неверная структура ответа для API Gateway приводит к `502 Bad Gateway` без понятного сообщения, поэтому всегда проверяйте формат ответа.
 
-**Module-level code runs once per execution environment, not once per invocation.** Execution environments are reused across invocations until they are recycled (typically after minutes to hours of inactivity). Use this to cache SDK clients, parse config, and establish connections outside the handler.
+**Код на уровне модуля выполняется один раз на вычислительное окружение, а не при каждом вызове.** Окружения повторно используются, пока не будут пересозданы (обычно после нескольких минут или часов бездействия). Используйте это для кэширования SDK-клиентов, разбора конфигурации и установки соединений вне обработчика.
 
 ```python
 # Good: SDK client and table reference created once, reused across warm invocations
@@ -67,18 +67,18 @@ def handler(event, context):
     ...
 ```
 
-### Runtime and Memory Configuration
+### Настройка runtime и памяти
 
-| Runtime | Cold start (typical) | Notes |
+| Runtime | Холодный старт (обычно) | Примечания |
 |---------|---------------------|-------|
-| Python 3.12 | 100–300ms | Fast, mature ecosystem |
-| Node.js 20.x | 100–250ms | Fastest for small functions |
-| Java 21 (SnapStart) | 1–3s (200ms with SnapStart) | JVM warmup is expensive; SnapStart snapshots the initialized state |
-| .NET 8 | 300ms–1s | AOT compilation reduces cold starts significantly |
-| Go (provided.al2023) | 50–150ms | Compiled binary, minimal runtime overhead |
-| Container image | 1–5s | Depends on image size; use slim base images |
+| Python 3.12 | 100–300 мс | Быстрый runtime с развитой экосистемой |
+| Node.js 20.x | 100–250 мс | Один из самых быстрых для небольших функций |
+| Java 21 (SnapStart) | 1–3 с (200 мс с SnapStart) | Прогрев JVM дорогой; SnapStart сохраняет снимок инициализированного состояния |
+| .NET 8 | 300 мс – 1 с | AOT-компиляция существенно сокращает холодный старт |
+| Go (provided.al2023) | 50–150 мс | Скомпилированный бинарник, минимальные накладные расходы |
+| Образ контейнера | 1–5 с | Зависит от размера образа; используйте slim-образы |
 
-Memory is the **primary configuration lever** for performance. Lambda allocates CPU proportionally to memory — at 1,769 MB you get exactly one full vCPU; at 3,538 MB you get two vCPUs. For CPU-bound workloads, increasing memory often reduces duration enough to lower total cost even though the per-GB-second price is constant.
+Память — **главный параметр настройки производительности**. Lambda выделяет CPU пропорционально объёму памяти: при 1769 МБ доступно ровно одно vCPU, при 3538 МБ — два. Для задач, ограниченных CPU, увеличение памяти часто настолько сокращает длительность выполнения, что общая стоимость снижается, хотя цена за ГБ-секунду остаётся постоянной.
 
 ```bash
 # Update memory and test billed duration at multiple settings
@@ -91,13 +91,13 @@ aws lambda update-function-configuration \
 # https://github.com/alexcasalboni/aws-lambda-power-tuning
 ```
 
-**Timeout configuration:** the default timeout is 3 seconds; the maximum is 900 seconds (15 minutes). Set the timeout to slightly above the 99th-percentile observed duration — a too-generous timeout increases cost when functions hang waiting on network I/O. Always set an explicit timeout; the 3-second default will silently terminate functions making slow downstream calls.
+**Настройка тайм-аута:** по умолчанию он равен 3 секундам, максимум — 900 секунд (15 минут). Устанавливайте значение немного выше 99-го перцентиля фактической длительности: слишком большой тайм-аут увеличивает стоимость при зависании на сетевом вводе-выводе. Всегда задавайте тайм-аут явно — значение по умолчанию может незаметно завершить функцию, ожидающую медленный внешний сервис.
 
-**`/tmp` storage:** Lambda provides 512 MB of ephemeral `/tmp` storage by default (configurable up to 10 GB). Data written to `/tmp` persists within a warm execution environment across invocations but is never shared between concurrent instances and disappears when the environment is recycled. Use `/tmp` for caching downloaded assets within a single environment — never as durable storage.
+**Хранилище `/tmp`:** по умолчанию Lambda предоставляет 512 МБ временного пространства `/tmp` (можно увеличить до 10 ГБ). Данные сохраняются между вызовами в тёплом окружении, но не разделяются между параллельными экземплярами и исчезают при пересоздании окружения. Используйте `/tmp` для кэширования загруженных файлов внутри одного окружения, но не для постоянного хранения.
 
-### Deploying with the AWS CLI
+### Развёртывание через AWS CLI
 
-The deployment workflow is: package code → create or update function → verify. For production, use SAM or Terraform, but understanding the raw CLI workflow is essential for debugging and scripting.
+Процесс развёртывания: упаковать код → создать или обновить функцию → проверить результат. В production используйте SAM или Terraform, но понимание базового процесса через CLI необходимо для отладки и скриптов.
 
 ```bash
 # Package handler and any local modules into a ZIP
@@ -143,7 +143,7 @@ aws lambda invoke \
   output.json | jq -r '.LogResult' | base64 -d
 ```
 
-**Invocation error gotcha:** `aws lambda invoke` exits with status 0 even when your function throws an unhandled exception. The HTTP status code is 200 but the response body contains `"FunctionError": "Unhandled"`. Always inspect `output.json` and check for the `FunctionError` field in CI pipelines — otherwise failed deployments look like successes.
+**Особенность ошибки вызова:** `aws lambda invoke` возвращает код 0 даже при необработанном исключении функции. HTTP-статус будет 200, но в теле ответа появится `"FunctionError": "Unhandled"`. Всегда проверяйте `output.json` и поле `FunctionError` в CI, иначе неудачный вызов может выглядеть как успешный.
 
 ```bash
 # In CI: fail the pipeline if the function errored
@@ -159,21 +159,21 @@ if jq -e '.FunctionError' output.json > /dev/null 2>&1; then
 fi
 ```
 
-### Triggers
+### Триггеры
 
-Lambda integrates with AWS services through two models: **push** (the source directly invokes Lambda) and **pull/poll** (Lambda polls the source for records and invokes the function with a batch).
+Lambda взаимодействует с сервисами AWS по двум моделям: **push** (источник напрямую вызывает Lambda) и **pull/poll** (Lambda опрашивает источник и вызывает функцию с пакетом записей).
 
-| Trigger | Model | Retry behavior | Scaling |
+| Триггер | Модель | Повторные попытки | Масштабирование |
 |---------|-------|---------------|---------|
-| API Gateway / ALB | Push (sync) | Caller handles retries | 1 concurrent exec per request |
-| S3 | Push (async) | Lambda retries 2×, then DLQ | Per object event |
-| SNS | Push (async) | Lambda retries 2×, then DLQ | Per message |
-| EventBridge | Push (async) | Lambda retries 2×, then DLQ | Per rule match |
-| SQS (standard) | Pull | Messages re-queued on failure; DLQ after maxReceiveCount | Scales with queue depth |
-| SQS (FIFO) | Pull | Same; ordering preserved per MessageGroupId | Limited by message group count |
-| Kinesis / DynamoDB Streams | Pull | Retries until TTL or success; blocks the shard | 1 concurrent exec per shard (default) |
+| API Gateway / ALB | Push (синхронный) | Повторные попытки выполняет вызывающая сторона | Один параллельный вызов на запрос |
+| S3 | Push (асинхронный) | Lambda повторяет дважды, затем DLQ | Для каждого события объекта |
+| SNS | Push (асинхронный) | Lambda повторяет дважды, затем DLQ | Для каждого сообщения |
+| EventBridge | Push (асинхронный) | Lambda повторяет дважды, затем DLQ | Для каждого совпадения правила |
+| SQS (standard) | Pull | При ошибке сообщения возвращаются в очередь; после maxReceiveCount отправляются в DLQ | Масштабируется по длине очереди |
+| SQS (FIFO) | Pull | То же; порядок сохраняется внутри MessageGroupId | Ограничено количеством групп сообщений |
+| Kinesis / DynamoDB Streams | Pull | Повторяет до успеха или истечения TTL; блокирует shard | По умолчанию один параллельный вызов на shard |
 
-**Async retry gotcha:** for push-async sources (S3, SNS, EventBridge), Lambda retries your function twice on failure. If all three attempts fail, the event is lost unless you configure a Dead Letter Queue or an on-failure event destination. Always configure a DLQ for async invocations handling important data.
+**Повторные попытки при асинхронном вызове:** для источников push-async (S3, SNS, EventBridge) Lambda повторяет вызов дважды при ошибке. Если все три попытки неудачны, событие будет потеряно, если не настроена Dead Letter Queue или назначение событий при сбое. Для асинхронной обработки важных данных всегда настраивайте DLQ.
 
 ```bash
 # Add a DLQ for async invocation failures
@@ -182,9 +182,9 @@ aws lambda update-function-configuration \
   --dead-letter-config TargetArn=arn:aws:sqs:us-east-1:123456789012:myapp-dlq
 ```
 
-#### S3 Trigger
+#### Триггер S3
 
-S3 invokes Lambda asynchronously when objects are created, deleted, or restored. The event payload contains a `Records` array; a single notification can contain multiple records in theory, but in practice S3 sends one record per event.
+S3 асинхронно вызывает Lambda при создании, удалении или восстановлении объектов. Payload события содержит массив `Records`; теоретически одно уведомление может содержать несколько записей, но на практике S3 отправляет одну запись на событие.
 
 ```bash
 # Step 1: grant S3 permission to invoke the function
@@ -212,7 +212,7 @@ aws s3api put-bucket-notification-configuration \
   }'
 ```
 
-**Key encoding gotcha:** S3 URL-encodes object keys in event payloads. A file named `my file.csv` becomes `my+file.csv` in the event. Always `unquote_plus` the key before using it.
+**Кодирование ключа:** S3 кодирует имена объектов в URL-формате внутри payload события. Имя `my file.csv` превращается в `my+file.csv`. Перед использованием всегда применяйте `unquote_plus`.
 
 ```python
 import urllib.parse
@@ -225,9 +225,9 @@ def handler(event, context):
         print(f"Processing s3://{bucket}/{key} ({size} bytes)")
 ```
 
-#### SQS Trigger
+#### Триггер SQS
 
-Lambda polls SQS and invokes your function with a batch of messages. This is the preferred pattern for reliable, at-least-once message processing.
+Lambda опрашивает SQS и вызывает функцию с пакетом сообщений. Это предпочтительный шаблон для надёжной обработки с гарантией доставки как минимум один раз.
 
 ```bash
 # Create event source mapping
@@ -239,7 +239,7 @@ aws lambda create-event-source-mapping \
   --function-response-types ReportBatchItemFailures  # partial batch success
 ```
 
-With `ReportBatchItemFailures`, return a `batchItemFailures` list containing the `messageId` of each failed message. Lambda deletes successful messages and requeues only the failures.
+При использовании `ReportBatchItemFailures` верните список `batchItemFailures` с `messageId` каждого неудачно обработанного сообщения. Lambda удалит успешно обработанные сообщения и повторно поставит в очередь только неудачные.
 
 ```python
 import json
@@ -258,11 +258,11 @@ def handler(event, context):
     return {'batchItemFailures': failures}
 ```
 
-**Without `ReportBatchItemFailures`:** if your function raises an exception, the entire batch is requeued — including successfully processed messages. This causes duplicate processing. Always enable partial batch success for SQS triggers.
+**Без `ReportBatchItemFailures`:** если функция вызывает исключение, в очередь возвращается весь пакет, включая успешно обработанные сообщения. Это приводит к дубликатам обработки. Для триггеров SQS всегда включайте частичный успех пакета.
 
-**SQS concurrency scaling:** Lambda adds concurrency to drain queues — roughly one concurrent execution per 60 messages in a standard queue, scaling up to 1,000 concurrent executions over the first 10 minutes. Without a reserved concurrency limit, a sudden queue burst can consume your entire account concurrency, starving other functions. Set reserved concurrency on high-volume SQS consumers.
+**Масштабирование параллельности SQS:** Lambda увеличивает число параллельных вызовов для обработки очереди — примерно один вызов на 60 сообщений стандартной очереди, до 1000 параллельных вызовов в первые 10 минут. Без ограничения reserved concurrency резкий всплеск очереди может занять весь лимит аккаунта и лишить ресурсов другие функции. Задавайте reserved concurrency для потребителей SQS с высокой нагрузкой.
 
-#### EventBridge Schedule
+#### Расписание EventBridge
 
 ```bash
 # Rate expression: every 5 minutes
@@ -291,15 +291,15 @@ aws lambda add-permission \
   --statement-id eventbridge-schedule
 ```
 
-**EventBridge cron syntax differs from Unix cron.** The sixth field is year, not seconds, and you must use `?` (any) in either day-of-month or day-of-week — not both. `cron(0 8 * * MON-FRI *)` is invalid; `cron(0 8 ? * MON-FRI *)` is correct.
+**Синтаксис cron в EventBridge отличается от Unix cron.** Шестое поле — год, а не секунды. В поле дня месяца или дня недели нужно использовать `?`, но не в обоих сразу. `cron(0 8 * * MON-FRI *)` неверно; правильно `cron(0 8 ? * MON-FRI *)`.
 
-### Concurrency and Throttling
+### Параллельность и ограничение частоты
 
-| Concurrency type | What it controls |
+| Тип параллельности | Что ограничивает |
 |-----------------|-----------------|
-| **Account limit** | Total concurrent executions across all functions in a region (default: 1,000; requestable increase) |
-| **Reserved concurrency** | Maximum concurrency for a specific function; counts against the account limit; requests above this are throttled (429) |
-| **Provisioned concurrency** | Pre-initialized execution environments that eliminate cold starts; billed whether invoked or not |
+| **Лимит аккаунта** | Общее число параллельных вызовов всех функций в регионе (по умолчанию 1000; можно запросить увеличение) |
+| **Reserved concurrency** | Максимум параллельных вызовов конкретной функции; учитывается в лимите аккаунта, превышение ограничивается (429) |
+| **Provisioned concurrency** | Заранее инициализированные окружения, устраняющие холодный старт; оплачиваются даже без вызовов |
 
 ```bash
 # Reserve 100 concurrent executions for a critical function
@@ -319,16 +319,16 @@ aws lambda put-provisioned-concurrency-config \
   --provisioned-concurrent-executions 10
 ```
 
-**Throttle behavior by invocation type:**
-- **Synchronous** (API Gateway, ALB): returns HTTP 429. The caller must implement retry with backoff.
-- **Asynchronous** (S3, SNS, EventBridge): Lambda queues the event internally and retries for up to 6 hours before sending to DLQ.
-- **Polling** (SQS, Kinesis): messages stay in the queue/stream; Lambda retries when capacity is available.
+**Поведение при ограничении частоты в зависимости от типа вызова:**
+- **Синхронный** (API Gateway, ALB): возвращается HTTP 429. Вызывающая сторона должна повторять запросы с экспоненциальной задержкой.
+- **Асинхронный** (S3, SNS, EventBridge): Lambda помещает событие во внутреннюю очередь и повторяет попытки до 6 часов перед отправкой в DLQ.
+- **Опрос** (SQS, Kinesis): сообщения остаются в очереди или потоке; Lambda повторяет попытку, когда появляется свободная мощность.
 
-**Setting reserved concurrency to 0** effectively disables a function — useful for emergency shutoff of a runaway function without deleting it.
+**Установка reserved concurrency в 0** фактически отключает функцию. Это полезно для аварийной остановки неконтролируемой функции без её удаления.
 
-### Environment Variables and Secrets
+### Переменные окружения и секреты
 
-Environment variables are the right place for non-sensitive configuration (URLs, table names, feature flags, region). For sensitive values, use AWS Secrets Manager or SSM Parameter Store and fetch at cold start.
+Переменные окружения подходят для несекретной конфигурации (URL, имена таблиц, feature flags, регион). Для чувствительных значений используйте AWS Secrets Manager или SSM Parameter Store и получайте их при холодном старте.
 
 ```python
 import os
@@ -353,7 +353,7 @@ def handler(event, context):
     db_password = _db_secret['password']     # sensitive: Secrets Manager
 ```
 
-**Encryption gotcha:** Lambda encrypts environment variables at rest using KMS (AWS-managed key by default). However, values are visible in plaintext in the Lambda console and in CloudTrail `GetFunctionConfiguration` API calls. Anyone with `lambda:GetFunctionConfiguration` IAM permission can read them. Never put raw credentials or API keys in environment variables — use Secrets Manager or SSM SecureString.
+**Особенность шифрования:** Lambda шифрует переменные окружения в состоянии покоя с помощью KMS (по умолчанию ключом AWS). Однако значения видны в открытом виде в консоли Lambda и вызовах `GetFunctionConfiguration` в CloudTrail. Любой, у кого есть разрешение IAM `lambda:GetFunctionConfiguration`, может их прочитать. Не храните обычные учётные данные и API-ключи в переменных окружения — используйте Secrets Manager или SSM SecureString.
 
 ```bash
 # Store the ARN in env vars, not the secret value
@@ -366,9 +366,9 @@ aws lambda update-function-configuration \
   }'
 ```
 
-### Layers
+### Слои
 
-Layers are versioned ZIP archives shared across functions. They are mounted read-only at `/opt` inside the execution environment. Python packages go in `/opt/python/`, Node.js in `/opt/nodejs/node_modules/`, and binaries in `/opt/bin/` (which Lambda adds to `PATH`).
+Слои — это версионируемые ZIP-архивы, которые можно использовать в нескольких функциях. Они монтируются в режиме только для чтения в `/opt`. Пакеты Python размещаются в `/opt/python/`, Node.js — в `/opt/nodejs/node_modules/`, бинарные файлы — в `/opt/bin/` (Lambda добавляет этот путь в `PATH`).
 
 ```bash
 # Build a Python dependency layer — directory structure must match the runtime import path
@@ -396,13 +396,13 @@ aws lambda update-function-configuration \
     arn:aws:lambda:us-east-1:123456789012:layer:datadog-extension:45
 ```
 
-**Layer size limits:** each layer ZIP can be up to 50 MB compressed, 250 MB unzipped. Total unzipped size of function code + all layers must stay under 250 MB. For larger dependency trees (e.g., ML inference with numpy/scipy/torch), use container image deployment — the limit is 10 GB.
+**Ограничения размера слоя:** ZIP-архив слоя может занимать до 50 МБ в сжатом виде и до 250 МБ после распаковки. Общий распакованный размер кода функции и всех слоёв должен быть меньше 250 МБ. Для больших наборов зависимостей (например, ML-инференса с numpy/scipy/torch) используйте развёртывание из образа контейнера — лимит составляет 10 ГБ.
 
-Layers are also the standard mechanism for deploying Lambda Extensions — agents that run in the same execution environment as your function to collect telemetry, inject secrets, or proxy network traffic (e.g., the Datadog extension, AWS AppConfig extension).
+Слои также используются для развёртывания Lambda Extensions — агентов, работающих в том же окружении, что и функция, для сбора телеметрии, передачи секретов или проксирования сетевого трафика (например, расширения Datadog и AWS AppConfig).
 
-### IAM Execution Role
+### Роль выполнения IAM
 
-Every Lambda function assumes an **execution role** at invocation time. This is the identity Lambda uses to call other AWS services. The role must trust `lambda.amazonaws.com` as a principal.
+При вызове каждая функция Lambda принимает **роль выполнения**. Это идентичность, от имени которой Lambda обращается к другим сервисам AWS. В политике доверия роли principal должен быть `lambda.amazonaws.com`.
 
 ```json
 {
@@ -438,11 +438,11 @@ aws iam put-role-policy \
   }'
 ```
 
-**Least privilege principle:** never attach `AdministratorAccess` or `AmazonS3FullAccess` to a Lambda execution role in production. Scope permissions to the exact actions and resources the function needs. A compromised function with broad permissions is a lateral movement path through your entire AWS account.
+**Принцип минимальных привилегий:** никогда не назначайте `AdministratorAccess` или `AmazonS3FullAccess` роли выполнения Lambda в production. Ограничивайте права конкретными действиями и ресурсами, которые нужны функции. Скомпрометированная функция с широкими правами может стать точкой дальнейшего проникновения в аккаунт AWS.
 
-### Observability
+### Наблюдаемость
 
-Lambda automatically ships logs to CloudWatch Logs. Each function gets a log group at `/aws/lambda/<function-name>`. Each execution environment generates a new log stream.
+Lambda автоматически отправляет журналы в CloudWatch Logs. Для каждой функции создаётся группа `/aws/lambda/<function-name>`, а каждое вычислительное окружение создаёт новый поток журнала.
 
 ```bash
 # Tail logs in real time (requires CloudWatch Logs Insights or awslogs tool)
@@ -459,16 +459,16 @@ aws logs start-query \
     | limit 20'
 ```
 
-Every invocation automatically emits a `REPORT` log line with duration, billed duration, memory used, and max memory used:
+Каждый вызов автоматически создаёт строку журнала `REPORT` с длительностью выполнения, оплаченной длительностью, использованной памятью и максимальным потреблением памяти:
 
 ```
 REPORT RequestId: abc-123  Duration: 142.73 ms  Billed Duration: 143 ms
        Memory Size: 256 MB  Max Memory Used: 89 MB  Init Duration: 312.14 ms
 ```
 
-**`Init Duration` in the REPORT line indicates a cold start.** If you see it consistently, consider provisioned concurrency or optimizing your initialization code. `Max Memory Used` tells you whether to right-size memory.
+**`Init Duration` в строке REPORT указывает на холодный старт.** Если он появляется регулярно, рассмотрите provisioned concurrency или оптимизацию инициализации. `Max Memory Used` помогает подобрать подходящий объём памяти.
 
-For structured observability, use AWS Lambda Powertools (Python, Java, TypeScript) — it provides structured JSON logging, tracing with X-Ray, and custom metrics with minimal boilerplate.
+Для структурированной наблюдаемости используйте AWS Lambda Powertools (Python, Java, TypeScript): библиотека предоставляет структурированные JSON-журналы, трассировку через X-Ray и пользовательские метрики с минимальным объёмом шаблонного кода.
 
 ```python
 from aws_lambda_powertools import Logger, Tracer, Metrics
@@ -491,9 +491,9 @@ def handler(event, context):
 
 ## Примеры
 
-### Example 1: S3-Triggered CSV Processor
+### Пример 1: обработчик CSV по событию S3
 
-Process CSV files uploaded to S3, validate rows, and write results to DynamoDB.
+Обрабатывать CSV-файлы, загруженные в S3, проверять строки и записывать результаты в DynamoDB.
 
 ```bash
 # --- Setup ---
@@ -619,7 +619,7 @@ aws dynamodb scan --table-name csv-records --max-items 5
 
 ---
 
-### Example 2: SQS Worker with Partial Batch Failure Handling
+### Пример 2: обработчик SQS с частичной обработкой ошибок пакета
 
 Process order events from an SQS queue with reliable partial failure semantics.
 
