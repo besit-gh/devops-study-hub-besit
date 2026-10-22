@@ -15,10 +15,10 @@ exercises: 4
 
 ### Модель прав доступа
 
-Every file and directory has:
-- An **owner** (a user)
-- A **group** (a group of users)
-- A **permission set** for three categories: owner, group, others
+У каждого файла и каталога есть:
+- **Владелец** — пользователь
+- **Группа** — набор пользователей
+- **Набор прав** для трёх категорий: владелец, группа и остальные
 
 Права доступа отображаются в выводе `ls -la` в виде строки из 10 символов:
 
@@ -69,7 +69,7 @@ ls -la /var/www/
 
 Есть два режима задания прав: восьмеричный и символьный.
 
-**Octal mode:**
+**Восьмеричный режим:**
 ```bash
 # Owner: full access | Group: read+execute | Others: read+execute
 chmod 755 deploy.sh
@@ -137,7 +137,7 @@ chown --reference=/etc/nginx/nginx.conf target.conf
 
 **setuid (`s` в позиции бита выполнения владельца):**
 ```bash
-# Programs with setuid run as their owner, not the invoking user
+# Программы с setuid выполняются от имени владельца файла, а не пользователя, который их запустил
 ls -la /usr/bin/passwd
 # -rwsr-xr-x 1 root root /usr/bin/passwd
 #      ^--- 's' means setuid + execute; 'S' means setuid but NOT executable
@@ -350,17 +350,17 @@ find /home -name authorized_keys 2>/dev/null -exec ls -la {} \;
 ### Настройка веб-сервера (nginx и приложение)
 
 ```bash
-# Standard web server permission layout
+# Типовая схема прав доступа веб-сервера
 chown -R www-data:www-data /var/www/myapp      # nginx process owns files
 find /var/www/myapp -type d -exec chmod 755 {} \;  # directories: traverse+list
 find /var/www/myapp -type f -exec chmod 644 {} \;  # files: read-only for group/others
 
-# Application writes to a specific subdir (uploads, cache)
+# Приложение записывает данные в отдельный каталог (загрузки, кэш)
 mkdir -p /var/www/myapp/storage/uploads
 chown -R www-data:www-data /var/www/myapp/storage
 chmod 775 /var/www/myapp/storage/uploads   # www-data can write here
 
-# Config files with secrets — restrict to owner only
+# Файлы конфигурации с секретами — доступ только владельцу
 chmod 600 /var/www/myapp/.env
 chown www-data:www-data /var/www/myapp/.env
 ```
@@ -369,27 +369,27 @@ chown www-data:www-data /var/www/myapp/.env
 
 ```bash
 #!/usr/bin/env bash
-# Deploy as 'deploy' user, nginx runs as 'www-data'
-# Both should be able to read the files; only deploy can write
+# Развёртывание выполняется пользователем deploy, nginx работает от www-data
+# Оба пользователя должны читать файлы, но записывать может только deploy
 
-# Shared group between deploy user and www-data
+# Общая группа для пользователей deploy и www-data
 usermod -a -G www-data deploy
 
-# Set group ownership and setgid so new files inherit
+# Назначить группу и setgid, чтобы новые файлы наследовали группу
 chown -R deploy:www-data /var/www/myapp
 chmod -R 2750 /var/www/myapp    # setgid + owner rwx, group rx, others none
 
-# Verify the setup
+# Проверить настройки
 ls -la /var/www/myapp
 stat /var/www/myapp
 ```
 
 ### Требования к правам SSH-ключей
 
-SSH is strict about private key file permissions — it refuses to use keys that are too open:
+SSH строго проверяет права приватных ключей и отказывается использовать ключи с чрезмерно широкими разрешениями:
 
 ```bash
-# Correct SSH directory and key permissions
+# Правильные права каталога SSH и ключей
 chmod 700 ~/.ssh                  # only owner can enter
 chmod 600 ~/.ssh/id_ed25519       # private key: owner read+write only
 chmod 644 ~/.ssh/id_ed25519.pub   # public key: world-readable is fine
@@ -397,7 +397,7 @@ chmod 600 ~/.ssh/authorized_keys  # authorized_keys: owner only
 chmod 644 ~/.ssh/known_hosts      # known_hosts: readable is ok
 chmod 600 ~/.ssh/config           # config may contain sensitive paths
 
-# Fix permissions if you cloned a repo and keys got wrong permissions
+# Исправить права, если после клонирования репозитория они оказались неверными
 find ~/.ssh -type f -exec chmod 600 {} \;
 chmod 700 ~/.ssh
 ```
@@ -406,7 +406,7 @@ chmod 700 ~/.ssh
 
 ```bash
 #!/usr/bin/env bash
-# Quick permission audit — run regularly on production servers
+# Быстрый аудит прав доступа — регулярно запускайте на production-серверах
 
 echo "=== World-writable files (excluding /proc /sys /dev) ==="
 find / -perm -o+w -type f \
@@ -440,7 +440,7 @@ ls -la /tmp/ | head -20
 
 ### Быстрая проверка
 
-1. Print the permission bits of `/etc/passwd`.
+1. Выведите биты прав доступа файла `/etc/passwd`.
 
    ```bash
    ls -l /etc/passwd | awk '{print $1}'
@@ -453,7 +453,7 @@ ls -la /tmp/ | head -20
 Подсказка: вспомните команду, которая выводит подробные метаданные файла, включая права доступа, в длинном формате.
 Подсказка: используйте `ls` с флагом `-l`, затем выделите первое поле — строку с правами доступа.
 
-2. Print the permission bits of `/tmp` (sticky bit expected).
+2. Выведите биты прав доступа каталога `/tmp` (ожидается sticky bit).
 
    ```bash
    ls -ld /tmp | awk '{print $1}'
