@@ -19,13 +19,13 @@ IAM (Identity and Access Management) — уровень авторизации, 
 
 ## Основные понятия
 
-### Principle of Least Privilege
+### Принцип минимальных привилегий
 
-Grant only the permissions needed to perform a specific task — no more. The correct direction is additive: start with zero and add permissions until the job works, not the reverse. Wildcards in actions or resources are a code smell that should require explicit justification in code review.
+Выдавайте только те разрешения, которые нужны для конкретной задачи, и не больше. Правильный подход — добавлять разрешения постепенно: начать с нуля и добавлять их, пока задача не заработает, а не выдавать всё сразу с последующим ограничением. Маски в действиях или ресурсах — тревожный признак, требующий явного обоснования при проверке кода.
 
-**Why it's hard in practice:** developers tend to request broad permissions to unblock themselves, and those permissions never get trimmed. The result is role sprawl where production roles carry permissions that haven't been exercised in months.
+**Почему это трудно на практике:** разработчики часто запрашивают широкие разрешения, чтобы быстрее решить задачу, а затем эти разрешения никто не сокращает. В результате роли разрастаются и получают полномочия, которые не использовались месяцами.
 
-**The operational pattern:** use IAM Access Advisor to see last-used dates per service, then remove what hasn't been touched in 90 days.
+**Практический подход:** используйте IAM Access Advisor, чтобы посмотреть дату последнего обращения к каждому сервису, и удаляйте разрешения, которые не использовались 90 дней.
 
 ```bash
 # Step 1 — generate a report of services accessed by a role
@@ -49,7 +49,7 @@ aws iam list-roles --output json | jq -r '
   ) | .RoleName'
 ```
 
-**Policy scoping — the most common mistake:**
+**Область действия политики — самая частая ошибка:**
 
 ```json
 // ❌ Bad — wildcard action, wildcard resource
@@ -67,7 +67,7 @@ aws iam list-roles --output json | jq -r '
 }
 ```
 
-**Gotcha:** `s3:ListBucket` operates on the bucket ARN (`arn:aws:s3:::bucket-name`), not the object ARN. If you grant only `s3:GetObject` on `arn:aws:s3:::bucket/*`, the SDK will throw `AccessDenied` on list operations even if the user only needs to list — you must add the bucket ARN separately.
+**Подводный камень:** действие `s3:ListBucket` применяется к ARN самого бакета (`arn:aws:s3:::bucket-name`), а не к ARN объектов. Если вы выдадите только `s3:GetObject` для `arn:aws:s3:::bucket/*`, SDK вернёт `AccessDenied` при попытке получить список объектов. Для операций со списком ARN бакета нужно указать отдельно.
 
 ```json
 // Correct pattern for an app that needs to list and read objects
