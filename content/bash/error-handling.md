@@ -672,16 +672,16 @@ echo "Backup of $DB_NAME complete: $BACKUP_DIR/${DB_NAME}.sql.gz"
 
 ### Задание 2. Создайте повторно используемую библиотеку обработки ошибок
 
-Create a file called `lib/error.sh` that can be sourced by other scripts. It should provide:
+Создайте файл `lib/error.sh`, который можно подключать из других скриптов. В нём должны быть функции:
 
-1. A `die <exit_code> <message>` function that prints to stderr and exits
-2. A `require_cmd <command>` function that exits with code 127 if the command is not on `$PATH`
-3. A `require_var <varname>` function that exits with code 1 if the named variable is unset or empty (use indirect expansion `${!varname}`)
-4. A `setup_traps` function that registers an `EXIT` trap printing the exit code and the line number where the script exited (use `$BASH_LINENO`)
+1. `die <exit_code> <message>` — выводит сообщение в stderr и завершает работу.
+2. `require_cmd <command>` — завершает работу с кодом 127, если команда отсутствует в `$PATH`.
+3. `require_var <varname>` — завершает работу с кодом 1, если переменная не задана или пуста (используйте косвенное раскрытие `${!varname}`).
+4. `setup_traps` — регистрирует ловушку `EXIT`, выводящую код завершения и номер строки, на которой завершился скрипт (используйте `$BASH_LINENO`).
 
-Then write a second script `deploy_check.sh` that sources `lib/error.sh`, calls `setup_traps`, uses `require_var` to validate `DEPLOY_ENV` and `APP_VERSION`, uses `require_cmd` to validate `docker` and `kubectl`, and calls `die` with a descriptive message if `DEPLOY_ENV` is not one of `staging`, `production`.
+Затем напишите второй скрипт `deploy_check.sh`: подключите `lib/error.sh`, вызовите `setup_traps`, проверьте `DEPLOY_ENV` и `APP_VERSION` с помощью `require_var`, наличие `docker` и `kubectl` — с помощью `require_cmd`. Если `DEPLOY_ENV` не равен `staging` или `production`, вызовите `die` с понятным сообщением.
 
-Test it with missing variables, missing commands, and an invalid environment name.
+Проверьте скрипт с отсутствующими переменными, отсутствующими командами и недопустимым именем окружения.
 
 ---
 
