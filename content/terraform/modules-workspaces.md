@@ -92,9 +92,9 @@ output "public_subnets" {
 
 Ссылки на выходные значения модуля: `module.vpc.vpc_id`, `module.vpc.private_subnets`
 
-### for_each and count — Multiple Resource Instances
+### for_each и count — несколько экземпляров ресурса
 ```hcl
-# count — повторение заданное числом
+# count — повторить указанное количество раз
 resource "aws_instance" "web" {
   count         = var.instance_count
   ami           = data.aws_ami.linux.id
@@ -107,7 +107,7 @@ resource "aws_instance" "web" {
 
 # Примеры ссылок: aws_instance.web[0].id, aws_instance.web[*].id
 
-# for_each — перебор map или set (предпочтительнее count для именованных ресурсов)
+# for_each — перебрать map или set (для именованных ресурсов обычно предпочтительнее count)
 resource "aws_s3_bucket" "assets" {
   for_each = toset(["images", "videos", "documents"])
 
@@ -151,10 +151,10 @@ terraform workspace list
 # Создать рабочее пространство и переключиться на него
 terraform workspace new staging
 terraform workspace select production
-terraform workspace show    # current workspace name
+terraform workspace show    # имя текущего рабочего пространства
 ```
 
-Use `terraform.workspace` in your config:
+Используйте `terraform.workspace` в конфигурации:
 ```hcl
 locals {
   env_config = {
@@ -176,7 +176,7 @@ resource "aws_instance" "app" {
 - Легко забыть, какой workspace активен, и случайно изменить production
 - Для полноценной изоляции окружений (разные аккаунты и права) используйте отдельные корневые конфигурации с разными backend
 
-### Terraform Registry and Module Versioning
+### Terraform Registry и управление версиями модулей
 ```hcl
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
@@ -184,10 +184,10 @@ module "eks" {
 }
 
 # Ограничения версий:
-# = 20.5.0   — exact
-# ~> 20.5    — >= 20.5, < 20.6 (patch only)
-# ~> 20.0    — >= 20.0, < 21.0 (minor+patch)
-# >= 20.0, < 21.0   — explicit range
+# = 20.5.0   — точная версия
+# ~> 20.5    — >= 20.5, < 20.6 (только исправления)
+# ~> 20.0    — >= 20.0, < 21.0 (минорные обновления и исправления)
+# >= 20.0, < 21.0   — явный диапазон версий
 ```
 
 В production всегда фиксируйте версии модулей: использование `source = "...//module"` без `version` может привести к неожиданным изменениям.
@@ -196,7 +196,7 @@ module "eks" {
 
 ### Несколько окружений с помощью модулей
 ```hcl
-# environments/prod/main.tf
+# Файл environments/prod/main.tf
 module "network" {
   source      = "../../modules/network"
   environment = "prod"
