@@ -75,7 +75,7 @@ export default function Review({ onXpEarned, onComplete }) {
         <div>
           <div className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-2">{due}</div>
           <div className="text-sm text-gray-500 dark:text-gray-400">
-            {due === 0 ? 'Повторять пока нечего' : `карточек к повторению: ${due}`}
+            {due === 0 ? 'Повторять пока нечего' : `К повторению: ${due}`}
           </div>
         </div>
         {due > 0 && (
