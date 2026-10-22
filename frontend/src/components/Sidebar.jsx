@@ -76,14 +76,14 @@ export default function Sidebar({ modules, progress }) {
                 : 'text-gray-700 dark:text-gray-400 hover:bg-stone-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
             }`}
           >
-            Roadmap
+            Учебный маршрут
           </Link>
         </div>
         <div className="mx-2 mb-2 border-t border-gray-200 dark:border-gray-700" />
         {grouped.map(({ group, modules: mods }) => (
           <div key={localizeGroupTitle(group)} className="mb-1">
             <div className="px-4 py-1 text-[10px] font-semibold tracking-widest uppercase text-gray-500 dark:text-gray-500">
-              {group}
+              {localizeGroupTitle(group)}
             </div>
             {mods.map(mod => {
               const { status, pct } = getModuleStatus(mod)
@@ -106,7 +106,7 @@ export default function Sidebar({ modules, progress }) {
         ))}
         <div className="mb-1 mt-1 border-t border-gray-200 dark:border-gray-700 pt-2">
           <div className="px-4 py-1 text-[10px] font-semibold tracking-widest uppercase text-gray-500 dark:text-gray-500">
-            Practice
+            Практика
           </div>
           <Link
             to="/projects"
@@ -131,7 +131,7 @@ export default function Sidebar({ modules, progress }) {
         </div>
         <div className="mb-1 border-t border-gray-200 dark:border-gray-700 pt-2">
           <div className="px-4 py-1 text-[10px] font-semibold tracking-widest uppercase text-gray-500 dark:text-gray-500">
-            Tools
+            Инструменты
           </div>
           <Link
             to="/review"
