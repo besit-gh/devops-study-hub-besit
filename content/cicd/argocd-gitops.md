@@ -13,15 +13,15 @@ GitOps — модель развёртывания, в которой Git явл
 
 Четыре принципа GitOps — декларативность, версионирование, автоматическое применение и постоянное согласование — напрямую отражены в архитектуре Argo CD. Приложения описываются через CRD Kubernetes, а не сохраняются как состояние CLI. Политики синхронизации определяют, происходит ли согласование автоматически или требует одобрения человека. RBAC регулирует, кто может запускать синхронизацию и менять политики. Благодаря этому кластер не уходит в неизвестное состояние, а продвижение между dev, staging и prod выполняется изменениями в Git, а не ручными инструкциями.
 
-In the broader DevOps toolchain, ArgoCD sits at the boundary between CI and the running cluster. CI builds artifacts and updates manifests; ArgoCD deploys them. This separation means your CI system never needs cluster credentials, the cluster's desired state is auditable, and you can reproduce any historical deployment by pointing ArgoCD at a specific commit SHA.
+В общей цепочке DevOps Argo CD находится на границе между CI и работающим кластером. CI собирает артефакты и обновляет манифесты, а Argo CD развёртывает их. Благодаря такому разделению системе CI не нужны учётные данные кластера, желаемое состояние кластера можно проверить по истории, а любое прежнее развёртывание можно воспроизвести, указав Argo CD конкретный SHA коммита.
 
 ---
 
 ## Основные понятия
 
-### GitOps vs. Traditional Push-Based CD
+### GitOps и традиционная модель CD с отправкой изменений
 
-Understanding the distinction between push-based and pull-based delivery is a common interview topic.
+Различие между доставкой по моделям push и pull — частая тема на технических собеседованиях.
 
 | Dimension | Push-Based (e.g., Jenkins → kubectl) | Pull-Based / GitOps (ArgoCD) |
 |---|---|---|
@@ -32,13 +32,13 @@ Understanding the distinction between push-based and pull-based delivery is a co
 | Audit trail | CI logs (often ephemeral) | Git history (permanent, signed) |
 | Multi-cluster | CI needs creds for every cluster | Each cluster runs its own ArgoCD |
 
-**Key security implication:** in a pull model, the cluster initiates outbound connections to Git and the registry. No external system needs inbound access or cluster-admin credentials. This is a meaningful security boundary, especially in regulated environments.
+**Важное следствие для безопасности:** в модели pull кластер сам устанавливает исходящие соединения с Git и реестром образов. Внешним системам не нужен входящий доступ к кластеру или права администратора. Это существенная граница безопасности, особенно в средах с нормативными требованиями.
 
-**Why this matters in interviews:** interviewers often ask "what's the problem with storing cluster credentials in Jenkins?" The answer is blast radius — a compromised CI system gives an attacker write access to every cluster it can reach. In the pull model, credentials never leave the cluster, and the worst-case blast radius is limited to what ArgoCD itself can do, which is controlled by its own RBAC.
+**Почему это важно на собеседовании:** часто спрашивают, чем опасно хранить учётные данные кластера в Jenkins. Главная проблема — масштаб последствий: взломанная система CI даёт атакующему возможность изменять каждый доступный ей кластер. В модели pull учётные данные не покидают кластер, а возможный ущерб ограничен полномочиями самого Argo CD, которые регулируются его RBAC.
 
 ---
 
-### ArgoCD Application Resource
+### Ресурс Application в Argo CD
 
 The `Application` CRD is the core unit of ArgoCD. It binds a Git source to a cluster destination and defines how reconciliation should happen.
 
