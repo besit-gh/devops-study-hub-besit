@@ -31,9 +31,9 @@ OTel обеспечивает единое инструментирование 
 
 Трассировки — основа распределённой диагностики. Один пользовательский запрос образует **trace**, состоящий из множества **span**; каждый span представляет отдельную операцию (HTTP-вызов, запрос к базе данных или вызов функции). Span содержит время начала, длительность, атрибуты, события и код состояния. Связи родительских и дочерних span позволяют восстановить полный граф вызовов запроса через все затронутые сервисы.
 
-Metrics in OTel map to the same types you'd find in Prometheus: counters, histograms, gauges, and up-down counters. The key difference from raw Prometheus: metrics are defined in application code using the OTel metrics API, then exported via OTLP or converted to Prometheus format at the Collector. This means you define your metric instrumentation once and the export format is a runtime concern.
+Метрики OTel соответствуют типам Prometheus: счётчикам, гистограммам, gauge и счётчикам с увеличением и уменьшением. Главное отличие от непосредственного использования Prometheus в том, что метрики определяются в коде приложения через API метрик OTel, а затем экспортируются по OTLP или преобразуются в формат Prometheus на Collector. Инструментирование задаётся один раз, а формат экспорта определяется во время выполнения.
 
-**OTel logs are newer than traces and metrics.** Log correlation — attaching trace IDs and span IDs to log lines — is OTel's primary value for logs, not replacing your logging library. Use the OTel logging bridge API to forward existing log records into the OTel pipeline. Don't rewrite your logging infrastructure; bridge it.
+**Журналы OTel появились позже трассировок и метрик.** Главное преимущество OTel для журналов — корреляция, то есть добавление ID трассировки и span к строкам журнала, а не замена библиотеки логирования. Используйте API-мост OTel, чтобы передавать существующие записи в конвейер OTel. Не переписывайте инфраструктуру логирования — подключите её через мост.
 
 ---
 
@@ -59,7 +59,7 @@ Your Application (Python, Go, Java, Node…)
                  └── → Grafana Tempo (traces)
 ```
 
-You can skip the Collector and export directly from the SDK to a backend. This is acceptable for development or simple setups. Prefer the Collector in production for three reasons:
+Можно пропустить Collector и экспортировать данные напрямую из SDK в backend. Это допустимо для разработки и простых конфигураций. В production предпочтительнее использовать Collector по трём причинам:
 
 1. **Decoupling** — your app doesn't need credentials to every backend; only the Collector does.
 2. **Processing** — filter noise, enrich with resource attributes, sample traces before they hit storage.
