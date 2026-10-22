@@ -214,11 +214,11 @@ Inbound:
 
 **Балансировщики L4** передают TCP/UDP-соединения без анализа содержимого. Они быстрые, поскольку проверяют минимум данных. Они не различают `/api` и `/static`: видят только порт и протокол. Используйте L4 для балансировки не-HTTP-протоколов (gRPC поверх TCP, MQTT, протоколы баз данных, игровые серверы) или когда критична задержка.
 
-**L7 load balancers** parse the HTTP request before routing. This enables:
+**Балансировщики уровня L7** анализируют HTTP-запрос перед маршрутизацией. Это позволяет использовать:
 
-- **Path-based routing:** `/api/*` → backend cluster A, `/images/*` → CDN or object storage
-- **Host-based routing:** `api.example.com` → API fleet, `app.example.com` → frontend fleet
-- **SSL/TLS termination:** handle certificates centrally; backends receive plain HTTP
+- **Маршрутизацию по пути:** `/api/*` → серверная группа A, `/images/*` → CDN или объектное хранилище
+- **Маршрутизацию по имени хоста:** `api.example.com` → группа API-серверов, `app.example.com` → группа фронтенд-серверов
+- **Завершение SSL/TLS:** сертификаты обрабатываются централизованно, а серверы приложения получают обычный HTTP
 - **Header manipulation:** inject `X-Real-IP`, `X-Forwarded-For`, custom auth headers
 - **Active health checks:** send HTTP requests to `/health` and remove failing backends
 - **Session affinity (sticky sessions):** route the same client to the same backend using cookies
