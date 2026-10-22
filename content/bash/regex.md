@@ -1060,15 +1060,15 @@ grep -rE "listen\s+443" /etc/nginx/ --include="*.conf"
 grep -rL "set -euo pipefail" scripts/
 ```
 
-**`grep -o` is underused.** It changes grep from a line filter into a field extractor. Combined with `sort | uniq -c`, it produces frequency tables from raw logs without needing awk. Combined with `-P`, it can extract named capture groups from structured log lines.
+**`grep -o` часто недооценивают.** Этот параметр превращает grep из фильтра строк в инструмент извлечения отдельных фрагментов. В сочетании с `sort | uniq -c` он строит таблицы частот по журналам без awk. С `-P` можно извлекать именованные группы из структурированных строк журнала.
 
-**Performance tip:** when searching large log archives, put the most specific literal string first in your pattern. `grep "ERROR" | grep -E "db_conn|timeout"` is faster than a single complex alternation on gigabyte files because the first grep eliminates most lines cheaply.
+**Совет по производительности:** при поиске в больших архивах журналов сначала указывайте в шаблоне наиболее конкретную буквальную строку. `grep "ERROR" | grep -E "db_conn|timeout"` быстрее одного сложного альтернативного шаблона на гигабайтных файлах, поскольку первый grep быстро отбрасывает большую часть строк.
 
 ---
 
-### sed with Regex
+### Регулярные выражения в sed
 
-`sed` is the standard tool for in-place substitution and stream transformation. Its most-used command is `s/pattern/replacement/flags`.
+`sed` — стандартный инструмент для замены текста на месте и преобразования потоков. Чаще всего используется команда `s/шаблон/замена/флаги`.
 
 ```bash
 # Basic substitution: replace first occurrence per line
@@ -1100,11 +1100,11 @@ sed -E 's/\x1B\[[0-9;]*[mK]//g' colored.log
 sed -E 's/^(MaxConnections=.*)/#\1/' database.conf
 ```
 
-**`sed -i` differs between GNU and BSD (macOS).** On GNU/Linux: `sed -i.bak`. On macOS: `sed -i '' 's/old/new/' file` (the suffix is required, even if empty). Scripts that work on Linux will silently break on macOS CI runners. Use `sed -i.bak` everywhere — it works on both and gives you a safety net.
+**`sed -i` отличается в GNU и BSD (macOS).** В GNU/Linux используется `sed -i.bak`, а в macOS — `sed -i '' 's/old/new/' file` (суффикс обязателен, даже если пустой). Скрипт, работающий в Linux, может незаметно сломаться на CI-исполнителе macOS. Используйте `sed -i.bak`: он работает в обеих системах и сохраняет резервную копию.
 
-**The replacement string is not a regex.** You cannot use quantifiers, character classes, or anchors in the replacement side of `s/pattern/replacement/`. Only literal text, `&` (full match), and `\1`–`\9` (capture groups) are valid. A `+` in the replacement is a literal plus sign.
+**Строка замены не является регулярным выражением.** В части `s/шаблон/замена/` нельзя использовать квантификаторы, классы символов или якоря. Допустимы буквальный текст, `&` (всё совпадение) и `\1`–`\9` (группы захвата). Символ `+` в замене означает обычный плюс.
 
-**`sed` address ranges** allow you to limit substitutions to specific lines:
+**Диапазоны адресов `sed`** позволяют ограничить замену конкретными строками:
 
 ```bash
 # Only substitute between lines matching start and end markers
@@ -1121,7 +1121,7 @@ sed '/^-- DEPRECATED/,$d' schema.sql
 
 ### Bash `=~` Operator
 
-The `=~` operator in `[[ ... ]]` tests a string against an ERE pattern without spawning a subprocess. Use it in scripts where you need to validate input or branch on string content — it is significantly faster than calling grep in a loop.
+Оператор `=~` внутри `[[ ... ]]` проверяет строку по шаблону ERE без запуска отдельного процесса. Используйте его для проверки входных данных и ветвления по содержимому строки: это значительно быстрее, чем вызывать grep в цикле.
 
 ```bash
 STRING="Error: disk full at 2024-01-15"
