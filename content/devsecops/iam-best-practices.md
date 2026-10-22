@@ -90,9 +90,9 @@ aws iam list-roles --output json | jq -r '
 
 ---
 
-### Eliminate Long-Lived Credentials
+### Откажитесь от долгоживущих учётных данных
 
-Static access keys (`AKIA...`) are the highest-risk IAM artifact. They don't expire, they travel in environment variables and config files, and they appear in git history. Every AWS workload that runs in a managed compute environment — EC2, ECS, EKS, Lambda — can use short-lived, automatically rotated credentials via the instance metadata service instead.
+Статические ключи доступа (`AKIA...`) — один из наиболее опасных видов данных IAM. Они не истекают, попадают в переменные окружения и конфигурационные файлы, а также остаются в истории Git. Нагрузки AWS в управляемых средах — EC2, ECS, EKS и Lambda — вместо этого могут использовать временные автоматически ротируемые учётные данные через сервис метаданных экземпляра.
 
 | Credential Type | Rotation | Revocation | Recommended Context |
 |---|---|---|---|
@@ -103,7 +103,7 @@ Static access keys (`AKIA...`) are the highest-risk IAM artifact. They don't exp
 | OIDC federated token | ~15 min–1h | Role trust policy | CI/CD pipelines |
 | `aws sts assume-role` | 15 min–12h | Policy revocation | Cross-account, human access |
 
-**Boto3 credential chain — know the order:**
+**Цепочка поиска учётных данных Boto3 — запомните порядок:**
 
 ```python
 # ❌ Never do this — key is plaintext in source code
@@ -124,7 +124,7 @@ s3 = boto3.client('s3',
 s3 = boto3.client('s3')  # works on EC2, Lambda, ECS, EKS with IRSA
 ```
 
-**Gotcha:** on EC2, enforce IMDSv2 (token-required mode) to prevent SSRF attacks from reading instance credentials via the metadata endpoint. IMDSv1 allows a simple `curl http://169.254.169.254/latest/meta-data/iam/security-credentials/` — no auth required.
+**Важно:** на EC2 обязательно используйте IMDSv2 (режим с обязательным токеном), чтобы предотвратить SSRF-атаки, позволяющие читать учётные данные экземпляра через конечную точку метаданных. В IMDSv1 достаточно выполнить `curl http://169.254.169.254/latest/meta-data/iam/security-credentials/` — аутентификация не требуется.
 
 ```bash
 # Enforce IMDSv2 at launch time
@@ -146,7 +146,7 @@ aws ec2 describe-instances \
   --query 'Reservations[0].Instances[0].MetadataOptions'
 ```
 
-**Detecting leaked keys in git history** — run this before any repo goes public:
+**Поиск утёкших ключей в истории Git** — выполните проверку перед тем, как сделать репозиторий публичным:
 
 ```bash
 # Install trufflehog and scan a repo for high-entropy strings and known key patterns
@@ -157,7 +157,7 @@ trufflehog git file://. --only-verified
 trufflehog github --repo https://github.com/myorg/myrepo --only-verified
 ```
 
-**Rotating an existing IAM user key without downtime:**
+**Ротация ключа существующего пользователя IAM без простоя:**
 
 ```bash
 # Step 1 — create a second key (max 2 per user)
@@ -181,9 +181,9 @@ aws iam delete-access-key \
 
 ---
 
-### OIDC for CI/CD — No Stored Secrets
+### OIDC для CI/CD — без сохранённых секретов
 
-The modern standard for CI/CD pipelines is OIDC federation: the pipeline exchanges a short-lived OIDC JWT (issued by GitHub, GitLab, etc.) for temporary AWS credentials via `sts:AssumeRoleWithWebIdentity`. No secrets are stored anywhere.
+Современный стандарт для CI/CD-конвейеров — федерация OIDC: конвейер обменивает краткоживущий OIDC JWT (выданный GitHub, GitLab и т. п.) на временные учётные данные AWS через `sts:AssumeRoleWithWebIdentity`. Постоянные секреты хранить не требуется.
 
 ```yaml
 # .github/workflows/deploy.yml
