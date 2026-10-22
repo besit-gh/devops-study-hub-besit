@@ -41,13 +41,13 @@ Warning: CPU > 70% for 5 minutes
 Recovery: CPU < 70%
 ```
 
-**Log monitor** — alert on log patterns:
+**Монитор журналов** — оповещение по шаблонам в логах:
 ```
 Query: logs("service:myapp status:error").rollup("count").last("5m") > 50
 → Alert when more than 50 error logs appear in 5 minutes
 ```
 
-**APM monitor** — alert on service metrics derived from distributed traces:
+**Монитор APM** — оповещение по метрикам сервиса, полученным из распределённых трассировок:
 ```
 Query: avg(last_10m):
   avg:trace.flask.request.errors{service:myapp,env:prod}
@@ -56,13 +56,13 @@ Query: avg(last_10m):
 → Alert when error rate exceeds 5%
 ```
 
-**Composite monitor** — trigger only when multiple conditions are simultaneously true:
+**Составной монитор** — срабатывает, только когда одновременно истинны несколько условий:
 ```
 Alert if (high_cpu_monitor) AND (high_memory_monitor)
 → Eliminates false positives from transient CPU spikes that resolve on their own
 ```
 
-**Anomaly monitor** — alert when a metric deviates from its expected seasonal pattern:
+**Монитор аномалий** — оповещение, когда метрика отклоняется от ожидаемого сезонного поведения:
 ```
 Query: avg(last_1h):anomalies(
   avg:trace.web.request.duration.by.service{service:myapp},
@@ -73,9 +73,9 @@ Query: avg(last_1h):anomalies(
    for this time of day and day of week
 ```
 
-**When to use anomaly monitors:** they work well for metrics with predictable seasonal patterns (traffic that's always lower on weekends, batch jobs that run nightly) where a fixed threshold would either miss daytime spikes or false-positive on normal night-time lows.
+**Когда использовать мониторы аномалий:** они хорошо работают для метрик с предсказуемой сезонностью (например, трафик по выходным всегда ниже или пакетные задания запускаются ночью), когда фиксированный порог пропускал бы дневные всплески или создавал ложные срабатывания из-за нормального ночного снижения.
 
-**When anomaly monitors fail:** during launches, traffic migrations, or any sustained change in baseline behavior, the model adapts slowly and generates noise. Don't rely on them as your only alert for critical paths.
+**Когда мониторы аномалий дают сбои:** во время запусков, миграций трафика и других длительных изменений базового поведения модель адаптируется медленно и создаёт шум. Не используйте их как единственный способ оповещения для критичных сценариев.
 
 ---
 
