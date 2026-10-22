@@ -138,7 +138,7 @@ COPY --from=builder /app /app
 CMD ["/app/main.py"]
 ```
 
-When distroless is too restrictive (debugging, dynamic dependencies), use `python:3.12-slim` or `alpine`-based images and strip unnecessary packages:
+Если distroless слишком ограничивает работу (например, нужна отладка или динамические зависимости), используйте образы на основе `python:3.12-slim` или Alpine и удалите ненужные пакеты:
 
 ```dockerfile
 FROM python:3.12-slim
@@ -148,11 +148,11 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*   # remove apt cache — don't leave it in the layer
 ```
 
-**Gotcha:** Distroless images have no shell, which means `kubectl exec` and `docker exec` won't give you an interactive session. For debugging in non-production environments, use the `:debug` tag variant (e.g., `gcr.io/distroless/python3-debian12:debug`), which includes BusyBox. Never use `:debug` in production images.
+**Важно:** в образах distroless нет оболочки, поэтому `kubectl exec` и `docker exec` не откроют интерактивную сессию. Для отладки вне production используйте вариант с тегом `:debug` (например, `gcr.io/distroless/python3-debian12:debug`), включающий BusyBox. Не используйте `:debug` в production-образах.
 
 #### .dockerignore
 
-Everything not in `.dockerignore` is sent to the build context and can be copied into the image accidentally.
+Всё, что не указано в `.dockerignore`, попадает в контекст сборки и может случайно оказаться внутри образа.
 
 ```
 # .dockerignore
@@ -169,9 +169,9 @@ node_modules/
 .DS_Store
 ```
 
-**Gotcha:** `.env` files containing secrets are commonly leaked into images via `COPY . .`. Always include `.env*` in `.dockerignore`, and verify with `docker history myapp:latest` that secrets are not present in any layer. You can also use `docker save myapp:latest | tar xO --wildcards '*/layer.tar' | tar t` to inspect layer contents directly.
+**Важно:** файлы `.env` с секретами часто попадают в образ через `COPY . .`. Всегда добавляйте `.env*` в `.dockerignore` и проверяйте командой `docker history myapp:latest`, что секретов нет ни в одном слое. Также содержимое слоёв можно изучить напрямую: `docker save myapp:latest | tar xO --wildcards '*/layer.tar' | tar t`.
 
-#### Build-Time Secrets
+#### Секреты на этапе сборки
 
 Docker layer history is permanent. Deleting a file in a later `RUN` step does not remove it from the layer where it was created — the secret is still extractable from the intermediate layer.
 
