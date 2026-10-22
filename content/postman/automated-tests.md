@@ -13,15 +13,15 @@ exercises: 4
 
 Newman — CLI-инструмент для запуска коллекций Postman вне графического интерфейса: в CI-пайплайнах, по расписанию или как контрольный этап перед развёртыванием. Команда `newman run` возвращает ненулевой код, если хотя бы один тест завершился ошибкой. Поэтому её удобно включать в пайплайн: развернуть приложение в staging, запустить Newman и остановить выпуск, если API перестал соответствовать ожиданиям. Newman also supports multiple reporters (CLI, JUnit, HTML) so the same run produces human-readable and machine-readable output simultaneously — one for engineers triaging failures, one for GitHub's test dashboard.
 
-In the broader DevOps toolchain, Postman/Newman sits between deployment and promotion. Unit tests and integration tests run during the build; Newman runs after the app is deployed to a real environment. It can act as a smoke-test gate (did the deployment break anything obvious?), a contract-test gate (does the deployed API still match the OpenAPI spec?), or a regression suite (do all the edge cases still pass?). This placement makes it complementary to, not a replacement for, earlier test layers.
+В цепочке DevOps Postman/Newman используется между развёртыванием и продвижением релиза. Модульные и интеграционные тесты выполняются во время сборки, а Newman запускается после развёртывания приложения в реальном окружении. Он может служить проверкой работоспособности после релиза, проверкой соответствия API спецификации OpenAPI или набором регрессионных тестов. Поэтому он дополняет предыдущие уровни тестирования, а не заменяет их.
 
 ---
 
 ## Основные понятия
 
-### Test Script Basics
+### Основы тестовых скриптов
 
-Test scripts in Postman run after the response is received. They live in the **Tests** tab of each request and are plain JavaScript executed in a sandboxed V8 environment. The core primitive is `pm.test(name, fn)` — it registers a named test case, and the function body contains one or more `pm.expect()` assertions using a Chai-style API.
+Тестовые скрипты Postman выполняются после получения ответа. Они находятся на вкладке **Tests** каждого запроса и представляют собой обычный JavaScript, выполняемый в изолированной среде V8. Основная конструкция — `pm.test(name, fn)`: она регистрирует тест с именем, а внутри функции размещаются одна или несколько проверок `pm.expect()` с API в стиле Chai.
 
 ```javascript
 // Each pm.test() is an independent test case — one failure does not skip others
@@ -45,7 +45,7 @@ pm.test("Response has required fields", () => {
 });
 ```
 
-**Gotcha:** `pm.response.to.be.json` checks the `Content-Type` header, not whether the body parses as JSON. If your API returns `Content-Type: text/plain` with a JSON body, this check passes the wrong assumption. Use `pm.response.json()` inside a try/catch to verify actual parsability.
+**Подводный камень:** `pm.response.to.be.json` проверяет заголовок `Content-Type`, а не возможность разобрать тело ответа как JSON. Если API возвращает JSON с заголовком `Content-Type: text/plain`, проверка даст неверное представление о формате. Чтобы проверить фактический разбор, используйте `pm.response.json()` внутри `try/catch`.
 
 **Gotcha:** `pm.test` does not throw — it records pass/fail and continues. If you want one assertion failure to abort the rest of the test function, put all assertions for a single logical unit inside one `pm.test` call.
 
