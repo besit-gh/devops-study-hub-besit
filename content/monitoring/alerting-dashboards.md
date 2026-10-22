@@ -79,9 +79,9 @@ Query: avg(last_1h):anomalies(
 
 ---
 
-### Monitor Configuration Best Practices
+### Рекомендации по настройке мониторов
 
-Every field in a monitor configuration is an opportunity to reduce false positives, improve response time, and make the on-call engineer's job easier.
+Каждое поле конфигурации монитора позволяет уменьшить число ложных срабатываний, сократить время реакции и облегчить работу дежурного инженера.
 
 ```yaml
 # Terraform: Datadog provider monitor resource
@@ -135,23 +135,23 @@ resource "datadog_monitor" "api_error_rate" {
 }
 ```
 
-**Hysteresis (recovery thresholds):** setting `critical_recovery` below `critical` prevents flapping — where a metric oscillates around the threshold and fires/recovers repeatedly. Without it, a metric at 5.1% → 4.9% → 5.1% generates three alert events in minutes. Each flip is a page.
+**Гистерезис (порог восстановления):** значение `critical_recovery` ниже `critical` предотвращает флаппинг — многократное срабатывание и восстановление при колебаниях метрики около порога. Без этого метрика 5,1% → 4,9% → 5,1% создаст три события оповещения за несколько минут, и каждое из них вызовет уведомление.
 
-**`notify_no_data`:** this is frequently overlooked. If a service crashes and stops emitting metrics, a threshold-based monitor will show `OK` (no data to breach the threshold) unless you explicitly enable no-data alerting. Always enable it for critical service monitors.
+**`notify_no_data`:** этот параметр часто упускают. Если сервис аварийно завершился и перестал отправлять метрики, монитор по порогу покажет `OK` (нет данных, которые могли бы превысить порог), если явно не включить оповещения при отсутствии данных. Для критичных сервисов включайте их всегда.
 
-**`require_full_window`:** prevents false alerts when a monitor starts or a host restarts and only has 30 seconds of data in a 5-minute window. The partial average can look extreme because the denominator is small.
+**`require_full_window`:** предотвращает ложные оповещения при запуске монитора или перезапуске узла, когда в пятиминутном окне есть только 30 секунд данных. Среднее по неполному окну может выглядеть экстремальным из-за малого количества выборок.
 
-**Threshold tuning checklist:**
-- Pull 30 days of historical data for the metric
-- Set warning at ~75th percentile of normal spikes, critical at ~99th
-- Never set thresholds on day one — let the system run for a week first
-- Review alert history monthly: if a critical fires without action taken, lower the threshold or remove the alert
+**Проверочный список настройки порогов:**
+- Получите исторические данные метрики за 30 дней.
+- Установите warning примерно на 75-м процентиле обычных всплесков, а critical — примерно на 99-м.
+- Не задавайте пороги в первый день: сначала дайте системе поработать неделю.
+- Ежемесячно проверяйте историю оповещений: если critical срабатывает без последующих действий, скорректируйте порог или удалите оповещение.
 
 ---
 
-### Notification Routing
+### Маршрутизация уведомлений
 
-Routing determines who gets paged, by what channel, and when. Misrouted alerts are nearly as harmful as missing alerts — paging the wrong team delays response, and paging everyone creates diffused responsibility where no one acts because everyone assumes someone else will.
+Маршрутизация определяет, кого, когда и по какому каналу уведомлять. Неверно направленные оповещения почти так же вредны, как пропущенные: обращение не к той команде задерживает реакцию, а уведомление всех размывает ответственность — каждый думает, что отреагирует кто-то другой.
 
 ```
 Alert fires
@@ -165,7 +165,7 @@ Datadog evaluates monitor state (ALERT / WARN / NO DATA / RECOVERY)
     └─ RECOVERY → @slack-platform-team       → informational only, no page
 ```
 
-**Severity model — map alert priority to escalation path:**
+**Модель серьёзности — сопоставьте приоритет оповещения с путём эскалации:**
 
 | Priority | Condition | Channel | Hours |
 |---|---|---|---|
@@ -174,7 +174,7 @@ Datadog evaluates monitor state (ALERT / WARN / NO DATA / RECOVERY)
 | P3 | Elevated concern, not yet user-impacting | Slack | Business hours |
 | P4 | Informational trend | Email / ticket | Async |
 
-**Conditional blocks in monitor messages** give you fine-grained routing without creating duplicate monitors:
+**Условные блоки в сообщениях монитора** позволяют гибко настраивать маршрутизацию без создания дублирующих мониторов:
 
 ```
 {{#is_alert}}
@@ -198,7 +198,7 @@ Datadog evaluates monitor state (ALERT / WARN / NO DATA / RECOVERY)
 {{/is_no_data}}
 ```
 
-**Multi-team routing with tag-based conditions:** if the same monitor covers multiple services or teams, use `@team-<name>` handles tied to the service tag so the alert self-routes:
+**Маршрутизация между командами по тегам:** если один монитор охватывает несколько сервисов или команд, используйте адреса `@team-<name>`, связанные с тегом сервиса, чтобы оповещение направлялось автоматически:
 
 ```
 {{#is_alert}}
@@ -207,9 +207,9 @@ Datadog evaluates monitor state (ALERT / WARN / NO DATA / RECOVERY)
 {{/is_alert}}
 ```
 
-**PagerDuty escalation policy:** Datadog sends the alert; PagerDuty owns the escalation logic (retry after N minutes, escalate to secondary on-call, notify manager). Don't duplicate escalation logic inside Datadog monitor messages. Datadog routes to the correct PagerDuty service; PagerDuty handles what happens next. Mixing the two creates configuration drift where the Datadog message says one thing and PagerDuty does another.
+**Политика эскалации PagerDuty:** Datadog отправляет оповещение, а логикой эскалации управляет PagerDuty (повтор через N минут, передача второму дежурному, уведомление менеджера). Не дублируйте логику эскалации в сообщениях мониторов Datadog. Datadog направляет оповещение в нужный сервис PagerDuty, а PagerDuty определяет дальнейшие действия. Смешивание логики приводит к расхождению конфигураций.
 
-**Downtime scheduling:** before a planned maintenance window, schedule a Datadog downtime to mute monitors. Failing to do this fills PagerDuty with false alerts during deployments, which trains engineers to ignore alerts — the first step toward alert fatigue.
+**Планирование простоев:** перед плановым обслуживанием задайте в Datadog период downtime, чтобы отключить уведомления мониторов. Иначе развёртывание заполнит PagerDuty ложными оповещениями и приучит инженеров игнорировать их — это первый шаг к усталости от оповещений.
 
 ```bash
 # Mute all monitors tagged service:myapp for a 30-minute deploy window
@@ -230,9 +230,9 @@ curl -X POST "https://api.datadoghq.com/api/v1/downtime" \
 
 ### Проектирование дашбордов
 
-A dashboard that shows everything shows nothing useful under incident pressure. The most effective dashboards are built around a specific question for a specific audience — before you add a widget, ask "what decision does this panel help someone make?"
+Панель, на которой показано всё подряд, мало помогает во время инцидента. Самые эффективные панели отвечают на конкретный вопрос для определённой аудитории. Прежде чем добавлять виджет, спросите себя: «Какое решение поможет принять эта панель?»
 
-**Dashboard archetypes:**
+**Типовые виды панелей:**
 
 | Type | Audience | Primary Question | Key Metrics |
 |---|---|---|---|
@@ -242,9 +242,9 @@ A dashboard that shows everything shows nothing useful under incident pressure. 
 | **Incident** | On-call during an active incident | What is broken and why? | Narrowly scoped to the incident type |
 | **Dependency** | On-call, service owners | Are my upstream/downstream services healthy? | Latency, error rate per dependency |
 
-**RED method** (Rate, Errors, Duration) — the standard framework for service-level dashboards:
-- **Rate:** requests per second — is the service receiving traffic at all?
-- **Errors:** error rate (%) — is it serving those requests successfully?
+**Метод RED** (Rate — частота запросов, Errors — ошибки, Duration — длительность) — стандартная схема панелей на уровне сервиса:
+- **Rate:** запросы в секунду — получает ли сервис трафик вообще?
+- **Errors:** доля ошибок (%) — успешно ли сервис обрабатывает запросы?
 - **Duration:** p50/p95/p99 latency — is it serving them fast enough?
 
 **USE method** (Utilization, Saturation, Errors) — for infrastructure resources:
