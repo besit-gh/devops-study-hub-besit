@@ -2,7 +2,7 @@
 
 ## Команды CLI
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `logstash -f pipeline.conf` | Запустить с файлом конфигурации |
 | `logstash -f /etc/logstash/conf.d/` | Запустить с каталогом конфигурации |
@@ -45,17 +45,17 @@ output {
 
 ## Common Filters
 
-| Filter | Key Options | Description |
+| Filter | Key Options | Описание |
 |--------|------------|-------------|
 | `grok` | `match`, `patterns_dir` | Parse unstructured text |
 | `date` | `match`, `target` | Parse and set @timestamp |
 | `mutate` | `rename`, `add_field`, `remove_field`, `convert` | Transform fields |
-| `json` | `source`, `target` | Parse JSON field |
-| `csv` | `separator`, `columns` | Parse CSV line |
+| `json` | `source`, `target` | Разобрать JSON field |
+| `csv` | `separator`, `columns` | Разобрать CSV line |
 | `kv` | `source`, `field_split`, `value_split` | Parse key=value pairs |
 | `geoip` | `source` | Add geo data from IP |
 | `useragent` | `source` | Parse user agent strings |
-| `drop` | `if condition` | Drop events matching condition |
+| `drop` | `if condition` | Отбросить событиеs matching condition |
 | `clone` | `clones` | Duplicate event |
 
 ## Conditionals
