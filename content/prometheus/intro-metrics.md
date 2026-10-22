@@ -41,21 +41,21 @@ Prometheus опрашивает цели по HTTP с заданным инте�
 
 **Histogram vs Summary:**
 - Гистограммы: корзины настраиваются на стороне приложения, а квантили рассчитываются в PromQL; данные можно агрегировать между экземплярами.
-- Summaries: quantiles calculated client-side — cannot be aggregated across instances. Prefer histograms in distributed systems.
+- Summary: квантили вычисляются на стороне клиента и не могут агрегироваться между экземплярами. В распределённых системах предпочтительнее Histogram.
 
 ### Labels
 
-Labels are key-value pairs that identify dimensions of a metric. Every metric is identified by its name plus its complete label set.
+Метки — это пары ключ-значение, описывающие измерения метрики. Каждая временная серия определяется именем метрики и полным набором её меток.
 
 ```
 http_requests_total{method="GET", status="200", handler="/api/users"} 1234
 http_requests_total{method="POST", status="500", handler="/api/login"} 7
 ```
 
-**Cardinality warning:** every unique combination of label values creates a new time series. High-cardinality labels (e.g. user IDs, request IDs, IP addresses) can cause memory exhaustion. A label with 10,000 unique values multiplied across 5 other label dimensions creates millions of series — this is a common production incident cause.
+**Внимание: кардинальность.** Каждая уникальная комбинация значений меток создаёт новый временной ряд. Метки с высокой кардинальностью (например, ID пользователей и запросов, IP-адреса) могут исчерпать память. Одна метка с 10 000 значений в сочетании с пятью другими измерениями способна создать миллионы рядов — это частая причина production-инцидентов.
 
-Good labels: `method`, `status`, `region`, `service`, `env`
-Bad labels: `user_id`, `request_id`, `url` (unbounded)
+Хорошие метки: `method`, `status`, `region`, `service`, `env`.
+Плохие метки: `user_id`, `request_id`, `url` (неограниченное число значений).
 
 ### Exposition Format
 
