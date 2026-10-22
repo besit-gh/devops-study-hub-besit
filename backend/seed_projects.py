@@ -279,8 +279,8 @@ PROJECTS = [
                 "language": "python",
                 "expected_output": "InstanceDown",
                 "hints": [
-                    "Use `yaml.safe_load()` to parse the YAML string, then navigate the nested structure to find the alert name.",
-                    "Access `yaml.safe_load(s)['groups'][0]['rules'][0]['alert']` after importing yaml.",
+                    "Разберите YAML-строку с помощью `yaml.safe_load()`, затем пройдите по вложенной структуре до имени оповещения.",
+                    "После импорта `yaml` обратитесь к `yaml.safe_load(s)['groups'][0]['rules'][0]['alert']`.",
                 ],
             },
             {
@@ -288,17 +288,17 @@ PROJECTS = [
                 "title": "Написать запросы PromQL",
                 "type": "ai",
                 "prompt": (
-                    "Write PromQL queries for these three scenarios:\n"
-                    "1. HTTP request rate per second over the last 5 minutes, broken down by status code\n"
-                    "2. 95th percentile request latency using a histogram metric `http_request_duration_seconds`\n"
-                    "3. An alerting expression that fires when any instance has been down for more than 5 minutes\n\n"
-                    "Explain the difference between `rate()` and `irate()` and why you chose one over the other for query 1."
+                    "Напишите запросы PromQL для трёх сценариев:\n"
+                    "1. Частота HTTP-запросов в секунду за последние пять минут с группировкой по коду состояния\n"
+                    "2. 95-й перцентиль задержки запросов с использованием гистограммы `http_request_duration_seconds`\n"
+                    "3. Выражение оповещения, срабатывающее, если любой экземпляр недоступен более пяти минут\n\n"
+                    "Объясните разницу между `rate()` и `irate()` и почему для первого запроса вы выбрали одну из этих функций."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "For rate queries use `rate(metric[5m])` with `by (status_code)` aggregation; for histogram percentile use `histogram_quantile(0.95, sum(rate(..._bucket[5m])) by (le))`.",
-                    "`rate()` averages over the window (smoother, better for alerting); `irate()` uses the last two points (more reactive, better for real-time graphs) — prefer `rate()` for query 1.",
+                    "Для скорости используйте `rate(metric[5m])` с агрегацией `by (status_code)`. Для перцентиля гистограммы примените `histogram_quantile(0.95, sum(rate(..._bucket[5m])) by (le))`.",
+                    "`rate()` усредняет значение по окну (график стабильнее, подходит для оповещений); `irate()` использует две последние точки (быстрее реагирует, подходит для графиков реального времени). Для первого запроса предпочтительнее `rate()`.",
                 ],
             },
             {
@@ -306,10 +306,10 @@ PROJECTS = [
                 "title": "Спроектировать стек целиком",
                 "type": "ai",
                 "prompt": (
-                    "Write a `docker-compose.yml` that runs:\n"
-                    "- Prometheus (port 9090) scraping itself and a Node Exporter\n"
-                    "- Node Exporter (port 9100)\n"
-                    "- Grafana (port 3000) pre-configured with Prometheus as a data source\n\n"
+                    "Создайте `docker-compose.yml`, запускающий:\n"
+                    "- Prometheus на порту 9090, собирающий метрики с себя и Node Exporter\n"
+                    "- Node Exporter на порту 9100\n"
+                    "- Grafana на порту 3000 с предварительно настроенным Prometheus в качестве источника данных\n\n"
                     "Include: named volumes for Prometheus data and Grafana dashboards, "
                     "a minimal `prometheus.yml` scrape config as an inline comment, "
                     "and Grafana datasource provisioning via environment variables."
@@ -317,8 +317,8 @@ PROJECTS = [
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Define a shared network so services reach each other by name; each service needs `ports`, `volumes`, and `networks` sections.",
-                    "Grafana datasource auto-provisioning: set `GF_DATASOURCES_DEFAULT_URL=http://prometheus:9090` via environment, or mount a `provisioning/datasources/prometheus.yml` file.",
+                    "Определите общую сеть, чтобы сервисы обращались друг к другу по имени. Для каждого сервиса нужны секции `ports`, `volumes` и `networks`.",
+                    "Для автоматической настройки источника Grafana задайте переменную `GF_DATASOURCES_DEFAULT_URL=http://prometheus:9090` либо подключите файл `provisioning/datasources/prometheus.yml`.",
                 ],
             },
         ],
