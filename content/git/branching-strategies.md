@@ -40,12 +40,12 @@ Gitflow был формализован Винсентом Дриссеном в
 
 **Две постоянные ветки:**
 - `main` — всегда соответствует production. Каждый коммит в этой ветке помечается номером версии.
-- `develop` — the integration target for all feature work. Reflects the latest delivered development changes.
+- `develop` — ветка интеграции функциональных изменений. Содержит последние объединённые изменения разработки.
 
-**The three temporary branch types:**
-- `feature/*` — branched from `develop`, merged back to `develop`
-- `release/*` — branched from `develop` when the release is feature-complete; only bugfixes go here; merged to both `main` and `develop` when done
-- `hotfix/*` — branched from `main` to fix a production bug; merged to both `main` and `develop`
+**Три типа временных веток:**
+- `feature/*` — создаётся от `develop` и после завершения вливается обратно в `develop`.
+- `release/*` — создаётся от `develop`, когда набор функций релиза готов; в неё вносят только исправления ошибок, а после завершения вливают и в `main`, и в `develop`.
+- `hotfix/*` — создаётся от `main` для исправления ошибки в production и затем вливается в `main` и `develop`.
 
 ```
 main:     ──────────────────────────────●──────────────────►
