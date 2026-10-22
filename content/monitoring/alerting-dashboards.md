@@ -13,15 +13,15 @@ exercises: 4
 
 Главный компромисс в оповещениях — точность против полноты: слишком мало оповещений — и реальные проблемы останутся незамеченными; слишком много — и инженеры перестанут реагировать. Такая усталость от оповещений (alert fatigue) — одна из самых вредных проблем дежурств. Критические события теряются в шуме, инженеры отключают мониторинг ради сна, а система создаёт ложное чувство безопасности. Хорошая система снижает ложные срабатывания корректными окнами оценки и порогами, делает каждое оповещение требующим действия и маршрутизирует уведомления по серьёзности, чтобы предупреждение о CPU не будило человека в три часа ночи.
 
-In the broader DevOps toolchain, alerting and dashboards sit at the output layer of the observability stack. Metrics, logs, and traces are collected and stored by tools like Datadog, Prometheus, or Grafana; alerting and dashboards are how that raw data becomes operational intelligence. Datadog serves as the primary platform in this lesson because it integrates all three signal types (metrics, logs, APM traces) and provides monitors, dashboards, SLOs, and synthetics in a single product — patterns that translate directly to equivalent tools like Grafana Alerting, PagerDuty, or AWS CloudWatch.
+В цепочке DevOps оповещения и дашборды находятся на выходном уровне стека наблюдаемости. Метрики, журналы и трассировки собираются и хранятся такими инструментами, как Datadog, Prometheus и Grafana; оповещения и дашборды превращают эти данные в информацию для оперативных решений. В этом уроке основным примером служит Datadog: он объединяет все три типа сигналов (метрики, журналы и APM-трассировки), а также мониторы, дашборды, SLO и синтетические проверки. Аналогичные подходы применимы к Grafana Alerting, PagerDuty и AWS CloudWatch.
 
 ---
 
 ## Основные понятия
 
-### Datadog Monitor Types
+### Типы мониторов Datadog
 
-A monitor is a continuous evaluation of a query against a threshold or condition. Datadog offers several monitor types targeting different data sources and use cases. Choosing the right type determines how accurately your alert reflects the underlying problem.
+Монитор непрерывно сравнивает результат запроса с порогом или условием. Datadog предлагает несколько типов мониторов для разных источников данных и сценариев. От правильного выбора зависит, насколько точно оповещение отражает реальную проблему.
 
 | Monitor Type | Data Source | Best For |
 |---|---|---|
@@ -33,7 +33,7 @@ A monitor is a continuous evaluation of a query against a threshold or condition
 | **Forecast** | Projected metric values | Disk filling up, capacity planning |
 | **Outlier** | Group of similar hosts/services | One pod behaving differently from its peers |
 
-**Metric monitor** — alert when a metric crosses a threshold:
+**Монитор метрик** — отправляет оповещение, когда метрика пересекает порог:
 ```
 Query: avg(last_5m):avg:system.cpu.user{env:production,service:myapp} > 85
 Alert: CPU > 85% for 5 minutes
