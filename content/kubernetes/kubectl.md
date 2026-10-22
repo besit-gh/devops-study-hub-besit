@@ -21,7 +21,7 @@ kubectl взаимодействует с Kubernetes API server по HTTPS. Ка
 
 ### Контексты и кластеры
 
-A kubeconfig file (default: `~/.kube/config`) holds three types of objects: **clusters** (API server endpoints + CA certs), **users** (credentials), and **contexts** (a named tuple of cluster + user + namespace). Switching context switches all three simultaneously.
+Файл kubeconfig (по умолчанию `~/.kube/config`) содержит три типа объектов: **кластеры** (адреса API-сервера и сертификаты CA), **пользователи** (учётные данные) и **контексты** (именованный набор из кластера, пользователя и пространства имён). При переключении контекста меняются все три параметра одновременно.
 
 ```bash
 # List all configured contexts (cluster + user + namespace combos)
@@ -40,7 +40,7 @@ kubectl config set-context --current --namespace=production
 kubectl cluster-info
 ```
 
-**Multiple kubeconfig files:** Instead of merging everything into one file, you can compose configs using `KUBECONFIG`:
+**Несколько файлов kubeconfig:** вместо объединения всех настроек в один файл можно задать несколько конфигураций через переменную `KUBECONFIG`:
 
 ```bash
 # Merge two configs temporarily
@@ -51,7 +51,7 @@ kubectl config get-contexts   # shows contexts from both files
 kubectl config view --flatten > ~/.kube/merged.yaml
 ```
 
-**kubectx + kubens** reduce context and namespace switching to a single word:
+**kubectx и kubens** позволяют переключать контексты и пространства имён одной короткой командой:
 
 ```bash
 kubectx prod-cluster     # switch context
@@ -59,7 +59,7 @@ kubens production        # switch namespace
 kubectx -                # switch back to previous context (like cd -)
 ```
 
-**Gotcha — namespace persistence:** `kubectl config set-context --current --namespace=production` modifies your kubeconfig on disk. If you forget this is set, every command silently targets the wrong namespace. Always check `kubectl config get-contexts` (the NAMESPACE column) when joining an incident someone else started.
+**Подводный камень — сохранение пространства имён:** команда `kubectl config set-context --current --namespace=production` изменяет kubeconfig на диске. Если забыть об этой настройке, все команды будут незаметно обращаться не к тому пространству имён. Подключаясь к расследованию чужого инцидента, всегда проверяйте столбец NAMESPACE в выводе `kubectl config get-contexts`.
 
 | Field | Where it lives | What it controls |
 |-------|----------------|-----------------|
@@ -70,7 +70,7 @@ kubectx -                # switch back to previous context (like cd -)
 
 ---
 
-### Getting Resources
+### Получение ресурсов
 
 `kubectl get` is your primary read path. Learn its flags deeply — the difference between `-o wide`, `-o yaml`, and `-o jsonpath` determines how fast you can extract what you need.
 
