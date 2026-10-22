@@ -774,8 +774,8 @@ PROJECTS = [
                 "language": "bash",
                 "expected_output": "3",
                 "hints": [
-                    "Think about what unique keyword starts each variable block definition in HCL — you can count lines that begin with it.",
-                    "Use `grep -c '^variable'` to count lines where the word `variable` appears at the start.",
+                    "Вспомните ключевое слово, с которого начинается определение каждой переменной в HCL. Можно подсчитать строки, начинающиеся с него.",
+                    "Используйте `grep -c '^variable'`, чтобы подсчитать строки, начинающиеся со слова `variable`.",
                 ],
             },
             {
@@ -783,14 +783,14 @@ PROJECTS = [
                 "title": "Разобрать JSON-вывод Terraform",
                 "type": "sandbox",
                 "prompt": (
-                    "Write a Python one-liner that parses this Terraform output JSON and prints the VPC ID value:\n\n"
+                    "Напишите однострочную команду Python, которая разбирает JSON-вывод Terraform и печатает ID VPC:\n\n"
                     '`{"vpc_id":{"value":"vpc-0abc1234","type":"string"}}`'
                 ),
                 "language": "python",
                 "expected_output": "vpc-0abc1234",
                 "hints": [
-                    "Use `json.loads()` to parse the string, then navigate the nested dict to find the value field.",
-                    "Access `json.loads(s)['vpc_id']['value']` after `import json`.",
+                    "Разберите строку через `json.loads()`, затем найдите поле `value` во вложенном словаре.",
+                    "После `import json` обратитесь к `json.loads(s)['vpc_id']['value']`.",
                 ],
             },
             {
@@ -800,21 +800,21 @@ PROJECTS = [
                 "prompt": (
                     "Write a Terraform module for a production AWS VPC. "
                     "The module should accept variables for: CIDR block, environment name, and list of AZs.\n\n"
-                    "It should create:\n"
-                    "- The VPC with DNS hostnames enabled\n"
-                    "- One public subnet per AZ\n"
-                    "- One private subnet per AZ\n"
-                    "- An internet gateway attached to public subnets\n"
-                    "- A NAT gateway in the first public subnet (with an Elastic IP)\n"
-                    "- Appropriate route tables for public and private subnets\n\n"
+                    "Модуль должен создавать:\n"
+                    "- VPC с включёнными DNS hostnames\n"
+                    "- Одну публичную подсеть для каждой AZ\n"
+                    "- Одну приватную подсеть для каждой AZ\n"
+                    "- Internet Gateway для публичных подсетей\n"
+                    "- NAT Gateway в первой публичной подсети с Elastic IP\n"
+                    "- Подходящие таблицы маршрутизации для публичных и приватных подсетей\n\n"
                     "Show `main.tf`, `variables.tf`, and `outputs.tf`. "
                     "Use consistent naming with the environment variable."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Use `count = length(var.azs)` on subnet resources; the NAT gateway requires an `aws_eip` first; route tables need separate `aws_route_table_association` resources to attach to subnets.",
-                    "Private subnets route `0.0.0.0/0` to `aws_nat_gateway.main.id`; public subnets route to `aws_internet_gateway.main.id`; both need `aws_route_table` + `aws_route_table_association`.",
+                    "Для ресурсов подсетей используйте `count = length(var.azs)`. Перед созданием NAT Gateway создайте `aws_eip`. Для подключения таблиц маршрутизации к подсетям нужны отдельные ресурсы `aws_route_table_association`.",
+                    "В приватных подсетях направьте `0.0.0.0/0` на `aws_nat_gateway.main.id`, в публичных — на `aws_internet_gateway.main.id`. Для обоих типов нужны `aws_route_table` и `aws_route_table_association`.",
                 ],
             },
             {
@@ -822,18 +822,18 @@ PROJECTS = [
                 "title": "Спроектировать security group",
                 "type": "ai",
                 "prompt": (
-                    "Write Terraform `aws_security_group` resources for a 3-tier application:\n"
-                    "1. **Web tier** — allows HTTP (80) and HTTPS (443) from anywhere; SSH (22) from a bastion CIDR only\n"
-                    "2. **App tier** — allows traffic only from the web tier security group on port 8080\n"
-                    "3. **Database tier** — allows PostgreSQL (5432) only from the app tier security group\n\n"
+                    "Создайте ресурсы Terraform `aws_security_group` для трёхуровневого приложения:\n"
+                    "1. **Web tier** — разрешает HTTP (80) и HTTPS (443) отовсюду, SSH (22) — только из CIDR bastion-хоста\n"
+                    "2. **App tier** — разрешает трафик только от security group веб-уровня на порту 8080\n"
+                    "3. **Database tier** — разрешает PostgreSQL (5432) только от security group уровня приложения\n\n"
                     "Use security group references (not CIDR) for inter-tier rules. "
                     "Explain why security group references are preferable to CIDR-based rules for internal traffic."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Define security groups in dependency order (web → app → db); use `source_security_group_id = aws_security_group.web.id` in the app tier ingress rule instead of `cidr_blocks`.",
-                    "Security group references are dynamic — they follow the group regardless of IP changes, so they're more robust than CIDR rules that break when instances are replaced or scaled.",
+                    "Определяйте группы безопасности в порядке зависимостей (web → app → db). В ingress-правиле app-уровня используйте `source_security_group_id = aws_security_group.web.id` вместо `cidr_blocks`.",
+                    "Ссылки на security group динамические: они учитывают изменения IP-адресов и устойчивее CIDR-правил, которые могут перестать работать при замене или масштабировании экземпляров.",
                 ],
             },
         ],
