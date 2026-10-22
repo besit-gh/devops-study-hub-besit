@@ -61,7 +61,7 @@ gcloud functions call hello-http \
   --data '{"name": "Alice"}'
 ```
 
-### Pub/Sub Event Function
+### Функция, запускаемая событием Pub/Sub
 ```python
 import functions_framework
 import base64
@@ -93,7 +93,7 @@ gcloud pubsub topics publish my-topic \
   --message '{"key": "value"}'
 ```
 
-### Cloud Storage Event Function
+### Функция, запускаемая событием Cloud Storage
 ```python
 import functions_framework
 from google.cloud import storage
@@ -128,7 +128,7 @@ gcloud functions deploy on-file-upload \
   --trigger-location us-central1
 ```
 
-### Environment Variables and Secrets
+### Переменные окружения и секреты
 ```bash
 # Set environment variables at deploy time
 gcloud functions deploy myfunction \
@@ -149,7 +149,7 @@ def handler(request):
     db_password = os.environ['DB_PASSWORD']   # injected from Secret Manager
 ```
 
-### Service Account and IAM
+### Сервисные аккаунты и IAM
 ```bash
 # Deploy with a specific service account
 gcloud functions deploy myfunction \
@@ -162,7 +162,7 @@ gcloud projects add-iam-policy-binding my-project \
   --role roles/storage.objectAdmin
 ```
 
-### Authenticated HTTP Functions
+### HTTP-функции с аутентификацией
 ```bash
 # Deploy without --allow-unauthenticated (requires Identity Token to call)
 gcloud functions deploy secure-function \
@@ -177,7 +177,7 @@ curl -H "Authorization: Bearer $TOKEN" \
   https://us-central1-my-project.cloudfunctions.net/secure-function
 ```
 
-### Concurrency (2nd gen only)
+### Параллельная обработка (только 2-е поколение)
 ```bash
 # 2nd gen: one instance can handle multiple requests simultaneously
 gcloud functions deploy myfunction \
@@ -187,9 +187,9 @@ gcloud functions deploy myfunction \
   --memory 512Mi
 ```
 
-Unlike Lambda (one request per instance), 2nd gen functions share an instance across concurrent requests. This dramatically reduces cold starts for moderate traffic — the same instance handles multiple requests.
+В отличие от Lambda, где один экземпляр обрабатывает один запрос за раз, функции второго поколения могут обрабатывать несколько запросов параллельно на одном экземпляре. При умеренной нагрузке это значительно сокращает количество холодных запусков.
 
-### Logs and Monitoring
+### Журналы и мониторинг
 ```bash
 # View function logs
 gcloud functions logs read hello-http \
@@ -208,7 +208,7 @@ gcloud logging read 'resource.type=cloud_function AND resource.labels.function_n
   --format 'value(timestamp, textPayload)'
 ```
 
-### Local Development
+### Локальная разработка
 ```bash
 # Install the Functions Framework
 pip install functions-framework
@@ -228,7 +228,7 @@ functions-framework --target process_message \
 
 ## Примеры
 
-### Image Processing Pipeline
+### Конвейер обработки изображений
 ```python
 # main.py — triggered when an image is uploaded to a raw bucket
 import functions_framework
@@ -273,20 +273,20 @@ def resize_image(cloud_event):
 
 ### Быстрая проверка
 
-5. Extract the trigger type from a Cloud Function config stub. Run: `printf 'trigger:\n  type: http\n  allowUnauthenticated: true\n' | awk '/^  type:/{print $2}'`
+5. Извлеките тип триггера из примера конфигурации Cloud Function. Выполните: `printf 'trigger:\n  type: http\n  allowUnauthenticated: true\n' | awk '/^  type:/{print $2}'`
 
 ```expected_output
 http
 ```
 
-hint: Think about how you can filter lines from structured text by matching a specific pattern and then extracting a particular field.
-hint: Use awk with a regex pattern like /^  type:/ to match the indented 'type:' line, then print the second whitespace-delimited field using {print $2}.
+Подсказка: найдите нужную строку в структурированном тексте по шаблону и извлеките определённое поле.
+Подсказка: используйте `awk` с шаблоном `/^  type:/`, чтобы найти строку `type:` с отступом, а затем выведите второе поле через `{print $2}`.
 
-6. Calculate the maximum function timeout (9 minutes) in seconds. Run: `python3 -c "print(9 * 60)"`
+6. Переведите максимальный тайм-аут функции (9 минут) в секунды. Выполните: `python3 -c "print(9 * 60)"`
 
 ```expected_output
 540
 ```
 
-hint: Think about how you can use Python's command-line evaluation flag to perform a quick arithmetic calculation directly in your terminal.
-hint: Use python3 -c with a print statement that multiplies two integers together using the * operator.
+Подсказка: используйте параметр Python для выполнения короткого арифметического выражения прямо в терминале.
+Подсказка: используйте `python3 -c` и `print`, чтобы перемножить два целых числа оператором `*`.
