@@ -72,19 +72,19 @@
 | Command | Description |
 |---------|-------------|
 | `iptables -L -n` | Показать правила |
-| `iptables -A INPUT -p tcp --dport 22 -j ACCEPT` | Allow SSH |
-| `iptables -A INPUT -j DROP` | Default deny |
-| `iptables-save > rules.v4` | Save rules |
-| `ufw status` | Ubuntu firewall status |
-| `ufw allow 22/tcp` | Allow port |
-| `ufw enable` | Enable firewall |
+| `iptables -A INPUT -p tcp --dport 22 -j ACCEPT` | Разрешить SSH |
+| `iptables -A INPUT -j DROP` | Запретить всё остальное по умолчанию |
+| `iptables-save > rules.v4` | Сохранить правила |
+| `ufw status` | Состояние межсетевого экрана Ubuntu |
+| `ufw allow 22/tcp` | Разрешить порт |
+| `ufw enable` | Включить межсетевой экран |
 
-## Packet Capture
+## Захват сетевых пакетов
 
 | Command | Description |
 |---------|-------------|
-| `tcpdump -i eth0` | Capture on interface |
-| `tcpdump -i eth0 port 80` | Filter by port |
-| `tcpdump -i eth0 host 1.2.3.4` | Filter by host |
-| `tcpdump -i eth0 -w file.pcap` | Write to file |
-| `tcpdump -r file.pcap` | Read from file |
+| `tcpdump -i eth0` | Захватывать пакеты на интерфейсе |
+| `tcpdump -i eth0 port 80` | Фильтровать по порту |
+| `tcpdump -i eth0 host 1.2.3.4` | Фильтровать по узлу |
+| `tcpdump -i eth0 -w file.pcap` | Записать в файл |
+| `tcpdump -r file.pcap` | Прочитать из файла |
