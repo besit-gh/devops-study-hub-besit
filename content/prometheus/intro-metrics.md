@@ -19,16 +19,16 @@ Prometheus — открытый набор инструментов монито
 
 ### Архитектура pull-модели
 
-Prometheus polls targets over HTTP at a configured scrape interval. Targets expose metrics on a `/metrics` endpoint in the Prometheus exposition format (plain text). This is the inverse of push-based systems where instrumented code sends metrics to a collector.
+Prometheus опрашивает цели по HTTP с заданным интервалом сбора. Цели публикуют метрики в текстовом формате Prometheus по эндпоинту `/metrics`. Это противоположно push-модели, в которой инструментированный код сам отправляет метрики сборщику.
 
 **Преимущества pull-модели:**
-- Central config: Prometheus controls what is scraped and when.
-- Easy health check: if the scrape fails, the target is down.
-- No firewall holes needed from target to monitoring server (only Prometheus needs outbound access to targets).
+- Централизованная конфигурация: Prometheus управляет тем, что и когда опрашивается.
+- Простая проверка доступности: если сбор не удался, цель считается недоступной.
+- Не нужно открывать входящие соединения от целей к серверу мониторинга: только Prometheus должен иметь исходящий доступ к целям.
 
 **Когда нужен push:** short-lived jobs (batch, cron) cannot be scraped before they exit. Use the **Pushgateway** to push metrics, then Prometheus scrapes the gateway.
 
-### Metric Types
+### Типы метрик
 
 | Type | Semantics | Example use case |
 |------|-----------|-----------------|
@@ -37,10 +37,10 @@ Prometheus polls targets over HTTP at a configured scrape interval. Targets expo
 | **Histogram** | Samples observations into configurable buckets; also exposes `_count` and `_sum` | Request latency, response size |
 | **Summary** | Pre-calculated client-side quantiles; also exposes `_count` and `_sum` | Same as histogram, but quantiles computed in app |
 
-**Counter gotcha:** never use a counter for something that can decrease. Use a gauge. Counters are designed to be used with `rate()` and `increase()` in PromQL — these functions handle resets automatically.
+**Важно о Counter:** никогда не используйте счётчик для величины, которая может уменьшаться; для неё нужен Gauge. Счётчики предназначены для использования с `rate()` и `increase()` в PromQL — эти функции автоматически учитывают сбросы счётчика.
 
 **Histogram vs Summary:**
-- Histograms: buckets are server-side (configurable), quantiles calculated in PromQL — aggregatable across instances.
+- Гистограммы: корзины настраиваются на стороне приложения, а квантили рассчитываются в PromQL; данные можно агрегировать между экземплярами.
 - Summaries: quantiles calculated client-side — cannot be aggregated across instances. Prefer histograms in distributed systems.
 
 ### Labels
