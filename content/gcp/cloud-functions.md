@@ -263,10 +263,10 @@ def resize_image(cloud_event):
 
 ## Практические задания
 
-1. Write and deploy an HTTP Cloud Function (2nd gen, Python) that accepts a JSON body with a `text` field and returns the text reversed. Test with `gcloud functions call` and with `curl`.
-2. Create a Pub/Sub topic and deploy a Cloud Function triggered by it. The function should log the decoded message content. Publish 5 test messages and verify all appear in the function logs.
-3. Deploy a Cloud Storage-triggered function that logs the name and size of every file uploaded to a specific bucket. Verify by uploading several files and checking the logs.
-4. Deploy a secure (authenticated) HTTP function. Write a Python script that calls it with a valid identity token obtained via `gcloud auth print-identity-token`. Verify the same URL returns 403 without the token.
+1. Напишите и разверните HTTP Cloud Function второго поколения на Python, которая принимает JSON с полем `text` и возвращает перевёрнутую строку. Проверьте её через `gcloud functions call` и `curl`.
+2. Создайте тему Pub/Sub и разверните Cloud Function, запускаемую сообщениями этой темы. Функция должна записывать декодированное содержимое сообщения в журнал. Опубликуйте пять тестовых сообщений и проверьте, что все они появились в журнале функции.
+3. Разверните функцию, запускаемую событиями Cloud Storage, которая записывает в журнал имя и размер каждого файла, загруженного в заданный бакет. Загрузите несколько файлов и проверьте журналы.
+4. Разверните защищённую HTTP-функцию, требующую аутентификацию. Напишите скрипт Python, который вызывает её с действительным токеном идентификации, полученным через `gcloud auth print-identity-token`. Убедитесь, что тот же URL возвращает 403 без токена.
 
 
 ---
