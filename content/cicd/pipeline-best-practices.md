@@ -19,7 +19,7 @@ CI/CD-пайплайн — сердцевина процесса поставк�
 
 ### Fail fast: порядок задач по стоимости
 
-The fail-fast principle says: **order your pipeline stages so the cheapest, most discriminating checks run first.** A linting error that takes 5 seconds to detect should not sit behind a 10-minute Docker build. Every minute a developer waits for feedback they already know is coming is wasted time — multiplied across every push in a year.
+Принцип быстрого отказа (fail-fast) требует **располагать этапы конвейера так, чтобы сначала выполнялись самые дешёвые и показательные проверки**. Ошибка линтера, которую можно обнаружить за 5 секунд, не должна ждать завершения десятиминутной сборки Docker-образа. Каждая минута ожидания заведомо известного результата — потерянное время, которое накапливается при каждом push в течение года.
 
 | Stage | Typical duration | What it catches |
 |-------|-----------------|-----------------|
@@ -63,15 +63,15 @@ jobs:
       - run: ./scripts/deploy.sh
 ```
 
-**The `needs` key is your dependency graph.** Without it, all jobs run in parallel. With it, you create a directed acyclic graph (DAG) where each node waits for its parents. The optimal pipeline is a DAG — not a linear sequence, and not a flat parallel list.
+**Ключ `needs` задаёт граф зависимостей.** Без него все задания запускаются параллельно. С ним получается ориентированный ациклический граф (DAG), в котором каждый узел ждёт завершения зависимостей. Оптимальный конвейер — это DAG, а не линейная цепочка и не простой список параллельных заданий.
 
-**Gotcha:** listing multiple parents in `needs: [a, b, c]` makes the job wait for all three. If any one fails, the dependent job is skipped by default — it does not itself show as failed in the UI unless you explicitly check. Use `if: always()` only for cleanup jobs that must run regardless of upstream status, not as a general override.
+**Подводный камень:** если указать несколько зависимостей в `needs: [a, b, c]`, задание будет ждать все три. Если хотя бы одно завершится с ошибкой, зависимое задание по умолчанию будет пропущено; само оно не обязательно получит статус ошибки в интерфейсе. Используйте `if: always()` только для очистки, которая должна выполниться независимо от результата предыдущих этапов, а не как универсальное переопределение.
 
-**Gotcha:** avoid putting build and test in the same job to "save checkout time." When they share a job, a test failure blocks artifact creation feedback, and you can't re-run just the build step. Keep them separate — the visibility is worth the overhead.
+**Подводный камень:** не объединяйте сборку и тесты в одно задание ради экономии времени на checkout. При сбое тестов теряется ясность результата сборки, а повторно запустить только этап сборки уже нельзя. Разделяйте их: дополнительная наглядность важнее небольших накладных расходов.
 
-### Caching Strategies
+### Стратегии кеширования
 
-Caching trades disk space and cache management complexity for build speed. The key insight: **a cache key that changes too frequently is useless; one that changes too infrequently causes stale dependency bugs.** The sweet spot is hashing the dependency manifest file — the cache invalidates exactly when dependencies change.
+Кеширование обменивает дисковое пространство и сложность управления кешем на скорость сборки. Главное правило: **если ключ кеша меняется слишком часто, кеш бесполезен; если слишком редко — появляются ошибки из-за устаревших зависимостей**. Обычно оптимально вычислять хеш файла с описанием зависимостей: кеш сбрасывается именно тогда, когда зависимости меняются.
 
 | Ecosystem | What to cache | Key input |
 |-----------|--------------|-----------|
