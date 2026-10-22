@@ -105,8 +105,9 @@ Frontend:
     npm test -- --run
     npm run build
 
-Backend (из корня репозитория):
+Backend (из корня репозитория; если pytest ещё не установлен, установите его):
 
+    .venv/bin/python -m pip install pytest
     .venv/bin/python -m pytest backend/tests
 
 ## Лицензия
