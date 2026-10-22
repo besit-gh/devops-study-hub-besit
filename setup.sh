@@ -20,7 +20,13 @@ print(f"Python: {sys.version.split()[0]}")
 PY
 
 node -e 'const v=process.versions.node.split(".").map(Number); if (v[0] < 18) { console.error("Требуется Node.js 18 или новее."); process.exit(1); } console.log("Node.js:", process.version)'
-echo "npm: $(npm --version)"
+npm_version="$(npm --version)"
+npm_major="${npm_version%%.*}"
+if (( npm_major < 9 )); then
+    echo "Требуется npm 9 или новее; установлена версия $npm_version."
+    exit 1
+fi
+echo "npm: $npm_version"
 
 if [[ ! -d .venv ]]; then
     echo "Создаю виртуальную среду Python..."
