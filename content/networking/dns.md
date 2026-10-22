@@ -13,15 +13,15 @@ DNS (Domain Name System) — распределённая система, пре
 
 DNS опирается на три принципа: **делегирование** — ни один сервер не знает всего, полномочия передаются по иерархии; **кэширование** — каждый ответ содержит TTL, определяющий срок повторного использования; **согласованность с течением времени** — изменения распространяются по мере истечения кэшей, а не мгновенно. Эти принципы объясняют, почему DNS-изменения требуют времени, разные клиенты могут видеть разные ответы, а запросы к двум DNS-серверам иногда возвращают разные результаты.
 
-In the DevOps toolchain, DNS sits at the intersection of infrastructure, networking, and deployment. You configure DNS records when you launch a service, manage TTLs during blue-green deployments, rely on internal DNS for Kubernetes service discovery, and debug it when services can't find each other. Cloud providers (AWS Route 53, GCP Cloud DNS, Cloudflare) expose DNS as an API, making it a first-class piece of infrastructure-as-code. Understanding DNS deeply means you can diagnose incidents faster, design safer deployment strategies, and reason about where failures actually originate.
+В DevOps DNS находится на пересечении инфраструктуры, сетей и развёртывания. DNS-записи настраивают при запуске сервиса, TTL регулируют при blue-green-развёртываниях, внутренний DNS используют для обнаружения сервисов Kubernetes, а при проблемах связи между сервисами — диагностируют. Облачные провайдеры (AWS Route 53, GCP Cloud DNS, Cloudflare) предоставляют DNS через API, поэтому DNS становится полноценной частью Infrastructure as Code. Глубокое понимание DNS помогает быстрее диагностировать инциденты, проектировать безопасные стратегии развёртывания и находить первопричины сбоев.
 
 ---
 
 ## Основные понятия
 
-### The DNS Resolution Chain
+### Цепочка разрешения DNS-имени
 
-When any process on a Linux system resolves a name, it goes through several layers before hitting the network. Understanding this chain is critical — the answer your app gets may come from a local cache, `/etc/hosts`, or a full recursive lookup, depending on configuration.
+Когда процесс Linux разрешает имя, запрос проходит несколько уровней, прежде чем попасть в сеть. Важно понимать эту цепочку: в зависимости от конфигурации приложение может получить ответ из локального кэша, `/etc/hosts` или в результате полного рекурсивного запроса.
 
 ```
 Your app (getaddrinfo() syscall)
@@ -37,9 +37,9 @@ Your app (getaddrinfo() syscall)
               → Final answer
 ```
 
-Each step caches the result for the TTL duration. The recursive resolver is where most caching happens — it serves cached answers to all clients behind it. The root nameservers and TLD nameservers are only consulted when no cached delegation exists.
+Каждый этап кэширует результат на время TTL. Основное кэширование происходит на рекурсивном резолвере, который отдаёт сохранённые ответы всем клиентам за ним. Корневые DNS-серверы и серверы доменов верхнего уровня запрашиваются только при отсутствии кэшированной делегации.
 
-**Key insight:** `dig` bypasses `/etc/hosts` and `nsswitch.conf`. It speaks directly to DNS. `getent hosts` or `ping` use the full stack including `/etc/hosts`. This is why `dig test.local` may return NXDOMAIN while `ping test.local` resolves correctly from a `/etc/hosts` entry.
+**Важно:** `dig` обходит `/etc/hosts` и `nsswitch.conf`, обращаясь напрямую к DNS. `getent hosts` и `ping` используют полный механизм разрешения имён, включая `/etc/hosts`. Поэтому `dig test.local` может вернуть NXDOMAIN, а `ping test.local` — успешно разрешить имя из `/etc/hosts`.
 
 ```bash
 # Which resolver is your system actually using?
@@ -58,15 +58,15 @@ dig +short api.example.com
 dig +trace api.example.com
 ```
 
-**`nsswitch.conf` gotcha:** if `nsswitch.conf` lists `files` before `dns` (the default), a wrong entry in `/etc/hosts` will silently override DNS. This burns engineers who add a temporary `/etc/hosts` entry for testing and forget to remove it.
+**Особенность `nsswitch.conf`:** если `files` указан перед `dns` (значение по умолчанию), неверная запись в `/etc/hosts` незаметно перекрывает DNS. Такое случается, когда инженер добавляет временную запись для тестирования и забывает её удалить.
 
 ---
 
-### Key Configuration Files
+### Основные файлы конфигурации
 
-Two files control DNS behavior on any Linux host. Misconfiguring either causes hard-to-diagnose failures.
+Работу DNS на Linux-узле определяют два файла. Ошибка в любом из них может вызвать сбой, который трудно диагностировать.
 
-**`/etc/resolv.conf`** — tells the system which DNS servers to query and how to handle short names:
+**`/etc/resolv.conf`** — задаёт DNS-серверы для запросов и правила обработки коротких имён:
 
 ```
 nameserver 10.0.0.2        # primary resolver (e.g. VPC internal resolver)
@@ -77,7 +77,7 @@ options timeout:2          # seconds before trying next nameserver
 options attempts:3         # total attempts per nameserver
 ```
 
-**`/etc/hosts`** — static name-to-IP mappings, checked before DNS:
+**`/etc/hosts`** — статические сопоставления имён и IP-адресов, проверяемые до DNS:
 
 ```
 127.0.0.1   localhost
@@ -86,13 +86,13 @@ options attempts:3         # total attempts per nameserver
 10.0.0.101  redis.internal
 ```
 
-**`ndots` gotcha:** the `ndots:5` option in Kubernetes `/etc/resolv.conf` means that `api.example.com` (3 dots = 4 labels, fewer than 5) gets search domains appended *before* trying the FQDN. A lookup for `api.example.com` inside a pod might try:
+**Особенность `ndots`:** параметр `ndots:5` в `/etc/resolv.conf` Kubernetes означает, что для `api.example.com` (три точки, четыре метки — меньше пяти) сначала добавляются поисковые домены и только потом выполняется запрос полного доменного имени (FQDN). Внутри pod поиск может пройти так:
 1. `api.example.com.default.svc.cluster.local`
 2. `api.example.com.svc.cluster.local`
 3. `api.example.com.cluster.local`
-4. `api.example.com.` ← finally the actual target
+4. `api.example.com.` ← наконец, исходное имя
 
-Each failed attempt adds 5–30ms latency. Multiply this across thousands of requests and you have a performance problem that looks like application slowness. **Fix:** append a trailing dot to force FQDN resolution: `api.example.com.`
+Каждая неудачная попытка добавляет задержку 5–30 мс. При тысячах запросов это превращается в проблему производительности, похожую на медленную работу приложения. **Решение:** добавьте точку в конце имени, чтобы принудительно выполнить поиск FQDN: `api.example.com.`
 
 ```bash
 # Verify what ndots is set to in your pod:
@@ -104,24 +104,24 @@ dig +stats api.example.com  # shows query count; high = search domain expansion
 
 ---
 
-### DNS Record Types
+### Типы DNS-записей
 
-| Type | Purpose | Typical Value |
+| Тип | Назначение | Пример значения |
 |------|---------|--------------|
-| **A** | Maps name → IPv4 address | `1.2.3.4` |
-| **AAAA** | Maps name → IPv6 address | `2001:db8::1` |
-| **CNAME** | Alias — maps name → another name | `www.example.com → example.com` |
-| **MX** | Mail exchanger with priority | `10 mail.example.com` |
-| **TXT** | Arbitrary text; used for SPF, DKIM, domain verification | `"v=spf1 include:sendgrid.net ~all"` |
-| **NS** | Authoritative nameservers for a zone | `ns1.dnsprovider.com` |
-| **PTR** | Reverse DNS: IP → name | `4.3.2.1.in-addr.arpa → api.example.com` |
-| **SRV** | Service location: priority, weight, port, host | `10 20 443 backend.example.com` |
-| **SOA** | Start of Authority: serial, refresh, retry, expire, negative TTL | Used by resolvers to govern zone behavior |
-| **CAA** | Specifies which CAs may issue TLS certs | `0 issue "letsencrypt.org"` |
+| **A** | Сопоставляет имя с IPv4-адресом | `1.2.3.4` |
+| **AAAA** | Сопоставляет имя с IPv6-адресом | `2001:db8::1` |
+| **CNAME** | Псевдоним: сопоставляет имя с другим именем | `www.example.com → example.com` |
+| **MX** | Почтовый сервер с приоритетом | `10 mail.example.com` |
+| **TXT** | Произвольный текст; используется для SPF, DKIM и подтверждения домена | `"v=spf1 include:sendgrid.net ~all"` |
+| **NS** | Авторитетные DNS-серверы зоны | `ns1.dnsprovider.com` |
+| **PTR** | Обратный DNS: IP → имя | `4.3.2.1.in-addr.arpa → api.example.com` |
+| **SRV** | Параметры сервиса: приоритет, вес, порт и узел | `10 20 443 backend.example.com` |
+| **SOA** | Start of Authority: serial, refresh, retry, expire, negative TTL | Используется резолверами для управления поведением зоны |
+| **CAA** | Определяет, каким центрам сертификации разрешено выпускать TLS-сертификаты | `0 issue "letsencrypt.org"` |
 
-**CNAME restriction:** A CNAME cannot coexist with other records at the same name. You cannot put a CNAME on a bare domain (`example.com`) because that zone also needs SOA and NS records. This is why DNS providers offer proprietary "ALIAS" or "ANAME" records — they resolve the CNAME target server-side and return the resulting A record, making it safe at the zone apex.
+**Ограничение CNAME:** запись CNAME не может сосуществовать с другими записями для того же имени. Нельзя назначить CNAME корневому домену (`example.com`), поскольку для зоны также нужны записи SOA и NS. Поэтому DNS-провайдеры предлагают собственные записи ALIAS или ANAME: они разрешают цель CNAME на стороне сервера и возвращают итоговую A-запись, что безопасно для корня зоны.
 
-**Multiple A records = primitive load balancing:** you can publish multiple A records for the same name pointing to different IPs. Resolvers return them all; clients typically use the first. This is not a replacement for a real load balancer — there's no health checking.
+**Несколько A-записей — примитивная балансировка:** для одного имени можно опубликовать несколько A-записей с разными IP. Резолверы возвращают их все, а клиенты обычно используют первую. Это не замена настоящему балансировщику: проверка состояния отсутствует.
 
 ```bash
 # See all A records for a name (multiple = round-robin DNS)
@@ -133,9 +133,9 @@ dig +short _http._tcp.my-service.my-namespace.svc.cluster.local SRV
 
 ---
 
-### `dig` — The Primary DNS Debugging Tool
+### `dig` — основной инструмент диагностики DNS
 
-`dig` is the standard tool for inspecting DNS. Learn its flags; you'll use them constantly in debugging and incident response.
+`dig` — стандартный инструмент для исследования DNS. Изучите его флаги: они постоянно нужны при отладке и расследовании инцидентов.
 
 ```bash
 # Basic A record lookup
@@ -173,13 +173,13 @@ dig -f domains.txt +short
 dig +dnssec +short api.example.com A
 ```
 
-**`nslookup` vs `dig`:** `nslookup` is interactive-friendly but its output is harder to script and it handles some edge cases differently. Always use `dig` for debugging — its output is unambiguous and consistent.
+**`nslookup` и `dig`:** `nslookup` удобен в интерактивном режиме, но его вывод сложнее обрабатывать скриптами, а некоторые пограничные случаи он обрабатывает иначе. Для диагностики предпочтителен `dig`: его вывод однозначен и стабилен.
 
 ---
 
-### Reading `dig` Output
+### Как читать вывод `dig`
 
-Most engineers glance at the ANSWER SECTION and ignore the rest. The other sections contain diagnostic information you need during incidents.
+Многие инженеры смотрят только на ANSWER SECTION и игнорируют остальное. Другие секции содержат важную диагностическую информацию для расследования инцидентов.
 
 ```
 ; <<>> DiG 9.18.1 <<>> api.example.com
@@ -212,28 +212,28 @@ ns1.dnsprovider.com.  3600  IN  A  198.51.100.1
 ;; MSG SIZE  rcvd: 88
 ```
 
-**`status` codes to know:**
+**Коды `status`, которые нужно знать:**
 
-| Status | Meaning | Common cause |
+| Статус | Значение | Частая причина |
 |--------|---------|-------------|
-| `NOERROR` | Query processed successfully | — |
-| `NXDOMAIN` | Domain does not exist | Typo, record deleted, wrong zone |
-| `SERVFAIL` | Resolver couldn't get an authoritative answer | Broken zone, NS unreachable, DNSSEC failure |
-| `REFUSED` | Server won't process the query | Firewall, ACL, resolver not allowing recursion |
-| `NOERROR` with empty ANSWER | Domain exists, but not that record type | Queried wrong type, record not yet created |
+| `NOERROR` | Запрос обработан успешно | — |
+| `NXDOMAIN` | Домен не существует | Опечатка, удалённая запись, неверная зона |
+| `SERVFAIL` | Резолвер не получил авторитетный ответ | Ошибка зоны, недоступный NS, сбой DNSSEC |
+| `REFUSED` | Сервер отказался обрабатывать запрос | Firewall, ACL, запрещена рекурсия |
+| `NOERROR` с пустым ANSWER | Домен существует, но записи такого типа нет | Запрошен неверный тип или запись ещё не создана |
 
-**`NOERROR` with no answer is not the same as `NXDOMAIN`.** `NXDOMAIN` means the name doesn't exist at all. An empty answer with `NOERROR` means the name exists but has no record of the type you asked for. Confusing these leads to wrong diagnosis.
+**`NOERROR` без ответа — не то же самое, что `NXDOMAIN`.** `NXDOMAIN` означает, что имя вообще не существует. Пустой ответ `NOERROR` означает, что имя существует, но записи запрошенного типа нет. Если перепутать эти случаи, диагностика будет неверной.
 
 ---
 
-### TTL and DNS Propagation
+### TTL и распространение DNS-изменений
 
-TTL (Time To Live) is the number of seconds a resolver may cache an answer. It is set by whoever manages the authoritative zone — not the client, and not the resolver.
+TTL (Time To Live) — количество секунд, в течение которых резолвер может хранить ответ в кэше. Его задаёт администратор авторитетной зоны, а не клиент и не резолвер.
 
-| TTL | Use case |
+| TTL | Применение |
 |-----|---------|
-| 30–60s | Active deployments, canary releases, blue-green switches |
-| 300s | Services that change occasionally |
+| 30–60 с | Активные развёртывания, canary-релизы, blue-green-переключения |
+| 300 с | Сервисы, которые меняются время от времени |
 | 3600s | Stable infrastructure (origin IPs, MX records) |
 | 86400s | Near-static records (NS records, rarely-changed infra) |
 
