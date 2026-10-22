@@ -46,7 +46,7 @@ provider "aws" {
 Ресурсы — это объекты инфраструктуры, которыми управляет Terraform:
 
 ```hcl
-# resource "<provider>_<type>" "<local_name>" { ... }
+# Формат объявления ресурса: `resource "<provider>_<type>" "<local_name>" { ... }`
 
 resource "aws_s3_bucket" "app_assets" {
   bucket = "mycompany-app-assets-prod"
@@ -107,13 +107,13 @@ terraform apply -var-file="prod.tfvars"
 ```
 
 ```hcl
-# prod.tfvars
+# Файл prod.tfvars
 region         = "eu-west-1"
 instance_count = 3
 db_password    = "supersecret"
 ```
 
-Or via environment: `TF_VAR_region=eu-west-1 terraform apply`
+Или через переменную окружения: `TF_VAR_region=eu-west-1 terraform apply`
 
 ### Выходные значения
 ```hcl
@@ -159,7 +159,7 @@ resource "aws_instance" "web" {
 Источники данных считывают сведения об уже существующей инфраструктуре, которой эта конфигурация не управляет:
 
 ```hcl
-# Найти актуальный AMI Amazon Linux
+# Найти актуальный образ AMI Amazon Linux
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["amazon"]
@@ -185,13 +185,13 @@ data "aws_vpc" "main" {
 
 ### Выражения и функции
 ```hcl
-# Интерполяция строк
+# Подстановка значений в строки
 name = "myapp-${var.environment}"
 
 # Условное выражение
 instance_type = var.environment == "prod" ? "t3.medium" : "t3.micro"
 
-# Выражения for
+# Выражения с циклом for
 security_group_ids = [for sg in var.security_groups : sg.id]
 
 # Функции
@@ -204,7 +204,7 @@ merged_tags  = merge(var.tags, local.extra_tags)
 
 ### Экземпляр EC2 с группой безопасности
 ```hcl
-# main.tf
+# Файл main.tf
 
 provider "aws" {
   region = var.region
