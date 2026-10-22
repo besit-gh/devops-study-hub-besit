@@ -2,7 +2,7 @@
 
 ## Кластер и состояние
 
-| API Call | Description |
+| Вызов API | Описание |
 |----------|-------------|
 | `GET /_cluster/health` | Состояние кластера (green/yellow/red) |
 | `GET /_cluster/stats` | Статистика всего кластера |
@@ -14,7 +14,7 @@
 
 ## Управление индексами
 
-| API Call | Description |
+| Вызов API | Описание |
 |----------|-------------|
 | `GET /_cat/indices?v` | Список индексов со статистикой |
 | `PUT /myindex` | Создать индекс |
@@ -30,46 +30,46 @@
 
 ## CRUD-операции с документами
 
-| API Call | Description |
+| Вызов API | Описание |
 |----------|-------------|
-| `PUT /index/_doc/ID` `{ ... }` | Index document with ID |
-| `POST /index/_doc` `{ ... }` | Index with auto-generated ID |
-| `GET /index/_doc/ID` | Retrieve document |
-| `POST /index/_update/ID` `{ "doc": { ... } }` | Partial update |
-| `DELETE /index/_doc/ID` | Delete document |
-| `POST /index/_delete_by_query` `{ "query": { ... } }` | Delete by query |
-| `GET /index/_count` `{ "query": { ... } }` | Count matching docs |
+| `PUT /index/_doc/ID` `{ ... }` | Индексировать документ с указанным ID |
+| `POST /index/_doc` `{ ... }` | Индексировать документ с автоматически созданным ID |
+| `GET /index/_doc/ID` | Получить документ |
+| `POST /index/_update/ID` `{ "doc": { ... } }` | Частично обновить документ |
+| `DELETE /index/_doc/ID` | Удалить документ |
+| `POST /index/_delete_by_query` `{ "query": { ... } }` | Удалить документы по запросу |
+| `GET /index/_count` `{ "query": { ... } }` | Подсчитать совпавшие документы |
 
 ## Search Queries
 
-| Query | Description |
+| Запрос | Описание |
 |-------|-------------|
-| `{ "query": { "match_all": {} } }` | All documents |
-| `{ "query": { "match": { "field": "text" } } }` | Full-text match |
-| `{ "query": { "term": { "field": "exact" } } }` | Exact keyword match |
-| `{ "query": { "range": { "field": { "gte": 10 } } } }` | Range filter |
-| `{ "query": { "bool": { "must": [...], "filter": [...] } } }` | Boolean query |
+| `{ "query": { "match_all": {} } }` | Все документы |
+| `{ "query": { "match": { "field": "text" } } }` | Полнотекстовый поиск |
+| `{ "query": { "term": { "field": "exact" } } }` | Точное совпадение по ключевому слову |
+| `{ "query": { "range": { "field": { "gte": 10 } } } }` | Фильтр по диапазону |
+| `{ "query": { "bool": { "must": [...], "filter": [...] } } }` | Булев запрос |
 | `{ "query": { "wildcard": { "field": "val*" } } }` | Шаблон с подстановочными символами |
-| `{ "from": 0, "size": 20, "query": { ... } }` | Pagination |
-| `{ "sort": [{ "field": "desc" }], "query": { ... } }` | Sort results |
+| `{ "from": 0, "size": 20, "query": { ... } }` | Пагинация |
+| `{ "sort": [{ "field": "desc" }], "query": { ... } }` | Сортировать результаты |
 
-## Aggregations
+## Агрегацияs
 
-| Aggregation | Description |
+| Агрегация | Описание |
 |-------------|-------------|
-| `{ "aggs": { "by_field": { "terms": { "field": "status" } } } }` | Count by field value |
-| `{ "aggs": { "avg_price": { "avg": { "field": "price" } } } }` | Average |
-| `{ "aggs": { "total": { "sum": { "field": "amount" } } } }` | Sum |
-| `{ "aggs": { "over_time": { "date_histogram": { "field": "@timestamp", "calendar_interval": "day" } } } }` | Time histogram |
+| `{ "aggs": { "by_field": { "terms": { "field": "status" } } } }` | Подсчитать документы по значению поля |
+| `{ "aggs": { "avg_price": { "avg": { "field": "price" } } } }` | Среднее значение |
+| `{ "aggs": { "total": { "sum": { "field": "amount" } } } }` | Сумма |
+| `{ "aggs": { "over_time": { "date_histogram": { "field": "@timestamp", "calendar_interval": "day" } } } }` | Гистограмма по времени |
 
 ## Index Lifecycle (ILM)
 
-| API Call | Description |
+| Вызов API | Описание |
 |----------|-------------|
-| `GET /_ilm/policy` | List ILM policies |
-| `PUT /_ilm/policy/myPolicy` `{ "policy": { ... } }` | Create ILM policy |
-| `GET /index/_ilm/explain` | Show index ILM status |
-| `POST /index/_ilm/retry` | Retry failed ILM step |
+| `GET /_ilm/policy` | Список политик ILM |
+| `PUT /_ilm/policy/myPolicy` `{ "policy": { ... } }` | Создать политику ILM |
+| `GET /index/_ilm/explain` | Показать состояние ILM для индекса |
+| `POST /index/_ilm/retry` | Повторить неудачный шаг ILM |
 
 ## curl Shorthand
 
