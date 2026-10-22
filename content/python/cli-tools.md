@@ -13,15 +13,15 @@ CLI-инструменты связывают компоненты DevOps-авт
 
 Для начала лучше всего подходит `argparse`: модуль входит в стандартную библиотеку, автоматически формирует справку, проверяет типы и допустимые значения и поддерживает подкоманды. Для более сложных инструментов `click` и `typer` предлагают API на основе декораторов и уменьшают количество шаблонного кода, но добавляют зависимости. Сначала стоит разобраться в `argparse`, чтобы понимать внутреннюю работу высокоуровневых библиотек и создавать инструменты для минимальных окружений без установки дополнительных пакетов.
 
-CLI tools in the DevOps toolchain occupy a specific role: they are the human-facing and script-facing interface to automation. They get invoked by CI pipelines, Makefiles, Ansible tasks, and cron jobs — all of which depend on exit codes and clean output to make decisions. Getting those contracts right is what separates a script that works on your laptop from one that can be trusted in a pipeline.
+CLI-инструменты в DevOps — интерфейс автоматизации как для человека, так и для скриптов. Их вызывают CI-конвейеры, Makefile, задачи Ansible и cron. Все они принимают решения на основе кодов завершения и чистого вывода. Правильная реализация этих соглашений отличает скрипт, работающий только на ноутбуке, от инструмента, которому можно доверять в конвейере.
 
 ---
 
 ## Основные понятия
 
-### argparse Basics
+### Основы argparse
 
-`argparse` gives you three things for free: argument parsing, type coercion, and help text generation. Build a parser by declaring what arguments your tool expects, then call `parse_args()` to get a namespace object back.
+`argparse` автоматически предоставляет три возможности: разбор аргументов, преобразование типов и генерацию справки. Опишите ожидаемые аргументы, затем вызовите `parse_args()`, чтобы получить объект namespace.
 
 ```python
 import argparse
@@ -48,7 +48,7 @@ print(args.port)      # 80 (int, not string)
 print(args.restart)   # True or False
 ```
 
-Running `python check.py --help` generates:
+Запуск `python check.py --help` выводит:
 
 ```
 usage: check.py [-h] [--port PORT] [--timeout TIMEOUT] [--restart] [--verbose] service
@@ -66,25 +66,25 @@ options:
   --verbose, -v         Verbose output
 ```
 
-**Naming gotcha:** `argparse` converts hyphens in flag names to underscores in the namespace. `--db-host` becomes `args.db_host`. Using hyphens in CLI flags is conventional Unix style; using underscores in Python is PEP 8 style — `argparse` bridges the two automatically.
+**Особенность именования:** `argparse` преобразует дефисы в именах флагов в подчёркивания в объекте namespace. `--db-host` становится `args.db_host`. Дефисы в CLI-флагах соответствуют традициям Unix, а подчёркивания в Python — PEP 8; `argparse` автоматически связывает эти соглашения.
 
 ---
 
-### Argument Types, Choices, and Nargs
+### Типы аргументов, choices и nargs
 
-`argparse` coerces values to a Python type before they reach your code. If coercion fails, it prints a usage error and exits with code 2 — before your code runs.
+`argparse` преобразует значения в заданный тип Python до передачи их вашему коду. Если преобразование не удалось, модуль выводит ошибку использования и завершается с кодом 2, не запуская ваш код.
 
-| Pattern | Declaration | Behavior |
+| Шаблон | Объявление | Поведение |
 |---|---|---|
-| String value | `type=str` (default) | No coercion |
-| Integer value | `type=int` | Fails on non-integer input |
-| Float value | `type=float` | Fails on non-numeric input |
-| Restricted set | `choices=["dev","staging","prod"]` | Fails if value not in set |
-| Open file for reading | `type=argparse.FileType("r")` | Opens the file, returns handle |
-| Stdout or file | `type=argparse.FileType("w"), default="-"` | `"-"` resolves to stdout |
-| List of values | `nargs="+"` | One or more; returns a list |
-| Optional value | `nargs="?"` | Zero or one |
-| Fixed count | `nargs=2` | Exactly two; returns a list |
+| Строка | `type=str` (по умолчанию) | Без преобразования |
+| Целое число | `type=int` | Ошибка при вводе нецелого значения |
+| Число с плавающей точкой | `type=float` | Ошибка при вводе нечислового значения |
+| Ограниченный набор | `choices=["dev","staging","prod"]` | Ошибка, если значение отсутствует в наборе |
+| Открыть файл для чтения | `type=argparse.FileType("r")` | Открывает файл и возвращает дескриптор |
+| Stdout или файл | `type=argparse.FileType("w"), default="-"` | `"-"` означает stdout |
+| Список значений | `nargs="+"` | Одно или несколько; возвращается список |
+| Необязательное значение | `nargs="?"` | Ноль или одно |
+| Фиксированное количество | `nargs=2` | Ровно два; возвращается список |
 
 ```python
 # Accept one or more target hosts
@@ -100,7 +100,7 @@ parser.add_argument("--output", type=argparse.FileType("w"), default="-")
 parser.add_argument("--config", type=argparse.FileType("r"))
 ```
 
-You can also write custom validator functions and pass them as `type=`. They receive the raw string and should either return the coerced value or raise `argparse.ArgumentTypeError`:
+Можно написать собственные функции-валидаторы и передать их в `type=`. Они получают исходную строку и должны вернуть преобразованное значение либо вызвать `argparse.ArgumentTypeError`.
 
 ```python
 def port_number(value):
@@ -112,13 +112,13 @@ def port_number(value):
 parser.add_argument("--port", type=port_number, default=80)
 ```
 
-**FileType gotcha:** `argparse.FileType` opens the file as soon as arguments are parsed — before your code runs. If the file doesn't exist, `argparse` prints the error and exits. This is usually what you want for required inputs, but it means you cannot lazily validate the path yourself.
+**Особенность FileType:** `argparse.FileType` открывает файл сразу после разбора аргументов, до запуска вашего кода. Если файл отсутствует, `argparse` выводит ошибку и завершает программу. Это удобно для обязательных входных файлов, но не позволяет отложить проверку пути.
 
 ---
 
-### Subcommands
+### Подкоманды
 
-Tools with multiple operations (deploy, status, rollback) should use subcommands rather than overloading a single command with flags. This matches the pattern users already know from `git`, `kubectl`, and `docker`.
+Для инструментов с несколькими операциями (deploy, status, rollback) лучше использовать подкоманды, а не перегружать одну команду множеством флагов. Такой интерфейс уже знаком пользователям по `git`, `kubectl` и `docker`.
 
 ```python
 parser = argparse.ArgumentParser(description="myapp CLI")
@@ -144,9 +144,9 @@ elif args.command == "status":
     show_status(args.env)
 ```
 
-**`required=True` on subparsers:** In Python 3.7+, subparsers are optional by default — omitting the subcommand will not raise an error unless you set `required=True`. Always set it explicitly or check `args.command is None` and print help manually.
+**`required=True` для subparsers:** в Python 3.7+ подкоманды по умолчанию необязательны. Если подкоманда не указана, ошибка не возникнет, пока не задано `required=True`. Всегда указывайте этот параметр явно или проверяйте `args.command is None` и выводите справку вручную.
 
-A cleaner pattern for larger tools is to attach a function directly to each subparser using `set_defaults(func=...)`, which eliminates the if/elif chain:
+Для больших инструментов удобнее назначать функцию непосредственно каждой подкоманде через `set_defaults(func=...)`. Это избавляет от цепочки if/elif:
 
 ```python
 deploy_parser.set_defaults(func=deploy)
@@ -156,23 +156,23 @@ args = parser.parse_args()
 args.func(args)   # dispatches to the right function automatically
 ```
 
-This scales cleanly — each subcommand module registers itself, and the main entry point never needs to import or know about individual commands directly.
+Такой подход хорошо масштабируется: модуль каждой подкоманды регистрирует себя, а главной точке входа не нужно напрямую импортировать или знать отдельные команды.
 
 ---
 
-### Exit Codes
+### Коды завершения
 
-Exit codes are the return value of your CLI tool. Every downstream system — CI/CD pipelines, shell conditionals, monitoring systems — uses them to determine success or failure. Getting them wrong silently hides failures.
+Код завершения — это результат работы CLI-инструмента. Все последующие системы — CI/CD-конвейеры, условия shell и системы мониторинга — используют его для определения успеха или ошибки. Неверные коды могут незаметно скрывать сбои.
 
-| Code | Meaning | Convention |
+| Код | Значение | Соглашение |
 |---|---|---|
-| `0` | Success | Universal |
-| `1` | General error / unhealthy | Operational scripts |
-| `2` | Misuse / bad arguments | `argparse` uses this automatically |
-| `3-125` | Tool-specific error codes | Document them in `--help` or the docstring |
-| `126` | Command not executable | Shell reserved |
-| `127` | Command not found | Shell reserved |
-| `130` | Interrupted by Ctrl-C | Shell (128 + SIGINT) |
+| `0` | Успех | Универсально |
+| `1` | Общая ошибка / нездоровое состояние | Эксплуатационные скрипты |
+| `2` | Неверное использование / аргументы | `argparse` использует автоматически |
+| `3-125` | Коды ошибок инструмента | Документируйте в `--help` или docstring |
+| `126` | Команда не исполняема | Зарезервировано shell |
+| `127` | Команда не найдена | Зарезервировано shell |
+| `130` | Прервано Ctrl-C | Shell (128 + SIGINT) |
 
 ```python
 import sys
@@ -188,20 +188,20 @@ except KeyboardInterrupt:
     sys.exit(130)
 ```
 
-**Pipeline gotcha:** In bash, `set -e` causes the shell to exit on any non-zero exit code. If your tool exits with 1 to mean "no results found" (not an error), it will abort pipelines unexpectedly. Choose exit codes that match the semantic intent — 0 for expected outcomes, non-zero for genuine failures. If "not found" is a normal result, exit 0 and let the caller inspect the output.
+**Особенность конвейеров:** в Bash `set -e` завершает shell при любом ненулевом коде. Если инструмент возвращает 1 в значении «ничего не найдено», конвейер может неожиданно остановиться. Выбирайте коды в соответствии со смыслом: 0 для ожидаемого результата, ненулевой — для настоящего сбоя. Если отсутствие результата нормально, возвращайте 0 и позволяйте вызывающей стороне проверить вывод.
 
-**Always call `sys.exit()` explicitly** rather than letting the script fall off the end. A script that falls through exits 0 regardless of whether it succeeded, which can mask failures when run in strict pipelines.
+**Всегда явно вызывайте `sys.exit()`**, а не полагайтесь на естественное завершение скрипта. При обычном завершении Python возвращает 0 независимо от того, была ли работа успешной, что может скрыть ошибки в строгих конвейерах.
 
 ---
 
-### stdout vs stderr
+### stdout и stderr
 
-Unix tools separate data from diagnostics by using two output streams. This contract lets users pipe your output to other programs without mixing in log messages.
+Unix-инструменты разделяют данные и диагностику между двумя потоками вывода. Благодаря этому вывод можно передавать другим программам через конвейер, не смешивая его с сообщениями журнала.
 
-| Stream | Use for | Redirection |
+| Поток | Назначение | Перенаправление |
 |---|---|---|
-| `stdout` | Data output — the result of the command | `> file`, `\| next-command` |
-| `stderr` | Errors, warnings, progress, debug info | `2> file`, `2>/dev/null` |
+| `stdout` | Данные — результат команды | `> file`, `\| next-command` |
+| `stderr` | Ошибки, предупреждения, прогресс и отладка | `2> file`, `2>/dev/null` |
 
 ```python
 import sys
@@ -222,7 +222,7 @@ def error(msg):
     print(f"ERROR: {msg}", file=sys.stderr)
 ```
 
-**Testing stderr separation:**
+**Проверка разделения stderr:**
 
 ```bash
 # Count only data lines — log noise should not appear here
@@ -235,7 +235,7 @@ def error(msg):
 ./tool > results.txt 2> errors.txt
 ```
 
-**stdout buffering gotcha:** Python buffers stdout when it's not a terminal (i.e., when piped). If your tool is long-running and writes output incrementally, the downstream consumer may not receive lines until the buffer flushes. Fix with `print(..., flush=True)` or run Python with `PYTHONUNBUFFERED=1`.
+**Буферизация stdout:** Python буферизует stdout, если вывод направлен не в терминал, а в конвейер. Долгоживущий инструмент может не передавать строки потребителю до сброса буфера. Используйте `print(..., flush=True)` или запускайте Python с `PYTHONUNBUFFERED=1`.
 
 ---
 
