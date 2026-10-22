@@ -151,7 +151,7 @@ curl -I https://artifacts.example.com/releases/app-v2.3.1.tar.gz
 | `Strict-Transport-Security` | Enforce HTTPS | `max-age=31536000; includeSubDomains` |
 | `X-Content-Type-Options` | Prevent MIME sniffing | `nosniff` |
 
-**`Authorization: Basic` encoding is not encryption.** The value is just `base64(username:password)`. It's trivially reversible. Basic auth over plain HTTP exposes credentials in transit. Only use it over HTTPS.
+**Кодирование `Authorization: Basic` — не шифрование.** Значение представляет собой `base64(username:password)` и легко декодируется обратно. Basic-аутентификация по обычному HTTP раскрывает учётные данные при передаче. Используйте её только через HTTPS.
 
 ```bash
 # Decode a Basic auth header to verify what's being sent
@@ -159,11 +159,11 @@ echo "dXNlcjpteXNlY3JldA==" | base64 -d
 # user:mysecret
 ```
 
-**`X-Forwarded-For` is spoofable.** A client can set this header to any value. If your application uses it for IP-based access control or rate limiting, configure your load balancer to overwrite (not append) this header — otherwise a malicious client can bypass controls by setting a trusted IP themselves. In nginx, use `real_ip_module` to rewrite it from a trusted upstream only.
+**`X-Forwarded-For` можно подделать.** Клиент может указать в заголовке любое значение. Если приложение использует его для контроля доступа по IP или ограничения частоты запросов, настройте балансировщик так, чтобы он перезаписывал заголовок, а не дополнял его. Иначе злоумышленник сможет указать доверенный IP и обойти ограничения. В nginx используйте `real_ip_module`, принимая значение только от доверенного вышестоящего узла.
 
-**Correlation headers (`X-Request-ID`, `X-Trace-ID`) are your best friend in distributed debugging.** Generate them at the edge (API gateway or first service), propagate them through every downstream call, and log them in every service. When a user reports a failed request, one ID lets you reconstruct the entire call chain across services.
+**Корреляционные заголовки (`X-Request-ID`, `X-Trace-ID`) незаменимы при распределённой диагностике.** Создавайте их на входе (в API-шлюзе или первом сервисе), передавайте во все последующие вызовы и записывайте в журналы каждого сервиса. Когда пользователь сообщает об ошибке, по одному идентификатору можно восстановить всю цепочку вызовов.
 
-**`Cache-Control` directives you need to know:**
+**Директивы `Cache-Control`, которые нужно знать:**
 
 | Directive | Meaning |
 |-----------|---------|
@@ -174,19 +174,19 @@ echo "dXNlcjpteXNlY3JldA==" | base64 -d
 | `public` | Any cache (CDN, proxy) can store this response |
 | `s-maxage=N` | Override `max-age` for shared caches (CDNs) specifically |
 
-**`Strict-Transport-Security` (HSTS) has a one-way ratchet.** Once a browser receives an HSTS header, it refuses plain HTTP connections to that domain for the `max-age` duration. If you later need to roll back to HTTP (e.g., cert misconfiguration), browsers that already received HSTS will not connect until `max-age` expires. Don't set `max-age` to a year until you're confident your HTTPS setup is stable.
+**`Strict-Transport-Security` (HSTS) работает по принципу одностороннего переключателя.** Получив заголовок HSTS, браузер отказывается подключаться к домену по обычному HTTP в течение `max-age`. Если позже потребуется вернуться к HTTP (например, из-за неправильной настройки сертификата), браузеры, уже получившие HSTS, не подключатся до истечения `max-age`. Не задавайте срок в год, пока не убедитесь, что HTTPS работает стабильно.
 
 ---
 
-### HTTPS and TLS
+### HTTPS и TLS
 
-HTTPS is HTTP sent through a TLS (Transport Layer Security) tunnel. TLS provides three guarantees:
+HTTPS — это HTTP, передаваемый через защищённый канал TLS (Transport Layer Security). TLS обеспечивает три свойства:
 
-1. **Confidentiality** — traffic is encrypted; a network observer sees only ciphertext
-2. **Authentication** — the server presents a certificate proving its identity
-3. **Integrity** — a message authentication code (MAC) detects tampering in transit
+1. **Конфиденциальность** — трафик зашифрован, наблюдатель в сети видит только шифротекст.
+2. **Аутентификация** — сервер предъявляет сертификат, подтверждающий его подлинность.
+3. **Целостность** — код аутентификации сообщения (MAC) позволяет обнаружить изменение данных при передаче.
 
-**TLS handshake (TLS 1.3, simplified):**
+**Упрощённое рукопожатие TLS 1.3:**
 
 ```
 Client → Server: ClientHello
@@ -206,9 +206,9 @@ Both sides:      Derive symmetric session keys from the DH exchange
                  Encrypted application data flows
 ```
 
-In TLS 1.3, the handshake completes in **one round trip** (1-RTT), down from two in TLS 1.2. This directly reduces connection latency, which matters for services that make many short-lived HTTPS calls. TLS 1.3 also removed weak cipher suites (RC4, 3DES) and RSA key exchange — forward secrecy is now mandatory.
+В TLS 1.3 рукопожатие завершается за **один обмен туда-обратно** (1-RTT), тогда как в TLS 1.2 требовалось два. Это снижает задержку соединения, что особенно важно для сервисов с множеством коротких HTTPS-вызовов. В TLS 1.3 также удалены слабые наборы шифров (RC4, 3DES) и обмен ключами RSA; прямая секретность стала обязательной.
 
-**Certificate chain of trust:**
+**Цепочка доверия сертификатов:**
 
 ```
 Root CA          (pre-installed in your OS/browser trust store)
@@ -216,9 +216,9 @@ Root CA          (pre-installed in your OS/browser trust store)
         └── example.com certificate   (presented by your server)
 ```
 
-Your server must serve the full chain (your cert + intermediates). If it only serves the leaf certificate, some clients that don't have the intermediate cached will fail with a chain verification error — even though your cert itself is valid. This is one of the most common TLS misconfiguration bugs in production.
+Сервер должен передавать полную цепочку (свой сертификат и промежуточные сертификаты). Если передаётся только конечный сертификат, клиенты без промежуточного сертификата в кэше не смогут проверить цепочку — даже если сам сертификат действителен. Это одна из самых распространённых ошибок настройки TLS в production.
 
-**Common certificate problems and their curl error signatures:**
+**Типичные проблемы с сертификатами и соответствующие ошибки curl:**
 
 ```bash
 # Expired certificate
@@ -244,7 +244,7 @@ curl --cacert /etc/ssl/certs/internal-ca.crt https://internal.example.com/
 curl -k https://localhost:8443/
 ```
 
-**Inspect a live certificate with openssl:**
+**Проверьте действующий сертификат с помощью openssl:**
 
 ```bash
 # See expiry, subject, and issuer
@@ -280,15 +280,15 @@ openssl x509 -checkend $((30*86400)) -noout <<< \
 # exit code 1 = expires within 30 days; 0 = still valid
 ```
 
-**SNI (Server Name Indication)** is why `-servername` matters. On a server hosting multiple HTTPS virtual hosts (one IP, many domains), the server needs to know which certificate to present before the TLS handshake completes — before it sees the `Host` header. SNI carries the hostname in the ClientHello. Without it, the server sends a default cert, which is often the wrong one. Always pass `-servername` when using `openssl s_client`.
+**SNI (Server Name Indication)** объясняет, зачем нужен параметр `-servername`. Если на сервере размещено несколько HTTPS-виртуальных хостов (один IP и много доменов), сервер должен выбрать сертификат ещё до завершения TLS-рукопожатия — до получения заголовка `Host`. SNI передаёт имя хоста в сообщении ClientHello. Без него сервер отправляет сертификат по умолчанию, который часто не подходит. Всегда указывайте `-servername` при использовании `openssl s_client`.
 
-**Mutual TLS (mTLS):** Standard TLS only authenticates the server. In mTLS, both sides present certificates — the client proves its identity to the server. This is common in service meshes (Istio, Linkerd) where every pod has a certificate and services authenticate each other without application-level tokens. If you see `400 No required SSL certificate was sent` or `SSL_ERROR_HANDSHAKE_FAILURE_ALERT`, the server is likely requiring client certificates that you haven't configured.
+**Взаимный TLS (mTLS):** обычный TLS аутентифицирует только сервер. При mTLS сертификаты предъявляют обе стороны: клиент подтверждает свою личность серверу. Это распространено в service mesh (Istio, Linkerd), где у каждого Pod есть сертификат, а сервисы проверяют друг друга без токенов уровня приложения. Ошибки `400 No required SSL certificate was sent` или `SSL_ERROR_HANDSHAKE_FAILURE_ALERT` часто означают, что сервер требует не настроенный у клиента сертификат.
 
 ---
 
-### curl for HTTP Debugging
+### Диагностика HTTP с помощью curl
 
-`curl` is the universal HTTP debugging tool. It's available everywhere, scriptable, and exposes every layer of the protocol.
+`curl` — универсальный инструмент диагностики HTTP. Он доступен почти везде, поддерживает автоматизацию через скрипты и позволяет изучать каждый уровень протокола.
 
 ```bash
 # Verbose output: shows TLS handshake, request headers, response headers, body.
@@ -354,9 +354,9 @@ curl -D - -o response.json https://api.example.com/data
 curl -o /dev/null -s -w "%{http_code}" https://api.example.com/health
 ```
 
-**`time_appconnect` is the TLS overhead.** The difference between `time_appconnect` and `time_connect` is pure TLS handshake time. If this is high (>100ms), investigate cipher negotiation, certificate chain length, or OCSP stapling configuration. If `time_connect` itself is high, the problem is network latency or TCP, not TLS.
+**`time_appconnect` показывает затраты времени на TLS.** Разница между `time_appconnect` и `time_connect` — это время самого TLS-рукопожатия. Если оно велико (более 100 мс), проверьте согласование шифров, длину цепочки сертификатов и настройку OCSP stapling. Если велико уже `time_connect`, проблема связана с сетью или TCP, а не с TLS.
 
-**Exit codes matter in scripts.** `curl` exits with 0 even on 4xx/5xx responses by default — it received a valid HTTP response, which is a "success" from curl's perspective. Use `--fail` (or `-f`) to make curl exit with code 22 on HTTP error responses. Use `--fail-with-body` (curl ≥ 7.76) to exit non-zero on errors while still printing the response body (useful for seeing error messages from the API).
+**Коды завершения важны в скриптах.** По умолчанию `curl` возвращает код 0 даже при ответах 4xx/5xx: с точки зрения curl, корректный HTTP-ответ означает успех. Используйте `--fail` (или `-f`), чтобы при HTTP-ошибках возвращался код 22. Параметр `--fail-with-body` (curl ≥ 7.76) возвращает ненулевой код при ошибке, но сохраняет тело ответа в выводе — это полезно для чтения сообщений API.
 
 ```bash
 # Will exit 0 even if the server returns 500 — wrong for health checks
@@ -371,9 +371,9 @@ curl --fail-with-body https://api.example.com/health
 
 ---
 
-### Nginx HTTP Configuration Patterns
+### Типовые схемы настройки HTTP в Nginx
 
-As a DevOps engineer, you configure HTTP behavior at the reverse proxy layer — not just consume it from the client side. These are the most common patterns you'll encounter.
+Как DevOps-инженер, вы настраиваете поведение HTTP на уровне обратного прокси, а не только используете его со стороны клиента. Ниже приведены наиболее распространённые схемы.
 
 ```nginx
 server {
@@ -428,15 +428,15 @@ server {
 }
 ```
 
-**`proxy_set_header Host $host` is required.** Without it, nginx forwards the backend's internal address as the `Host` header, which breaks virtual-host routing on the backend. This is a frequent source of unexpected 404s when setting up a new proxy.
+**`proxy_set_header Host $host` необходим.** Без него nginx передаёт внутренний адрес backend-сервера в заголовке `Host`, из-за чего маршрутизация виртуальных хостов на backend перестаёт работать. Это частая причина неожиданных ответов 404 при настройке нового прокси.
 
-**`proxy_read_timeout` vs application timeout:** nginx's `proxy_read_timeout` is how long nginx waits for the backend to send a response. If your backend has a 30s database query, set this to at least 35s. If the backend times out first, it returns 500 or closes the connection and nginx returns 502. If nginx times out first, it returns 504. Knowing which timeout fired tells you where to tune.
+**`proxy_read_timeout` и тайм-аут приложения:** `proxy_read_timeout` задаёт, сколько nginx ждёт ответа от backend. Если запрос к базе данных на backend занимает 30 секунд, задайте значение не меньше 35 секунд. Если первым сработает тайм-аут backend, он вернёт 500 или закроет соединение, а nginx вернёт 502. Если первым истечёт тайм-аут nginx, клиент получит 504. Понимание того, какой тайм-аут сработал, помогает найти нужный уровень настройки.
 
 ---
 
-### Kubernetes Health Check Probes
+### Проверки состояния в Kubernetes
 
-Kubernetes uses HTTP to determine container health. Understanding the probe types prevents outages during deployments.
+Kubernetes использует HTTP-проверки для определения состояния контейнеров. Понимание типов проб помогает предотвратить сбои при развёртывании.
 
 ```yaml
 apiVersion: apps/v1
@@ -490,15 +490,15 @@ spec:
           periodSeconds: 10
 ```
 
-**Liveness vs Readiness is the most common misconfiguration.** If you put dependency checks in the liveness probe and a downstream service flaps, Kubernetes will restart all your healthy pods, making the outage worse. Liveness = "is this process alive and not deadlocked." Readiness = "is this pod ready to serve traffic right now."
+**Путаница между Liveness и Readiness — одна из самых частых ошибок конфигурации.** Если добавить проверку зависимостей в liveness-пробу и зависимый сервис начнёт нестабильно работать, Kubernetes перезапустит все исправные Pod и усугубит сбой. Liveness отвечает на вопрос «процесс жив и не завис?». Readiness — «готов ли Pod прямо сейчас принимать трафик?».
 
 ---
 
 ## Примеры
 
-### Example 1: Debugging a 502 Bad Gateway in a Proxy Setup
+### Пример 1. Диагностика 502 Bad Gateway в конфигурации прокси
 
-**Scenario:** A new nginx reverse proxy is deployed in front of a backend API. Users are getting 502 errors. Diagnose and fix the issue.
+**Сценарий:** перед API развернули новый обратный прокси nginx, и пользователи получают ошибки 502. Найдите и устраните причину.
 
 ```bash
 # Step 1: Confirm the 502 and get the full response headers
@@ -538,9 +538,9 @@ curl -si https://api.example.com/headers   # an endpoint that echoes request hea
 
 ---
 
-### Example 2: Diagnosing TLS Certificate Expiry Before It Causes an Outage
+### Пример 2. Диагностика истечения TLS-сертификата до возникновения сбоя
 
-**Scenario:** Build a shell script that checks certificate expiry for a list of services and exits non-zero if any cert expires within 30 days. Run it in CI on a schedule.
+**Сценарий:** создайте shell-скрипт, который проверяет срок действия сертификатов списка сервисов и возвращает ненулевой код, если срок любого сертификата истекает в течение 30 дней. Запускайте его в CI по расписанию.
 
 ```bash
 #!/usr/bin/env bash
@@ -615,9 +615,9 @@ echo "Exit code: $?"
 
 ---
 
-### Example 3: Tracing a Slow API Call with curl Timing
+### Пример 3. Поиск причины медленного вызова API с помощью таймингов curl
 
-**Scenario:** Users report that a specific API endpoint is slow. Use curl's timing breakdown to identify whether the latency is in DNS, TCP, TLS, or the application itself.
+**Сценарий:** пользователи жалуются на медленный ответ конкретного API-эндпоинта. Используйте разбивку времени curl, чтобы определить, где возникает задержка: DNS, TCP, TLS или само приложение.
 
 ```bash
 # curl timing template — measures each phase of the request lifecycle
@@ -671,9 +671,9 @@ curl -v -o /dev/null -H "Authorization: Bearer $TOKEN" \
 
 ---
 
-### Example 4: Testing a Kubernetes Readiness Probe Endpoint
+### Пример 4. Проверка эндпоинта Readiness в Kubernetes
 
-**Scenario:** Before deploying a new service to Kubernetes, verify the health check endpoints behave correctly — including failure scenarios.
+**Сценарий:** перед развёртыванием нового сервиса в Kubernetes проверьте корректную работу эндпоинтов состояния, в том числе при отказах.
 
 ```bash
 # Run the container locally to test health endpoints before pushing
@@ -718,58 +718,58 @@ docker stop api-test && docker rm api-test
 
 ## Практические задания
 
-### Exercise 1: Decode and Analyze a Full HTTP Transaction
+### Задание 1. Разберите полный HTTP-обмен
 
-Using `curl -v`, capture a complete HTTP transaction to an API of your choice (use `https://httpbin.org` if you don't have one available). From the verbose output:
+С помощью `curl -v` запишите полный HTTP-обмен с выбранным API (если своего нет, используйте `https://httpbin.org`). По подробному выводу:
 
-1. Identify the TLS version and cipher suite negotiated during the handshake.
-2. Find the value of the `Content-Type` response header and explain what the `charset` parameter means.
-3. Identify which HTTP version was used (HTTP/1.1 or HTTP/2). If HTTP/2 was used, explain why you see fewer headers in the verbose output than you would with HTTP/1.1.
-4. Make a second request to the same URL and compare `time_appconnect` between the two. Explain why it might be zero on the second request.
+1. Определите версию TLS и согласованный набор шифров.
+2. Найдите значение заголовка ответа `Content-Type` и объясните смысл параметра `charset`.
+3. Определите использованную версию HTTP (HTTP/1.1 или HTTP/2). Если использовался HTTP/2, объясните, почему в подробном выводе меньше заголовков, чем было бы при HTTP/1.1.
+4. Повторите запрос к тому же URL и сравните `time_appconnect`. Объясните, почему во втором запросе значение может быть нулевым.
 
 *Hint:* `curl -v --write-out "\ntls: %{ssl_version} %{ssl_cipher}\n" https://httpbin.org/get`
 
 ---
 
-### Exercise 2: Reproduce and Fix a Common 4xx Error
+### Задание 2. Воспроизведите и исправьте типичную ошибку 4xx
 
-Use `https://httpbin.org` to trigger each of the following error conditions with `curl`, capture the response, and explain what change in the request fixes it:
+Используйте `https://httpbin.org`, чтобы вызвать с помощью `curl` каждую из следующих ошибок, сохранить ответ и объяснить, какое изменение запроса исправляет ситуацию:
 
-1. Send a `POST` to `https://httpbin.org/post` with a JSON body but **without** a `Content-Type` header. Observe the response. Add the correct header and compare.
-2. Send a request to `https://httpbin.org/basic-auth/admin/secret` without credentials. Observe the status code. Now send the correct `Authorization: Basic` header (compute the base64 value yourself — don't use `curl -u`).
-3. Send a request to `https://httpbin.org/status/429`. Read the response headers. Write a bash snippet that reads the `Retry-After` header value from the response and sleeps for that duration before retrying.
-
----
-
-### Exercise 3: Inspect and Validate a TLS Certificate Chain
-
-Pick any public HTTPS site (or use `api.github.com`) and use `openssl s_client` to answer all of the following:
-
-1. How many certificates are in the chain? Name each one (subject CN) and its role (root, intermediate, or end-entity).
-2. What is the exact expiry date of the end-entity certificate?
-3. Does the certificate cover only the exact hostname you connected to, or does it cover additional names? List all Subject Alternative Names.
-4. What TLS version was negotiated? How would you force `openssl s_client` to attempt TLS 1.1 only, and what do you expect to happen?
-5. Write a one-liner that exits with code `1` if the certificate expires within the next 14 days and code `0` if it does not.
+1. Отправьте `POST` на `https://httpbin.org/post` с телом JSON, но **без** заголовка `Content-Type`. Изучите ответ, добавьте правильный заголовок и сравните результат.
+2. Отправьте запрос к `https://httpbin.org/basic-auth/admin/secret` без учётных данных и изучите код статуса. Затем передайте корректный заголовок `Authorization: Basic` (вычислите значение base64 самостоятельно, не используйте `curl -u`).
+3. Отправьте запрос к `https://httpbin.org/status/429` и изучите заголовки ответа. Напишите фрагмент Bash, который считывает значение `Retry-After` и ждёт указанное время перед повторной попыткой.
 
 ---
 
-### Exercise 4: Build a Health Check Script for a CI Pipeline
+### Задание 3. Изучите и проверьте цепочку TLS-сертификатов
 
-Write a bash script named `wait-for-healthy.sh` that:
+Выберите любой публичный HTTPS-сайт (или `api.github.com`) и с помощью `openssl s_client` ответьте на вопросы:
 
-1. Accept a URL as its first argument and an optional timeout in seconds as the second argument (default: 60 seconds).
-2. Poll the URL every 5 seconds using `curl --fail --max-time 5`.
-3. Exit with code `0` as soon as the endpoint returns a 2xx status.
-4. Exit with code `1` if the total timeout is exceeded before the endpoint becomes healthy, printing a clear error message.
-5. Print a timestamped status line on each poll attempt.
+1. Сколько сертификатов в цепочке? Укажите каждый из них (subject CN) и его роль (корневой, промежуточный или конечный).
+2. Какова точная дата истечения конечного сертификата?
+3. Покрывает ли сертификат только указанный хост или дополнительные имена тоже? Перечислите все Subject Alternative Names.
+4. Какая версия TLS была согласована? Как заставить `openssl s_client` попытаться использовать только TLS 1.1 и какого результата вы ожидаете?
+5. Напишите однострочную команду, возвращающую код `1`, если сертификат истекает в течение следующих 14 дней, и код `0` в противном случае.
 
-Test it against `https://httpbin.org/status/200` (should succeed immediately) and `https://httpbin.org/status/503` (should time out).
+---
+
+### Задание 4. Создайте скрипт проверки состояния для CI-конвейера
+
+Напишите скрипт Bash `wait-for-healthy.sh`, который:
+
+1. Принимает URL первым аргументом и необязательный тайм-аут в секундах вторым аргументом (по умолчанию 60 секунд).
+2. Проверяет URL каждые 5 секунд с помощью `curl --fail --max-time 5`.
+3. Возвращает код `0`, как только эндпоинт отвечает статусом 2xx.
+4. Если до истечения общего тайм-аута эндпоинт не стал доступен, возвращает код `1` и выводит понятное сообщение об ошибке.
+5. При каждой проверке выводит строку состояния с временной меткой.
+
+Проверьте скрипт на `https://httpbin.org/status/200` (успех сразу) и `https://httpbin.org/status/503` (должен истечь тайм-аут).
 
 ---
 
 ### Быстрая проверка
 
-1. Decode a Basic Auth credential — the value you would send in the `Authorization` header.
+1. Декодируйте учётные данные Basic Auth — значение, которое передают в заголовке `Authorization`.
 
    ```bash
    echo "YWRtaW46c2VjcmV0" | base64 -d
@@ -779,10 +779,10 @@ Test it against `https://httpbin.org/status/200` (should succeed immediately) an
    admin:secret
    ```
 
-hint: Basic Auth credentials are Base64-encoded, so you need a tool that can decode that encoding scheme.
-hint: Use the command `echo '<encoded_string>' | base64 --decode` to reveal the original plaintext credentials.
+Подсказка: учётные данные Basic Auth кодируются в Base64, поэтому понадобится инструмент для обратного декодирования.
+Подсказка: используйте `echo '<encoded_string>' | base64 --decode`, чтобы получить исходные учётные данные в открытом виде.
 
-2. Identify the HTTP status class for a given code — useful for writing generic response handlers.
+2. Определите класс HTTP-статуса по коду — это полезно при написании универсальных обработчиков ответов.
 
    ```python
    code = 429; print(f'{code // 100}xx')
@@ -791,5 +791,5 @@ hint: Use the command `echo '<encoded_string>' | base64 --decode` to reveal the 
    ```expected_output
    4xx
    ```
-hint: HTTP status codes are grouped into classes based on their first digit, each class representing a category of response type.
-hint: Check whether the first digit of the status code is 4, which maps to a specific class using the pattern <digit>xx — look up what that class is named in the HTTP specification.
+Подсказка: классы HTTP-статусов определяются первой цифрой и обозначают категории ответов.
+Подсказка: проверьте, равна ли первая цифра кода 4. Такой класс обозначается шаблоном `<цифра>xx`; найдите его название в спецификации HTTP.
