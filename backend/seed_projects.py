@@ -685,8 +685,8 @@ PROJECTS = [
                 "language": "bash",
                 "expected_output": "3",
                 "hints": [
-                    "A JWT has 3 parts separated by `.` — think about counting the separators and adding 1, or counting fields directly.",
-                    "Use `echo 'JWT' | awk -F. '{print NF}'` to split on `.` and print the number of fields.",
+                    "JWT состоит из трёх частей, разделённых `.`. Можно подсчитать разделители и прибавить 1 либо сразу посчитать поля.",
+                    "Используйте `echo 'JWT' | awk -F. '{print NF}'`, чтобы разделить строку по `.` и вывести число полей.",
                 ],
             },
             {
@@ -705,8 +705,8 @@ PROJECTS = [
                 "language": "python",
                 "expected_output": "user123",
                 "hints": [
-                    "Split the JWT on `.`, take index 1 (the payload segment), and base64url-decode it — the standard `base64.urlsafe_b64decode` needs padding added first.",
-                    "Padding fix: `base64.urlsafe_b64decode(payload + '=' * (-len(payload) % 4))`; then `json.loads()` the result and access `['sub']`.",
+                    "Разделите JWT по `.`, возьмите элемент с индексом 1 (payload) и декодируйте Base64url. Перед вызовом `base64.urlsafe_b64decode` нужно добавить padding.",
+                    "Исправление padding: `base64.urlsafe_b64decode(payload + '=' * (-len(payload) % 4))`; затем разберите результат через `json.loads()` и обратитесь к `['sub']`.",
                 ],
             },
             {
@@ -714,7 +714,7 @@ PROJECTS = [
                 "title": "Создать коллекцию Postman для API аутентификации",
                 "type": "ai",
                 "prompt": (
-                    "Write a Postman collection (JSON) for an authentication API with these three requests:\n\n"
+                    "Создайте коллекцию Postman в формате JSON для API аутентификации с тремя запросами:\n\n"
                     "1. **POST /auth/login** — body `{email, password}`, test that response status is 200 "
                     "and response body contains a `token` field; save the token to a collection variable\n"
                     "2. **GET /api/profile** — uses the saved token as a Bearer header; "
@@ -727,8 +727,8 @@ PROJECTS = [
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "A Postman collection JSON has an `info` block (name, schema) and an `item` array; each item has `name`, `request`, and `event` arrays for pre-request and test scripts.",
-                    "In the login test script: `pm.collectionVariables.set('token', pm.response.json().token)`; reference it in the profile request `Authorization` header as `Bearer {{token}}`.",
+                    "JSON-коллекция Postman содержит блок `info` (name, schema) и массив `item`. Каждый элемент включает `name`, `request` и массив `event` с pre-request- и test-скриптами.",
+                    "В тестовом скрипте входа используйте `pm.collectionVariables.set('token', pm.response.json().token)`. В запросе профиля укажите в заголовке `Authorization`: `Bearer {{token}}`.",
                 ],
             },
             {
@@ -736,19 +736,19 @@ PROJECTS = [
                 "title": "Спроектировать стратегию тестирования безопасности API",
                 "type": "ai",
                 "prompt": (
-                    "Design an API security testing strategy covering these OWASP API Security Top 10 risks:\n\n"
-                    "- **API1** (Broken Object Level Authorization): describe a test scenario and how to automate it\n"
-                    "- **API3** (Broken Object Property Level Authorization): give a concrete example using a PATCH endpoint\n"
-                    "- **API5** (Broken Function Level Authorization): explain how to find and test admin-only endpoints\n"
-                    "- **API8** (Security Misconfiguration): list 5 headers or settings to check in every response\n\n"
+                    "Спроектируйте стратегию тестирования безопасности API, охватывающую следующие риски OWASP API Security Top 10:\n\n"
+                    "- **API1** (Broken Object Level Authorization): опишите сценарий тестирования и его автоматизацию\n"
+                    "- **API3** (Broken Object Property Level Authorization): приведите конкретный пример с endpoint PATCH\n"
+                    "- **API5** (Broken Function Level Authorization): объясните, как найти и проверить endpoint, доступные только администраторам\n"
+                    "- **API8** (Security Misconfiguration): перечислите пять заголовков или настроек, которые нужно проверять в каждом ответе\n\n"
                     "Then describe how you would integrate these checks into a CI pipeline using Newman "
                     "(the Postman CLI runner), so that a failing security test blocks the PR."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "For BOLA (API1): substitute another user's resource ID in the URL and assert a 403 response — if you get 200, authorization is broken. Automate by parameterizing resource IDs in Postman.",
-                    "For Newman CI integration: `newman run collection.json -e env.json --bail` exits non-zero on test failure; add it as a CI step after deploying to staging so security failures block the PR.",
+                    "Для BOLA (API1) подставьте в URL ID ресурса другого пользователя и проверьте ответ 403. Если приходит 200, авторизация работает неправильно. Автоматизируйте тест, параметризовав ID ресурсов в Postman.",
+                    "Для интеграции Newman с CI используйте `newman run collection.json -e env.json --bail`: при провале теста команда вернёт ненулевой код. Добавьте шаг после развёртывания в staging, чтобы ошибки безопасности блокировали PR.",
                 ],
             },
         ],
