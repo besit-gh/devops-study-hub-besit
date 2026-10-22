@@ -72,9 +72,9 @@ ip addr add 192.168.50.10/24 dev eth1
 ip addr del 192.168.50.10/24 dev eth1
 ```
 
-**`ip route get` is underused.** `ip route get 8.8.8.8` tells you exactly which source IP and gateway the kernel would use to reach a destination — invaluable on multi-interface servers where routing asymmetry causes connection resets.
+**`ip route get` используют недостаточно часто.** Команда `ip route get 8.8.8.8` показывает, какой исходный IP-адрес и шлюз ядро выберет для достижения адресата. Это особенно полезно на серверах с несколькими интерфейсами, где асимметричная маршрутизация вызывает сбросы соединений.
 
-**Changes made with `ip` are non-persistent.** They survive until next reboot. To persist them, edit `/etc/netplan/*.yaml` (Ubuntu), `/etc/sysconfig/network-scripts/` (RHEL/CentOS 7), or use `nmcli` (NetworkManager-managed systems).
+**Изменения, внесённые командой `ip`, не сохраняются постоянно.** Они действуют до перезагрузки. Для постоянной настройки измените `/etc/netplan/*.yaml` в Ubuntu, используйте `/etc/sysconfig/network-scripts/` в RHEL/CentOS 7 или `nmcli` в системах под управлением NetworkManager.
 
 | Old command (`net-tools`) | Modern equivalent (`iproute2`) |
 |---------------------------|-------------------------------|
@@ -129,13 +129,13 @@ watch -n1 'ss -s'
 | `192.168.1.10:8080` | Specific interface | That interface's network |
 | `:::8080` | All IPv6 interfaces | Anywhere via IPv6 |
 
-**`Recv-Q` and `Send-Q` in LISTEN state** represent the number of connections that have completed the three-way handshake but haven't been `accept()`-ed by the application yet. A non-zero `Recv-Q` on a listening socket means your application is not consuming connections fast enough — a sign of an overloaded or deadlocked service.
+**`Recv-Q` и `Send-Q` в состоянии LISTEN** показывают количество соединений, прошедших трёхэтапное рукопожатие, но ещё не принятых приложением через `accept()`. Ненулевой `Recv-Q` у прослушивающего сокета означает, что приложение не успевает принимать соединения; возможно, сервис перегружен или заблокирован.
 
 ---
 
 ### `netstat` — устаревшая статистика сокетов
 
-`netstat` comes from the `net-tools` package. It is deprecated but ships on almost every Linux distro you'll encounter. Know it for legacy systems and interview recognition.
+`netstat` входит в пакет `net-tools`. Утилита считается устаревшей, но встречается почти во всех дистрибутивах Linux. Её стоит знать для работы с устаревшими системами и подготовки к собеседованиям.
 
 ```bash
 # Equivalent to ss -tlunp
@@ -161,7 +161,7 @@ netstat -c -tlun
 | `ss -i` | `netstat -i` | Interface stats |
 | `ip route` | `netstat -rn` | Routing table |
 
-**`netstat` may not be installed** on minimal container images or fresh cloud instances. If it's missing, install `net-tools` or just use `ss` — they show the same underlying data.
+**`netstat` может отсутствовать** в минимальных контейнерных образах и новых облачных инстансах. Если утилиты нет, установите `net-tools` или используйте `ss` — обе показывают одни и те же базовые данные.
 
 ---
 
