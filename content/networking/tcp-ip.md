@@ -21,27 +21,27 @@ exercises: 4
 
 ### Модель OSI на практике
 
-The full 7-layer OSI model is useful as a mental map for isolating where a problem lives. In practice, you'll spend most of your time at layers 3, 4, and 7.
+Полная семиуровневая модель OSI помогает определить, на каком уровне находится проблема. На практике чаще всего приходится работать с уровнями 3, 4 и 7.
 
-| Layer | Name | Protocol examples | What breaks here |
+| Уровень | Название | Примеры протоколов | Типичные проблемы |
 |-------|------|-------------------|------------------|
-| 7 | Application | HTTP, SSH, DNS, SMTP, TLS | App config, TLS cert mismatch, wrong URL, auth failure |
-| 6 | Presentation | TLS/SSL encoding | Certificate errors, cipher mismatch |
-| 5 | Session | (mostly handled by app) | Session timeout, keep-alive config |
-| 4 | Transport | TCP, UDP | Port blocked, connection refused, timeout, packet loss |
-| 3 | Network | IP, ICMP | Wrong route, firewall drop, wrong subnet, TTL exceeded |
-| 2 | Data Link | Ethernet, ARP | Wrong MAC, ARP failure, VLAN mismatch |
-| 1 | Physical | Cables, NIC | Interface down, cable unplugged |
+| 7 | Прикладной | HTTP, SSH, DNS, SMTP, TLS | Ошибка конфигурации приложения, несовпадение TLS-сертификата, неверный URL, сбой аутентификации |
+| 6 | Представления | Кодирование TLS/SSL | Ошибки сертификата, несовпадение шифров |
+| 5 | Сеансовый | (обычно обрабатывается приложением) | Тайм-аут сессии, настройки keep-alive |
+| 4 | Транспортный | TCP, UDP | Заблокированный порт, отказ соединения, тайм-аут, потеря пакетов |
+| 3 | Сетевой | IP, ICMP | Неверный маршрут, блокировка firewall, неправильная подсеть, превышение TTL |
+| 2 | Канальный | Ethernet, ARP | Неверный MAC, ошибка ARP, несовпадение VLAN |
+| 1 | Физический | Кабели, NIC | Интерфейс выключен, кабель отключён |
 
-**Debug top-down:** start at layer 7 (does the app respond?) and work down until something fails. If HTTP is broken but `nc` to port 80 succeeds, the problem is in the application, not the network. If `nc` fails but `ping` succeeds, the problem is at layer 4 (port/firewall). If `ping` fails, move to layer 3 (routing). This systematic approach prevents wasted time in the wrong layer.
+**Диагностика сверху вниз:** начните с уровня 7 — отвечает ли приложение, — и двигайтесь вниз, пока не найдёте сбой. Если HTTP не работает, но `nc` на порт 80 успешно подключается, проблема в приложении, а не в сети. Если `nc` не работает, но `ping` успешен, проверяйте уровень 4 (порт и firewall). Если не проходит `ping`, переходите к уровню 3 (маршрутизация). Такой подход экономит время.
 
-The TCP/IP model collapses OSI layers 5–7 into "Application" and layers 1–2 into "Link," but the OSI vocabulary is still what people use when talking about firewalls ("layer 4 rules") and load balancers ("layer 7 routing").
+Модель TCP/IP объединяет уровни OSI 5–7 в «прикладной», а уровни 1–2 — в «канальный». При этом терминология OSI продолжает использоваться при обсуждении firewall («правила уровня 4») и балансировщиков («маршрутизация уровня 7»).
 
 ---
 
-### IP Addresses and Subnets
+### IP-адреса и подсети
 
-Every host on a network has an IP address — a 32-bit number written as four decimal octets: `192.168.1.100`. A subnet mask (or CIDR prefix) defines which bits identify the network vs. the host.
+Каждый узел сети имеет IP-адрес — 32-битное число, записываемое четырьмя десятичными октетами, например `192.168.1.100`. Маска подсети (или префикс CIDR) определяет, какие биты относятся к сети, а какие — к узлу.
 
 ```
 192.168.1.100/24
@@ -53,21 +53,21 @@ Every host on a network has an IP address — a 32-bit number written as four de
               → total hosts:   254
 ```
 
-A `/25` gives you 126 hosts per subnet; `/16` gives 65,534. Each time you increase the prefix by 1, you halve the host count. This matters when planning VPC subnets in AWS or GCP — choose a CIDR that leaves room to grow.
+Подсеть `/25` предоставляет 126 адресов узлов, а `/16` — 65 534. При увеличении префикса на 1 число адресов узлов уменьшается вдвое. Это важно при планировании подсетей VPC в AWS или GCP: выбирайте CIDR с запасом для роста.
 
-**Private ranges (RFC 1918)** — routable only within private networks, not on the public internet:
+**Приватные диапазоны (RFC 1918)** — маршрутизируются только внутри частных сетей и не маршрутизируются в публичном интернете:
 
-| Range | CIDR | Typical use |
+| Диапазон | CIDR | Типичное применение |
 |-------|------|-------------|
-| `10.0.0.0` – `10.255.255.255` | `10.0.0.0/8` | Cloud VPCs, corporate LANs |
-| `172.16.0.0` – `172.31.255.255` | `172.16.0.0/12` | Docker default bridge network |
-| `192.168.0.0` – `192.168.255.255` | `192.168.0.0/16` | Home routers, small office |
+| `10.0.0.0` – `10.255.255.255` | `10.0.0.0/8` | Облачные VPC и корпоративные LAN |
+| `172.16.0.0` – `172.31.255.255` | `172.16.0.0/12` | Сеть bridge по умолчанию в Docker |
+| `192.168.0.0` – `192.168.255.255` | `192.168.0.0/16` | Домашние роутеры и небольшие офисы |
 
-**Special addresses:**
-- `127.0.0.1` — loopback (the host talking to itself); entire `127.0.0.0/8` is loopback
-- `0.0.0.0` — "all interfaces" when used as a bind address; "default route" in routing tables
-- `169.254.x.x` — link-local (APIPA); a host assigned this has no DHCP — usually a problem
-- `100.64.0.0/10` — shared address space; AWS instance metadata endpoint lives at `169.254.169.254`
+**Специальные адреса:**
+- `127.0.0.1` — loopback (узел обращается к самому себе); весь диапазон `127.0.0.0/8` предназначен для loopback
+- `0.0.0.0` — «все интерфейсы» при привязке сервиса; «маршрут по умолчанию» в таблице маршрутизации
+- `169.254.x.x` — link-local (APIPA); такой адрес часто означает, что узел не получил настройки DHCP
+- `100.64.0.0/10` — общий диапазон адресов; endpoint метаданных экземпляра AWS находится по адресу `169.254.169.254`
 
 ```bash
 # Show all IP addresses and interfaces
@@ -83,26 +83,26 @@ ip -4 addr show
 ip -6 addr show
 ```
 
-**`169.254.x.x` warning:** if `ip addr show` reveals a `169.254` address on your primary interface, DHCP failed. The host may still be partially functional but routing to anything outside the local link will be broken. This is common in misconfigured VMs and containers that lose their DHCP lease on restart.
+**Предупреждение о `169.254.x.x`:** если `ip addr show` показывает такой адрес на основном интерфейсе, DHCP не сработал. Узел может работать частично, но маршрутизация за пределы локального сегмента будет нарушена. Такое встречается у неверно настроенных ВМ и контейнеров, потерявших DHCP-аренду после перезапуска.
 
-**CIDR overlap in Kubernetes:** when provisioning clusters, your node CIDR, pod CIDR, and service CIDR must not overlap each other or your VPC subnet. A common mistake is letting Kubernetes default pod CIDR (`10.244.0.0/16`) collide with the corporate VPN range, breaking all pod-to-pod traffic when the VPN is connected.
+**Пересечение CIDR в Kubernetes:** диапазоны узлов, pod и Service не должны пересекаться друг с другом или с подсетью VPC. Частая ошибка — пересечение стандартного pod CIDR Kubernetes (`10.244.0.0/16`) с корпоративной VPN-сетью, из-за чего после подключения VPN ломается весь трафик между pod.
 
 ---
 
-### TCP vs UDP
+### TCP и UDP
 
-| Property | TCP | UDP |
+| Свойство | TCP | UDP |
 |----------|-----|-----|
-| Connection setup | 3-way handshake | None |
-| Reliable delivery | Yes (retransmits lost segments) | No (fire and forget) |
-| Ordered delivery | Yes | No |
-| Flow control | Yes (window sizing) | No |
-| Congestion control | Yes | No |
-| Header overhead | ~20 bytes + handshake RTT | ~8 bytes |
-| Latency | Higher (handshake + ACKs) | Lower |
-| Use cases | HTTP/S, SSH, databases, email | DNS, NTP, DHCP, video streaming, game state |
+| Установление соединения | Трёхэтапное рукопожатие | Нет |
+| Надёжная доставка | Да (повторная передача потерянных сегментов) | Нет (отправка без подтверждения) |
+| Доставка по порядку | Да | Нет |
+| Управление потоком | Да (размер окна) | Нет |
+| Управление перегрузкой | Да | Нет |
+| Накладные расходы заголовка | ~20 байт + RTT рукопожатия | ~8 байт |
+| Задержка | Выше (рукопожатие и ACK) | Ниже |
+| Применение | HTTP/S, SSH, базы данных, почта | DNS, NTP, DHCP, видеопотоки, состояние игры |
 
-**TCP 3-way handshake** — every TCP connection starts here:
+**Трёхэтапное рукопожатие TCP** — начало каждого TCP-соединения:
 
 ```
 Client                    Server
@@ -116,18 +116,18 @@ Client                    Server
   │═══════ DATA FLOWS ═══════│
 ```
 
-The handshake takes one full round-trip before any data flows. At 100ms RTT to a distant server, your first byte of data costs at least 100ms just for the handshake. TLS adds another 1–2 round trips on top. This is why connection pooling exists in every database driver and HTTP client — amortizing that setup cost across many requests.
+До передачи данных рукопожатие требует одного полного RTT. При RTT 100 мс до удалённого сервера первый байт данных задерживается минимум на 100 мс только из-за рукопожатия. TLS добавляет ещё 1–2 RTT. Поэтому драйверы баз данных и HTTP-клиенты используют пулы соединений, распределяя стоимость установки соединения между многими запросами.
 
-**TCP connection states you'll encounter:**
+**Состояния TCP-соединения, которые вы встретите:**
 
-| State | Meaning | Action if stuck |
+| Состояние | Значение | Что делать, если зависло |
 |-------|---------|-----------------|
-| `LISTEN` | Socket accepting connections | Normal for server processes |
-| `ESTABLISHED` | Active connection, data flowing | Normal |
-| `TIME_WAIT` | Connection closed, draining stale packets | Normal; lasts ~60s (2×MSL) |
-| `CLOSE_WAIT` | Remote side closed, local app hasn't called `close()` | Possible app bug — connection leak |
-| `SYN_SENT` | Client sent SYN, waiting for SYN-ACK | Firewall drop or server down |
-| `SYN_RECV` | Server got SYN, sent SYN-ACK, waiting for ACK | SYN flood or very high latency |
+| `LISTEN` | Сокет принимает соединения | Нормальное состояние серверного процесса |
+| `ESTABLISHED` | Активное соединение, передаются данные | Нормальное состояние |
+| `TIME_WAIT` | Соединение закрыто, ожидается исчезновение устаревших пакетов | Нормально; длится около 60 с (2×MSL) |
+| `CLOSE_WAIT` | Удалённая сторона закрыла соединение, приложение ещё не вызвало `close()` | Возможная ошибка приложения — утечка соединений |
+| `SYN_SENT` | Клиент отправил SYN и ждёт SYN-ACK | Пакеты блокирует firewall или сервер недоступен |
+| `SYN_RECV` | Сервер получил SYN, отправил SYN-ACK и ждёт ACK | SYN flood или очень высокая задержка |
 | `FIN_WAIT_2` | Local sent FIN, waiting for remote FIN | Remote app not closing cleanly |
 
 **`TIME_WAIT` gotcha:** a server handling high connection volume can accumulate thousands of `TIME_WAIT` sockets. This is normal and expected — do not "fix" it by disabling `TIME_WAIT`. Doing so can cause data corruption from stale packets arriving on a reused port number. If you're running out of ephemeral ports, tune `net.ipv4.ip_local_port_range` to expand the pool and enable `net.ipv4.tcp_tw_reuse` (not `tcp_tw_recycle`, which was removed in kernel 4.12 and was broken in NAT environments).
