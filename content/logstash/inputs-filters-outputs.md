@@ -56,11 +56,11 @@ input {
 }
 ```
 
-Filebeat automatically sets the `[log][file][path]` field, `[agent][type]`, and `[event][dataset]`. You can use these in filter conditionals to route different log files through different grok patterns.
+Filebeat автоматически задаёт поля `[log][file][path]`, `[agent][type]` и `[event][dataset]`. Их можно использовать в условиях фильтра, чтобы направлять разные файлы журналов в разные шаблоны grok.
 
 #### tcp / udp
 
-Useful for syslog-over-TCP/UDP, legacy log shippers, or quick integration tests (you can send events with `nc`).
+Подходит для syslog по TCP/UDP, устаревших отправителей журналов и быстрых интеграционных проверок (события можно отправлять через `nc`).
 
 ```ruby
 input {
@@ -75,14 +75,14 @@ input {
 }
 ```
 
-Test TCP input from command line:
+Проверьте TCP-вход из командной строки:
 ```bash
 echo '{"level":"ERROR","message":"test event"}' | nc localhost 5000
 ```
 
 #### kafka
 
-High-throughput ingest from Kafka topics. Logstash acts as a consumer group member.
+Высокопроизводительный приём данных из топиков Kafka. Logstash работает как участник группы потребителей.
 
 ```ruby
 input {
@@ -100,7 +100,7 @@ input {
 
 #### syslog
 
-Accepts RFC 3164 / RFC 5424 syslog messages and auto-parses facility, severity, host, and program fields.
+Принимает сообщения syslog форматов RFC 3164 / RFC 5424 и автоматически разбирает поля facility, severity, host и program.
 
 ```ruby
 input {
