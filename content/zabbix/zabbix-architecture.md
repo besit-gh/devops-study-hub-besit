@@ -13,15 +13,15 @@ Zabbix — корпоративная open-source платформа монит�
 
 Архитектура Zabbix сочетает централизованное управление с распределённым сбором данных. Один сервер отвечает за конфигурацию, вычисление триггеров и логику оповещений. Прокси расширяют географию сбора данных — в удалённые дата-центры, DMZ или облачные VPC — без создания независимых плоскостей управления. Это позволяет масштабировать мониторинг географически, не усложняя эксплуатацию. The tradeoff is that the server and its database become a shared bottleneck; database tuning and cache configuration are therefore first-class operational concerns, not afterthoughts.
 
-In the broader DevOps toolchain, Zabbix occupies the infrastructure observability layer. It excels at classic availability monitoring — "is this host up, is this service responding, is this disk filling?" — and at high-frequency metric collection from heterogeneous device types that a pure Prometheus stack would struggle to cover without extensive exporter management. In modern shops, Zabbix often coexists with Prometheus: Zabbix owns legacy infrastructure and network gear; Prometheus owns containerized workloads. Grafana sits above both, unifying dashboards via the Zabbix datasource plugin.
+В цепочке DevOps Zabbix отвечает за наблюдаемость инфраструктуры. Он особенно хорошо подходит для классического мониторинга доступности — «узел работает? сервис отвечает? диск заполняется?» — и частого сбора метрик с разнообразных устройств, которые сложно охватить одним Prometheus без большого числа экспортёров. В современных инфраструктурах Zabbix часто работает вместе с Prometheus: Zabbix контролирует устаревшую инфраструктуру и сетевое оборудование, а Prometheus — контейнерные нагрузки. Grafana объединяет их панели через источник данных Zabbix.
 
 ---
 
 ## Основные понятия
 
-### Component Overview
+### Обзор компонентов
 
-Zabbix is a distributed system. Every component has a single, non-overlapping responsibility and communicates over well-defined protocols on fixed ports.
+Zabbix — распределённая система. У каждого компонента есть отдельная ответственность, а взаимодействие происходит по определённым протоколам и фиксированным портам.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -57,13 +57,13 @@ Zabbix is a distributed system. Every component has a single, non-overlapping re
 | **Web Frontend** | PHP app — management UI and REST/JSON-RPC API | 80 / 443 |
 | **Java Gateway** | Bridge process for JMX checks — server talks to it, it talks to JVM | 10052 |
 
-**Architectural invariant:** the Zabbix Server is the only component that evaluates trigger expressions and fires alerts. Proxies collect and forward raw data — they never decide whether something is a problem. This means alerting always survives proxy failures gracefully: the proxy's buffered data arrives when connectivity is restored, triggers evaluate on arrival.
+**Архитектурный инвариант:** только Zabbix Server вычисляет выражения триггеров и создаёт оповещения. Прокси собирают и пересылают исходные данные, но не определяют, является ли ситуация проблемой. Поэтому при отказе прокси система может восстановить обработку после восстановления связи: накопленные данные поступят на сервер и триггеры будут вычислены.
 
-**Agent vs Agent2:** Agent2 is the modern replacement, written in Go. It supports concurrent active checks, plugin architecture, and significantly lower memory footprint. Unless you have a specific reason to use the legacy C agent, always install `zabbix-agent2`.
+**Agent и Agent2:** Agent2 — современная замена, написанная на Go. Он поддерживает параллельные активные проверки, архитектуру плагинов и заметно меньшее потребление памяти. Если нет особой причины использовать старый агент на C, устанавливайте `zabbix-agent2`.
 
 ---
 
-### Supported Databases
+### Поддерживаемые базы данных
 
 The database is the most consequential architectural decision in any Zabbix deployment. All collected data, all configuration, and all event history live there. Poor database choice or configuration is the primary cause of Zabbix performance degradation at scale.
 
