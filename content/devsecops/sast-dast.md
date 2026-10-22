@@ -80,7 +80,7 @@ bandit -r src/ -f json -o bandit.json --exit-zero
 | B501 | SSL cert verification disabled | Enables MITM attacks on outbound requests |
 | B608 | SQL string formatting | SQL injection vector |
 
-**Suppressing a finding inline:** use `# nosec <rule>` with a comment explaining why it is safe. Bare `# nosec` without a rule ID suppresses everything on that line — avoid it because it hides future findings if new rules are added.
+**Подавление находки в коде:** используйте `# nosec <rule>` и комментарий с объяснением, почему код безопасен. Запись `# nosec` без ID правила подавляет все проверки этой строки. Не используйте её: так можно скрыть находки, появившиеся после добавления новых правил.
 
 ```python
 # Acceptable suppression — test-only code, not a real password
@@ -90,13 +90,13 @@ TEST_PASSWORD = "hunter2"  # nosec B105 — hardcoded only in test fixtures, nev
 TEST_PASSWORD = "hunter2"  # nosec
 ```
 
-**Bandit gotcha:** Bandit does not perform full inter-procedural taint analysis. It cannot follow data through function calls across files. A B608 finding might be a false positive if the string being formatted is not user-controlled — always read the surrounding code before suppressing. Conversely, Bandit can miss an injection vulnerability if the dangerous call is wrapped in a helper function in another module.
+**Ограничение Bandit:** инструмент не выполняет полный межпроцедурный анализ распространения недоверенных данных и не отслеживает их через вызовы функций между файлами. Находка B608 может быть ложноположительной, если форматируемая строка не контролируется пользователем, поэтому перед подавлением изучите окружающий код. С другой стороны, Bandit может пропустить инъекцию, если опасный вызов обёрнут вспомогательной функцией из другого модуля.
 
 ---
 
-### SAST with Semgrep
+### Статический анализ безопасности с Semgrep
 
-Semgrep performs pattern-matching on syntax trees across 30+ languages. Unlike regex, Semgrep patterns are syntactically aware — `$X + $Y` matches any addition expression regardless of whitespace, parentheses, or variable names. The community registry at `semgrep.dev/r` contains thousands of rules maintained by Semgrep and the security community, organized into curated packs.
+Semgrep сопоставляет шаблоны с синтаксическими деревьями более чем 30 языков. В отличие от регулярных выражений, шаблоны Semgrep учитывают синтаксис: `$X + $Y` соответствует выражению сложения независимо от пробелов, скобок и имён переменных. В каталоге сообщества `semgrep.dev/r` собраны тысячи правил Semgrep и специалистов по безопасности, сгруппированных в тематические наборы.
 
 ```bash
 pip install semgrep
