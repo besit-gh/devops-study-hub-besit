@@ -2,7 +2,7 @@
 
 ## Основные команды
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `helm install name chart` | Установить релиз |
 | `helm install name chart -f values.yaml` | Установить с пользовательскими values |
@@ -17,7 +17,7 @@
 
 ## Values и шаблоны
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `helm show values chart` | Показать значения по умолчанию |
 | `helm show chart chart` | Показать метаданные chart |
@@ -30,7 +30,7 @@
 
 ## Откат и отладка
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `helm rollback name 1` | Откатиться к ревизии 1 |
 | `helm rollback name 0` | Откатиться к предыдущей ревизии |
@@ -42,7 +42,7 @@
 
 ## Repositories
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `helm repo add name url` | Add repository |
 | `helm repo list` | List repos |
@@ -55,16 +55,16 @@
 
 ## Chart Development
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `helm create name` | Scaffold new chart |
-| `helm package chart/` | Package chart to tarball |
+| `helm package chart/` | Упаковать чарт to tarball |
 | `helm dependency update chart/` | Download chart dependencies |
 | `helm dependency list chart/` | List dependencies |
 
 ## Common Flags
 
-| Flag | Description |
+| Flag | Описание |
 |------|-------------|
 | `-n namespace` | Target namespace |
 | `--create-namespace` | Create namespace if missing |
@@ -73,4 +73,4 @@
 | `--dry-run` | Simulate without applying |
 | `--debug` | Enable verbose output |
 | `--set key=val` | Override single value |
-| `-f values.yaml` | Override values file |
+| `-f values.yaml` | Переопределить values file |
