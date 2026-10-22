@@ -19,7 +19,7 @@ Terraform state — механизм, связывающий конфигура�
 
 ### Что хранит state и как Terraform его использует
 
-The state file is a JSON document. At the top level it records the Terraform version, a serial number (incremented on every successful write), a lineage UUID (a unique ID assigned when the state is first created), and a `resources` array. Each entry in that array maps a configuration address (`aws_s3_bucket.app_assets`) to a provider resource type and a set of instances, each of which holds the full set of attributes as returned by the provider after the last apply.
+Файл состояния — документ JSON. На верхнем уровне он хранит версию Terraform, серийный номер (увеличивается при каждой успешной записи), UUID lineage (уникальный идентификатор, назначаемый при создании состояния) и массив `resources`. Каждый элемент массива связывает адрес ресурса в конфигурации (`aws_s3_bucket.app_assets`) с типом ресурса провайдера и набором экземпляров. Каждый экземпляр содержит атрибуты, возвращённые провайдером после последнего `apply`.
 
 ```bash
 # See a human-readable summary of the entire state
@@ -35,7 +35,7 @@ terraform state list
 terraform state show aws_s3_bucket.app_assets
 ```
 
-Terraform consults state in three phases:
+Terraform обращается к состоянию в три этапа:
 
 | Phase | What state provides |
 |---|---|
@@ -43,13 +43,13 @@ Terraform consults state in three phases:
 | `terraform apply` | Resource IDs needed to make API calls (update/delete) |
 | `terraform destroy` | Complete list of resources to remove, with their provider-assigned IDs |
 
-**The serial number is a consistency guard.** If two operators read the same state and both try to write, the one whose serial is now stale gets rejected at the storage layer. This is the second line of defense — locking is the first.
+**Серийный номер защищает согласованность.** Если два оператора прочитали одно состояние и оба пытаются записать изменения, запись с устаревшим серийным номером будет отклонена на уровне хранилища. Это вторая линия защиты; первая — блокировка.
 
-**The lineage UUID prevents state file mix-ups.** If you accidentally point a backend at the wrong state file, Terraform detects that the lineage doesn't match the local cache and refuses to proceed. This prevents silent corruption from path misconfigurations.
+**UUID lineage предотвращает путаницу между файлами состояния.** Если backend случайно указывает не на тот файл, Terraform обнаруживает несовпадение lineage с локальным кэшем и отказывается продолжать. Это защищает от незаметного повреждения состояния из-за неправильного пути.
 
-**State contains secrets in plaintext.** Database passwords, private keys, and other sensitive attributes written by providers end up in the state file. Marking an output `sensitive = true` in HCL does not prevent the value from appearing in state — it only suppresses it from CLI output. Enable encryption at rest on your backend and treat state access as you would production secret access. Audit who has `s3:GetObject` on your state bucket.
+**Состояние содержит секреты в открытом виде.** Пароли баз данных, приватные ключи и другие чувствительные атрибуты, возвращённые провайдерами, могут попасть в файл состояния. Атрибут `sensitive = true` в HCL не скрывает значение из состояния — он лишь подавляет его вывод в CLI. Включите шифрование данных в хранилище и защищайте доступ к состоянию так же строго, как доступ к production-секретам. Проверьте, у кого есть разрешение `s3:GetObject` для бакета состояния.
 
-### Remote State Backends (S3)
+### Удалённые backend-хранилища состояния (S3)
 
 The `backend` block tells Terraform where to store and lock state. For S3, two locking options exist:
 
