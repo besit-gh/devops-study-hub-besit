@@ -13,13 +13,13 @@ exercises: 3
 
 Источники данных связывают слой визуализации Grafana с backend-системами наблюдаемости. Для надёжной инфраструктуры нужно понимать, как правильно настраивать источники, описывать их как код для воспроизводимого развёртывания, объединять несколько источников в одном представлении и преобразовывать результаты. На собеседованиях часто встречаются сценарии диагностики: «Панель показывает No data — что проверите?» или «Как сопоставить метрики Prometheus и события логов в одном представлении?»
 
-Data source configuration errors are among the most common issues in new Grafana deployments. The access mode (proxy vs. direct), the URL, authentication method, and TLS settings all interact. Provisioning data sources as code — rather than configuring them in the UI once and hoping they persist — is the production-grade approach.
+Ошибки настройки источников данных — одна из самых частых проблем новых установок Grafana. На результат влияют режим доступа (через прокси или напрямую), URL, способ аутентификации и параметры TLS. Для production-среды источники данных следует описывать как код, а не один раз настраивать в интерфейсе и надеяться, что конфигурация сохранится.
 
 ## Основные понятия
 
-### Built-in Data Sources
+### Встроенные источники данных
 
-Grafana ships first-party support for the most common observability backends. These require no additional plugin installation.
+Grafana изначально поддерживает наиболее распространённые системы хранения данных наблюдаемости. Для них не нужно устанавливать дополнительные плагины.
 
 | Data Source | Protocol | Typical Use |
 |-------------|----------|-------------|
@@ -34,7 +34,7 @@ Grafana ships first-party support for the most common observability backends. Th
 | Alertmanager | HTTP | Visualize active Alertmanager alerts |
 | TestData | Built-in | Generate fake data for dashboard development |
 
-### Configuring a Data Source — UI Method
+### Настройка источника данных через интерфейс
 
 **Administration → Data sources → Add new data source**
 
