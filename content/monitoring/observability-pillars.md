@@ -97,7 +97,7 @@ http_requests_total{method="GET",  endpoint="/api/users", status="500"} 7
 
 ### Четыре золотых сигнала
 
-From the Google SRE book — the minimum viable set of metrics for any user-facing service. If you instrument nothing else, instrument these four.
+Из книги Google SRE: минимальный набор метрик для любого пользовательского сервиса. Если вы не собираете больше ничего, начните с этих четырёх метрик.
 
 | Signal | What it measures | Example metric |
 |--------|-----------------|----------------|
@@ -106,9 +106,9 @@ From the Google SRE book — the minimum viable set of metrics for any user-faci
 | **Errors** | Rate of failed requests | `http_requests_total{status=~"5.."}` / total |
 | **Saturation** | How "full" the service is | CPU%, memory%, disk I/O%, queue depth |
 
-**Latency gotcha:** always track error latency separately from success latency. A spike in 500s that respond immediately (fast failures) will pull your average latency *down*, hiding a real degradation behind a misleading "improvement." Filter by `status` in latency queries.
+**Нюанс задержки:** всегда отслеживайте задержку ошибок отдельно от задержки успешных запросов. Всплеск быстрых ответов 500 может снизить среднюю задержку и скрыть реальное ухудшение за обманчивым «улучшением». Фильтруйте запросы по `status`.
 
-**Saturation gotcha:** saturation is often a leading indicator — it predicts problems before errors or latency degrade. A queue that is 90% full will become a dropped-request problem in minutes. Alert on saturation trends, not just thresholds.
+**Нюанс насыщения:** насыщение часто является опережающим индикатором — оно предсказывает проблемы до роста числа ошибок или задержки. Если очередь заполнена на 90%, уже через несколько минут запросы могут начать теряться. Настраивайте оповещения по тенденциям насыщения, а не только по порогам.
 
 ```promql
 # p99 latency for successful requests only
