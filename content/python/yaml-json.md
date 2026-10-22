@@ -247,9 +247,9 @@ print(helm_values["featureFlags"])
 
 ---
 
-### Multi-Document YAML
+### YAML с несколькими документами
 
-Kubernetes manifests routinely bundle multiple resources (Deployment, Service, ConfigMap) in a single file, separated by `---`.
+В манифестах Kubernetes часто объединяют несколько ресурсов (Deployment, Service, ConfigMap) в одном файле, разделяя их строкой `---`.
 
 ```python
 import yaml
@@ -274,11 +274,11 @@ with open("patched.yaml", "w") as f:
     yaml.dump_all(docs, f, default_flow_style=False)
 ```
 
-**`safe_load_all` returns a generator:** if you consume it once (e.g., in a for loop), it's exhausted. Call `list()` on it immediately if you need to iterate more than once or check the length.
+**`safe_load_all` возвращает генератор:** после однократного обхода (например, в цикле `for`) он исчерпывается. Сразу преобразуйте его в `list()`, если требуется пройти по данным повторно или узнать их количество.
 
-**`None` documents:** a file that ends with `---` or has `---` followed immediately by another `---` produces `None` entries in the generator. Always guard with `if doc is None: continue`.
+**Документы со значением `None`:** если файл заканчивается на `---` или за одним `---` сразу следует другой, генератор может вернуть элементы `None`. Всегда проверяйте `if doc is None: continue`.
 
-**Building a multi-doc manifest programmatically:**
+**Программное формирование многочастного манифеста:**
 
 ```python
 import yaml
