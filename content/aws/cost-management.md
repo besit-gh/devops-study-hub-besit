@@ -297,7 +297,7 @@ aws ce get-savings-plans-purchase-recommendation \
 
 ### Классы хранения S3
 
-S3 costs have two components: **storage cost per GB** and **request/retrieval fees**. Choosing the wrong storage class for access patterns wastes money in both directions — Standard is expensive for cold data; Glacier has retrieval costs that exceed storage savings if you access data frequently.
+У S3 две составляющие расходов: **стоимость хранения гигабайта** и **плата за запросы и извлечение данных**. Неподходящий класс хранения приводит к лишним затратам: Standard дорог для редко используемых данных, а расходы на извлечение из Glacier могут превысить экономию на хранении при частом доступе.
 
 | Class | Use Case | ~Storage Cost | Retrieval Fee | Min Duration |
 |-------|----------|--------------|---------------|--------------|
@@ -309,7 +309,7 @@ S3 costs have two components: **storage cost per GB** and **request/retrieval fe
 | Glacier Deep Archive | Rarely accessed, 12-48h retrieval | $0.00099/GB | $0.02/GB | 180 days |
 | Intelligent-Tiering | Unknown or changing access patterns | $0.023/GB + $0.0025/1k objects | None | None |
 
-**Minimum duration billing:** if you delete a Standard-IA object after 15 days, you are still billed for 30 days. Factor this into lifecycle rule design — do not transition short-lived objects to IA classes. A log file that is deleted after 14 days should stay in Standard.
+**Минимальный оплачиваемый срок:** если удалить объект Standard-IA через 15 дней, плата всё равно взимается за 30 дней. Учитывайте это при настройке правил жизненного цикла: не переводите краткоживущие объекты в классы IA. Например, журнал, удаляемый через 14 дней, лучше оставить в Standard.
 
 ```bash
 # Lifecycle policy: transition logs/ through classes then expire
