@@ -760,9 +760,9 @@ function parse_ts(ts,    parts, t) {
 
 ---
 
-### Exercise 2: Config File Normalization
+### Задание 2. Нормализация файла конфигурации
 
-You have a legacy config file with inconsistent formatting: some keys use spaces around `=`, some use tabs, comment lines start with `#` or `;`, and there are blank lines throughout.
+У вас есть устаревший файл конфигурации с непоследовательным форматированием: вокруг `=` где-то стоят пробелы, где-то табуляции, комментарии начинаются с `#` или `;`, а между строками встречаются пустые строки.
 
 **Setup:**
 ```bash
@@ -780,11 +780,11 @@ old_key = ignored
 EOF
 ```
 
-**Task:** Using `sed` (not awk), produce a normalized version that:
-1. Remove all comment lines (starting with `;` or `#`, possibly with leading whitespace)
-2. Remove blank lines
-3. Strip all whitespace around the `=` sign (so `  host = localhost` becomes `host=localhost`)
-4. Write the result to `normalized.conf` using a temp file + mv pattern (not `-i`)
+**Задача:** с помощью `sed` (не `awk`) подготовьте нормализованную версию, которая:
+1. Удаляет все строки комментариев (начинающиеся с `;` или `#`, возможно после пробелов).
+2. Удаляет пустые строки.
+3. Удаляет пробельные символы вокруг `=` (например, превращает `  host = localhost` в `host=localhost`).
+4. Записывает результат в `normalized.conf` через временный файл и `mv` (не используя `-i`).
 
 **Verify:** `cat normalized.conf` should produce exactly:
 ```
