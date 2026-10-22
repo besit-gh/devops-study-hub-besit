@@ -26,11 +26,11 @@ Recording rules расширяют возможности PromQL: они поз�
 | **Scalar** | Single float value | `1.5` |
 | **String** | String literal (rarely used) | `"foo"` |
 
-Most functions take a range vector and return an instant vector. The `[5m]` notation is the range selector — it says "give me all samples within the last 5 minutes for each series."
+Большинство функций принимает вектор диапазона и возвращает мгновенный вектор. Обозначение `[5m]` — селектор диапазона: он означает «верни все выборки каждой временной серии за последние пять минут».
 
-### Selectors and Matchers
+### Селекторы и условия сопоставления
 
-Label matchers filter which time series are selected. Four matcher operators:
+Условия сопоставления по меткам фильтруют выбираемые временные ряды. Есть четыре оператора:
 
 ```promql
 # Exact match
@@ -52,9 +52,9 @@ http_requests_total{job="app"}[5m]
 http_requests_total offset 1h
 ```
 
-**Important:** an instant vector selector returns one sample per matched series (the most recent sample within the lookback delta, default 5 minutes). If a target goes down and stops being scraped, the series disappears from instant queries after the lookback window.
+**Важно:** селектор мгновенного вектора возвращает одну выборку на каждый совпавший ряд — самую свежую в пределах окна поиска, по умолчанию пять минут. Если цель становится недоступной и опрос прекращается, после окончания этого окна ряд исчезает из мгновенных запросов.
 
-**Regex syntax is RE2:** anchors are implicit at word boundaries but not the full string. `status=~"5.."` matches any string that contains a character followed by two characters — if you want to match only 3-character codes starting with 5, use `status=~"5.."` with the understanding that `.` matches any character. To match `500` exclusively, use `status="500"`.
+**Синтаксис регулярных выражений — RE2:** границы совпадения не следует путать с поиском всей строки. `status=~"5.."` соответствует строкам с символом `5` и двумя следующими символами; точка `.` означает любой символ. Чтобы выбрать только код `500`, используйте точное сравнение `status="500"`.
 
 ### Operators
 
@@ -87,7 +87,7 @@ http_requests_total > bool 100
 rate(http_requests_total[5m]) > 10
 ```
 
-**Vector matching:** when operating on two instant vectors, Prometheus matches series by label set. Use `on()` or `ignoring()` to control which labels are used for matching, and `group_left` / `group_right` for many-to-one joins.
+**Сопоставление векторов:** при операции над двумя мгновенными векторами Prometheus сопоставляет ряды по набору меток. Используйте `on()` или `ignoring()`, чтобы указать учитываемые метки, и `group_left` / `group_right` для соединений «многие к одному».
 
 ```promql
 # Ratio — must have matching label sets
@@ -99,7 +99,7 @@ rate(http_requests_total[5m])
 instance_info{role="frontend"}
 ```
 
-### Aggregation Operators
+### Операторы агрегации
 
 Aggregations collapse or group instant vectors across label dimensions.
 
