@@ -47,13 +47,13 @@ pm.test("Response has required fields", () => {
 
 **Подводный камень:** `pm.response.to.be.json` проверяет заголовок `Content-Type`, а не возможность разобрать тело ответа как JSON. Если API возвращает JSON с заголовком `Content-Type: text/plain`, проверка даст неверное представление о формате. Чтобы проверить фактический разбор, используйте `pm.response.json()` внутри `try/catch`.
 
-**Gotcha:** `pm.test` does not throw — it records pass/fail and continues. If you want one assertion failure to abort the rest of the test function, put all assertions for a single logical unit inside one `pm.test` call.
+**Важно:** `pm.test` не прерывает выполнение при ошибке — он записывает результат и продолжает работу. Если ошибка одного утверждения должна останавливать остальные проверки, объедините утверждения одного логического блока в один вызов `pm.test`.
 
 ---
 
-### Status and Response Assertions
+### Проверки статуса и ответа
 
-Postman exposes response metadata through `pm.response`. The following covers the most commonly needed assertions:
+Postman предоставляет метаданные ответа через `pm.response`. Ниже приведены наиболее часто используемые проверки:
 
 ```javascript
 // Status code — by number or reason phrase
@@ -89,9 +89,9 @@ pm.expect(pm.response.text()).to.include("success");
 
 ---
 
-### JSON Assertions
+### Проверки JSON
 
-JSON response validation is the core of most API test suites. `pm.response.json()` parses the body once; store it in a variable before writing multiple assertions.
+Проверка JSON-ответов — основа большинства наборов API-тестов. `pm.response.json()` разбирает тело ответа; сохраните результат в переменную, прежде чем выполнять несколько проверок.
 
 ```javascript
 const json = pm.response.json();
@@ -119,7 +119,7 @@ json.users.forEach((user, index) => {
 });
 ```
 
-**Schema validation with Ajv (preferred over tv4):** Postman bundles `tv4` for legacy reasons, but `tv4` does not support JSON Schema draft-07+. For `format: "email"`, `nullable`, or `anyOf` you need Ajv, which is also bundled.
+**Проверка схемы с Ajv (предпочтительнее tv4):** Postman включает `tv4` для совместимости со старым кодом, но `tv4` не поддерживает JSON Schema draft-07 и новее. Для `format: "email"`, `nullable` или `anyOf` используйте Ajv, который также входит в комплект.
 
 ```javascript
 // Ajv is available as a global in Postman sandbox
@@ -144,13 +144,13 @@ pm.test("Response matches schema", () => {
 });
 ```
 
-**`additionalProperties: false` is a contract decision.** It fails if the API adds new undocumented fields. Enable it when you are writing contract tests; disable it for smoke tests where forward compatibility matters more than strictness.
+**`additionalProperties: false` — решение на уровне контракта.** Проверка завершится ошибкой, если API добавит новые, не описанные в схеме поля. Включайте её в контрактных тестах; в smoke-тестах, где важнее обратная совместимость, строгую проверку можно отключить.
 
 ---
 
-### Error Case Testing
+### Проверка ошибочных сценариев
 
-Error path tests are as important as happy-path tests. They verify that the API returns structured error responses (not HTML 500 pages or stack traces), uses the correct status codes, and includes useful error messages.
+Тесты ошибочных сценариев не менее важны, чем проверки успешного пути. Они подтверждают, что API возвращает структурированные ошибки (а не HTML-страницы 500 или трассировки стека), правильные коды статуса и полезные сообщения.
 
 ```javascript
 // --- In a request with a missing required field ---
@@ -185,13 +185,13 @@ pm.test("409 body has error code field", () => {
 });
 ```
 
-**Do not test error cases in the same request as success cases.** Create a dedicated folder in your collection (e.g., `Error Cases / POST /users`) where each request is pre-configured with the bad input. This makes the collection self-documenting and lets Newman run error suites in isolation.
+**Не проверяйте ошибки тем же запросом, которым проверяете успешный сценарий.** Создайте в коллекции отдельную папку, например `Error Cases / POST /users`, где каждый запрос заранее настроен на некорректные входные данные. Так коллекция становится самодокументируемой, а Newman может запускать набор ошибочных сценариев отдельно.
 
 ---
 
-### Variables, Pre-request Scripts, and Chaining Requests
+### Переменные, pre-request-скрипты и цепочки запросов
 
-Real API test suites need to chain requests — create a resource, then verify it, then delete it. Postman's variable scopes and pre-request scripts make this possible.
+Реальные наборы API-тестов должны связывать запросы в цепочку: создать ресурс, проверить его, затем удалить. Области видимости переменных и pre-request-скрипты Postman позволяют это реализовать.
 
 | Scope | Set with | Read with | Lifetime |
 |---|---|---|---|
@@ -217,13 +217,13 @@ pm.test("Fetched user matches created user", () => {
 });
 ```
 
-**Use `collectionVariables` (not `environment`) for values that are generated during a test run**, like IDs returned from a POST. Environment variables are for config (base URLs, credentials). Mixing them creates a race condition when you run multiple Newman instances against the same environment file.
+**Используйте `collectionVariables`, а не `environment`, для значений, созданных во время тестового запуска**, например ID из ответа POST. Переменные окружения предназначены для конфигурации (базовых URL и учётных данных). Смешивание этих типов создаёт гонку, если несколько экземпляров Newman используют один файл окружения.
 
 ---
 
-### Test Organisation and Failure Messages
+### Организация тестов и сообщения об ошибках
 
-Grouping assertions and labelling them well is the difference between a test output that says "AssertionError: expected 0 to be above 0" and one that says "users[3].id: expected 0 to be above 0".
+Группировка утверждений и понятные подписи отличают сообщение `AssertionError: expected 0 to be above 0` от гораздо более полезного `users[3].id: expected 0 to be above 0`.
 
 ```javascript
 // Use the second argument to pm.expect() as a label — it appears in failure output
@@ -252,9 +252,9 @@ pm.test("Timestamps are ISO 8601", () => {
 
 ---
 
-### Newman — CLI Runner
+### Newman — запуск из командной строки
 
-Newman executes a collection JSON file from the command line. It exits `0` on all-pass, non-zero on any failure — making it suitable as a CI gate.
+Newman запускает JSON-файл коллекции из командной строки. Если все проверки прошли, он возвращает `0`; при любой ошибке — ненулевой код. Поэтому его удобно использовать как условие прохождения CI.
 
 ```bash
 # Install globally (or as a local devDependency — prefer local in CI)
@@ -312,11 +312,11 @@ fi
 | `--iteration-count` | How many times to iterate the collection |
 | `--reporters` | Comma-separated list: `cli`, `junit`, `htmlextra` |
 
-**Newman does not save variable changes back to the environment file.** Variables set with `pm.environment.set()` during a run live only in that run's memory. If you need to pass a value (like an auth token) between a `newman run` and a subsequent step, write it to a file from within the test script using the `pm.sendRequest` + file tricks, or use a pre-request script that fetches a fresh token at startup.
+**Newman не сохраняет изменения переменных обратно в файл окружения.** Переменные, заданные через `pm.environment.set()` во время запуска, существуют только в памяти текущего процесса. Если нужно передать значение (например, токен) следующему шагу после `newman run`, сохраните его в файл подходящим способом или используйте pre-request-скрипт, который получает новый токен при старте.
 
 ---
 
-### Newman in CI (GitHub Actions)
+### Newman в CI (GitHub Actions)
 
 ```yaml
 # .github/workflows/api-tests.yml
@@ -375,13 +375,13 @@ jobs:
           retention-days: 14
 ```
 
-**`if: always()` on reporting steps is mandatory.** Without it, GitHub Actions skips the upload/publish steps when Newman exits non-zero, which means the test report is unavailable precisely when you need it most.
+**`if: always()` обязателен для шагов публикации отчётов.** Без него GitHub Actions пропустит загрузку и публикацию, если Newman завершится с ненулевым кодом. В итоге отчёт будет недоступен именно тогда, когда он особенно нужен.
 
 ---
 
-### API Contract Testing
+### Контрактное тестирование API
 
-Contract testing verifies that a deployed API conforms to its OpenAPI specification. It catches the class of bug where the implementation drifts from the documented contract — a renamed field, a dropped required property, a changed type.
+Контрактное тестирование проверяет соответствие развёрнутого API спецификации OpenAPI. Оно обнаруживает расхождения реализации с описанным контрактом: переименование поля, удаление обязательного свойства или изменение типа.
 
 ```bash
 # portman generates a Postman collection with contract tests from an OpenAPI spec
@@ -397,7 +397,7 @@ newman run myapp.postman_collection.json \
   -e staging.postman_environment.json
 ```
 
-Manual contract test using Ajv — embed this in any request to gate the deployed schema:
+Ручная проверка контракта с Ajv: добавьте этот скрипт к любому запросу, чтобы проверять схему развёрнутого API:
 
 ```javascript
 // This pattern is useful for endpoints not covered by portman
@@ -425,13 +425,13 @@ pm.test("GET /users response matches OpenAPI schema", () => {
 });
 ```
 
-**Contract tests and smoke tests have different tolerances for `additionalProperties`.** Smoke tests should be lenient (allow new fields — they are non-breaking additions). Contract tests should be strict (fail on undocumented fields — they indicate spec drift). Maintain separate folders or collections for each mode.
+**Контрактные и smoke-тесты по-разному относятся к `additionalProperties`.** Smoke-тесты должны быть гибкими и допускать новые поля, если они не нарушают совместимость. Контрактные тесты должны быть строгими и падать при появлении неописанных полей, поскольку это указывает на расхождение со спецификацией. Используйте для этих режимов разные папки или коллекции.
 
 ---
 
-### Performance Baselines
+### Базовые показатели производительности
 
-Postman test scripts can track response time trends across runs by persisting a rolling average in environment variables.
+Скрипты Postman могут отслеживать динамику времени ответа между запусками, сохраняя скользящее среднее в переменных окружения.
 
 ```javascript
 // Assert against a fixed SLA — simplest form
@@ -463,15 +463,15 @@ pm.test("Response time has not regressed by more than 50%", () => {
 })();
 ```
 
-**Performance tests in Newman are not load tests.** Newman sends one request at a time. Use these checks to catch a 10× regression (e.g., an N+1 query introduced in a deployment), not to measure throughput under concurrency. For load testing, use k6 or Gatling.
+**Проверки производительности в Newman — не нагрузочные тесты.** Newman отправляет по одному запросу за раз. Используйте эти проверки для обнаружения десятикратного ухудшения (например, из-за запроса N+1 после развёртывания), а не для измерения пропускной способности при параллельной нагрузке. Для нагрузочного тестирования подойдут k6 или Gatling.
 
 ---
 
 ## Примеры
 
-### Example 1: Full CRUD Test Suite for `/api/users`
+### Пример 1. Полный набор CRUD-тестов для `/api/users`
 
-**Setup:** Export a Postman collection with four requests in a folder named `Users CRUD`: `POST /users`, `GET /users/:id`, `PUT /users/:id`, `DELETE /users/:id`. Each request references `{{base_url}}` from the environment file.
+**Подготовка:** экспортируйте коллекцию Postman с четырьмя запросами в папке `Users CRUD`: `POST /users`, `GET /users/:id`, `PUT /users/:id`, `DELETE /users/:id`. Каждый запрос использует `{{base_url}}` из файла окружения.
 
 **staging.postman_environment.json:**
 ```json
@@ -535,9 +535,9 @@ echo "Exit code: $?"
 
 ---
 
-### Example 2: Error Case Collection for `POST /users`
+### Пример 2. Коллекция ошибочных сценариев для `POST /users`
 
-**Setup:** A folder named `POST /users — Error Cases` with three requests, each with a different malformed body pre-configured.
+**Подготовка:** создайте папку `POST /users — Error Cases` с тремя запросами, каждый из которых заранее настроен на своё некорректное тело.
 
 **Request 1: Missing email — Tests tab:**
 ```javascript
@@ -565,7 +565,7 @@ pm.test("Response is JSON even for malformed input", () => {
 });
 ```
 
-**Run only error cases:**
+**Запуск только ошибочных сценариев:**
 ```bash
 newman run users-api.postman_collection.json \
   -e staging.postman_environment.json \
@@ -575,7 +575,7 @@ newman run users-api.postman_collection.json \
 
 ---
 
-### Example 3: Data-Driven Login Tests with a CSV
+### Пример 3. Тесты входа с данными из CSV
 
 **test-credentials.csv:**
 ```csv
@@ -612,11 +612,11 @@ newman run auth.postman_collection.json \
   --reporter-htmlextra-export results/auth-report.html
 ```
 
-**Verify:** The HTML report shows 4 iterations. The 200 row shows the token assertion; the others skip it.
+**Проверка:** HTML-отчёт показывает 4 итерации. Для строки с ответом 200 отображается проверка токена, для остальных она пропускается.
 
 ---
 
-### Example 4: Newman as a Deployment Gate in GitHub Actions
+### Пример 4. Newman как условие допуска к развёртыванию в GitHub Actions
 
 ```yaml
 # .github/workflows/deploy-and-test.yml
@@ -681,56 +681,56 @@ jobs:
 ```
 
 **Verify it worked:**
-- A passing run: the `api-tests` job is green; the JUnit check appears in the PR; the artifact is downloadable.
-- A failing run: Newman exits non-zero; the job is red; the JUnit check shows which tests failed; the HTML artifact is still uploaded (`if: always()`).
+- Успешный запуск: задача `api-tests` отмечена зелёным; проверка JUnit отображается в PR; артефакт можно скачать.
+- Неуспешный запуск: Newman возвращает ненулевой код; задача отмечена красным; проверка JUnit показывает упавшие тесты; HTML-артефакт всё равно загружается благодаря `if: always()`.
 
 ---
 
 ## Практические задания
 
-**Exercise 1: Write a full test script for `POST /users`**
+**Задание 1. Напишите полный тестовый скрипт для `POST /users`**
 
-Using a real or mock API (e.g., `https://jsonplaceholder.typicode.com/users` or a locally running service), write a Postman test script that asserts all of the following without copy-pasting directly from the Concepts section:
-- Status code is 201 (or 200 if using JSONPlaceholder which returns 201 for POST)
-- `Content-Type` header includes `application/json`
-- Response body contains `id` (positive integer), `name` (non-empty string), and `email` (contains `@`)
-- Response time is under 800ms
-- Save the returned `id` to a collection variable named `created_id`
+Используя реальный или тестовый API (например, `https://jsonplaceholder.typicode.com/users` или локально запущенный сервис), напишите тестовый скрипт Postman, который проверяет все перечисленные условия. Не копируйте готовый код из раздела «Основные понятия»:
+- Код статуса равен 201 (или 200, если используемый API возвращает этот код для POST).
+- Заголовок `Content-Type` содержит `application/json`.
+- Тело ответа содержит `id` (положительное целое число), `name` (непустую строку) и `email` (с символом `@`).
+- Время ответа меньше 800 мс.
+- Сохраните полученный `id` в переменную коллекции `created_id`.
 
-Run the request in the Postman GUI and confirm all tests pass in the test results panel.
-
----
-
-**Exercise 2: Test error paths for `POST /users`**
-
-Create two additional requests in the same collection that test error cases:
-1. Send a POST body missing the `email` field. Assert: status is 400, body is JSON, body contains a `message` field that is a non-empty string.
-2. Send a POST with an invalid `email` format (e.g., `"email": "notanemail"`). Assert: status is 400 or 422, and the response is not an HTML page (check `Content-Type`).
-
-Then write a one-line explanation of *why* you test for `Content-Type: application/json` on error responses, not just on success responses.
+Запустите запрос в интерфейсе Postman и убедитесь, что все тесты пройдены в панели результатов.
 
 ---
 
-**Exercise 3: Run a collection with Newman and inspect the exit code**
+**Задание 2. Проверьте ошибочные сценарии для `POST /users`**
 
-1. Export your collection and environment from Postman to JSON files.
-2. Install Newman globally: `npm install -g newman`
-3. Run the collection against your environment. Observe the CLI output — note where pass/fail counts appear.
-4. Intentionally break one assertion (e.g., change `below(800)` to `below(1)`). Re-export and re-run. Confirm the exit code is non-zero: `echo $?`
-5. Add `--reporters cli,junit --reporter-junit-export results/test.xml` and inspect the generated XML. Find the `<testcase>` element for the failing test.
+Создайте в той же коллекции два дополнительных запроса для проверки ошибок:
+1. Отправьте POST без поля `email`. Проверьте, что статус равен 400, тело имеет формат JSON и содержит непустое строковое поле `message`.
+2. Отправьте POST с некорректным форматом `email` (например, `"email": "notanemail"`). Проверьте, что статус равен 400 или 422 и ответ не является HTML-страницей (проверьте `Content-Type`).
 
-**Goal:** understand what Newman's exit code means for CI pipelines and what the JUnit XML looks like.
+Затем одним предложением объясните, *почему* нужно проверять `Content-Type: application/json` и в ошибочных ответах, а не только в успешных.
 
 ---
 
-**Exercise 4: Add Newman to a GitHub Actions workflow**
+**Задание 3. Запустите коллекцию через Newman и проверьте код завершения**
 
-Given an existing workflow file that has a `deploy` job, add an `api-tests` job that:
+1. Экспортируйте коллекцию и окружение из Postman в файлы JSON.
+2. Установите Newman глобально: `npm install -g newman`.
+3. Запустите коллекцию с нужным окружением. Изучите вывод CLI и найдите количество успешных и неуспешных проверок.
+4. Намеренно сломайте одно утверждение (например, замените `below(800)` на `below(1)`). Повторно экспортируйте и запустите коллекцию. Убедитесь, что код завершения ненулевой: `echo $?`.
+5. Добавьте `--reporters cli,junit --reporter-junit-export results/test.xml` и изучите созданный XML. Найдите элемент `<testcase>` для упавшего теста.
+
+**Цель:** понять значение кода завершения Newman для CI-конвейера и изучить структуру JUnit XML.
+
+---
+
+**Задание 4. Добавьте Newman в workflow GitHub Actions**
+
+В существующий файл workflow с задачей `deploy` добавьте задачу `api-tests`, которая:
 1. Depend on `deploy` using `needs`
-2. Install Newman
-3. Run your collection with the JUnit reporter, outputting to `results/api.xml`
-4. Publish results with `mikepenz/action-junit-report@v4` using `if: always()`
-5. Upload the XML as an artifact using `actions/upload-artifact@v4` using `if: always()`
+2. Устанавливает Newman.
+3. Запускает коллекцию с отчётчиком JUnit и сохраняет результат в `results/api.xml`.
+4. Публикует результаты через `mikepenz/action-junit-report@v4` с `if: always()`.
+5. Загружает XML как артефакт через `actions/upload-artifact@v4` с `if: always()`.
 
 Push a commit that intentionally fails a test (e.g., assert a field name that does not exist). Verify in the GitHub Actions UI that: the job is red, the test report appears in the PR checks tab, and the artifact is still present despite the failure.
 
