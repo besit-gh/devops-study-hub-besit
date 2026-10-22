@@ -237,12 +237,12 @@ TTL (Time To Live) — количество секунд, в течение ко
 | 3600s | Stable infrastructure (origin IPs, MX records) |
 | 86400s | Near-static records (NS records, rarely-changed infra) |
 
-**Pre-change checklist for safe DNS cutover:**
-1. Check current TTL: `dig +ttlid api.example.com A`
-2. If TTL > 300, lower it to 60 and **wait for at least the current TTL duration** before proceeding — every resolver that cached the old value needs to expire it
-3. Make your record change
-4. Verify from multiple resolvers (`@8.8.8.8`, `@1.1.1.1`, `@your-internal-resolver`)
-5. Raise TTL back after you're confident the change is stable
+**Проверка перед безопасным переключением DNS:**
+1. Проверьте текущий TTL: `dig +ttlid api.example.com A`
+2. Если TTL больше 300, уменьшите его до 60 и **перед продолжением подождите не меньше текущего значения TTL** — кэш каждого резолвера со старым значением должен устареть.
+3. Измените DNS-запись.
+4. Проверьте результат через несколько резолверов (`@8.8.8.8`, `@1.1.1.1`, `@your-internal-resolver`)
+5. Верните прежнее значение TTL, когда убедитесь, что изменение стабильно.
 
 ```bash
 # Check current TTL (the value decrements as cache ages — query twice to confirm)
@@ -255,7 +255,7 @@ watch -n 5 'dig +short @8.8.8.8 api.example.com A'
 dig @$(dig +short api.example.com NS | head -1) api.example.com A
 ```
 
-**Negative TTL:** NXDOMAIN responses are also cached, for the duration specified in the SOA record's minimum TTL field. If you create a record for a name that was recently queried and got NXDOMAIN, resolvers may continue returning NXDOMAIN until their negative cache expires. This trips up engineers who delete and recreate records quickly.
+**Отрицательный TTL:** ответы NXDOMAIN тоже кэшируются на срок, указанный в поле минимального TTL записи SOA. Если создать запись для имени, которое недавно запрашивали и получили NXDOMAIN, резолверы могут продолжать возвращать NXDOMAIN до истечения отрицательного кэша. Это часто мешает инженерам, которые быстро удаляют и заново создают записи.
 
 ```bash
 # Find the negative TTL (the last number in the SOA record)
@@ -267,11 +267,11 @@ dig +short example.com SOA
 
 ---
 
-### Internal DNS and Service Discovery
+### Внутренний DNS и обнаружение сервисов
 
-In modern infrastructure, DNS is the universal service discovery mechanism. Cloud and container platforms all rely on it, and understanding their conventions saves significant debugging time.
+В современной инфраструктуре DNS — универсальный механизм обнаружения сервисов. На него опираются облачные платформы и контейнерные среды; знание их соглашений заметно ускоряет диагностику.
 
-**Kubernetes DNS (CoreDNS):**
+**DNS в Kubernetes (CoreDNS):**
 
 ```bash
 # Full FQDN format:
@@ -306,7 +306,7 @@ services:
     # "api" reaches this as hostname "cache"
 ```
 
-**AWS VPC DNS:**
+**DNS в AWS VPC:**
 ```bash
 # VPC resolver is always at: base_of_VPC_CIDR + 2
 # VPC 10.0.0.0/16 → resolver at 10.0.0.2
@@ -322,7 +322,7 @@ my-alb-1234567890.us-east-1.elb.amazonaws.com
 mycluster.abc123.ng.0001.use1.cache.amazonaws.com
 ```
 
-**Split-horizon DNS:** the same name resolves to different IPs depending on where the query originates. Common pattern: `api.example.com` returns a public IP from the internet but a private VPC IP from inside the VPC. This is intentional — it avoids hairpinning through a public load balancer for internal traffic. Debugging requires querying both resolvers and comparing.
+**Split-horizon DNS:** одно и то же имя разрешается в разные IP-адреса в зависимости от источника запроса. Например, `api.example.com` возвращает публичный IP из интернета и частный IP VPC изнутри неё. Это сделано намеренно: внутренний трафик не проходит через публичный балансировщик по лишнему маршруту. Для диагностики нужно запросить оба резолвера и сравнить ответы.
 
 ```bash
 # Detect split-horizon: are you getting internal or external answers?
@@ -334,11 +334,11 @@ dig @8.8.8.8 api.example.com A      # external resolver → public IP expected
 
 ---
 
-### DNS in the Context of TLS and Security
+### DNS в контексте TLS и безопасности
 
-DNS affects security in ways that catch engineers off guard. Several security mechanisms are implemented entirely as DNS records.
+DNS влияет на безопасность неочевидными для инженеров способами. Несколько механизмов защиты реализованы исключительно с помощью DNS-записей.
 
-**CAA records** restrict which Certificate Authorities can issue certificates for your domain. If your CA isn't listed, issuance fails silently during cert renewal — a common cause of unexpected TLS outages:
+**Записи CAA** ограничивают список центров сертификации, которым разрешено выпускать сертификаты для домена. Если нужный центр не указан, выпуск или продление сертификата может завершиться ошибкой — это частая причина неожиданных сбоев TLS:
 
 ```bash
 dig example.com CAA
@@ -347,7 +347,7 @@ dig example.com CAA
 # 0 iodef "mailto:security@example.com"  ← notify on unauthorized issuance attempts
 ```
 
-**SPF/DKIM/DMARC** are TXT records. Email deliverability failures are almost always DNS problems:
+**SPF/DKIM/DMARC** публикуются в TXT-записях. Проблемы с доставкой электронной почты часто связаны с DNS:
 
 ```bash
 # SPF: which servers may send email for this domain
@@ -362,7 +362,7 @@ dig _dmarc.example.com TXT
 dig selector1._domainkey.example.com TXT
 ```
 
-**DNSSEC** adds cryptographic signatures to DNS responses, preventing cache poisoning and spoofing. Check if a domain uses it:
+**DNSSEC** добавляет к DNS-ответам криптографические подписи, помогая предотвращать отравление кэша и подмену данных. Проверьте, использует ли домен DNSSEC:
 
 ```bash
 dig +dnssec example.com A
@@ -379,7 +379,7 @@ dig @8.8.8.8 +cd example.com A    # +cd disables DNSSEC validation — if this w
 
 ---
 
-### Common DNS Failure Patterns
+### Типичные сценарии отказа DNS
 
 ```bash
 # ── PATTERN 1: "Name or service not known" ──────────────────────────────────
@@ -421,9 +421,9 @@ kubectl logs -n kube-system -l k8s-app=kube-dns  # any errors in CoreDNS logs?
 
 ## Примеры
 
-### Example 1: Diagnosing a Failed Deployment Cutover
+### Пример 1. Диагностика неудачного переключения при развёртывании
 
-Your team just updated the DNS A record for `api.example.com` from `1.2.3.4` to `5.6.7.8` as part of a blue-green deployment. Users on some networks are still hitting the old server. Diagnose the situation and confirm the cutover is complete.
+Ваша команда изменила A-запись `api.example.com` с `1.2.3.4` на `5.6.7.8` в рамках blue-green-развёртывания. Пользователи некоторых сетей всё ещё попадают на старый сервер. Диагностируйте ситуацию и подтвердите, что переключение завершено.
 
 ```bash
 # Step 1: Check what the authoritative nameserver says (ground truth)
@@ -458,13 +458,13 @@ watch -n 10 'for r in 8.8.8.8 1.1.1.1 9.9.9.9; do echo -n "$r: "; dig +short @$r
 # (Done via your DNS provider's API or UI — not via dig)
 ```
 
-**What to look for:** if any resolver is still returning the old IP after `old_TTL + 60` seconds, something is wrong — either the authoritative server wasn't updated, or an intermediate resolver is violating TTL. Use `dig +trace` to identify where the chain is breaking.
+**На что обратить внимание:** если спустя `old_TTL + 60` секунд какой-либо резолвер всё ещё возвращает старый IP, что-то не так: либо авторитетный сервер не обновлён, либо промежуточный резолвер нарушает TTL. Используйте `dig +trace`, чтобы найти проблемное звено.
 
 ---
 
-### Example 2: Debugging a Kubernetes Pod That Can't Reach an External API
+### Пример 2. Диагностика Pod Kubernetes, который не может обратиться к внешнему API
 
-An application pod is failing to connect to `api.stripe.com`. The error is `dial tcp: lookup api.stripe.com: no such host`. The service works fine from your laptop.
+Pod приложения не может подключиться к `api.stripe.com` и получает ошибку `dial tcp: lookup api.stripe.com: no such host`. При этом с ноутбука сервис работает.
 
 ```bash
 # Step 1: Exec into the pod and verify basic DNS works
@@ -534,9 +534,9 @@ kubectl edit configmap coredns -n kube-system
 
 ---
 
-### Example 3: Setting Up Split-Horizon DNS for a Service on AWS
+### Пример 3. Настройка split-horizon DNS для сервиса в AWS
 
-You're deploying a service that should resolve to a private IP inside your VPC and a public IP from the internet. This is the split-horizon pattern.
+Вы развёртываете сервис, который должен разрешаться в частный IP внутри VPC и в публичный IP из интернета. Это сценарий split-horizon DNS.
 
 ```bash
 # Verify current behavior (both should return the same public IP before the change):
@@ -567,9 +567,9 @@ cat /etc/resolv.conf
 
 ---
 
-### Example 4: Validating DNS Before a TLS Certificate Renewal
+### Пример 4. Проверка DNS перед продлением TLS-сертификата
 
-Your Let's Encrypt cert renewal is failing. The ACME challenge requires a specific TXT record to be visible publicly. Diagnose and confirm the record is propagated before retrying.
+Не удаётся продлить сертификат Let's Encrypt. Для проверки ACME нужна определённая TXT-запись, доступная из публичного DNS. Диагностируйте проблему и убедитесь, что запись распространилась, прежде чем повторять попытку.
 
 ```bash
 # Step 1: Check what the ACME client is trying to create
@@ -606,21 +606,21 @@ certbot renew --dry-run --cert-name example.com
 
 ## Практические задания
 
-### Exercise 1: Trace and Interpret a Full Resolution Chain
+### Задание 1. Проследите и разберите полную цепочку разрешения имени
 
-**Goal:** understand how delegation works from root to authoritative.
+**Цель:** понять, как работает делегирование от корневых серверов до авторитетного сервера.
 
-1. Pick any public domain (e.g., `github.com`).
-2. Run `dig +trace github.com A` and capture the output.
-3. Identify each of the following in the output: the root nameserver that was queried, the TLD nameserver for `.com`, the authoritative nameserver for `github.com`, and the final A record with its TTL.
-4. Now run `dig +trace nonexistent-12345.github.com A` and explain why the trace stops where it does and what status code appears.
-5. Answer: at which layer in the chain would a SERVFAIL most likely originate, versus an NXDOMAIN?
+1. Выберите любой публичный домен, например `github.com`.
+2. Выполните `dig +trace github.com A` и сохраните вывод.
+3. Найдите в выводе: опрошенный корневой DNS-сервер, DNS-сервер домена верхнего уровня `.com`, авторитетный сервер `github.com` и итоговую A-запись с её TTL.
+4. Теперь выполните `dig +trace nonexistent-12345.github.com A` и объясните, почему трассировка останавливается именно там и какой код статуса появляется.
+5. Ответьте: на каком уровне цепочки вероятнее всего возникает SERVFAIL, а на каком — NXDOMAIN?
 
 ---
 
-### Exercise 2: Reproduce and Fix the Kubernetes `ndots` Latency Problem
+### Задание 2. Воспроизведите и устраните задержки из-за `ndots` в Kubernetes
 
-**Goal:** observe how `ndots:5` affects lookup behavior and understand the fix.
+**Цель:** увидеть, как `ndots:5` влияет на разрешение имён, и понять способ исправления.
 
 1. If you have a Kubernetes cluster available: `kubectl run dns-debug --image=busybox --restart=Never -- sleep 3600` then exec into it. Otherwise, simulate by temporarily modifying your own `/etc/resolv.conf` to add `options ndots:5` and `search default.svc.cluster.local svc.cluster.local cluster.local`.
 2. Run `dig +stats api.stripe.com A` and note the number of queries made (visible in `+stats` output). Then run `dig +stats api.stripe.com. A` (with trailing dot). Compare the query counts and explain the difference.
@@ -629,9 +629,9 @@ certbot renew --dry-run --cert-name example.com
 
 ---
 
-### Exercise 3: Diagnose a Simulated DNS Failure
+### Задание 3. Диагностируйте смоделированный сбой DNS
 
-**Goal:** use `dig` flags and systematic reasoning to diagnose DNS problems without guessing.
+**Цель:** использовать параметры `dig` и систематический подход для диагностики DNS без догадок.
 
 Set up the following scenario (or observe it if it already exists): configure `/etc/hosts` to map `test-service.internal` to `127.0.0.1`. Then answer these questions using only command-line tools:
 
@@ -642,23 +642,23 @@ Set up the following scenario (or observe it if it already exists): configure `/
 
 ---
 
-### Exercise 4: Audit a Domain's DNS Security Posture
+### Задание 4. Проверьте настройки DNS-безопасности домена
 
-**Goal:** use DNS record lookups to assess a domain's email authentication and TLS certificate issuance controls.
+**Цель:** с помощью DNS-записей оценить механизмы аутентификации электронной почты и контроля выпуска TLS-сертификатов домена.
 
-Pick a domain you control, or use a public domain for read-only analysis (e.g., `cloudflare.com`).
+Выберите домен, которым управляете, или используйте публичный домен только для чтения, например `cloudflare.com`.
 
-1. Retrieve and interpret the SPF record. Does it use `~all` (soft fail) or `-all` (hard fail)? What does the difference mean for email security?
-2. Retrieve the DMARC record at `_dmarc.<domain>`. What is the policy (`p=`)? What would happen to an email that fails both SPF and DKIM checks under each of the three possible policy values?
-3. Retrieve the CAA record. Which CAs are authorized? If there is no CAA record, what does that mean for cert issuance?
-4. Run `dig +dnssec <domain> A @8.8.8.8`. Is there an RRSIG record in the answer? Now run the same command with `+cd` (checking disabled). If the results differ, what does that tell you?
-5. Explain in one paragraph how a compromised DNS record (e.g., an attacker who gains access to your DNS provider) could affect TLS certificate issuance, email delivery, and DNSSEC validation simultaneously.
+1. Получите и разберите SPF-запись. Используется `~all` (мягкий отказ) или `-all` (строгий отказ)? Что это означает для безопасности почты?
+2. Получите DMARC-запись `_dmarc.<domain>`. Какая политика указана в `p=`? Что произойдёт с письмом, которое не прошло проверки SPF и DKIM, при каждом из трёх возможных значений политики?
+3. Получите CAA-запись. Какие центры сертификации разрешены? Что означает отсутствие CAA-записи для выпуска сертификатов?
+4. Выполните `dig +dnssec <domain> A @8.8.8.8`. Есть ли в ответе запись RRSIG? Затем повторите команду с `+cd` (проверка отключена). Если результаты различаются, о чём это говорит?
+5. В одном абзаце объясните, как скомпрометированная DNS-запись (например, если злоумышленник получил доступ к DNS-провайдеру) может одновременно повлиять на выпуск TLS-сертификатов, доставку почты и проверку DNSSEC.
 
 ---
 
 ### Быстрая проверка
 
-1. Extract the TTL from a mock DNS A record — the same field you read in `dig` output.
+1. Извлеките TTL из примера DNS A-записи — того же поля, которое отображается в выводе `dig`.
 
    ```bash
    echo "github.com. 60 IN A 140.82.113.4" | awk '{print $2}'
@@ -668,10 +668,10 @@ Pick a domain you control, or use a public domain for read-only analysis (e.g., 
    60
    ```
 
-hint: Think about how DNS record fields are structured and which position in a typical A record line holds the TTL value.
-hint: Use awk to parse the record and print the second field with `awk '{print $2}'`, since TTL occupies that column in standard dig-style output.
+Подсказка: вспомните структуру полей DNS-записи и позицию, в которой в типичной строке A-записи находится TTL.
+Подсказка: разберите запись с помощью `awk` и выведите второе поле командой `awk '{print $2}'`: в стандартном выводе `dig` TTL находится в этой колонке.
 
-2. Detect whether an FQDN has a trailing dot (which bypasses `ndots` search-domain expansion).
+2. Определите, заканчивается ли FQDN точкой (это отключает добавление поисковых доменов по правилу `ndots`).
 
    ```bash
    echo "api.stripe.com." | grep -q '\.$' && echo "FQDN (no expansion)" || echo "relative (ndots applies)"
@@ -680,5 +680,5 @@ hint: Use awk to parse the record and print the second field with `awk '{print $
    ```expected_output
    FQDN (no expansion)
    ```
-hint: Consider how DNS resolution behaves differently when a hostname ends with a dot, and think about what string pattern you would check for.
-hint: Use a conditional test in bash with a case statement or parameter expansion like [[ "$fqdn" == *. ]] to detect the trailing dot character.
+Подсказка: вспомните, как меняется разрешение DNS-имени с точкой в конце, и определите, какой шаблон строки нужно проверить.
+Подсказка: используйте условие Bash с `case` или раскрытие параметра, например `[[ "$fqdn" == *. ]]`, чтобы обнаружить точку в конце.
