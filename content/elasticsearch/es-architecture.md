@@ -33,18 +33,18 @@ docker run -d \
 - `xpack.security.enabled=false` — отключает аутентификацию и TLS; никогда не используйте это в production
 - `ES_JAVA_OPTS=-Xms512m -Xmx512m` — caps the JVM heap at 512 MB; without this, ES defaults to half your system RAM
 
-Wait ~30 seconds, then verify:
+Подождите около 30 секунд, затем проверьте:
 
 ```bash
 curl -s http://localhost:9200/ | jq '.tagline'
 # Expected: "You Know, for Search"
 ```
 
-If you get a connection refused, inspect container logs: `docker logs es-dev`.
+Если соединение отклонено, проверьте журналы контейнера: `docker logs es-dev`.
 
-### Translating DevTools Notation to curl
+### Преобразование синтаксиса DevTools в команды curl
 
-Elasticsearch documentation uses Kibana DevTools shorthand (`GET /_cluster/health`). On the command line everything is a `curl` call:
+В документации Elasticsearch используется сокращённый синтаксис Kibana DevTools (`GET /_cluster/health`). В командной строке каждый такой запрос выполняется через `curl`:
 
 ```bash
 # GET
