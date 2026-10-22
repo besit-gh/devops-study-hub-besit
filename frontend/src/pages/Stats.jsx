@@ -63,7 +63,7 @@ export default function Stats() {
     { label: 'Всего XP', value: `${summary.total_xp} XP` },
     { label: 'Пройдено уроков', value: summary.lessons_done },
     { label: 'Точность тестов', value: quizAccuracy !== null ? `${quizAccuracy}%` : '—' },
-    { label: 'Текущая серия', value: summary.streak > 0 ? `${summary.streak} day${summary.streak > 1 ? 's' : ''}` : '—' },
+    { label: 'Текущая серия', value: summary.streak > 0 ? `${summary.streak} дн.` : '—' },
   ]
 
   return (
