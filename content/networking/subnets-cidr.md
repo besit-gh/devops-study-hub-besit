@@ -13,31 +13,31 @@ exercises: 4
 
 Основной принцип подсетей — иерархическое распределение адресов: большой диапазон делится на меньшие блоки, каждый с фиксированным сетевым префиксом и переменной частью для узлов. Длина префикса (`/N`) определяет границу между ними. Из этого следуют остальные свойства: сколько узлов помещается в подсеть, находятся ли два IP в одной подсети, нужен ли маршрутизатор и как эффективно агрегировать маршруты.
 
-In the DevOps toolchain, CIDR knowledge sits at the infrastructure layer but surfaces constantly in higher-level tools: Terraform `aws_subnet` resources, Helm chart values for Kubernetes CNI plugins, Ansible firewall rules, and Docker network configurations all require you to reason about address blocks. Getting subnetting right at design time saves enormous pain later — you cannot easily re-CIDR a production VPC with running workloads.
+В DevOps CIDR относится к инфраструктурному уровню, но постоянно встречается и в инструментах более высокого уровня: ресурсах Terraform `aws_subnet`, values Helm-чартов для CNI-плагинов Kubernetes, правилах firewall в Ansible и сетевых конфигурациях Docker. Правильное планирование подсетей на этапе проектирования избавляет от серьёзных проблем: изменить CIDR production-VPC с работающими нагрузками непросто.
 
 ---
 
 ## Основные понятия
 
-### IP Addresses and Binary Representation
+### IP-адреса и двоичное представление
 
-An IPv4 address is a 32-bit integer, written in dotted-decimal notation as four octets separated by dots. Every operation on subnets — masking, ANDing, range checks — happens at the binary level. The dotted-decimal form is just a human convenience.
+IPv4-адрес — 32-битное целое число, записываемое четырьмя октетами, разделёнными точками. Все операции с подсетями — маскирование, побитовое AND и проверка диапазонов — выполняются на двоичном уровне. Десятичная запись с точками лишь удобна для человека.
 
 ```
 192     .168    .1      .100
 11000000.10101000.00000001.01100100
 ```
 
-Each octet is 8 bits, so the full address is 32 bits. The maximum value per octet is 255 (all 8 bits set). A subnet divides those 32 bits into two parts:
+Каждый октет содержит 8 бит, поэтому весь адрес — 32-битный. Максимальное значение октета — 255 (все 8 бит равны 1). Подсеть делит эти 32 бита на две части:
 
-- **Network part** (leftmost N bits): identifies the subnet — same for every host in it
-- **Host part** (remaining 32−N bits): identifies a specific host within the subnet
+- **Сетевая часть** (N крайних левых бит): определяет подсеть и одинакова для всех узлов в ней
+- **Часть узла** (оставшиеся 32−N бит): определяет конкретный узел подсети
 
-The boundary between those two parts is the prefix length. Everything in subnetting reduces to: "where is that boundary, and what does it imply?"
+Граница между этими частями задаётся длиной префикса. Вся логика разбиения на подсети сводится к вопросу: «где проходит граница и что из этого следует?»
 
-To internalize binary conversion, practice these anchors:
+Чтобы освоить двоичное представление, запомните следующие значения:
 
-| Decimal | Binary   |
+| Десятичное | Двоичное |
 |---------|----------|
 | 128     | 10000000 |
 | 192     | 11000000 |
@@ -48,43 +48,43 @@ To internalize binary conversion, practice these anchors:
 | 254     | 11111110 |
 | 255     | 11111111 |
 
-These are exactly the values that appear in the last octet of non-octet-aligned subnet masks — memorize them.
+Именно эти значения встречаются в последнем октете масок, граница которых проходит не по октету. Их стоит запомнить.
 
 ### Нотация CIDR
 
-CIDR notation writes an address block as `<network address>/<prefix length>`. The network address has all host bits set to zero. The prefix length says how many of the 32 bits belong to the network part.
+Нотация CIDR записывает адресный блок как `<адрес сети>/<длина префикса>`. В адресе сети все биты узла равны нулю. Длина префикса показывает, сколько из 32 бит относятся к сетевой части.
 
-`10.0.1.0/24` means:
-- First 24 bits (3 octets) are fixed: `10.0.1`
-- Last 8 bits are variable: `.0` through `.255`
-- Total addresses: 2⁸ = 256
-- Usable host addresses: 254 (the network address `.0` and broadcast address `.255` are reserved)
+`10.0.1.0/24` означает:
+- Первые 24 бита (3 октета) фиксированы: `10.0.1`
+- Последние 8 бит изменяются от `.0` до `.255`
+- Всего адресов: 2⁸ = 256
+- Доступно адресов узлов: 254 (адрес сети `.0` и широковещательный адрес `.255` зарезервированы)
 
-| CIDR | Total addresses | Usable hosts | Typical use |
+| CIDR | Всего адресов | Доступно узлам | Типичное применение |
 |------|----------------|--------------|-------------|
-| /32  | 1              | 1            | Single host; security group rule for one IP |
-| /31  | 2              | 2            | Point-to-point links (RFC 3021) |
-| /30  | 4              | 2            | Smallest general-purpose subnet |
-| /28  | 16             | 14           | Small isolated subnet |
-| /27  | 32             | 30           | Small subnet tier |
-| /26  | 64             | 62           | Medium subnet |
-| /25  | 128            | 126          | Half a /24 |
-| /24  | 256            | 254          | Standard per-AZ subnet |
-| /23  | 512            | 510          | Two /24s combined |
-| /22  | 1,024          | 1,022        | Node pool with growth room |
-| /20  | 4,096          | 4,094        | Large subnet tier |
-| /16  | 65,536         | 65,534       | Typical VPC CIDR |
-| /8   | 16,777,216     | —            | Full RFC 1918 Class A block |
+| /32 | 1 | 1 | Один узел; правило security group для одного IP |
+| /31 | 2 | 2 | Соединения point-to-point (RFC 3021) |
+| /30 | 4 | 2 | Минимальная подсеть общего назначения |
+| /28 | 16 | 14 | Небольшая изолированная подсеть |
+| /27 | 32 | 30 | Маленькая подсеть |
+| /26 | 64 | 62 | Средняя подсеть |
+| /25 | 128 | 126 | Половина /24 |
+| /24 | 256 | 254 | Стандартная подсеть на зону доступности |
+| /23 | 512 | 510 | Две подсети /24 |
+| /22 | 1 024 | 1 022 | Пул узлов с запасом для роста |
+| /20 | 4 096 | 4 094 | Большая подсеть |
+| /16 | 65 536 | 65 534 | Типичный CIDR VPC |
+| /8 | 16 777 216 | — | Полный приватный блок класса A RFC 1918 |
 
-**Quick mental math:** every time you decrease the prefix by 1 (e.g., `/24` → `/23`), the address space doubles. Going the other direction, every +1 halves it. A `/24` has 256 addresses; a `/20` is 4 bits wider in the host part, so 2⁴ × 256 = 4,096 addresses.
+**Быстрый расчёт в уме:** при уменьшении префикса на 1 (например, `/24` → `/23`) адресное пространство удваивается. При увеличении на 1 — уменьшается вдвое. В `/24` 256 адресов; в `/20` часть узла на 4 бита длиннее, поэтому 2⁴ × 256 = 4 096 адресов.
 
-**AWS and GCP reserved addresses:** cloud providers reserve more than just the network and broadcast addresses. AWS reserves 5 addresses per subnet (network address, VPC router, DNS resolver, future use, broadcast). A `/28` gives you only 11 usable IPs instead of 14. GCP reserves 4 per subnet. Always check your cloud provider's documentation before sizing tightly.
+**Зарезервированные адреса AWS и GCP:** облачные провайдеры резервируют не только адрес сети и broadcast. AWS резервирует пять адресов в каждой подсети (адрес сети, маршрутизатор VPC, DNS-резолвер, будущие нужды и broadcast). Поэтому в `/28` остаётся 11 доступных IP вместо 14. GCP резервирует четыре адреса на подсеть. Перед точным расчётом проверяйте документацию провайдера.
 
-### The Subnet Mask
+### Маска подсети
 
-The subnet mask is an older representation of the prefix length: a 32-bit value with the first N bits set to 1 and the remaining bits set to 0. It communicates the same information as the CIDR prefix but in dotted-decimal form, still used in OS configuration files and legacy tools.
+Маска подсети — более старый способ записи длины префикса: 32-битное значение, где первые N бит равны 1, а остальные — 0. Она передаёт ту же информацию, что и CIDR-префикс, но в десятичной форме с точками; такой формат всё ещё встречается в конфигурациях ОС и устаревших инструментах.
 
-| CIDR prefix | Subnet mask       | Last octet binary |
+| Префикс CIDR | Маска подсети | Двоичное представление последнего октета |
 |-------------|-------------------|-------------------|
 | /24         | 255.255.255.0     | 00000000          |
 | /25         | 255.255.255.128   | 10000000          |
@@ -95,9 +95,9 @@ The subnet mask is an older representation of the prefix length: a 32-bit value 
 | /16         | 255.255.0.0       | —                 |
 | /8          | 255.0.0.0         | —                 |
 
-The non-octet-aligned masks (`/25`, `/26`, `/27`, `/28`, `/29`) are where confusion happens. A `/26` mask of `255.255.255.192` in binary is `11000000` in the last octet — the top two bits of that octet belong to the network, the bottom six to the host. This means a `/26` block always starts at an address where the last octet is a multiple of 64: `.0`, `.64`, `.128`, or `.192`.
+Путаница чаще всего возникает с масками, граница которых проходит внутри октета (`/25`, `/26`, `/27`, `/28`, `/29`). Маска `/26` — `255.255.255.192`, а последний октет в двоичном виде — `11000000`: два старших бита относятся к сети, шесть младших — к узлу. Поэтому блок `/26` всегда начинается с адреса, у которого последний октет кратен 64: `.0`, `.64`, `.128` или `.192`.
 
-**Alignment rule:** a subnet of size S must start at an address that is a multiple of S. `10.0.1.64/26` is valid. `10.0.1.70/26` is not — the network address would have host bits set, which is illegal. Use `strict=True` in Python's `ipaddress` module to catch this mistake programmatically.
+**Правило выравнивания:** подсеть размера S должна начинаться с адреса, кратного S. `10.0.1.64/26` корректен, а `10.0.1.70/26` — нет: в адресе сети установлены биты узла. Для автоматической проверки используйте `strict=True` в модуле Python `ipaddress`.
 
 ```python
 import ipaddress
@@ -113,9 +113,9 @@ net = ipaddress.ip_network("10.0.1.70/26", strict=False)
 print(net)  # 10.0.1.64/26
 ```
 
-### How Subnet Membership Is Determined
+### Как определяется принадлежность к подсети
 
-The kernel decides whether a destination IP is on the local subnet or needs a router using a bitwise AND:
+Ядро определяет, находится ли IP назначения в локальной подсети или нужен маршрутизатор, с помощью побитовой операции AND:
 
 ```
 IP:      10.0.1.55  = 00001010.00000000.00000001.00110111
@@ -123,19 +123,19 @@ Mask:  255.255.255.0 = 11111111.11111111.11111111.00000000
 AND:    10.0.1.0    = 00001010.00000000.00000001.00000000
 ```
 
-If `IP AND mask == network address`, the destination is on the local subnet → send directly via ARP.  
-If not → send to the default gateway, which routes it further.
+Если `IP AND mask == адрес сети`, узел находится в локальной подсети — пакет отправляется напрямую через ARP.
+В противном случае пакет отправляется на шлюз по умолчанию, который маршрутизирует его дальше.
 
-This is exactly why `10.0.1.5/24` and `10.0.2.5/24` cannot communicate without a router even though both are inside `10.0.0.0/16`. Each host applies its own /24 mask:
+Именно поэтому `10.0.1.5/24` и `10.0.2.5/24` не могут обмениваться данными без маршрутизатора, хотя оба входят в `10.0.0.0/16`. Каждый узел использует собственную маску `/24`:
 
 ```
 10.0.1.5  AND 255.255.255.0 = 10.0.1.0   ← host A's network
 10.0.2.5  AND 255.255.255.0 = 10.0.2.0   ← host B's network
 ```
 
-Different results → host A considers B to be off-subnet and sends traffic to its gateway. The `/16` supernet is irrelevant to this decision — the kernel only uses the mask configured on the local interface.
+Результаты различаются, поэтому узел A считает B внешним для своей подсети и отправляет трафик на шлюз. Суперсеть `/16` здесь не влияет на решение: ядро использует маску, настроенную на локальном интерфейсе.
 
-**Common interview trap:** "They're both in 10.0.0.0/16, why can't they talk directly?" The answer is that the *configured prefix on each interface* determines local vs. remote, not some containing supernet. The route table handles inter-subnet communication.
+**Частый вопрос на собеседовании:** «Оба адреса находятся в `10.0.0.0/16`, почему они не общаются напрямую?» Потому что локальную или удалённую сеть определяет *префикс, настроенный на каждом интерфейсе*, а не охватывающая суперсеть. Межсетевое взаимодействие обеспечивает таблица маршрутизации.
 
 ```bash
 # Check your interface's address and prefix length
@@ -155,13 +155,13 @@ ipcalc 10.0.1.200/24
 # Compare the "Network:" lines — if they match, same subnet
 ```
 
-### Private Address Ranges (RFC 1918)
+### Диапазоны частных адресов (RFC 1918)
 
-These three blocks are reserved for private use and are not routed on the public internet. Use them freely inside your infrastructure, but plan allocations carefully to avoid conflicts between your VPCs, on-premises networks, Docker, and Kubernetes.
+Эти три блока зарезервированы для частного использования и не маршрутизируются в публичном интернете. Используйте их во внутренней инфраструктуре, но тщательно планируйте адресацию, чтобы избежать пересечений между VPC, локальными сетями, Docker и Kubernetes.
 
-| Name     | Range                         | CIDR           | Size    | Common use                      |
+| Название | Диапазон | CIDR | Размер | Типичное применение |
 |----------|-------------------------------|----------------|---------|---------------------------------|
-| Class A  | 10.0.0.0 – 10.255.255.255     | 10.0.0.0/8     | ~16M    | Enterprise VPCs, large clusters |
+| Класс A | 10.0.0.0 – 10.255.255.255 | 10.0.0.0/8 | ~16 млн | Корпоративные VPC и большие кластеры |
 | Class B  | 172.16.0.0 – 172.31.255.255   | 172.16.0.0/12  | ~1M     | Docker default bridge networks  |
 | Class C  | 192.168.0.0 – 192.168.255.255 | 192.168.0.0/16 | ~65K    | Home networks, small offices    |
 
