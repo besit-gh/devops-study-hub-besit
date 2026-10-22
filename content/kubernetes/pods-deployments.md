@@ -28,7 +28,7 @@ Deployment
               └── Container(s)
 ```
 
-The Deployment owns multiple ReplicaSets but only one is "active" (desired replicas > 0) at any time. During a rolling update, two ReplicaSets are briefly active simultaneously — the old one scales down while the new one scales up. This is why rollback is nearly instant: Kubernetes simply scales the old ReplicaSet back up rather than rebuilding anything.
+Deployment управляет несколькими ReplicaSet, но обычно активен только один из них (число желаемых реплик больше нуля). Во время последовательного обновления на короткое время активны два ReplicaSet: старый уменьшается, а новый увеличивается. Поэтому откат почти мгновенный: Kubernetes снова увеличивает число реплик старого ReplicaSet, не пересобирая приложение.
 
 ```bash
 # See the ReplicaSets owned by a Deployment
@@ -40,15 +40,15 @@ kubectl get replicasets -l app=myapp -n production
 # myapp-5c6d7e8f9    0         0         0       5d     <- retained for rollback
 ```
 
-**The `.spec.revisionHistoryLimit` field** (default: 10) controls how many old ReplicaSets are kept. Set it to 0 and you lose rollback capability entirely. A value of 3–5 is typical for production.
+**Поле `.spec.revisionHistoryLimit`** (по умолчанию — 10) задаёт число сохраняемых старых ReplicaSet. Значение 0 полностью лишает возможности отката. Для production обычно выбирают 3–5.
 
-**ReplicaSets are not meant to be managed directly.** If you manually delete a ReplicaSet owned by a Deployment, the Deployment controller will recreate it. Always interact with the Deployment, not its children.
+**ReplicaSet не предназначены для ручного управления.** Если вручную удалить ReplicaSet, принадлежащий Deployment, контроллер Deployment создаст его заново. Работайте с объектом Deployment, а не с его дочерними объектами.
 
 ---
 
-### Pod Spec
+### Спецификация Pod
 
-A Pod spec is embedded inside every Deployment's `.spec.template`. Understanding it deeply means understanding what Kubernetes actually schedules and runs.
+Спецификация Pod находится внутри `.spec.template` каждого Deployment. Понимая её, вы понимаете, что именно Kubernetes планирует и запускает.
 
 ```yaml
 apiVersion: v1
