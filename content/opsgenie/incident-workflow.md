@@ -13,22 +13,22 @@ Opsgenie — не просто маршрутизатор оповещений, 
 
 Основной принцип Opsgenie — автоматически фиксировать каждое значимое действие в хронологии инцидента, а каждое решение человека представлять как явное изменение состояния с записью в журнале. Поэтому оповещения и инциденты являются разными объектами, уровни серьёзности управляют автоматическими действиями, а postmortem строится на основе журнала, а не восстанавливается по памяти. The platform is opinionated: it wants you to declare incidents early, keep the timeline annotated, and close the loop with action items tied to real tickets.
 
-In the broader DevOps toolchain, Opsgenie sits at the intersection of observability (receives alerts from Prometheus, Datadog, CloudWatch), communication (integrates with Slack and Teams), project tracking (syncs with Jira Service Management), and customer communication (connects to Atlassian Statuspage). It is the coordination layer that links a firing metric to a resolved customer impact to a completed remediation task. Engineers working in SRE, platform engineering, or on-call rotation roles interact with Opsgenie under the worst conditions — high stress, incomplete information, time pressure — so knowing the workflow cold is a genuine operational advantage.
+В цепочке DevOps Opsgenie связывает наблюдаемость (получает оповещения от Prometheus, Datadog и CloudWatch), коммуникации (интеграции со Slack и Teams), управление задачами (синхронизация с Jira Service Management) и информирование клиентов (интеграция с Atlassian Statuspage). Это координационный уровень, связывающий сработавшую метрику, влияние на клиентов и завершённое устранение проблемы. Для инженеров SRE, платформенных команд и дежурных специалистов уверенное владение процессом особенно важно в условиях стресса, неполной информации и дефицита времени.
 
 ---
 
 ## Основные понятия
 
-### Alert vs. Incident: Two Distinct Objects
+### Оповещение и инцидент: два разных объекта
 
-Alerts and incidents are not the same thing in Opsgenie, and conflating them is a common source of confusion during real outages.
+В Opsgenie оповещение и инцидент — не одно и то же. Путаница между ними часто мешает работе во время реальных сбоев.
 
 | Object | What it is | Lifecycle | Scope |
 |--------|-----------|-----------|-------|
 | **Alert** | A single notification from a monitoring source | Open → Acknowledged → Resolved | One signal, one team, one on-call |
 | **Incident** | A declared coordinated response to broader impact | Open → Investigating → Identified → Monitoring → Resolved → Closed | Multiple responders, linked alerts, public status |
 
-An alert can exist without ever becoming an incident — a transient CPU spike that auto-resolves is an alert. An incident should be declared when the impact is customer-visible, cross-team, or requires coordination beyond the on-call engineer's immediate capability.
+Оповещение может так и не перерасти в инцидент: например, кратковременный скачок загрузки CPU, который исчезает сам, остаётся оповещением. Инцидент следует объявлять, когда проблема заметна клиентам, затрагивает несколько команд или требует координации, выходящей за рамки возможностей дежурного инженера.
 
 The lifecycle looks like this:
 
