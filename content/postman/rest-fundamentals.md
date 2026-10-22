@@ -11,17 +11,17 @@ exercises: 4
 
 REST (Representational State Transfer) — наиболее распространённый стиль API для веб-сервисов, и его понимание необходимо для работы в DevOps. Современные инфраструктурные инструменты — Kubernetes, Vault, Terraform Cloud, GitHub Actions, PagerDuty и Datadog — предоставляют REST API. Автоматизация развёртывания, интеграции IaC, создание runbook и диагностика production-инцидентов требуют умения читать, формировать и анализировать HTTP-запросы и ответы. Если вы не понимаете ответ API и разницу между `403` и `401`, это будет постоянно мешать работе.
 
-REST is not a protocol — it is a set of architectural constraints defined by Roy Fielding in 2000. The key constraints are: statelessness (each request contains all information needed to process it, no server-side session), a uniform interface (resources identified by URLs, manipulated through representations), and client-server separation. In practice, "RESTful" APIs communicate over HTTP, use JSON bodies, identify resources with nouns in paths, and use HTTP methods to express intent. These constraints make APIs predictable and cacheable, which matters when you are scripting against them.
+REST — не протокол, а набор архитектурных ограничений, сформулированных Роем Филдингом в 2000 году. Основные принципы: отсутствие состояния на сервере (каждый запрос содержит всё необходимое для обработки и не зависит от серверной сессии), единый интерфейс (ресурсы идентифицируются URL и изменяются через представления) и разделение клиента и сервера. На практике REST API обмениваются данными по HTTP, используют JSON, обозначают ресурсы существительными в путях, а назначение операции выражают HTTP-методами. Эти ограничения делают API предсказуемыми и удобными для кеширования.
 
-In the DevOps toolchain, REST API knowledge connects directly to several adjacent skills: `curl` for ad-hoc debugging and shell scripting, Postman for manual exploration and writing automated test suites, CI/CD pipelines that call deployment APIs, and observability tooling that queries time-series databases over HTTP. This lesson covers the protocol layer — request anatomy, methods, status codes, headers — and the two primary tools for interacting with it: `curl` and Postman.
+В DevOps знание REST API напрямую связано с другими навыками: `curl` для диагностики и shell-скриптов, Postman для изучения API и создания автоматизированных тестов, конвейеры CI/CD для вызова API развёртывания и инструменты наблюдаемости, обращающиеся к базам временных рядов по HTTP. В уроке рассматриваются структура запроса, методы, коды состояния, заголовки и два основных инструмента взаимодействия — `curl` и Postman.
 
 ---
 
 ## Основные понятия
 
-### HTTP Request Anatomy
+### Структура HTTP-запроса
 
-Every HTTP interaction is a request/response pair. Understanding the structure of both sides lets you construct correct requests and diagnose problems precisely.
+Каждое взаимодействие по HTTP состоит из запроса и ответа. Понимание структуры обеих частей помогает правильно формировать запросы и точно диагностировать проблемы.
 
 ```
 POST /api/users HTTP/1.1
