@@ -45,13 +45,13 @@ Unit-файлы загружаются из нескольких каталог�
 **Drop-in-каталоги** — более безопасный способ переопределения. Для unit `nginx.service` systemd автоматически объединяет все `.conf`-файлы из `/etc/systemd/system/nginx.service.d/` с основной конфигурацией. Так можно изменить отдельный раздел, не копируя и не поддерживая весь исходный файл.
 
 ```bash
-# List all loaded unit files and their source locations
+# Показать все загруженные unit-файлы и расположение их исходников
 systemctl list-unit-files --type=service
 
-# Show exactly which file systemd is using for a unit
+# Показать, какой именно файл systemd использует для unit
 systemctl cat nginx.service
 
-# Show the final merged configuration after drop-ins are applied
+# Показать итоговую конфигурацию после применения drop-in
 systemctl show nginx.service
 ```
 
@@ -168,11 +168,11 @@ WantedBy=multi-user.target   # стандарт для большинства с
 | Политика | Перезапуск при успешном завершении (0)? | Перезапуск при ошибке? | Перезапуск при SIGTERM? |
 |--------|----------------------------|---------------------|---------------------|
 | `no` | No | No | No |
-| `on-success` | Yes | No | No |
-| `on-failure` | No | Yes | No |
-| `on-abnormal` | No | Yes (signals, watchdog, timeout) | Yes |
-| `on-abort` | No | Uncaught signals only | No |
-| `always` | Yes | Yes | Yes |
+| `on-success` | Да | Нет | Нет |
+| `on-failure` | Нет | Да | Нет |
+| `on-abnormal` | Нет | Да (сигналы, watchdog, тайм-аут) | Да |
+| `on-abort` | Нет | Только необработанные сигналы | Нет |
+| `always` | Да | Да | Да |
 
 Для долгоживущих серверных приложений стандартный выбор — `Restart=on-failure`: служба восстановится после аварии или OOM kill, но не будет перезапускаться бесконечно после намеренного `systemctl stop`.
 
@@ -201,11 +201,11 @@ Targets — точки синхронизации, именованные эта
 
 | Уровень запуска SysV | Target systemd | Значение |
 |--------------|---------------|---------|
-| 0 | `poweroff.target` | Halt |
-| 1 | `rescue.target` | Single-user / recovery mode |
-| 3 | `multi-user.target` | Multi-user, no GUI (typical server) |
-| 5 | `graphical.target` | Multi-user + display manager |
-| 6 | `reboot.target` | Reboot |
+| 0 | `poweroff.target` | Выключение |
+| 1 | `rescue.target` | Однопользовательский режим / восстановление |
+| 3 | `multi-user.target` | Многопользовательский режим без GUI (типичный сервер) |
+| 5 | `graphical.target` | Многопользовательский режим с графической оболочкой |
+| 6 | `reboot.target` | Перезагрузка |
 
 ```bash
 # Проверить target по умолчанию
@@ -278,10 +278,10 @@ journalctl -u db-backup.service -n 50
 
 | Тип таймера | Директива | Пример | Значение |
 |-----------|-----------|---------|---------|
-| Calendar (wall clock) | `OnCalendar` | `Mon *-*-* 09:00:00` | Every Monday at 09:00 |
-| Boot-relative | `OnBootSec` | `OnBootSec=5min` | 5 minutes after boot |
-| Activation-relative | `OnActiveSec` | `OnActiveSec=1h` | 1 hour after timer starts |
-| Unit-active-relative | `OnUnitActiveSec` | `OnUnitActiveSec=30min` | 30 min after last run completes |
+| Календарное время | `OnCalendar` | `Mon *-*-* 09:00:00` | Каждый понедельник в 09:00 |
+| Относительно загрузки | `OnBootSec` | `OnBootSec=5min` | Через 5 минут после загрузки |
+| Относительно активации | `OnActiveSec` | `OnActiveSec=1h` | Через час после запуска таймера |
+| Относительно активности unit | `OnUnitActiveSec` | `OnUnitActiveSec=30min` | Через 30 минут после завершения последнего запуска |
 
 ### journalctl — запросы к журналу
 
@@ -323,7 +323,7 @@ journalctl --vacuum-size=500M               # trim journal to 500MB
 journalctl --vacuum-time=30d                # remove entries older than 30 days
 ```
 
-**Persistence gotcha:** On a fresh Debian/Ubuntu install, the journal may be volatile (stored in `/run/`) and lost on reboot. To make it persistent:
+**Особенность хранения:** в новой установке Debian/Ubuntu журнал может быть временным (храниться в `/run/`) и теряться после перезагрузки. Чтобы сделать его постоянным:
 
 ```bash
 mkdir -p /var/log/journal
@@ -333,11 +333,11 @@ systemctl restart systemd-journald
 
 Or set `Storage=persistent` in `/etc/systemd/journald.conf`.
 
-**Rate limiting:** journald rate-limits log lines per service by default (`RateLimitIntervalSec=30s`, `RateLimitBurst=10000`). A chatty service that exceeds this will have log lines dropped, and you'll see `Suppressed N messages from myapp.service` in the journal. Raise the limits in `/etc/systemd/journald.conf` for noisy but important services, or fix the application's log verbosity.
+**Ограничение частоты:** по умолчанию journald ограничивает число сообщений от каждой службы (`RateLimitIntervalSec=30s`, `RateLimitBurst=10000`). Если служба превышает лимит, часть записей отбрасывается, а в журнале появляется `Suppressed N messages from myapp.service`. Для важных, но многословных служб увеличьте лимиты в `/etc/systemd/journald.conf` или уменьшите подробность логирования приложения.
 
-**Forwarding to syslog/external systems:** For centralized log shipping (e.g., to Elasticsearch, Loki, Splunk), set `ForwardToSyslog=yes` in `journald.conf` or use `journalctl -o json` piped to your log shipper. Many modern agents (Promtail, Filebeat, Fluentd) can read the journal natively via the journal API without touching files at all.
+**Передача в syslog или внешние системы:** для централизованного сбора журналов (например, в Elasticsearch, Loki или Splunk) задайте `ForwardToSyslog=yes` в `journald.conf` либо передавайте вывод `journalctl -o json` в систему сбора. Многие современные агенты (Promtail, Filebeat, Fluentd) умеют читать журнал напрямую через API, не обращаясь к файлам.
 
-### Overriding Package Unit Files
+### Переопределение unit-файлов пакетов
 
 The correct override workflow is drop-in files, not editing `/lib/systemd/system/` directly (package upgrades will overwrite your changes with no warning).
 
@@ -361,7 +361,7 @@ LimitNOFILE=65536
 LimitCORE=infinity
 ```
 
-**Clearing a directive:** To unset a directive inherited from the base unit, set it to empty first, then set your value. This is mandatory for list-type directives like `ExecStart` — appending a second `ExecStart` without clearing adds a second execution, not a replacement:
+**Сброс директивы:** чтобы отменить директиву из базового unit, сначала задайте ей пустое значение, а затем укажите новое. Это обязательно для списочных директив вроде `ExecStart`: если добавить второй `ExecStart` без сброса, получится второй запуск, а не замена исходного:
 
 ```ini
 [Service]
@@ -377,9 +377,9 @@ systemctl daemon-reload    # re-read all unit files from disk
 systemctl restart nginx    # apply changes to the running service
 ```
 
-**`daemon-reload` is mandatory.** Editing a unit file on disk has zero effect until you reload. Forgetting this step is a very common source of confusion — you change the file, restart the service, and the old behavior persists because systemd is still running from its cached version.
+**`daemon-reload` обязателен.** Изменение unit-файла на диске не действует до перезагрузки конфигурации systemd. Если забыть этот шаг, можно изменить файл и перезапустить службу, но старое поведение сохранится, поскольку systemd использует кэшированную версию.
 
-### Diagnosing Boot and Dependency Problems
+### Диагностика загрузки и проблем зависимостей
 
 When a service fails to start, the debugging sequence follows a predictable path:
 
@@ -406,33 +406,33 @@ systemd-analyze critical-chain    # the critical path that determined total boot
 systemd-analyze verify myapp.service  # static lint check of the unit file
 ```
 
-**`Result` field meanings:** When a service fails, `systemctl show` exposes a `Result` field that tells you *why* it failed:
+**Значения поля `Result`:** при сбое службы `systemctl show` показывает причину в поле `Result`:
 
-| Result | Meaning |
+| Result | Значение |
 |--------|---------|
-| `success` | Exited cleanly |
-| `exit-code` | Non-zero exit status |
-| `signal` | Killed by a signal (check `ExecMainCode`) |
-| `core-dump` | Process dumped core |
-| `watchdog` | Watchdog timeout expired |
-| `start-limit-hit` | Restart loop limit was reached |
-| `oom-kill` | Killed by the OOM killer |
+| `success` | Завершилась успешно |
+| `exit-code` | Ненулевой код завершения |
+| `signal` | Завершена сигналом (проверьте `ExecMainCode`) |
+| `core-dump` | Процесс создал core dump |
+| `watchdog` | Истёк тайм-аут watchdog |
+| `start-limit-hit` | Достигнут лимит перезапусков |
+| `oom-kill` | Завершён механизмом OOM killer |
 
-**`oom-kill` in production:** If you see `Result=oom-kill`, the kernel ran out of memory and killed your process — this is not a systemd restart. Check `journalctl -k | grep oom` for the kernel OOM killer's own log lines, which include memory stats at the time of the kill. The fix is at the application level (memory leak, oversized heap) or the host level (more RAM, cgroups memory limits).
+**`oom-kill` в production:** если видите `Result=oom-kill`, ядру не хватило памяти и оно завершило процесс — это не перезапуск systemd. Проверьте `journalctl -k | grep oom`: сообщения OOM killer содержат статистику памяти на момент завершения. Решение может быть на уровне приложения (утечка памяти, слишком большая heap) или хоста (добавить RAM, настроить лимиты памяти cgroups).
 
 ---
 
 ## Примеры
 
-### Example 1: Deploying a Node.js API as a systemd Service
+### Пример 1: развёртывание API на Node.js как службы systemd
 
-**Scenario:** You have a Node.js application at `/opt/api/server.js` that should run as a dedicated user, restart on failure, and start at boot.
+**Сценарий:** приложение Node.js находится в `/opt/api/server.js`; оно должно работать от отдельного пользователя, перезапускаться при сбое и запускаться при загрузке системы.
 
 ```bash
-# Create a dedicated system user (no home directory, no login shell)
+# Создать отдельного системного пользователя без домашнего каталога и login shell
 useradd --system --no-create-home --shell /usr/sbin/nologin apiuser
 
-# Create the environment file (keep secrets out of the unit file)
+# Создать файл окружения (не хранить секреты в unit-файле)
 mkdir -p /etc/api
 cat > /etc/api/env <<'EOF'
 NODE_ENV=production
@@ -450,8 +450,8 @@ Description=My Node.js API Server
 Documentation=https://github.com/myorg/api
 After=network-online.target postgresql.service
 Wants=network-online.target
-# Soft dep on postgres — if it's not running, we'll fail at connection time
-# but systemd won't block our start waiting for it
+# Мягкая зависимость от postgres: если служба не запущена, ошибка возникнет при подключении
+# systemd не будет блокировать запуск в ожидании этой службы
 Requires=postgresql.service
 
 [Service]
@@ -460,28 +460,28 @@ User=apiuser
 Group=apiuser
 WorkingDirectory=/opt/api
 
-# Load secrets from a root-owned file — process inherits them as env vars
+# Загрузить секреты из файла, принадлежащего root; процесс получит их как переменные окружения
 EnvironmentFile=/etc/api/env
 
 ExecStartPre=/usr/bin/node --check /opt/api/server.js   # syntax check before starting
 ExecStart=/usr/bin/node /opt/api/server.js
 
-# Restart on crash, OOM kill, or signal — but NOT on clean exit (systemctl stop)
+# Перезапускать при сбое, OOM kill или сигнале, но НЕ после штатной остановки (systemctl stop)
 Restart=on-failure
 RestartSec=10s
 
-# Restart loop: if it crashes 5 times in 2 minutes, give up
+# Ограничить перезапуски: если за 2 минуты произойдёт 5 сбоев, прекратить попытки
 StartLimitIntervalSec=120s
 StartLimitBurst=5
 
-# Security: drop capabilities and isolate filesystem
+# Безопасность: убрать capabilities и изолировать файловую систему
 NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=strict
 ProtectHome=yes
 ReadWritePaths=/var/log/api /var/lib/api
 
-# Logging: stdout/stderr go directly to journald — no log file needed
+# Журналирование: stdout/stderr направляются прямо в journald, отдельный файл не нужен
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=api-server
@@ -491,27 +491,27 @@ WantedBy=multi-user.target
 ```
 
 ```bash
-# Install and start the service
+# Установить и запустить службу
 systemctl daemon-reload
 systemctl enable --now api.service
 
-# Verify it came up correctly
+# Проверить, что служба успешно запустилась
 systemctl status api.service
 
-# Check startup logs
+# Проверить журналы запуска
 journalctl -u api.service -b -n 50
 
-# Test that it survives a simulated crash
+# Проверить восстановление после имитации сбоя
 kill -9 $(systemctl show api.service --property=MainPID --value)
-# Wait 10 seconds (RestartSec), then check it restarted
+# Подождать 10 секунд (RestartSec) и проверить перезапуск
 sleep 12 && systemctl status api.service
 ```
 
 ---
 
-### Example 2: Replacing a Cron Job with a systemd Timer
+### Пример 2: замена задания cron таймером systemd
 
-**Scenario:** A cron job runs `/usr/local/bin/cleanup-old-logs.sh` every day at 3 AM. Migrate it to a systemd timer so failures appear in `systemctl --failed` and logs are captured in journald.
+**Сценарий:** cron ежедневно запускает `/usr/local/bin/cleanup-old-logs.sh` в 03:00. Перенесите задачу на таймер systemd, чтобы сбои отображались в `systemctl --failed`, а журналы попадали в journald.
 
 ```ini
 # /etc/systemd/system/cleanup-logs.service
@@ -571,9 +571,9 @@ cat /var/run/cleanup-logs-last-run
 
 ---
 
-### Example 3: Overriding a Package-Installed Service with a Drop-In
+### Пример 3: переопределение службы пакета через drop-in
 
-**Scenario:** The package-installed `postgresql.service` uses a default memory configuration. You need to set `POSTGRES_HUGE_PAGES=try` and raise the open file limit without owning the entire unit file.
+**Сценарий:** установленная пакетом служба `postgresql.service` использует настройки памяти по умолчанию. Нужно задать `POSTGRES_HUGE_PAGES=try` и увеличить лимит открытых файлов, не копируя весь unit-файл.
 
 ```bash
 # Inspect what the package provides
@@ -615,28 +615,28 @@ systemctl status postgresql.service
 
 ---
 
-### Example 4: Diagnosing a Service That Fails to Start
+### Пример 4: диагностика службы, которая не запускается
 
-**Scenario:** After a deployment, `myapp.service` shows `failed` state. Walk through the full diagnosis.
+**Сценарий:** после развёртывания `myapp.service` находится в состоянии `failed`. Выполните полную диагностику.
 
 ```bash
-# Step 1: Quick overview — note the exit code and the last few log lines
+# Шаг 1: краткая сводка — проверить код завершения и последние строки журнала
 systemctl status myapp.service
 # Output shows: "code=exited, status=1/FAILURE"
 
-# Step 2: Full logs from this boot to see the complete error
+# Шаг 2: полный журнал текущей загрузки для просмотра ошибки
 journalctl -u myapp.service -b --no-pager
 # Output: "Error: cannot open config file /etc/myapp/config.yaml: no such file"
 
-# Step 3: Confirm the result code programmatically
+# Шаг 3: программно проверить код результата
 systemctl show myapp.service --property=Result,ExecMainStatus
 # Result=exit-code
 # ExecMainStatus=1
 
-# Step 4: Check if ExecStartPre failed (common cause — pre-check exits non-zero)
+# Шаг 4: проверить, не завершился ли с ошибкой ExecStartPre
 journalctl -u myapp.service -b -p err
 
-# Step 5: Verify the binary and config exist where the unit expects them
+# Шаг 5: проверить наличие бинарного файла и конфигурации по ожидаемым путям
 systemctl cat myapp.service | grep Exec
 # ExecStart=/opt/myapp/bin/server --config /etc/myapp/config.yaml
 
@@ -661,27 +661,27 @@ systemctl start myapp.service
 
 ## Практические задания
 
-### Exercise 1: Write and Deploy a Custom Service Unit
+### Задание 1: создать и развернуть собственный unit службы
 
 Create a minimal web server using Python's built-in HTTP server and manage it as a proper systemd service.
 
-1. Create a system user `webdemo` with no login shell.
-2. Write `/etc/systemd/system/webdemo.service` that:
+1. Создайте системного пользователя `webdemo` без login shell.
+2. Создайте `/etc/systemd/system/webdemo.service`, который:
    - Runs `python3 -m http.server 8888` from `/var/www/html` as the `webdemo` user.
    - Sets `Restart=on-failure` and `RestartSec=5s`.
    - Enables with `WantedBy=multi-user.target`.
    - Sets `NoNewPrivileges=yes` and `PrivateTmp=yes`.
-3. Enable and start the service. Verify with `systemctl status` and `curl localhost:8888`.
-4. Simulate a crash by sending `SIGKILL` to the main PID. Confirm the service restarts within 10 seconds.
-5. Check the journal for the restart event. What log lines does systemd emit between the crash and the successful restart?
+3. Включите автозапуск и запустите службу. Проверьте её командами `systemctl status` и `curl localhost:8888`.
+4. Имитируйте сбой, отправив `SIGKILL` основному PID. Убедитесь, что служба перезапускается в течение 10 секунд.
+5. Найдите в журнале событие перезапуска. Какие сообщения systemd записывает между сбоем и успешным запуском?
 
-**What to figure out:** How do you find the MainPID without hardcoding it? What does `systemctl show` expose? Why does `PrivateTmp=yes` not affect `curl` running in your shell?
+**Что нужно выяснить:** как получить MainPID без жёстко заданного значения? Какие сведения показывает `systemctl show`? Почему `PrivateTmp=yes` не влияет на `curl`, запущенный из вашей оболочки?
 
 ---
 
-### Exercise 2: Investigate and Fix a Broken Service
+### Задание 2: исследовать и исправить сломанную службу
 
-**Setup:** Run this to create a broken service:
+**Подготовка:** выполните команды, чтобы создать службу с ошибкой:
 
 ```bash
 cat > /etc/systemd/system/broken.service <<'EOF'
@@ -703,31 +703,31 @@ systemctl daemon-reload
 systemctl start broken.service || true
 ```
 
-**Tasks:**
+**Задания:**
 
-1. Use `systemctl status` and `journalctl` to determine exactly why the service failed. What is the `Result` value?
-2. After the restart loop exhausts itself, what does `systemctl status` show as the final state?
-3. Fix the service by creating `/usr/local/bin/nonexistent-binary` as a script that prints "hello" and exits 0. What additional step is required before systemd will find the fix?
-4. The service is now stuck in the restart limit. How do you clear it and start fresh without rebooting?
-5. Move `StartLimitBurst` and `StartLimitIntervalSec` to the `[Unit]` section. Run `systemd-analyze verify broken.service`. What does this tell you about your unit file?
-
----
-
-### Exercise 3: Build a systemd Timer to Replace a Cron Job
-
-**Scenario:** You have this cron job: `*/5 * * * * /usr/local/bin/health-check.sh >> /var/log/health-check.log 2>&1`
-
-1. Write `health-check.sh` — it should check if port 80 is open on localhost using `nc` or `curl` and exit non-zero if it's not.
-2. Write a `health-check.service` (Type=oneshot) and `health-check.timer` that runs every 5 minutes. Do **not** redirect output to a file — let journald capture it.
-3. Enable the timer and verify `systemctl list-timers` shows the next trigger time.
-4. Deliberately stop nginx (or any service on port 80) and manually trigger `systemctl start health-check.service`. Confirm the failure appears in `systemctl --failed` and in `journalctl -u health-check.service`.
-5. Answer: why is a systemd timer with `Persistent=true` more reliable than cron for a job on a laptop or a spot instance that may not always be running at the scheduled time?
+1. Используйте `systemctl status` и `journalctl`, чтобы точно определить причину сбоя. Какое значение имеет `Result`?
+2. Когда лимит перезапусков будет исчерпан, какое итоговое состояние покажет `systemctl status`?
+3. Исправьте службу, создав `/usr/local/bin/nonexistent-binary` как скрипт, который выводит `hello` и завершается с кодом 0. Какой дополнительный шаг нужен, чтобы systemd увидел исправление?
+4. Служба достигла лимита перезапусков. Как сбросить его и запустить службу заново без перезагрузки?
+5. Перенесите `StartLimitBurst` и `StartLimitIntervalSec` в секцию `[Unit]`. Выполните `systemd-analyze verify broken.service`. Что результат говорит о unit-файле?
 
 ---
 
-### Exercise 4: Practice Drop-In Overrides and Inspect Merged Configuration
+### Задание 3: заменить cron-задачу таймером systemd
 
-1. Find the package-installed unit file for `ssh.service` (or `sshd.service`). Display it with `systemctl cat`.
+**Сценарий:** у вас есть cron-задача: `*/5 * * * * /usr/local/bin/health-check.sh >> /var/log/health-check.log 2>&1`
+
+1. Напишите `health-check.sh`: он должен проверять, открыт ли порт 80 на localhost, используя `nc` или `curl`, и возвращать ненулевой код, если порт закрыт.
+2. Создайте `health-check.service` (`Type=oneshot`) и `health-check.timer`, запускающий задачу каждые 5 минут. **Не** перенаправляйте вывод в файл — пусть его сохраняет journald.
+3. Включите таймер и убедитесь, что `systemctl list-timers` показывает время следующего запуска.
+4. Намеренно остановите nginx (или другую службу на порту 80) и вручную запустите `systemctl start health-check.service`. Убедитесь, что ошибка видна в `systemctl --failed` и `journalctl -u health-check.service`.
+5. Объясните, почему таймер systemd с `Persistent=true` надёжнее cron для задачи на ноутбуке или spot-инстансе, который может быть выключен в запланированное время.
+
+---
+
+### Задание 4: отработать drop-in-переопределения и изучить итоговую конфигурацию
+
+1. Найдите установленный пакетом unit-файл `ssh.service` (или `sshd.service`) и выведите его командой `systemctl cat`.
 2. Use `systemctl edit sshd.service` to add a drop-in that:
    - Sets `RestartSec=10s` and `Restart=always`.
    - Adds `Environment=MY_CUSTOM_VAR=devops-practice`.
