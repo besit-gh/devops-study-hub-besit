@@ -11,24 +11,24 @@ exercises: 3
 
 Zabbix Agent — основной механизм сбора метрик на уровне хоста. Он работает как лёгкий демон на наблюдаемых системах и обменивается данными с сервером Zabbix по структурированному протоколу ключ-значение. В отличие от опроса по SNMP или проверок через SSH без агента, агент имеет прямой доступ к ядру, файловой системе, процессам и журналам хоста, поэтому особенно эффективен на Linux и Windows. При масштабировании грамотное развёртывание агентов отличает устойчивую систему мониторинга от системы, которая перегружается собственным опросом.
 
-Templates are Zabbix's configuration reuse mechanism. Instead of manually defining items, triggers, and graphs for each host, you define them once in a template and link that template to as many hosts as needed. Updates propagate automatically. Templates compose — a production web server template might link together an OS template, a network template, and an Nginx template, all managed independently. Low-Level Discovery (LLD) extends templates further by generating monitoring objects dynamically at runtime, removing the need to predict in advance how many disks, interfaces, or containers a host will have.
+Шаблоны — механизм повторного использования конфигурации в Zabbix. Вместо ручного определения элементов данных, триггеров и графиков для каждого узла их описывают один раз в шаблоне и связывают его с нужным количеством узлов. Изменения распространяются автоматически. Шаблоны можно объединять: шаблон production-веб-сервера может включать шаблоны ОС, сети и Nginx, которыми управляют независимо. Low-Level Discovery (LLD) расширяет этот подход и динамически создаёт объекты мониторинга во время работы, избавляя от необходимости заранее знать количество дисков, интерфейсов или контейнеров на узле.
 
-In the broader DevOps toolchain, these three features — agents, templates, and LLD — are what allow Zabbix to scale from 10 hosts to 10,000 without proportional administrative overhead. Infrastructure-as-code practices apply directly: templates can be exported as YAML, stored in Git, and imported via the API, enabling the same GitOps workflows used for application deployments. Understanding these components deeply is the prerequisite for treating Zabbix as a managed service rather than a manually operated tool.
+В цепочке DevOps эти три возможности — агенты, шаблоны и LLD — позволяют масштабировать Zabbix с 10 до 10 000 узлов без пропорционального роста административной нагрузки. Подход Infrastructure as Code применим напрямую: шаблоны можно экспортировать в YAML, хранить в Git и импортировать через API, используя те же GitOps-процессы, что и при развёртывании приложений. Понимание этих компонентов необходимо, чтобы управлять Zabbix как сервисом, а не вручную.
 
 ## Основные понятия
 
-### Active vs Passive Agents
+### Активные и пассивные агенты
 
-This distinction determines who initiates the TCP connection for each check, and it has significant consequences for network architecture, scalability, and what types of checks are even possible.
+Это различие определяет, кто инициирует TCP-соединение для каждой проверки, и существенно влияет на сетевую архитектуру, масштабирование и доступные типы проверок.
 
 | Mode | Who initiates | Direction | Listening port |
 |------|--------------|-----------|----------------|
 | Passive | Zabbix Server polls the agent | Server → Agent | 10050 (on agent) |
 | Active | Agent sends data to server | Agent → Server | 10051 (on server) |
 
-**Passive mode** is the simpler mental model: the server connects to the agent on port 10050 and requests a specific metric value. The agent responds and closes the connection. The server controls the schedule entirely. The downside is that the server must be able to reach every agent directly — this breaks in NAT environments, cloud VPCs with restrictive security groups, or any topology where agents are behind an egress-only firewall.
+**Пассивный режим** проще понять: сервер подключается к агенту на порту 10050 и запрашивает значение метрики. Агент отвечает и закрывает соединение. Расписание полностью контролирует сервер. Недостаток — сервер должен напрямую достигать каждый агент, что невозможно в средах с NAT, облачных VPC с ограничительными группами безопасности и топологиях, где агенты находятся за межсетевым экраном, разрешающим только исходящие соединения.
 
-**Active mode** works the other way. On startup, the agent connects to the server on port 10051 and fetches a list of all active checks assigned to it. It then runs those checks locally on schedule and pushes the results back to the server. The server never initiates a connection to the agent. This means:
+**Активный режим** работает наоборот. При запуске агент подключается к серверу на порту 10051 и получает список назначенных ему активных проверок. Затем он выполняет их локально по расписанию и отправляет результаты серверу. Сервер не инициирует соединение с агентом. Это означает, что:
 
 - Agents can sit behind NAT or strict firewalls with no inbound rules required.
 - Log file monitoring (`log[]`, `logrt[]`) and Windows event log monitoring **only work in active mode** — they require the agent to stream data as events occur, not wait to be polled.
