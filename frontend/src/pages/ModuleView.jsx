@@ -81,7 +81,7 @@ export default function ModuleView({ modules, progress, onProgressUpdate, readin
       {completedBanner && (
         <div className="mb-6 flex items-start justify-between gap-4 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-800">
           <div>
-            <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Модуль завершён!div>
+            <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Модуль завершён!</div>>
             <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">Получен бонус за модуль: +50 XP.</div>
           </div>
           <button
