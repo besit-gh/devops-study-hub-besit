@@ -78,7 +78,7 @@ s3 = session.client("s3")
 ec2 = session.client("ec2", region_name="eu-west-1")
 ```
 
-**Cross-account access via role assumption** is the standard pattern for multi-account deployments. Your script runs with credentials from account A, assumes a role in account B, and operates there:
+**Доступ между аккаунтами через принятие роли** — стандартный подход для инфраструктуры с несколькими аккаунтами. Скрипт запускается с учётными данными аккаунта A, принимает роль в аккаунте B и выполняет операции там:
 
 ```python
 import boto3
@@ -108,13 +108,13 @@ target_session = assume_role(
 ec2 = target_session.client("ec2", region_name="us-east-1")
 ```
 
-**Session token gotcha:** Temporary credentials from `assume_role`, SSO, or MFA always require `aws_session_token`. If you pass `AccessKeyId` and `SecretAccessKey` from a temporary credential without the session token, every API call will return `InvalidClientTokenId`.
+**Важно о токене сессии:** временные учётные данные из `assume_role`, SSO или MFA всегда требуют `aws_session_token`. Если передать `AccessKeyId` и `SecretAccessKey` без токена сессии, каждый вызов API вернёт `InvalidClientTokenId`.
 
 ---
 
 ### S3 Operations
 
-S3 is the most common boto3 target in DevOps scripts. The key distinction is between the **transfer methods** (`upload_file`, `download_file`) and the **API methods** (`put_object`, `get_object`).
+S3 — самая распространённая цель boto3-скриптов в DevOps. Важно различать **методы передачи файлов** (`upload_file`, `download_file`) и **методы API** (`put_object`, `get_object`).
 
 ```python
 import json
@@ -176,9 +176,9 @@ url = s3.generate_presigned_url(
 )
 ```
 
-**`list_objects_v2` vs `list_objects`:** Always use `list_objects_v2`. The original `list_objects` is a legacy API. `list_objects_v2` is more efficient, supports continuation tokens properly, and is what AWS recommends.
+**`list_objects_v2` и `list_objects`:** всегда используйте `list_objects_v2`. Исходный `list_objects` — устаревший API. `list_objects_v2` эффективнее, корректно поддерживает токены продолжения и рекомендован AWS.
 
-**`put_object` vs `upload_file`:** `put_object` is a single HTTP PUT — it will fail or produce a corrupted object for files over 5 GB, and has no retry logic for partial failures. `upload_file` uses the S3 Transfer Manager, which automatically switches to multipart upload above a configurable threshold (default 8 MB) and retries failed parts. Use `upload_file` for anything going to or from disk.
+**`put_object` и `upload_file`:** `put_object` выполняет один HTTP PUT — для файлов больше 5 ГБ он завершится ошибкой или создаст повреждённый объект, а также не умеет повторять неудачные части передачи. `upload_file` использует S3 Transfer Manager, автоматически переключается на multipart-загрузку выше заданного порога (по умолчанию 8 МБ) и повторяет передачу неудачных частей. Для файлов на диске используйте `upload_file`.
 
 ---
 
