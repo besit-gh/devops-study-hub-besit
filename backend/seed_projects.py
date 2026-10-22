@@ -103,8 +103,8 @@ PROJECTS = [
                 "language": "bash",
                 "expected_output": "nginx:1.24",
                 "hints": [
-                    "Think about which field in the space-delimited output corresponds to the image name.",
-                    "Use `awk '{print $NF}'` to print the last field from the input line.",
+                    "Определите, какое поле в выводе, разделённом пробелами, содержит имя образа.",
+                    "Используйте `awk '{print $NF}'`, чтобы вывести последнее поле строки.",
                 ],
             },
             {
@@ -112,13 +112,13 @@ PROJECTS = [
                 "title": "Разобрать JSON состояния Pod",
                 "type": "sandbox",
                 "prompt": (
-                    "Write a bash one-liner (using Python) that parses this JSON and prints the pod phase:\n\n"
+                    "Напишите однострочную Bash-команду с Python, которая разбирает этот JSON и выводит фазу Pod:\n\n"
                     '`{"status":{"phase":"Running","hostIP":"10.0.0.1"}}`'
                 ),
                 "language": "bash",
                 "expected_output": "Running",
                 "hints": [
-                    "Pipe the JSON string into a Python one-liner that reads from stdin and navigates the parsed dict.",
+                    "Передайте JSON-строку в однострочную команду Python, которая читает stdin и обращается к полям разобранного словаря.",
                     "Try `echo '{...}' | python3 -c \"import sys,json; print(json.loads(sys.stdin.read())['status']['phase'])\"`.",
                 ],
             },
@@ -127,19 +127,19 @@ PROJECTS = [
                 "title": "Написать манифест Deployment",
                 "type": "ai",
                 "prompt": (
-                    "Write a complete Kubernetes Deployment manifest for an app called `api-server` with:\n"
-                    "- 3 replicas\n"
-                    "- Rolling update strategy: `maxSurge: 1`, `maxUnavailable: 0`\n"
-                    "- CPU and memory resource requests and limits\n"
-                    "- An HTTP readiness probe on `/health` port 8080 with appropriate `initialDelaySeconds`\n"
-                    "- An HTTP liveness probe that gives the pod 30 seconds to start\n\n"
-                    "Explain your choice of readiness vs liveness probe parameters."
+                    "Напишите полный манифест Deployment Kubernetes для приложения `api-server`, который включает:\n"
+                    "- 3 реплики\n"
+                    "- Стратегию rolling update: `maxSurge: 1`, `maxUnavailable: 0`\n"
+                    "- requests и limits для CPU и памяти\n"
+                    "- HTTP readiness probe для `/health` на порту 8080 с подходящим `initialDelaySeconds`\n"
+                    "- HTTP liveness probe, предоставляющую Pod 30 секунд на запуск\n\n"
+                    "Объясните выбор параметров readiness- и liveness-проб."
                 ),
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Cover three key sections: `spec.strategy.rollingUpdate`, container `readinessProbe`, and container `livenessProbe`, each with `httpGet` on `/health` port 8080.",
-                    "For zero-downtime: set `maxUnavailable: 0` so no pod is removed before a replacement is ready; set `initialDelaySeconds` on readiness to the actual app warmup time.",
+                    "Добавьте три ключевые секции: `spec.strategy.rollingUpdate`, `readinessProbe` и `livenessProbe` контейнера; для обеих проб используйте `httpGet` на `/health`, порт 8080.",
+                    "Для развёртывания без простоя задайте `maxUnavailable: 0`, чтобы Pod не удалялся до готовности замены. Значение `initialDelaySeconds` для readiness должно соответствовать реальному времени прогрева приложения.",
                 ],
             },
             {
@@ -147,7 +147,7 @@ PROJECTS = [
                 "title": "Сравнить readiness- и liveness-пробы",
                 "type": "ai",
                 "prompt": (
-                    "Explain the difference between Kubernetes readiness and liveness probes.\n\n"
+                    "Объясните разницу между readiness- и liveness-пробами Kubernetes.\n\n"
                     "Specifically: describe a realistic scenario where a pod fails a readiness check but passes "
                     "a liveness check — and why that distinction matters for zero-downtime deployments.\n\n"
                     "Then write probe definitions for a service that has a 30-second startup warmup "
@@ -156,8 +156,8 @@ PROJECTS = [
                 "language": None,
                 "expected_output": None,
                 "hints": [
-                    "Readiness controls traffic routing (pod removed from Service endpoints); liveness controls restarts — they have different consequences when they fail.",
-                    "Key scenario: a pod loading a large cache fails readiness (no traffic) but passes liveness (no restart) — traffic is withheld without killing the pod.",
+                    "Readiness управляет маршрутизацией трафика (Pod удаляется из endpoints Service), а liveness управляет перезапусками. Ошибка каждой пробы имеет разные последствия.",
+                    "Пример: Pod загружает большой кэш, поэтому не проходит readiness (трафик не поступает), но проходит liveness (перезапуск не нужен). Трафик временно не направляется в Pod, но сам Pod продолжает работать.",
                 ],
             },
         ],
