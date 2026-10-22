@@ -387,7 +387,7 @@ export default function ProjectDetail({ onXpEarned }) {
 
       {allDone && (
         <div className="mt-6 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-center">
-          <div className="text-emerald-700 dark:text-emerald-300 font-semibold">Проект завершён!</div>>
+          <div className="text-emerald-700 dark:text-emerald-300 font-semibold">Проект завершён!</div>
           <div className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">Получен бонус: +75 XP</div>
         </div>
       )}
