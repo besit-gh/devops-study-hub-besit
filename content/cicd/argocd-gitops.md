@@ -157,7 +157,7 @@ argocd app get myapp --refresh
 
 ### Статус синхронизации и состояние приложения
 
-ArgoCD tracks two orthogonal states for every Application. They are independent and must both be understood to diagnose a deployment problem correctly.
+ArgoCD отслеживает для каждого Application два независимых состояния. Для правильной диагностики проблемы развёртывания нужно понимать оба.
 
 | Status Type | Values | Meaning |
 |---|---|---|
@@ -170,11 +170,11 @@ ArgoCD tracks two orthogonal states for every Application. They are independent 
 | | `Missing` | Resource defined in Git but absent from cluster |
 | | `Suspended` | Resource is intentionally paused (e.g., suspended CronJob) |
 
-An Application can be `Synced` but `Degraded` — the cluster matches Git exactly, but what Git describes is broken. This means the problem is in the manifests themselves, not a sync issue. Conversely, `OutOfSync` + `Healthy` means someone manually added or modified a resource that works fine but isn't tracked in Git — a classic drift scenario that `selfHeal: true` would revert.
+Application может иметь состояние `Synced`, но `Degraded`: кластер точно соответствует Git, однако описанное в Git состояние неисправно. Значит, проблема в самих манифестах, а не в синхронизации. И наоборот, `OutOfSync` + `Healthy` означает, что кто-то вручную добавил или изменил работающий ресурс, не отслеживаемый Git. Это типичный дрейф конфигурации, который `selfHeal: true` отменит.
 
-**Health checks are resource-type aware.** ArgoCD ships with built-in health checks for Deployments, StatefulSets, DaemonSets, Jobs, PVCs, and more. A Deployment is `Healthy` only when its desired replica count matches available replicas. You can write custom health checks in Lua for CRDs that ArgoCD doesn't know about natively.
+**Проверки состояния учитывают тип ресурса.** В ArgoCD есть встроенные проверки для Deployment, StatefulSet, DaemonSet, Job, PVC и других ресурсов. Deployment считается `Healthy`, только когда число доступных реплик соответствует желаемому. Для CRD, которые ArgoCD не распознаёт из коробки, можно написать собственные проверки на Lua.
 
-**`argocd app wait` in CI pipelines:**
+**`argocd app wait` в CI-конвейерах:**
 
 ```bash
 argocd app sync myapp
@@ -186,7 +186,7 @@ argocd app wait myapp \
 # Exit code 0 = healthy + synced; non-zero = failure — safe to use as a CI gate
 ```
 
-This pattern is the correct way to integrate ArgoCD into a CI pipeline. Fire the sync, then block on `argocd app wait` — your pipeline knows the deploy actually succeeded, not just that the API accepted the sync request.
+Это правильный способ интегрировать ArgoCD в CI-конвейер. Запустите синхронизацию, затем дождитесь результата через `argocd app wait`: конвейер проверит, что развёртывание действительно завершилось успешно, а не просто получило подтверждение API.
 
 ---
 
