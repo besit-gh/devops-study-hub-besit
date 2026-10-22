@@ -189,10 +189,12 @@ def main():
         print(f"[Markdown] {path.relative_to(ROOT)}")
     stats = translate_database(client) if not args.markdown_only and DB_PATH.exists() else {}
     print(f"Обработано Markdown-файлов: {translated_count}/{len(files)}")
-    if stats:
+    if args.markdown_only:
+        print("Режим --markdown-only: база данных пропущена.")
+    elif stats:
         print("Обработаны записи БД: " + ", ".join(f"{k}={v}" for k, v in stats.items()))
     else:
-        print(f"База данных не найдена ({DB_PATH}); переведены Markdown-файлы. После первого запуска backend повторите команду, чтобы перевести записи базы данных.")
+        print(f"База данных не найдена ({DB_PATH}); переведены Markdown-файлы. После первого запуска backend выполните --database-only --apply.")
     print("Проверьте изменения и выполните тесты перед коммитом.")
 
 if __name__ == "__main__":
