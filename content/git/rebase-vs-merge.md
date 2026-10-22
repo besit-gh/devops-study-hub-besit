@@ -252,15 +252,15 @@ git log --follow -p -- path/to/file    # full patch history for a specific file,
 | Репозиторий Infrastructure as Code с обязательным аудитом | Merge `--no-ff` | Полная история того, кто, что и когда изменил |
 | Вклад в OSS с политикой rebase upstream | Rebase на upstream/main | Чистая последовательность патчей для проверки |
 
-**Consistency matters more than the specific choice.** A team that always squashes is in a better position than a team that sometimes squashes, sometimes merges, and sometimes rebases — because inconsistency makes automation (changelogs, release notes, bisect) unreliable.
+**Последовательность важнее конкретного выбора.** Команда, которая всегда использует squash, работает предсказуемее команды, которая то объединяет коммиты, то выполняет merge, то rebase: непоследовательность делает автоматизацию (журналы изменений, заметки к релизам, bisect) ненадёжной.
 
 ---
 
 ## Примеры
 
-### Example 1: Update a Feature Branch with Latest Main
+### Пример 1. Обновление функциональной ветки последними изменениями из main
 
-**Scenario:** you started `feature/add-auth` three days ago. `main` has received four commits since then. You want your branch to include those changes before opening a PR.
+**Сценарий:** три дня назад вы создали ветку `feature/add-auth`. С тех пор в `main` появились четыре коммита. Перед созданием PR нужно включить эти изменения в свою ветку.
 
 ```bash
 # 1. Confirm current state
@@ -295,7 +295,7 @@ git log --oneline --graph
 git push --force-with-lease origin feature/add-auth
 ```
 
-### Example 2: Clean Up Commits Before a PR with Interactive Rebase
+### Пример 2. Упорядочивание коммитов перед PR с помощью интерактивного rebase
 
 **Scenario:** you have been working on a feature for two days and your commit log is full of WIP and fix commits. You want to present two clean, logical commits to reviewers.
 
