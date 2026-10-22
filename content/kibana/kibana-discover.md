@@ -13,13 +13,13 @@ Kibana Discover — основной интерфейс для разового 
 
 Discover построен на двух принципах. Во-первых, он ориентирован на запросы: каждое действие — фильтрация по значению поля, масштабирование гистограммы или выбор популярного значения на боковой панели — превращается в явный запрос или видимый фильтр, который можно проверить, скопировать и передать коллегам. Непрозрачного скрытого состояния нет. Во-вторых, интерфейс не изменяет данные: фильтры ограничивают отображение результатов, поэтому при исследовании нельзя случайно изменить документы. Это делает Discover безопасным инструментом во время инцидента.
 
-In the broader ELK/Elastic Stack toolchain, Discover sits between data ingestion (Beats, Logstash, Elastic Agent) and visualization (Dashboards, Lens). You use Discover to validate that logs are being ingested correctly, to explore a new data source before you know what fields exist, and to investigate specific incidents by drilling down from a dashboard alert into the raw events. Saved searches from Discover can be embedded directly in dashboards, so the work you do in Discover is reusable and composable with the rest of the stack.
+В стеке ELK/Elastic Stack Discover находится между сбором данных (Beats, Logstash, Elastic Agent) и визуализацией (Dashboards, Lens). С его помощью проверяют корректность поступления журналов, изучают новый источник данных до того, как известен состав полей, и расследуют инциденты, переходя от оповещения на дашборде к исходным событиям. Сохранённые поисковые запросы Discover можно встраивать в дашборды и повторно использовать в других частях стека.
 
 ## Основные понятия
 
-### The Discover Interface
+### Интерфейс Discover
 
-Understanding what each zone of the UI does prevents wasted clicks during an incident.
+Понимание назначения каждой области интерфейса помогает не тратить время на лишние действия во время инцидента.
 
 | Zone | Location | Purpose |
 |------|----------|---------|
@@ -31,9 +31,9 @@ Understanding what each zone of the UI does prevents wasted clicks during an inc
 | Document table | Centre | Matching events, expandable rows, sortable columns |
 | Field statistics tab | Above the table | Per-field breakdown: cardinality, top values, doc coverage |
 
-**Non-obvious behaviour:** the histogram and the document table are always in sync — zooming the histogram by click-dragging updates the time picker and re-runs the query. Conversely, changing the time picker re-renders the histogram. They represent the same query result, not two separate queries.
+**Неочевидное поведение:** гистограмма и таблица документов всегда синхронизированы. Выделение участка гистограммы мышью меняет временной диапазон и повторно выполняет запрос. И наоборот, изменение периода обновляет гистограмму. Это два представления одного результата, а не два отдельных запроса.
 
-**Column order matters:** when you add columns from the field list, they appear in the order you added them. During an incident, add `@timestamp` first, then the most discriminating field (e.g., `service.name`), then `level`, then `message`. This gives you the most readable table without horizontal scrolling.
+**Порядок столбцов важен:** новые столбцы появляются в том порядке, в котором вы их добавляли. Во время инцидента сначала добавьте `@timestamp`, затем наиболее информативное поле (например, `service.name`), потом `level` и `message`. Так таблица будет удобнее для чтения без горизонтальной прокрутки.
 
 ---
 
