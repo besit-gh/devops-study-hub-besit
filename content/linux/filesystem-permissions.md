@@ -81,8 +81,8 @@ chmod 644 config.yaml
 chmod 770 shared-dir/
 
 # Только владелец может читать и записывать; остальные не имеют доступа
-chmod 600 ~/.ssh/id_ed25519     # private key MUST be 600
-chmod 644 ~/.ssh/id_ed25519.pub # public key: world-readable is fine
+chmod 600 ~/.ssh/id_ed25519     # приватный ключ должен иметь права 600
+chmod 644 ~/.ssh/id_ed25519.pub # публичный ключ можно читать всем
 ```
 
 **Символьный режим — удобнее для точечных изменений:**
@@ -202,7 +202,7 @@ umask         # e.g., 0022
 umask -S      # symbolic: u=rwx,g=rx,o=rx
 
 # Umask по умолчанию — 022:
-# Максимальные права нового файла: 666 (файлы не создаются исполняемыми)
+# Максимальные права нового файла: 666 (файлы изначально не создаются исполняемыми)
 # Вычитаем umask:       -022
 # Результат:             644 → владелец rw, группа r, остальные r
 
@@ -213,8 +213,8 @@ umask -S      # symbolic: u=rwx,g=rx,o=rx
 
 ```bash
 # Изменить umask для текущего сеанса
-umask 027     # files: 640, dirs: 750 (group can read, others get nothing)
-umask 077     # files: 600, dirs: 700 (only owner)
+umask 027     # файлы: 640, каталоги: 750 (группа может читать, остальные не имеют доступа)
+umask 077     # файлы: 600, каталоги: 700 (доступ только у владельца)
 ```
 
 Чтобы сделать настройку постоянной, добавьте `umask 027` в `/etc/profile` (для всей системы) или `~/.bashrc` (для конкретного пользователя).
@@ -351,14 +351,14 @@ find /home -name authorized_keys 2>/dev/null -exec ls -la {} \;
 
 ```bash
 # Типовая схема прав доступа веб-сервера
-chown -R www-data:www-data /var/www/myapp      # nginx process owns files
-find /var/www/myapp -type d -exec chmod 755 {} \;  # directories: traverse+list
-find /var/www/myapp -type f -exec chmod 644 {} \;  # files: read-only for group/others
+chown -R www-data:www-data /var/www/myapp      # процесс nginx владеет файлами
+find /var/www/myapp -type d -exec chmod 755 {} \;  # каталоги: проход и просмотр списка
+find /var/www/myapp -type f -exec chmod 644 {} \;  # файлы: группа и остальные могут только читать
 
 # Приложение записывает данные в отдельный каталог (загрузки, кэш)
 mkdir -p /var/www/myapp/storage/uploads
 chown -R www-data:www-data /var/www/myapp/storage
-chmod 775 /var/www/myapp/storage/uploads   # www-data can write here
+chmod 775 /var/www/myapp/storage/uploads   # www-data может записывать сюда
 
 # Файлы конфигурации с секретами — доступ только владельцу
 chmod 600 /var/www/myapp/.env
@@ -390,12 +390,12 @@ SSH строго проверяет права приватных ключей �
 
 ```bash
 # Правильные права каталога SSH и ключей
-chmod 700 ~/.ssh                  # only owner can enter
-chmod 600 ~/.ssh/id_ed25519       # private key: owner read+write only
-chmod 644 ~/.ssh/id_ed25519.pub   # public key: world-readable is fine
-chmod 600 ~/.ssh/authorized_keys  # authorized_keys: owner only
-chmod 644 ~/.ssh/known_hosts      # known_hosts: readable is ok
-chmod 600 ~/.ssh/config           # config may contain sensitive paths
+chmod 700 ~/.ssh                  # войти может только владелец
+chmod 600 ~/.ssh/id_ed25519       # приватный ключ: чтение и запись только владельцу
+chmod 644 ~/.ssh/id_ed25519.pub   # публичный ключ можно читать всем
+chmod 600 ~/.ssh/authorized_keys  # authorized_keys: доступ только владельцу
+chmod 644 ~/.ssh/known_hosts      # файл known_hosts может быть доступен для чтения
+chmod 600 ~/.ssh/config           # конфигурация может содержать чувствительные пути
 
 # Исправить права, если после клонирования репозитория они оказались неверными
 find ~/.ssh -type f -exec chmod 600 {} \;
@@ -408,7 +408,7 @@ chmod 700 ~/.ssh
 #!/usr/bin/env bash
 # Быстрый аудит прав доступа — регулярно запускайте на production-серверах
 
-echo "=== World-writable files (excluding /proc /sys /dev) ==="
+echo "=== Файлы, доступные для записи всем (кроме /proc /sys /dev) ==="
 find / -perm -o+w -type f \
     \( -path /proc -o -path /sys -o -path /dev \) -prune \
     -o -print 2>/dev/null | head -30
@@ -418,11 +418,11 @@ echo "=== SUID binaries ==="
 find / -perm -4000 -type f 2>/dev/null | sort
 
 echo ""
-echo "=== Files with no owner ==="
+echo "=== Файлы без владельца ==="
 find / -nouser -type f 2>/dev/null | head -20
 
 echo ""
-echo "=== /tmp contents with permissions ==="
+echo "=== Содержимое /tmp с правами доступа ==="
 ls -la /tmp/ | head -20
 ```
 
