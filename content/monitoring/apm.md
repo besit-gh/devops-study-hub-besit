@@ -81,7 +81,7 @@ sudo datadog-agent status | grep -A 10 "APM Agent"
 ss -tlnp | grep 8126
 ```
 
-Key fields in `/etc/datadog-agent/datadog.yaml`:
+Основные параметры в `/etc/datadog-agent/datadog.yaml`:
 
 ```yaml
 api_key: <DD_API_KEY>
@@ -98,9 +98,9 @@ apm_config:
   max_traces_per_second: 50     # agent-side ingestion rate limit; adjust for your volume
 ```
 
-**Unified Service Tagging (UST)** — setting `env`, `service`, and `version` at the agent level means every trace, metric, and log from that host carries the same three tags. This is what enables one-click pivoting from a trace to correlated logs to a deployment marker on a latency graph. Without UST, you lose the connective tissue between the three pillars of observability.
+**Единая разметка сервисов (UST)** — если задать `env`, `service` и `version` на уровне агента, каждая трассировка, метрика и запись журнала с этого узла получит одинаковые три тега. Это позволяет одним нажатием перейти от трассировки к связанным журналам и отметке развёртывания на графике задержки. Без UST теряется связность между тремя столпами наблюдаемости.
 
-In Kubernetes, the Agent runs as a **DaemonSet** (one pod per node). The application pod reaches the agent via the node's `hostIP`:
+В Kubernetes агент работает как **DaemonSet** (один Pod на узел). Pod приложения обращается к агенту через `hostIP` узла:
 
 ```yaml
 # In your application container's env block
@@ -119,9 +119,9 @@ In Kubernetes, the Agent runs as a **DaemonSet** (one pod per node). The applica
   value: "2.4.1"
 ```
 
-**Do not hardcode the agent IP.** Always use `status.hostIP`. If the pod is rescheduled to a different node, a hardcoded IP will point at the wrong agent or nothing at all.
+**Не прописывайте IP агента напрямую.** Всегда используйте `status.hostIP`. Если Pod перенесут на другой узел, фиксированный IP укажет на неправильный агент или на несуществующий адрес.
 
-### Python Instrumentation with ddtrace
+### Инструментирование Python с помощью ddtrace
 
 `ddtrace` is Datadog's Python APM client. It provides both automatic and manual instrumentation.
 
