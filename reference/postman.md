@@ -2,7 +2,7 @@
 
 ## CLI Newman
 
-| Command | Description |
+| Команда | Описание |
 |---------|-------------|
 | `newman run collection.json` | Запустить коллекцию |
 | `newman run collection.json -e environment.json` | С указанием окружения |
@@ -15,7 +15,7 @@
 
 ## Окружения и переменные
 
-| Context | Set | Get |
+| Контекст | Установить | Получить |
 |---------|-----|-----|
 | Global | `pm.globals.set("key", val)` | `pm.globals.get("key")` |
 | Environment | `pm.environment.set("key", val)` | `pm.environment.get("key")` |
@@ -25,62 +25,62 @@
 ## Шаблоны pre-request-скриптов
 
 ```javascript
-// Set dynamic timestamp
+// Установить dynamic timestamp
 pm.environment.set("timestamp", Date.now());
 
-// Generate random ID
+// Сгенерировать случайный ID
 pm.environment.set("userId", Math.floor(Math.random() * 10000));
 
-// Set auth header from env variable
+// Установить auth header from env variable
 pm.request.headers.add({ key: "Authorization", value: "Bearer " + pm.environment.get("token") });
 ```
 
-## Test Script Patterns
+## Шаблоны тестовых скриптов
 
 ```javascript
-// Status code
+// Код состояния
 pm.test("Status is 200", () => pm.response.to.have.status(200));
 
-// Response time
+// Время ответа
 pm.test("Under 500ms", () => pm.expect(pm.response.responseTime).to.be.below(500));
 
-// Body contains
+// Содержимое тела ответа
 pm.test("Has id field", () => {
   const body = pm.response.json();
   pm.expect(body).to.have.property("id");
 });
 
-// Save token from response
+// Сохранить токен из ответа
 const body = pm.response.json();
 pm.environment.set("token", body.access_token);
 
-// Chain requests — set next request
-postman.setNextRequest("Get User");
+// Связать запросы — задать следующий запрос
+postman.setNextRequest("Получить User");
 
-// Skip rest of collection
+// Пропустить оставшуюся часть коллекции
 postman.setNextRequest(null);
 ```
 
-## Common Assertions
+## Common Проверкаs
 
-| Assertion | Code |
+| Проверка | Code |
 |-----------|------|
-| Status code | `pm.response.to.have.status(200)` |
-| Status range | `pm.expect(pm.response.code).to.be.within(200, 299)` |
-| Header present | `pm.response.to.have.header("Content-Type")` |
-| Header value | `pm.expect(pm.response.headers.get("Content-Type")).to.include("json")` |
-| Body string | `pm.expect(pm.response.text()).to.include("success")` |
-| JSON field | `pm.expect(pm.response.json().name).to.eql("Alice")` |
-| Array length | `pm.expect(pm.response.json().items).to.have.lengthOf(3)` |
-| Schema valid | `pm.response.to.have.jsonSchema(schema)` |
+| Код состояния | `pm.response.to.have.status(200)` |
+| Диапазон кодов состояния | `pm.expect(pm.response.code).to.be.within(200, 299)` |
+| Наличие заголовка | `pm.response.to.have.header("Content-Type")` |
+| Значение заголовка | `pm.expect(pm.response.headers.get("Content-Type")).to.include("json")` |
+| Строка в теле ответа | `pm.expect(pm.response.text()).to.include("success")` |
+| Поле JSON | `pm.expect(pm.response.json().name).to.eql("Alice")` |
+| Длина массива | `pm.expect(pm.response.json().items).to.have.lengthOf(3)` |
+| Схема корректна | `pm.response.to.have.jsonSchema(schema)` |
 
 ## curl Equivalents
 
-| Postman concept | curl equivalent |
+| Понятие Postman | Эквивалент в curl |
 |----------------|-----------------|
-| GET request | `curl -X GET url` |
+| GET-запрос | `curl -X GET url` |
 | POST JSON | `curl -X POST -H "Content-Type: application/json" -d '{"k":"v"}' url` |
-| Auth header | `curl -H "Authorization: Bearer TOKEN" url` |
-| Query params | `curl "url?key=val&key2=val2"` |
-| Follow redirect | `curl -L url` |
-| Verbose | `curl -v url` |
+| Заголовок авторизации | `curl -H "Authorization: Bearer TOKEN" url` |
+| Параметры запроса | `curl "url?key=val&key2=val2"` |
+| Следовать перенаправлению | `curl -L url` |
+| Подробный вывод | `curl -v url` |
