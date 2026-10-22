@@ -209,13 +209,13 @@ info() {
 | `127` | Command not found |
 | `128+N` | Fatal signal N received (e.g., `130` = Ctrl-C, SIGINT) |
 
-Scripts should use `1` for runtime errors and `2` for usage errors (wrong arguments). This lets callers distinguish between "the script ran but something went wrong" and "the script was called incorrectly."
+Скрипты должны возвращать `1` при ошибках выполнения и `2` при ошибках использования (неверных аргументах). Это позволяет вызывающей стороне отличать ситуацию «скрипт запустился, но что-то пошло не так» от «скрипт вызвали неправильно».
 
 ---
 
-### Conditionals: `[ ]`, `[[ ]]`, and the Difference
+### Условия: `[ ]`, `[[ ]]` и различия между ними
 
-Bash has two test syntaxes. Know when to use each:
+В Bash есть два синтаксиса проверок. Важно знать, когда использовать каждый из них:
 
 | Feature | `[ ]` (POSIX `test`) | `[[ ]]` (bash built-in) |
 |---------|---------------------|------------------------|
@@ -226,7 +226,7 @@ Bash has two test syntaxes. Know when to use each:
 | `&&` / `\|\|` inside | Syntax error | Supported |
 | `<` / `>` string comparison | Must escape: `\<` | No escaping needed |
 
-**Prefer `[[ ]]` for all bash scripts.** Use `[ ]` only when writing POSIX sh that must run in minimal containers or BusyBox environments.
+**В Bash-скриптах предпочитайте `[[ ]]`.** Используйте `[ ]`, только если пишете POSIX sh, который должен работать в минимальных контейнерах или средах BusyBox.
 
 ```bash
 # Numeric comparisons — use -eq, -ne, -lt, -gt, -le, -ge (both syntaxes)
@@ -256,7 +256,7 @@ if [[ -f "$CONFIG" && -r "$CONFIG" ]]; then
 fi
 ```
 
-`case` statements are cleaner than long `if/elif` chains when matching one variable against multiple patterns:
+Оператор `case` удобнее длинной цепочки `if/elif`, когда нужно сопоставить одну переменную с несколькими шаблонами:
 
 ```bash
 case "$ENV" in
@@ -321,9 +321,9 @@ while IFS= read -r LINE; do
 done < hosts.txt
 ```
 
-**`while IFS= read -r LINE`** is the canonical pattern for reading files:
-- `IFS=` prevents leading/trailing whitespace from being stripped
-- `-r` prevents backslash escapes from being interpreted
+**`while IFS= read -r LINE`** — стандартный шаблон для чтения файлов:
+- `IFS=` не позволяет удалять пробелы в начале и конце строки.
+- `-r` запрещает интерпретировать обратную косую черту как управляющую последовательность.
 - `< file` redirects the file into the loop without a subshell
 
 **Subshell trap:** a pipeline like `cat file | while read LINE` runs the `while` loop in a subshell. Variables set inside the loop are invisible after it ends. Always use `while read ... done < file` or process substitution `< <(command)` to keep the loop in the current shell.
