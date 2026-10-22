@@ -40,7 +40,7 @@ GitOps — модель развёртывания, в которой Git явл
 
 ### Ресурс Application в Argo CD
 
-The `Application` CRD is the core unit of ArgoCD. It binds a Git source to a cluster destination and defines how reconciliation should happen.
+CRD `Application` — основной объект ArgoCD. Он связывает источник в Git с целевым кластером и определяет правила согласования состояния.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -84,15 +84,15 @@ spec:
         maxDuration: 2m
 ```
 
-**`prune: false` is the default.** If you remove a Deployment from Git without enabling prune, the old Deployment keeps running silently. Enable prune deliberately and verify your manifests are complete before turning it on in production.
+**По умолчанию `prune: false`.** Если удалить Deployment из Git и не включить prune, старый Deployment продолжит работать незаметно. Включайте prune осознанно и перед использованием в production убедитесь, что манифесты полны.
 
-**`targetRevision: main` vs. a commit SHA:** Branches are mutable — a force push changes what ArgoCD deploys without any review process. For production, pin to a tag or commit SHA to make deployments fully reproducible and prevent surprise deploys from branch resets.
+**`targetRevision: main` и SHA коммита:** ветки изменяемы — force push меняет то, что развернёт ArgoCD, без дополнительного процесса проверки. В production фиксируйте тег или SHA коммита, чтобы развёртывания были воспроизводимыми и чтобы сброс ветки не вызвал неожиданное обновление.
 
-**`ServerSideApply: true` is recommended for complex resources.** Client-side apply stores a `last-applied-configuration` annotation that grows unbounded on large objects (e.g., CRDs with large schemas) and can exceed the 256KB etcd annotation limit. SSA avoids this entirely and handles field ownership conflicts more gracefully.
+**Для сложных ресурсов рекомендуется `ServerSideApply: true`.** Клиентский apply хранит аннотацию `last-applied-configuration`, которая может разрастись у крупных объектов (например, CRD с большой схемой) и превысить лимит аннотаций etcd в 256 КБ. SSA избегает этой проблемы и лучше обрабатывает конфликты владения полями.
 
 ---
 
-### Installing ArgoCD and the CLI
+### Установка ArgoCD и CLI
 
 ```bash
 # 1. Install ArgoCD into the cluster
@@ -123,7 +123,7 @@ argocd account update-password
 argocd cluster add my-prod-context --name prod
 ```
 
-**Common day-2 CLI operations:**
+**Типовые операции CLI при повседневной эксплуатации:**
 
 ```bash
 # List all applications and their sync/health status
@@ -151,11 +151,11 @@ argocd app rollback myapp 5   # revision 5 from `argocd app history`
 argocd app get myapp --refresh
 ```
 
-**Poll interval:** ArgoCD polls Git every 3 minutes by default. For faster response, configure a Git webhook (GitHub → ArgoCD API server) to push change notifications instantly. This is strongly recommended in production — waiting 3 minutes for a hotfix to appear is unacceptable in most teams.
+**Интервал опроса:** по умолчанию ArgoCD проверяет Git каждые 3 минуты. Чтобы ускорить реакцию, настройте Git webhook (GitHub → API-сервер ArgoCD), который мгновенно передаёт уведомления об изменениях. Для production это настоятельно рекомендуется: ожидание хотфикса в течение трёх минут неприемлемо для большинства команд.
 
 ---
 
-### Sync Status and Health Status
+### Статус синхронизации и состояние приложения
 
 ArgoCD tracks two orthogonal states for every Application. They are independent and must both be understood to diagnose a deployment problem correctly.
 
