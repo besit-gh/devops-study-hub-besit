@@ -54,7 +54,7 @@ Global — доступна во всех коллекциях (лучше из�
 Синтаксис ссылки: `{{base_url}}/api/users/{{user_id}}`
 ```
 
-#### Setting Variables in Scripts
+#### Задание переменных в скриптах
 ```javascript
 // Pre-request-скрипт — задать переменную перед выполнением запроса
 pm.environment.set("timestamp", new Date().toISOString());
@@ -66,7 +66,7 @@ pm.environment.set("access_token", json.access_token);
 pm.environment.set("user_id", json.user.id);
 ```
 
-### Environments
+### Окружения
 Окружение — это набор пар «ключ — значение». При переключении активного окружения все ссылки `{{variable}}` в коллекции одновременно получают новые значения.
 
 **Пример настройки окружений:**
@@ -74,25 +74,25 @@ pm.environment.set("user_id", json.user.id);
 Development:
   base_url = http://localhost:8000
   api_key  = dev-key-abc123
-  user_id  = (initially empty — filled by login script)
+  user_id  = (изначально пусто — заполняется скриптом входа)
 
 Staging:
   base_url = https://staging.api.myapp.com
   api_key  = staging-key-xyz789
-  user_id  = (initially empty)
+  user_id  = (изначально пусто)
 
 Production:
   base_url = https://api.myapp.com
-  api_key  = (use Postman Vault for secrets, not plain env vars)
-  user_id  = (initially empty)
+  api_key  = (используйте Postman Vault для секретов, а не обычные переменные окружения)
+  user_id  = (изначально пусто)
 ```
 
 Для чувствительных значений (реальных API-ключей и паролей) используйте **Postman Vault**, а не переменные окружения: значения из Vault не синхронизируются с облаком Postman.
 
-### Auth Configuration
+### Настройка аутентификации
 Настройте аутентификацию на уровне коллекции, чтобы все запросы наследовали её:
 
-**Collection → вкладка Authorization:**
+**Коллекция → вкладка Authorization:**
 ```
 Type: Bearer Token
 Token: {{access_token}}
@@ -112,7 +112,7 @@ Scope: read:users write:users
 
 Нажмите «Get New Access Token»: Postman откроет браузер, вы пройдёте аутентификацию, после чего токен сохранится автоматически.
 
-### Pre-Request Scripts
+### Pre-request-скрипты
 Pre-request-скрипты выполняются перед отправкой запроса. Используйте их для:
 - генерации подписей и временных меток для аутентификации
 - обновления просроченных токенов
@@ -157,7 +157,7 @@ pm.request.headers.add({ key: "X-Timestamp", value: timestamp });
 pm.request.headers.add({ key: "X-Signature", value: signature });
 ```
 
-### Chaining Requests
+### Цепочки запросов
 Используйте тестовые скрипты, чтобы передавать данные из одного запроса в следующий:
 
 ```javascript
@@ -182,7 +182,7 @@ pm.environment.set("order_id", order.id);
 // Использует order_id, установленный запросом 2
 ```
 
-### Collection Runner
+### Запуск коллекции
 Запустите всю коллекцию (или папку) последовательно:
 1. Нажмите **Run collection** — откроется Collection Runner
 2. Выберите окружение
@@ -199,7 +199,7 @@ postman.setNextRequest("GET /users/:id");
 postman.setNextRequest(null);
 ```
 
-### Importing and Exporting
+### Импорт и экспорт
 ```bash
 # Экспортировать коллекцию в JSON
 # File → Export → Collection v2.1 → myapp-api.postman_collection.json
