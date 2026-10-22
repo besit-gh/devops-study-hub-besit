@@ -94,4 +94,4 @@
 | `git config --global alias.st status` | Создать псевдоним команды |
 | `.git/hooks/pre-commit` | Скрипт запускается перед каждым коммитом |
 | `git bisect start` | Начать двоичный поиск коммита с ошибкой |
-| `git bisect good / bad` | Mark commits during bisect |
+| `git bisect good / bad` | Пометить коммиты как хорошие или плохие во время bisect |
