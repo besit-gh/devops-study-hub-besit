@@ -31,7 +31,7 @@ QUESTIONS_PER_MODULE = 8
 
 
 MODEL_ANSWER_PROMPT = """\
-You are writing a model answer for a DevOps interview question in a study platform.
+You are writing a model answer for a DevOps interview question in a study platform. Write the answer in Russian, preserving technical terms and commands.
 
 Module: {module_title}
 Question: {question}
@@ -46,7 +46,7 @@ Return ONLY the answer text — no preamble, no labels, no markdown formatting.
 """
 
 HINTS_PROMPT = """\
-You are writing progressive hints for a DevOps interview question in a study platform.
+You are writing progressive hints for a DevOps interview question in a study platform. Write both hints in Russian, preserving technical terms and commands.
 
 Module: {module_title}
 Question: {question}
@@ -62,7 +62,7 @@ Example: ["Think about how volumes persist data across container restarts.", "Us
 """
 
 INTERVIEW_PROMPT = """\
-You are generating DevOps job interview questions for a study platform. The \
+You are generating DevOps job interview questions for a study platform. Write all questions in Russian, preserving technical terms and commands. The \
 candidate is preparing for a mid-level DevOps engineering role.
 
 Module: {module_title}

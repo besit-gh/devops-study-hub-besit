@@ -1,5 +1,5 @@
 ---
-title: Script Writing Basics
+title: Основы написания скриптов Bash
 module: bash
 duration_min: 20
 difficulty: beginner
@@ -7,17 +7,17 @@ tags: [bash, scripting, variables, loops, conditionals, functions]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Bash is the connective tissue of DevOps infrastructure. It's not a general-purpose language — it's a coordination layer. A bash script can wire together `curl`, `jq`, `systemctl`, `aws`, `kubectl`, and a dozen other tools into a single repeatable operation. That's its power: not computation, but orchestration. Every deployment pipeline, log rotation job, health check, and on-call runbook eventually bottoms out in shell commands. Understanding bash means understanding how those operations actually execute.
+Bash — связующий слой DevOps-инфраструктуры. Это не столько универсальный язык программирования, сколько инструмент координации. Скрипт Bash объединяет `curl`, `jq`, `systemctl`, `aws`, `kubectl` и другие утилиты в одну повторяемую операцию. Его сила — не в сложных вычислениях, а в оркестрации команд. В основе пайплайнов развёртывания, ротации логов, health checks и аварийных инструкций в конечном счёте лежит shell. Знание Bash означает понимание того, как эти операции действительно выполняются.
 
-The language itself is small. Variables, conditionals, loops, functions, and a handful of special idioms cover 90% of real scripts. But bash has sharp edges — unquoted variables, silent failures, subshell scoping — that cause production incidents. The guiding principle of good bash is **defensive programming**: always quote variables, always handle failure, always validate inputs. Scripts that work in a dev environment and silently corrupt data in production are worse than no script at all.
+Сам язык невелик: переменные, условия, циклы, функции и несколько специальных конструкций покрывают большую часть реальных скриптов. Но у Bash есть острые углы — переменные без кавычек, незаметные ошибки и особенности области видимости subshell, — которые приводят к инцидентам в production. Главный принцип качественного Bash — **защитное программирование**: заключайте переменные в кавычки, обрабатывайте ошибки и проверяйте входные данные. Скрипт, который работает в dev-среде, но незаметно портит данные в production, хуже отсутствующего скрипта.
 
-In the DevOps toolchain, bash sits at the foundation. It runs inside Dockerfiles, CI/CD pipeline steps, Ansible tasks, Kubernetes init containers, and cron jobs. Even when you graduate to Python or Go for complex automation, bash remains the glue for invoking those tools. Getting it right pays dividends across every platform you'll work on.
+В DevOps Bash находится в основании стека. Он используется в Dockerfile, шагах CI/CD-пайплайнов, задачах Ansible, init-контейнерах Kubernetes и cron-заданиях. Даже когда для сложной автоматизации вы перейдёте на Python или Go, Bash останется удобным способом вызывать инструменты. Хорошие навыки Bash пригодятся практически на любой платформе.
 
-## Concepts
+## Основные понятия
 
-### The Shebang, Strict Mode, and Permissions
+### Shebang, строгий режим и права доступа
 
 The shebang line tells the kernel which interpreter to use. Without it, the script runs in whatever shell the user happens to be in — which may not be bash at all.
 
@@ -536,7 +536,7 @@ fi
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Service Health Check with Alerting
 
@@ -815,7 +815,7 @@ unset DB_HOST
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Fix a Broken Script
 
@@ -893,7 +893,7 @@ Test with a sample log file you generate using a loop that writes fake log lines
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Assign `NAME="nginx"` and print the value with `_backup` appended using brace syntax. Write it as a one-liner with a semicolon.
 

@@ -81,8 +81,8 @@ export default function Quiz({ lessonSlug, onXpEarned }) {
     return (
       <div className="flex flex-col items-center justify-center flex-1 px-4 text-center gap-4">
         <div>
-          <div className="text-sm font-medium text-gray-800 dark:text-gray-100 mb-1">Lesson Quiz</div>
-          <div className="text-xs text-gray-400 dark:text-gray-500">5 questions · AI-generated from lesson content</div>
+          <div className="text-sm font-medium text-gray-800 dark:text-gray-100 mb-1">Тест по уроку</div>
+          <div className="text-xs text-gray-400 dark:text-gray-500">5 вопросов · сгенерировано ИИ по материалам урока</div>
         </div>
         {error && <div className="text-xs text-red-500 max-w-[220px]">{error}</div>}
         <button
@@ -90,7 +90,7 @@ export default function Quiz({ lessonSlug, onXpEarned }) {
           disabled={loading}
           className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
         >
-          {loading ? 'Generating…' : 'Start Quiz'}
+          {loading ? 'Генерируем…' : 'Начать тест'}
         </button>
       </div>
     )
@@ -103,16 +103,16 @@ export default function Quiz({ lessonSlug, onXpEarned }) {
       <div className="flex flex-col items-center justify-center flex-1 px-4 text-center gap-3">
         <div className={`text-5xl font-bold ${color}`}>{pct}%</div>
         <div className="text-sm text-gray-500 dark:text-gray-400">
-          {score} / {questions.length} correct
+          {score} из {questions.length} правильных ответов
         </div>
         {xpEarned > 0 && (
-          <div className="text-xs font-medium text-amber-600 dark:text-amber-400">+{xpEarned} XP earned</div>
+          <div className="text-xs font-medium text-amber-600 dark:text-amber-400">+{xpEarned} XP получено</div>
         )}
         <button
           onClick={retake}
           className="mt-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
         >
-          Retake
+          Пройти ещё раз
         </button>
       </div>
     )
@@ -174,7 +174,7 @@ export default function Quiz({ lessonSlug, onXpEarned }) {
             onClick={next}
             className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
           >
-            {current + 1 >= questions.length ? 'See Results' : 'Next →'}
+            {current + 1 >= questions.length ? 'Результаты' : 'Далее →'}
           </button>
         </div>
       )}

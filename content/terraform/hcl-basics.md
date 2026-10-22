@@ -1,5 +1,5 @@
 ---
-title: HCL Fundamentals
+title: Основы HCL
 module: terraform
 duration_min: 20
 difficulty: beginner
@@ -7,12 +7,12 @@ tags: [terraform, hcl, providers, resources, variables, outputs, plan, apply]
 exercises: 4
 ---
 
-## Overview
-Terraform is the dominant Infrastructure as Code tool. You write HCL (HashiCorp Configuration Language) describing what infrastructure you want; Terraform figures out how to create it. Every major cloud provider, DNS registrar, database service, and monitoring platform has a Terraform provider. This lesson covers HCL syntax, the core workflow, and the building blocks of any Terraform configuration.
+## Обзор
+Terraform — один из основных инструментов Infrastructure as Code (IaC). Вы описываете желаемую инфраструктуру на HCL (HashiCorp Configuration Language), а Terraform определяет, как привести реальные ресурсы к этому состоянию. Для большинства крупных облачных провайдеров, DNS-регистраторов, баз данных и платформ мониторинга существуют Terraform-провайдеры. В уроке разбираются синтаксис HCL, основной рабочий процесс и строительные блоки конфигурации Terraform.
 
-## Concepts
+## Основные понятия
 
-### Core Workflow
+### Основной рабочий процесс
 ```bash
 terraform init     # download providers and modules
 terraform plan     # show what will be created/changed/destroyed
@@ -22,7 +22,7 @@ terraform destroy  # destroy all managed resources (prompts)
 
 Always review `plan` output before `apply`. Terraform shows additions (+), changes (~), and destructions (-).
 
-### Providers
+### Провайдеры
 Providers are plugins that know how to talk to a specific API (AWS, GCP, Azure, Kubernetes, GitHub, etc.):
 
 ```hcl
@@ -42,7 +42,7 @@ provider "aws" {
 }
 ```
 
-### Resources
+### Ресурсы
 Resources are the infrastructure objects Terraform manages:
 
 ```hcl
@@ -68,7 +68,7 @@ resource "aws_s3_bucket_versioning" "app_assets_versioning" {
 
 Reference syntax: `<resource_type>.<local_name>.<attribute>`
 
-### Variables
+### Переменные
 ```hcl
 # variables.tf
 variable "region" {
@@ -115,7 +115,7 @@ db_password    = "supersecret"
 
 Or via environment: `TF_VAR_region=eu-west-1 terraform apply`
 
-### Outputs
+### Выходные значения
 ```hcl
 # outputs.tf
 output "bucket_name" {
@@ -200,7 +200,7 @@ name         = lower(replace(var.name, " ", "-"))
 merged_tags  = merge(var.tags, local.extra_tags)
 ```
 
-## Examples
+## Примеры
 
 ### EC2 Instance with Security Group
 ```hcl
@@ -256,7 +256,7 @@ output "instance_ips" {
 }
 ```
 
-## Exercises
+## Практические задания
 
 1. Write a Terraform configuration that creates an S3 bucket with versioning enabled. Run `terraform init`, `terraform plan`, and `terraform apply`. Then inspect the state with `terraform show`.
 2. Add an `environment` variable (type: string, no default) and use it in the bucket name and tags. Apply with `-var="environment=dev"` and then with `staging` — observe the plan differences.
@@ -266,7 +266,7 @@ output "instance_ips" {
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Count `resource` blocks in an HCL stub. Run: `printf 'resource "aws_instance" "web" {}\nresource "aws_s3_bucket" "logs" {}\n' | grep -c '^resource'`
 

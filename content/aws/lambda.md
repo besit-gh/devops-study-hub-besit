@@ -7,15 +7,15 @@ tags: [aws, lambda, serverless, functions, triggers, layers, api-gateway, sam]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-AWS Lambda is a serverless compute service that executes your code in response to events and manages all underlying infrastructure automatically. For DevOps engineers, Lambda is a foundational tool: it eliminates the operational overhead of provisioning, patching, and scaling servers for workloads that are inherently event-driven or intermittent. You pay only for the compute time consumed (measured in 1ms increments), making it cost-effective for tasks that would otherwise require always-on EC2 instances sitting idle most of the day. Lambda's managed scaling — from zero to thousands of concurrent executions in seconds — removes the capacity-planning burden that dominates traditional server-based deployments.
+AWS Lambda — serverless-сервис вычислений, запускающий код в ответ на события и автоматически управляющий инфраструктурой. Для DevOps он позволяет не заниматься подготовкой, обновлением и масштабированием серверов для событийных или периодических задач. Оплата начисляется только за использованное время вычислений (с шагом в 1 мс), что выгодно для задач, ради которых иначе пришлось бы держать EC2 постоянно включёнными. Автоматическое масштабирование Lambda — от нуля до тысяч параллельных запусков за секунды — снимает значительную часть задач планирования мощности.
 
 Lambda's design is shaped by three principles: statelessness (each invocation is independent — no shared memory between calls), event-driven execution (Lambda reacts to triggers from dozens of AWS services), and ephemeral compute (execution environments are created and destroyed automatically). These constraints drive the patterns you'll use: caching state in external stores like DynamoDB or ElastiCache, structuring code to handle idempotent retries, and keeping packages small to minimize cold start latency. Understanding these constraints upfront prevents entire classes of bugs that appear only in production under concurrency.
 
 In the DevOps toolchain, Lambda fills several roles simultaneously. It acts as glue code connecting AWS services (S3 → Lambda → DynamoDB), as a backend for API Gateway HTTP endpoints, as a consumer for SQS and Kinesis streams, as a scheduled task runner via EventBridge, and increasingly as the execution engine for infrastructure automation — rotating secrets, enforcing compliance rules, and responding to CloudWatch alarms. Mastering Lambda means understanding not just the function itself, but the entire event-driven substrate that AWS is built on.
 
-## Concepts
+## Основные понятия
 
 ### Function Anatomy
 
@@ -489,7 +489,7 @@ def handler(event, context):
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: S3-Triggered CSV Processor
 
@@ -805,7 +805,7 @@ aws events describe-rule --name nightly-cleanup-schedule \
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Deploy and Debug an Intentionally Broken Function
 
@@ -858,7 +858,7 @@ Build a pipeline: EventBridge rule (rate 1 minute) → Lambda → intentional fa
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 6. Extract the handler function name from a Lambda config stub. Run: `printf 'Handler: index.handler\nRuntime: nodejs20.x\n' | awk '/^Handler:/{split($2, a, "."); print a[2]}'`
 

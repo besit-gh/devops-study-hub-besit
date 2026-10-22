@@ -1,5 +1,5 @@
 ---
-title: Alerting and Dashboards
+title: Оповещения и дашборды
 module: monitoring
 duration_min: 20
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [monitoring, datadog, alerting, dashboards, monitors, pagerduty, slo]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Effective alerting and dashboards are the difference between a team that detects and resolves incidents quickly and one that discovers outages from user complaints. Alerts are the mechanism by which your monitoring system demands human attention — but only when that attention is actually warranted. Dashboards are the mechanism by which engineers develop situational awareness, both during normal operations and under the pressure of an active incident. Getting both right requires deliberate design decisions, not just connecting metrics to notification channels.
+Эффективные оповещения и дашборды отличают команду, которая быстро обнаруживает и устраняет инциденты, от команды, узнающей о сбоях из жалоб пользователей. Оповещения привлекают внимание человека только тогда, когда оно действительно необходимо. Дашборды помогают инженерам понимать состояние системы как при штатной работе, так и во время инцидента. Для качественного результата нужны продуманные решения, а не просто подключение метрик к каналам уведомлений.
 
-The core tension in alerting is precision versus recall: alert on too little and you miss real problems; alert on too much and engineers start ignoring pages. This phenomenon — alert fatigue — is one of the most common and damaging failure modes in on-call culture. It results in missed critical alerts buried under noise, engineers who disable monitors to get sleep, and a monitoring system that provides false confidence. Good alerting design minimizes false positives through appropriate evaluation windows and thresholds, requires every alert to be actionable, and routes notifications by severity so a CPU warning doesn't page someone at 3 AM.
+Главный компромисс в оповещениях — точность против полноты: слишком мало оповещений — и реальные проблемы останутся незамеченными; слишком много — и инженеры перестанут реагировать. Такая усталость от оповещений (alert fatigue) — одна из самых вредных проблем дежурств. Критические события теряются в шуме, инженеры отключают мониторинг ради сна, а система создаёт ложное чувство безопасности. Хорошая система снижает ложные срабатывания корректными окнами оценки и порогами, делает каждое оповещение требующим действия и маршрутизирует уведомления по серьёзности, чтобы предупреждение о CPU не будило человека в три часа ночи.
 
 In the broader DevOps toolchain, alerting and dashboards sit at the output layer of the observability stack. Metrics, logs, and traces are collected and stored by tools like Datadog, Prometheus, or Grafana; alerting and dashboards are how that raw data becomes operational intelligence. Datadog serves as the primary platform in this lesson because it integrates all three signal types (metrics, logs, APM traces) and provides monitors, dashboards, SLOs, and synthetics in a single product — patterns that translate directly to equivalent tools like Grafana Alerting, PagerDuty, or AWS CloudWatch.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### Datadog Monitor Types
 
@@ -228,7 +228,7 @@ curl -X POST "https://api.datadoghq.com/api/v1/downtime" \
 
 ---
 
-### Dashboard Design
+### Проектирование дашбордов
 
 A dashboard that shows everything shows nothing useful under incident pressure. The most effective dashboards are built around a specific question for a specific audience — before you add a widget, ask "what decision does this panel help someone make?"
 
@@ -433,7 +433,7 @@ Row 3 — Recent incidents
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Full Terraform Monitor Stack for a Flask API
 
@@ -894,7 +894,7 @@ curl -s "https://api.datadoghq.com/api/v1/monitor/${MONITOR_ID}" \
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Design an Alert Threshold from Historical Data
 
@@ -985,7 +985,7 @@ resource "datadog_monitor" "broken_alert" {
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 6. Calculate the error rate as a percentage. Run: `python3 -c "errors=15; total=200; print(round(errors/total*100, 1))"`
 

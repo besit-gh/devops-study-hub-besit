@@ -1,5 +1,5 @@
 ---
-title: Writing Custom Charts
+title: Создание собственных Helm chart
 module: helm
 duration_min: 25
 difficulty: advanced
@@ -7,12 +7,12 @@ tags: [helm, custom-charts, subcharts, hooks, tests, library-charts]
 exercises: 4
 ---
 
-## Overview
-Writing your own Helm charts means controlling exactly how your application is deployed, tested, and upgraded across environments. This lesson covers production-grade chart patterns: hooks for database migrations, chart tests, library charts for shared templates, and dependency management with subcharts.
+## Обзор
+Создание собственных Helm chart позволяет точно контролировать развёртывание, тестирование и обновление приложения в разных окружениях. В уроке рассматриваются практики для production: hooks для миграций базы данных, тесты chart, библиотечные chart с общими шаблонами и управление зависимостями через subcharts.
 
-## Concepts
+## Основные понятия
 
-### Hooks
+### Hooks — хуки жизненного цикла — хуки жизненного цикла
 Hooks run Jobs at specific points in the release lifecycle:
 
 | Hook | When it runs |
@@ -58,7 +58,7 @@ Hook delete policies:
 - `hook-failed` — delete if hook fails (keeps on success for inspection)
 - `before-hook-creation` — delete old hook before running new one (default if not specified)
 
-### Chart Tests
+### Тестирование chart
 Tests are Pods with the `helm.sh/hook: test` annotation. They run when you call `helm test`:
 
 ```yaml
@@ -87,7 +87,7 @@ helm test myapp -n production
 # Status: SUCCESS
 ```
 
-### Library Charts
+### Библиотечные chart
 A library chart contains only `_helpers.tpl` templates — reusable snippets with no renderable manifests. Other charts declare it as a dependency:
 
 ```yaml
@@ -220,7 +220,7 @@ helm repo index ./dist --url https://charts.example.com
 helm push mychart-0.1.0.tgz oci://registry.example.com/charts
 ```
 
-## Examples
+## Примеры
 
 ### Production Chart with Migration Hook
 ```yaml
@@ -249,7 +249,7 @@ spec:
                 name: {{ .Release.Name }}-secrets
 ```
 
-## Exercises
+## Практические задания
 
 1. Add a `pre-upgrade` hook to an existing chart that runs a database migration Job. Use `helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded`. Test it by running `helm upgrade` and verifying the Job ran.
 2. Write a chart test that verifies the application's `/health` endpoint returns HTTP 200. Run it with `helm test` and verify it passes and cleans up the test pod.
@@ -259,7 +259,7 @@ spec:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Count template files in a chart template directory listing. Run: `printf 'deployment.yaml\nservice.yaml\ningress.yaml\nconfigmap.yaml\nserviceaccount.yaml\n' | grep -c '\.yaml$'`
 

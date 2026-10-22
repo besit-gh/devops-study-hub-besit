@@ -7,12 +7,12 @@ tags: [docker, compose, multi-container, networking, volumes, services]
 exercises: 4
 ---
 
-## Overview
-Docker Compose defines and runs multi-container applications from a single YAML file. Instead of running five `docker run` commands with the right flags memorized, you declare the entire stack — app, database, cache, reverse proxy — and bring it up with one command. It's the standard tool for local development environments and simple production deployments.
+## Обзор
+Docker Compose описывает и запускает приложения из нескольких контейнеров с помощью одного YAML-файла. Вместо запоминания множества команд `docker run` вы декларативно описываете весь стек — приложение, базу данных, кэш и reverse proxy — и запускаете его одной командой. Это стандартный инструмент для локальной разработки и несложных production-развёртываний.
 
-## Concepts
+## Основные понятия
 
-### compose.yaml Structure
+### Структура compose.yaml
 ```yaml
 # compose.yaml (formerly docker-compose.yml — both names work)
 services:
@@ -54,7 +54,7 @@ volumes:
   postgres_data:   # named volumes persist across container restarts
 ```
 
-### Core Commands
+### Основные команды
 ```bash
 # Start all services (detached)
 docker compose up -d
@@ -208,7 +208,7 @@ app:
       restart: true                # restart app if db restarts (Compose 2.17+)
 ```
 
-## Examples
+## Примеры
 
 ### Full Dev Stack
 ```yaml
@@ -259,7 +259,7 @@ volumes:
   redisdata:
 ```
 
-## Exercises
+## Практические задания
 
 1. Write a `compose.yaml` that runs a FastAPI app (build from a local Dockerfile) and a PostgreSQL database. The app should connect to the DB by service name. Start the stack and verify both containers are running.
 2. Add a Redis service to the stack above. Use `depends_on` with `condition: service_started` for Redis and `condition: service_healthy` for the database.
@@ -268,7 +268,7 @@ volumes:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Count service definitions in a Compose YAML stub. Run: `printf 'services:\n  web:\n    image: nginx\n  db:\n    image: postgres\n  cache:\n    image: redis\n' | awk '/^  [a-z]/ && !/^    /{c++} END{print c}'`
 

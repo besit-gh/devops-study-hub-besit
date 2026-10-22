@@ -1,5 +1,5 @@
 ---
-title: Observability Pillars
+title: Основы наблюдаемости: три столпа
 module: monitoring
 duration_min: 20
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [monitoring, observability, metrics, logs, traces, sli, slo, datadog]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Observability is the ability to understand what your system is doing from its external outputs — without having to redeploy or modify the code to ask new questions. The three pillars — metrics, logs, and traces — each answer a different question about a running system. Metrics tell you *something is wrong* (a number crossed a threshold). Logs tell you *what happened* (the sequence of events at that moment). Traces tell you *where time was spent* (which service or query caused the latency). Each pillar has different cost, cardinality, and query characteristics; a mature observability setup uses all three together, not one in isolation.
+Наблюдаемость (observability) — способность понимать, что происходит внутри системы, по её внешним данным, не меняя код и не выполняя повторное развёртывание ради новых вопросов. Три столпа — метрики, логи и трассировки — отвечают на разные вопросы. Метрики показывают, *что-то пошло не так* (значение пересекло порог). Логи объясняют, *что произошло* (последовательность событий). Трассировки показывают, *где было потрачено время* (какой сервис или запрос вызвал задержку). У каждого подхода свои стоимость, кардинальность и особенности запросов; зрелая система использует их вместе.
 
-The key design principle is **correlation**: the three pillars become exponentially more powerful when they share a common identifier — a trace ID — so an engineer can pivot from a metric spike on a dashboard directly to the logs and distributed trace for that specific request. Without correlation, you have three separate islands of data and you waste time manually reconstructing what happened by cross-referencing timestamps. This is the difference between a system that is merely monitored and one that is truly observable.
+Ключевой принцип — **корреляция**. Все три столпа становятся гораздо полезнее, если используют общий идентификатор — trace ID. Тогда инженер может перейти от всплеска метрики на дашборде к логам и распределённой трассировке конкретного запроса. Без корреляции данные остаются разрозненными, и приходится вручную восстанавливать картину по временным меткам. В этом и заключается разница между простым мониторингом и настоящей наблюдаемостью.
 
 In the DevOps toolchain, observability sits between deployment and incident response. After a deploy, metrics tell you immediately if error rates or latency regressed. During an incident, logs and traces tell you why. After the incident, SLOs and error budgets tell you how to prioritize reliability work versus feature work going forward. The dominant tools in this space are Prometheus + Grafana (open source metrics and dashboarding), Loki (open source log aggregation), Jaeger/Tempo (open source tracing), Datadog (SaaS, unified across all three pillars), and the OpenTelemetry project (vendor-neutral instrumentation SDK and wire format that works with any backend).
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### Metric Types
 
@@ -459,7 +459,7 @@ service:
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Prometheus + Grafana alerting on error rate
 
@@ -718,7 +718,7 @@ curl -s 'http://localhost:9090/api/v1/query' \
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Instrument a Flask app with Prometheus metrics
 
@@ -763,7 +763,7 @@ A new checkout service has the following raw data from the last 7 days:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Count the three observability pillars. Run: `printf 'metrics\nlogs\ntraces\n' | wc -l`
 

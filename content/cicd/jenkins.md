@@ -1,5 +1,5 @@
 ---
-title: Jenkins Pipelines
+title: Пайплайны Jenkins
 module: cicd
 duration_min: 25
 difficulty: intermediate
@@ -7,12 +7,12 @@ tags: [cicd, jenkins, pipeline, jenkinsfile, declarative, groovy, credentials]
 exercises: 4
 ---
 
-## Overview
-Jenkins is the most widely deployed open-source CI/CD server. It powers pipelines via `Jenkinsfile` — a Groovy-based DSL checked into your repo. The declarative pipeline syntax (introduced in Jenkins 2.x) is the modern standard: structured, readable, and portable. Understanding Jenkinsfiles, agents, credentials, and shared libraries is enough for most enterprise environments.
+## Обзор
+Jenkins — один из наиболее распространённых open-source серверов CI/CD. Пайплайны описываются в `Jenkinsfile` на основе DSL языка Groovy и хранятся в репозитории. Декларативный синтаксис pipeline, появившийся в Jenkins 2.x, стал современным стандартом: он структурирован, читаем и переносим. Для большинства корпоративных сценариев достаточно понимать Jenkinsfile, агентов, учётные данные и shared libraries.
 
-## Concepts
+## Основные понятия
 
-### Declarative Pipeline Structure
+### Структура декларативного pipeline
 ```groovy
 // Jenkinsfile
 pipeline {
@@ -230,7 +230,7 @@ env.GIT_BRANCH         // "origin/main"
 env.WORKSPACE          // path to the build workspace
 ```
 
-## Examples
+## Примеры
 
 ### Docker Build + ECR Push
 ```groovy
@@ -281,7 +281,7 @@ pipeline {
 }
 ```
 
-## Exercises
+## Практические задания
 
 1. Write a declarative Jenkinsfile that: checks out code, runs `pytest` in a `python:3.12-slim` Docker agent, publishes JUnit results, and sends a failure email in the `post` block.
 2. Add parallel stages to run unit tests and linting simultaneously. Verify both run in parallel by checking the Blue Ocean UI timeline.
@@ -291,7 +291,7 @@ pipeline {
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Count pipeline stages in a Jenkinsfile stub. Run: `printf 'stage("Build") {}\nstage("Test") {}\nstage("Deploy") {}\n' | grep -c 'stage('`
 

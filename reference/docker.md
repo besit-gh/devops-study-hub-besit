@@ -1,92 +1,92 @@
-# Docker — Quick Reference
+# Docker — краткая справка
 
-## Images
-
-| Command | Description |
-|---------|-------------|
-| `docker build -t name:tag .` | Build image from Dockerfile |
-| `docker build --no-cache -t name .` | Build without cache |
-| `docker images` | List local images |
-| `docker rmi image` | Remove image |
-| `docker image prune` | Remove dangling images |
-| `docker pull image:tag` | Pull from registry |
-| `docker push image:tag` | Push to registry |
-| `docker tag src dst` | Tag an image |
-| `docker save -o file.tar image` | Export image to tar |
-| `docker load -i file.tar` | Load image from tar |
-| `docker history image` | Show image layers |
-
-## Containers
+## Образы
 
 | Command | Description |
 |---------|-------------|
-| `docker run image` | Run container |
-| `docker run -d image` | Run detached |
-| `docker run -p 8080:80 image` | Map host:container port |
-| `docker run -v /host:/container image` | Bind mount |
-| `docker run --rm image` | Auto-remove on exit |
-| `docker run -e VAR=val image` | Set environment variable |
-| `docker run --name myapp image` | Named container |
-| `docker run -it image bash` | Interactive shell |
-| `docker ps` | List running containers |
-| `docker ps -a` | List all containers |
-| `docker stop name` | Graceful stop (SIGTERM) |
-| `docker kill name` | Force stop (SIGKILL) |
-| `docker rm name` | Remove container |
-| `docker rm $(docker ps -aq)` | Remove all stopped containers |
+| `docker build -t name:tag .` | Собрать образ из Dockerfile |
+| `docker build --no-cache -t name .` | Собрать без кэша |
+| `docker images` | Список локальных образов |
+| `docker rmi image` | Удалить образ |
+| `docker image prune` | Удалить неиспользуемые образы без тегов |
+| `docker pull image:tag` | Загрузить из реестра |
+| `docker push image:tag` | Отправить в реестр |
+| `docker tag src dst` | Назначить тег образу |
+| `docker save -o file.tar image` | Экспортировать образ в tar |
+| `docker load -i file.tar` | Загрузить образ из tar |
+| `docker history image` | Показать слои образа |
 
-## Inspection & Debugging
+## Контейнеры
 
 | Command | Description |
 |---------|-------------|
-| `docker logs name` | Show container logs |
-| `docker logs -f name` | Follow logs |
-| `docker logs --tail 100 name` | Last 100 lines |
-| `docker exec -it name bash` | Shell into running container |
-| `docker inspect name` | Full container JSON metadata |
-| `docker stats` | Live resource usage |
-| `docker top name` | Running processes in container |
-| `docker cp src name:/dest` | Copy file into container |
-| `docker diff name` | Show filesystem changes |
+| `docker run image` | Запустить контейнер |
+| `docker run -d image` | Запустить в фоновом режиме |
+| `docker run -p 8080:80 image` | Сопоставить порт хоста и контейнера |
+| `docker run -v /host:/container image` | Подключить bind mount |
+| `docker run --rm image` | Автоматически удалить после завершения |
+| `docker run -e VAR=val image` | Установить переменную окружения |
+| `docker run --name myapp image` | Назвать контейнер |
+| `docker run -it image bash` | Интерактивная оболочка |
+| `docker ps` | Список запущенных контейнеров |
+| `docker ps -a` | Список всех контейнеров |
+| `docker stop name` | Корректно остановить (SIGTERM) |
+| `docker kill name` | Принудительно остановить (SIGKILL) |
+| `docker rm name` | Удалить контейнер |
+| `docker rm $(docker ps -aq)` | Удалить все остановленные контейнеры |
 
-## Networks & Volumes
+## Просмотр состояния и отладка
 
 | Command | Description |
 |---------|-------------|
-| `docker network ls` | List networks |
-| `docker network create mynet` | Create network |
-| `docker run --network mynet image` | Attach to network |
-| `docker volume ls` | List volumes |
-| `docker volume create myvol` | Create volume |
-| `docker run -v myvol:/data image` | Mount named volume |
-| `docker volume prune` | Remove unused volumes |
+| `docker logs name` | Показать журналы контейнера |
+| `docker logs -f name` | Следить за журналом |
+| `docker logs --tail 100 name` | Последние 100 строк |
+| `docker exec -it name bash` | Открыть shell в работающем контейнере |
+| `docker inspect name` | Полные метаданные контейнера в JSON |
+| `docker stats` | Текущее потребление ресурсов |
+| `docker top name` | Процессы внутри контейнера |
+| `docker cp src name:/dest` | Скопировать файл в контейнер |
+| `docker diff name` | Показать изменения файловой системы |
+
+## Сети и тома
+
+| Command | Description |
+|---------|-------------|
+| `docker network ls` | Список сетей |
+| `docker network create mynet` | Создать сеть |
+| `docker run --network mynet image` | Подключить к сети |
+| `docker volume ls` | Список томов |
+| `docker volume create myvol` | Создать том |
+| `docker run -v myvol:/data image` | Подключить именованный том |
+| `docker volume prune` | Удалить неиспользуемые тома |
 
 ## Docker Compose
 
 | Command | Description |
 |---------|-------------|
-| `docker compose up` | Start services |
-| `docker compose up -d` | Start detached |
-| `docker compose up --build` | Force rebuild |
-| `docker compose down` | Stop and remove containers |
-| `docker compose down -v` | Also remove volumes |
-| `docker compose logs -f svc` | Follow service logs |
-| `docker compose exec svc bash` | Shell into service |
-| `docker compose ps` | List service status |
-| `docker compose restart svc` | Restart a service |
-| `docker compose pull` | Pull latest images |
+| `docker compose up` | Запустить службы |
+| `docker compose up -d` | Запустить в фоне |
+| `docker compose up --build` | Принудительно пересобрать |
+| `docker compose down` | Остановить и удалить контейнеры |
+| `docker compose down -v` | Также удалить тома |
+| `docker compose logs -f svc` | Следить за журналами службы |
+| `docker compose exec svc bash` | Открыть shell в службе |
+| `docker compose ps` | Показать состояние служб |
+| `docker compose restart svc` | Перезапустить службу |
+| `docker compose pull` | Загрузить последние версии образов |
 
-## Dockerfile Patterns
+## Шаблоны Dockerfile
 
 | Instruction | Description |
 |------------|-------------|
-| `FROM base:tag` | Base image |
-| `RUN cmd` | Execute at build time |
-| `COPY src dest` | Copy files into image |
-| `WORKDIR /path` | Set working directory |
-| `ENV VAR=value` | Set environment variable |
-| `EXPOSE 8080` | Document exposed port |
-| `CMD ["app"]` | Default command (overridable) |
-| `ENTRYPOINT ["app"]` | Fixed entrypoint |
-| `ARG NAME=default` | Build-time variable |
-| `HEALTHCHECK CMD curl ...` | Container health probe |
+| `FROM base:tag` | Базовый образ |
+| `RUN cmd` | Выполнить во время сборки |
+| `COPY src dest` | Скопировать файлы в образ |
+| `WORKDIR /path` | Установить рабочий каталог |
+| `ENV VAR=value` | Установить переменную окружения |
+| `EXPOSE 8080` | Объявить порт контейнера |
+| `CMD ["app"]` | Команда по умолчанию (может быть переопределена) |
+| `ENTRYPOINT ["app"]` | Фиксированная точка входа |
+| `ARG NAME=default` | Переменная времени сборки |
+| `HEALTHCHECK CMD curl ...` | Проверка работоспособности контейнера |

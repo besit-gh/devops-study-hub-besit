@@ -7,12 +7,12 @@ tags: [cicd, github-actions, workflows, runners, secrets, matrix, caching]
 exercises: 4
 ---
 
-## Overview
-GitHub Actions is the CI/CD platform built into GitHub. Workflows live in `.github/workflows/` and run on push, pull request, schedule, or manual trigger. Every job gets a fresh runner; steps inside a job share the same filesystem and environment. Understanding the job/step model, caching, and secrets handling is enough to build production-grade pipelines.
+## Обзор
+GitHub Actions — встроенная в GitHub платформа CI/CD. Workflow-файлы хранятся в `.github/workflows/` и запускаются при push, pull request, по расписанию или вручную. Каждая job получает отдельный runner, а шаги внутри одной job используют общие файловую систему и окружение. Понимания модели job/step, кэширования и работы с секретами достаточно, чтобы строить production-пайплайны.
 
-## Concepts
+## Основные понятия
 
-### Workflow Structure
+### Структура workflow
 ```yaml
 # .github/workflows/ci.yml
 name: CI
@@ -44,7 +44,7 @@ jobs:
         run: pytest --tb=short
 ```
 
-### Runners
+### Runner-ы
 ```yaml
 # GitHub-hosted (free tier: 2000 min/month for public repos)
 runs-on: ubuntu-24.04
@@ -59,7 +59,7 @@ runs-on: [self-hosted, linux, x64, gpu]
 
 Self-hosted runners give you control over hardware, software, and network access — useful for accessing private infrastructure or needing specific hardware.
 
-### Secrets and Environment Variables
+### Секреты и переменные окружения
 ```yaml
 jobs:
   deploy:
@@ -79,7 +79,7 @@ jobs:
 
 Secrets are set in **Settings → Secrets and variables → Actions**. They're masked in logs and never passed to workflows triggered by forks (for security).
 
-### Caching
+### Кэширование
 ```yaml
 - name: Cache pip packages
   uses: actions/cache@v4
@@ -215,7 +215,7 @@ jobs:
   run: docker compose down
 ```
 
-## Examples
+## Примеры
 
 ### Full CI/CD Pipeline
 ```yaml
@@ -283,7 +283,7 @@ jobs:
           kubectl rollout status deployment/myapp
 ```
 
-## Exercises
+## Практические задания
 
 1. Write a workflow that triggers on push to `main` and on pull requests. It should run `pytest` with Python 3.11 and 3.12 in a matrix. Use `actions/cache` for pip packages keyed to the hash of `requirements.txt`.
 2. Add a Docker build-and-push job that runs only on pushes to `main` (not PRs). Push the image to GitHub Container Registry (`ghcr.io`) using `GITHUB_TOKEN` for auth. Tag it with the commit SHA.
@@ -293,7 +293,7 @@ jobs:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Count jobs in a workflow stub. Run: `printf 'jobs:\n  build:\n    runs-on: ubuntu-latest\n  test:\n    runs-on: ubuntu-latest\n  deploy:\n    runs-on: ubuntu-latest\n' | awk '/^  [a-z]/ && !/^    /{c++} END{print c}'`
 

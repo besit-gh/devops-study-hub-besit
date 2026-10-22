@@ -1,5 +1,5 @@
 ---
-title: EC2, S3, and IAM
+title: EC2, S3 и IAM
 module: aws
 duration_min: 35
 difficulty: intermediate
@@ -7,14 +7,14 @@ tags: [aws, ec2, s3, iam, instances, buckets, policies, roles, permissions]
 exercises: 4
 ---
 
-## Overview
-EC2, S3, and IAM are the foundation of almost every AWS deployment. EC2 provides virtual machines; S3 provides object storage; IAM controls who and what can access everything. Understanding how these three interact — especially the IAM model of users, roles, and policies — is prerequisite knowledge for every other AWS service.
+## Обзор
+EC2, S3 и IAM — основа большинства развёртываний в AWS. EC2 предоставляет виртуальные машины, S3 — объектное хранилище, а IAM управляет тем, кто и к каким ресурсам может обращаться. Понимание взаимодействия этих компонентов, особенно модели пользователей, ролей и политик IAM, необходимо для работы с другими сервисами AWS.
 
-## Concepts
+## Основные понятия
 
 ### EC2 — Elastic Compute Cloud
 
-#### Instance Types
+#### Типы экземпляров
 ```
 t3.micro      — burstable, 2 vCPU, 1 GB RAM     (dev/test, free tier)
 t3.medium     — burstable, 2 vCPU, 4 GB RAM
@@ -26,7 +26,7 @@ g4dn.xlarge   — GPU instance (ML inference, graphics)
 
 Naming pattern: `<family><generation><attributes>.<size>` — `m6i.xlarge` = M family, gen 6, Intel, extra large.
 
-#### Launching an Instance
+#### Запуск экземпляра
 ```bash
 # Launch via CLI
 aws ec2 run-instances \
@@ -241,7 +241,7 @@ aws iam simulate-principal-policy \
 ✗ Never embed access keys in code or Docker images
 ```
 
-## Examples
+## Примеры
 
 ### Setting Up a Deployment Role
 ```bash
@@ -272,7 +272,7 @@ aws iam put-role-policy \
   --policy-document file://deploy-policy.json
 ```
 
-## Exercises
+## Практические задания
 
 1. Launch a t3.micro EC2 instance with a user data script that installs and starts nginx. SSH in and verify nginx is running. Then describe the instance using the AWS CLI and extract the public IP with `--query`.
 2. Create an S3 bucket with versioning enabled. Upload three versions of the same file. Use `aws s3api list-object-versions` to see all versions. Delete the latest version and verify the previous version is accessible.
@@ -282,7 +282,7 @@ aws iam put-role-policy \
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Extract the S3 bucket name from an ARN. Run: `echo "arn:aws:s3:::my-app-bucket-prod" | cut -d: -f6`
 

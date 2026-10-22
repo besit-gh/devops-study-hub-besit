@@ -1,5 +1,5 @@
 ---
-title: File System & Permissions
+title: Файловая система и права доступа
 module: linux
 duration_min: 15
 difficulty: intermediate
@@ -7,20 +7,20 @@ tags: [permissions, chmod, chown, acl, umask, setuid, sticky, filesystem]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Linux permissions are the first line of defense for every file and directory on a system. In DevOps, getting permissions wrong causes two failure modes: services that can't access their own files (too restrictive), and security vulnerabilities that let the wrong users or processes read secrets, write to config directories, or execute arbitrary code (too permissive). Understanding the full permission model — including special bits, umask, and ACLs — is a prerequisite for setting up web servers, deploying applications, managing SSH keys, and writing CI/CD pipelines that run in production.
+Права доступа Linux — первая линия защиты каждого файла и каталога в системе. Ошибки настройки приводят к двум типам проблем: службы не могут получить доступ к собственным файлам из-за слишком строгих прав, либо возникают уязвимости, позволяющие посторонним пользователям и процессам читать секреты, изменять конфигурации или выполнять произвольный код. Полная модель прав — включая специальные биты, umask и ACL — необходима для настройки веб-серверов, развёртывания приложений, управления SSH-ключами и создания рабочих CI/CD-пайплайнов.
 
-## Concepts
+## Основные понятия
 
-### The Permission Model
+### Модель прав доступа
 
 Every file and directory has:
 - An **owner** (a user)
 - A **group** (a group of users)
 - A **permission set** for three categories: owner, group, others
 
-Permissions are displayed as a 10-character string in `ls -la` output:
+Права доступа отображаются в выводе `ls -la` в виде строки из 10 символов:
 
 ```
 -rwxr-xr-x  1 ubuntu www-data 4096 deploy.sh
@@ -31,17 +31,17 @@ Permissions are displayed as a 10-character string in `ls -la` output:
 └───────────── file type: - (regular file), d (directory), l (symlink)
 ```
 
-Each permission letter maps to a numeric value:
+Каждому символу права соответствует числовое значение:
 - `r` = 4 (read)
 - `w` = 2 (write)
 - `x` = 1 (execute)
 - `-` = 0 (no permission)
 
-Summed into octal: `rwx` = 7, `r-x` = 5, `r--` = 4, `---` = 0.
+В восьмеричной записи значения складываются: `rwx` = 7, `r-x` = 5, `r--` = 4, `---` = 0.
 
-So `chmod 755` means: owner=rwx (7), group=r-x (5), others=r-x (5).
+Таким образом, `chmod 755` означает: владелец — rwx (7), группа — r-x (5), остальные — r-x (5).
 
-### Reading Permissions
+### Чтение прав доступа
 
 ```bash
 # Detailed listing: permissions, links, owner, group, size, date, name
@@ -63,11 +63,11 @@ ls -la /var/www/
 # s  socket
 ```
 
-On **directories**, the `x` bit means *enter* (traverse), not execute. A directory with `r--` can be listed but not entered. `--x` can be entered but not listed.
+Для **каталогов** бит `x` означает возможность *войти* в каталог (пройти по пути), а не выполнить его. Каталог с правами `r--` можно просмотреть, но нельзя открыть. Каталог с `--x` можно открыть по известному пути, но нельзя получить список содержимого.
 
-### chmod — Changing Permissions
+### chmod — изменение прав
 
-Two modes: octal and symbolic.
+Есть два режима задания прав: восьмеричный и символьный.
 
 **Octal mode:**
 ```bash
@@ -85,7 +85,7 @@ chmod 600 ~/.ssh/id_ed25519     # private key MUST be 600
 chmod 644 ~/.ssh/id_ed25519.pub # public key: world-readable is fine
 ```
 
-**Symbolic mode — more readable for targeted changes:**
+**Символьный режим — удобнее для точечных изменений:**
 ```bash
 # Add execute for owner
 chmod u+x script.sh
@@ -103,7 +103,7 @@ chmod u=rwx,g=rx,o= deploy.sh
 chmod -R 755 /var/www/html/
 ```
 
-### chown and chgrp — Changing Ownership
+### chown и chgrp — изменение владельца
 
 ```bash
 # Change owner and group
@@ -125,17 +125,17 @@ chown ubuntu: deploy.sh
 chown --reference=/etc/nginx/nginx.conf target.conf
 ```
 
-### Special Permission Bits
+### Специальные биты прав
 
-Beyond the standard rwx, three additional bits change execution behavior:
+Помимо стандартных rwx существуют три специальных бита, меняющих поведение файлов и каталогов:
 
-| Bit | Octal | Name | On files | On directories |
+| Бит | Восьмеричное значение | Название | Для файлов | Для каталогов |
 |-----|-------|------|----------|----------------|
-| setuid | 4000 | SUID | Execute as the file's owner | Ignored (mostly) |
-| setgid | 2000 | SGID | Execute as the file's group | New files inherit the directory's group |
-| sticky | 1000 | Sticky | Ignored | Only owner can delete their own files |
+| setuid | 4000 | SUID | Выполнение от имени владельца файла | В основном игнорируется |
+| setgid | 2000 | SGID | Выполнение от имени группы файла | Новые файлы наследуют группу каталога |
+| sticky | 1000 | Sticky | Игнорируется | Удалять файл может только его владелец |
 
-**setuid (`s` in owner's execute position):**
+**setuid (`s` в позиции бита выполнения владельца):**
 ```bash
 # Programs with setuid run as their owner, not the invoking user
 ls -la /usr/bin/passwd
@@ -147,9 +147,9 @@ chmod 4755 /usr/bin/myapp     # rwsr-xr-x
 chmod u+s /usr/bin/myapp      # symbolic
 ```
 
-`passwd` is owned by root but runs as root when any user executes it, allowing them to change their own password. SUID on shell scripts is ignored by Linux.
+Файл `passwd` принадлежит root и выполняется с правами root, когда его запускает любой пользователь. Это позволяет пользователю изменить собственный пароль. Linux игнорирует SUID на shell-скриптах.
 
-**setgid (`s` in group's execute position):**
+**setgid (`s` в позиции бита выполнения группы):**
 ```bash
 # Set setgid on a directory — new files inherit the directory's group
 mkdir /shared
@@ -163,9 +163,9 @@ ls -la /shared/newfile
 # -rw-rw-r-- 1 ubuntu devs newfile     ← group is 'devs', not ubuntu's primary group
 ```
 
-Useful for shared project directories where multiple developers need to access each other's files.
+Полезно для общих каталогов проектов, в которых разработчикам нужно работать с файлами друг друга.
 
-**sticky bit (`t` in others' execute position):**
+**sticky bit (`t` в позиции бита выполнения для остальных):**
 ```bash
 # Classic example: /tmp is world-writable but sticky
 ls -ld /tmp
@@ -178,9 +178,9 @@ chmod 1777 /tmp          # standard /tmp permissions
 chmod o+t /shared-dir    # symbolic
 ```
 
-The sticky bit prevents users from deleting each other's files in shared directories.
+Sticky bit не позволяет пользователям удалять чужие файлы в общих каталогах.
 
-**Finding files with special bits:**
+**Поиск файлов со специальными битами:**
 ```bash
 # Find all setuid files (potential security concern — audit these)
 find / -perm -4000 -type f 2>/dev/null
@@ -192,9 +192,9 @@ find / -perm -2000 -type f 2>/dev/null
 find / -perm -o+w -not \( -path /proc -prune -o -path /sys -prune \) 2>/dev/null
 ```
 
-### umask — Default Permissions for New Files
+### umask — права по умолчанию для новых файлов
 
-`umask` defines which permission bits are **removed** from new files and directories. It's a mask: bits in the umask are OFF.
+`umask` определяет, какие биты прав будут **убраны** у новых файлов и каталогов. Это маска: биты, установленные в umask, отключаются.
 
 ```bash
 # Check current umask
@@ -217,13 +217,13 @@ umask 027     # files: 640, dirs: 750 (group can read, others get nothing)
 umask 077     # files: 600, dirs: 700 (only owner)
 ```
 
-To make permanent: add `umask 027` to `/etc/profile` (system-wide) or `~/.bashrc` (per user).
+Чтобы сделать настройку постоянной, добавьте `umask 027` в `/etc/profile` (для всей системы) или `~/.bashrc` (для конкретного пользователя).
 
-**Why it matters:** if your CI/CD user creates log files with umask 022, those logs are world-readable. If your app creates config files with umask 000, they're world-writable. Set umask explicitly for service accounts.
+**Почему это важно:** если пользователь CI/CD создаёт логи с `umask 022`, их смогут читать все. Если приложение создаёт конфигурации с `umask 000`, любой пользователь сможет их изменять. Явно задавайте umask для сервисных аккаунтов.
 
-### ACLs — Access Control Lists
+### ACL — списки контроля доступа
 
-Standard Unix permissions only allow one owner, one group, and one "everyone else". ACLs extend this to grant specific permissions to additional users or groups without changing ownership.
+Стандартные права Unix предусматривают одного владельца, одну группу и категорию «все остальные». ACL расширяют эту модель и позволяют назначать права дополнительным пользователям и группам без смены владельца.
 
 ```bash
 # Check if ACL support is available
@@ -255,15 +255,15 @@ setfacl -x u:appuser /var/www/html/config.json
 setfacl -b /var/www/html/config.json
 ```
 
-When an ACL is set, `ls -la` shows a `+` after the permission string:
+Если для файла настроен ACL, `ls -la` показывает знак `+` после строки прав:
 ```
 -rw-rw-r--+ 1 root www-data config.json
 #         ^--- + means ACL is set
 ```
 
-### File Attributes — chattr and lsattr
+### Атрибуты файлов — chattr и lsattr
 
-Beyond permissions, Linux filesystems (ext4, xfs) support per-file attributes that control how the kernel itself handles the file:
+Помимо прав доступа, файловые системы Linux (ext4, xfs) поддерживают атрибуты файлов, определяющие, как ядро может работать с файлом:
 
 ```bash
 # View attributes
@@ -286,9 +286,9 @@ chattr +a /var/log/audit/audit.log
 # e  extent format — informational, set automatically
 ```
 
-`chattr +i` is used by security-hardening tools to protect critical config files like `/etc/passwd` or `/etc/resolv.conf`. It's one of the few controls that survives `rm -rf` as root.
+`chattr +i` используют инструменты усиления безопасности для защиты критически важных файлов конфигурации, например `/etc/passwd` и `/etc/resolv.conf`. Это один из немногих механизмов, который защищает файл даже от `rm -rf`, запущенного от root.
 
-### Privilege Escalation — sudo and su
+### Повышение привилегий — sudo и su
 
 ```bash
 # Run a single command as root
@@ -310,7 +310,7 @@ su -
 su - www-data
 ```
 
-`/etc/sudoers` controls who can run what as whom. Always edit with `visudo` (syntax-checks before saving):
+Файл `/etc/sudoers` определяет, кто и какие команды может выполнять от имени других пользователей. Всегда редактируйте его через `visudo`: перед сохранением команда проверяет синтаксис.
 ```
 # /etc/sudoers
 # Format: who  where=(as_whom) commands
@@ -318,9 +318,9 @@ ubuntu  ALL=(ALL:ALL) NOPASSWD: /usr/bin/systemctl restart nginx
 deploy  ALL=(ALL) NOPASSWD: /usr/local/bin/deploy.sh
 ```
 
-`NOPASSWD:` is common for CI/CD service accounts that need to restart services without interactive password prompts.
+`NOPASSWD:` часто используют для сервисных аккаунтов CI/CD, которым нужно перезапускать службы без интерактивного ввода пароля.
 
-### Finding Files by Permission
+### Поиск файлов по правам доступа
 
 ```bash
 # Files world-writable
@@ -345,9 +345,9 @@ find /etc -mtime -1 -type f
 find /home -name authorized_keys 2>/dev/null -exec ls -la {} \;
 ```
 
-## Examples
+## Примеры
 
-### Web Server Setup (nginx + application)
+### Настройка веб-сервера (nginx и приложение)
 
 ```bash
 # Standard web server permission layout
@@ -365,7 +365,7 @@ chmod 600 /var/www/myapp/.env
 chown www-data:www-data /var/www/myapp/.env
 ```
 
-### CI/CD Deployment Permissions
+### Права для развёртывания через CI/CD
 
 ```bash
 #!/usr/bin/env bash
@@ -384,7 +384,7 @@ ls -la /var/www/myapp
 stat /var/www/myapp
 ```
 
-### SSH Key Permission Requirements
+### Требования к правам SSH-ключей
 
 SSH is strict about private key file permissions — it refuses to use keys that are too open:
 
@@ -402,7 +402,7 @@ find ~/.ssh -type f -exec chmod 600 {} \;
 chmod 700 ~/.ssh
 ```
 
-### Security Audit Script
+### Скрипт аудита безопасности
 
 ```bash
 #!/usr/bin/env bash
@@ -426,19 +426,19 @@ echo "=== /tmp contents with permissions ==="
 ls -la /tmp/ | head -20
 ```
 
-## Exercises
+## Практические задания
 
-1. Create a directory `/tmp/shared`, set it up so that: (a) the group `staff` owns it, (b) all new files created inside inherit group `staff` (use setgid), (c) any user can create files but only the file's owner can delete them (sticky bit). Verify by creating two files as two different users and trying to delete each other's files.
+1. Создайте каталог `/tmp/shared` и настройте его так, чтобы: (а) владельцем группы была `staff`; (б) все новые файлы наследовали группу `staff` (используйте setgid); (в) любой пользователь мог создавать файлы, но удалять их мог только владелец файла (sticky bit). Проверьте результат: создайте файлы от двух разных пользователей и попробуйте удалить чужой файл.
 
-2. A Python web application needs to read a secret at `/etc/myapp/secret.key`. The app runs as user `appuser` (not root, not in any privileged group). Using `setfacl`, grant `appuser` read-only access to the file without changing the file's owner or group. Verify with `getfacl` and by running `sudo -u appuser cat /etc/myapp/secret.key`.
+2. Веб-приложению на Python нужно читать секрет из `/etc/myapp/secret.key`. Приложение работает от пользователя `appuser` (не root и не участник привилегированных групп). С помощью `setfacl` предоставьте `appuser` только право чтения файла, не меняя владельца и группу. Проверьте результат командами `getfacl` и `sudo -u appuser cat /etc/myapp/secret.key`.
 
-3. Write a bash script called `audit-permissions.sh` that: scans `/var/www` and `/etc` for files that are world-writable, reports them with their permissions and owner, and exits with code 1 if any are found (suitable for use as a CI gate). Test by creating a world-writable file and confirming the script catches it.
+3. Напишите Bash-скрипт `audit-permissions.sh`, который сканирует `/var/www` и `/etc` на наличие файлов, доступных для записи всем пользователям, выводит их права и владельца и завершается с кодом 1, если такие файлы найдены (скрипт должен подходить для контрольного этапа CI). Проверьте его, создав файл с правом записи для всех и убедившись, что скрипт его обнаруживает.
 
-4. Find all SUID and SGID binaries on your system with `find / -perm -4000 -o -perm -2000`. For each binary, explain in one sentence WHY it needs the elevated bit (use `man <binary>` or research). Identify any that look suspicious or unnecessary.
+4. Найдите все бинарные файлы с SUID и SGID с помощью `find / -perm -4000 -o -perm -2000`. Для каждого в одном предложении объясните, ПОЧЕМУ ему нужен повышенный бит привилегий (используйте `man <binary>` или изучите документацию). Отметьте файлы, которые выглядят подозрительно или избыточно.
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Print the permission bits of `/etc/passwd`.
 
@@ -450,8 +450,8 @@ ls -la /tmp/ | head -20
    -rw-r--r--
    ```
 
-hint: Think about which command displays detailed file metadata, including permissions, in a long-format listing.
-hint: Use ls with the -l flag on the target file, then consider how to isolate just the first field showing the permission bits.
+Подсказка: вспомните команду, которая выводит подробные метаданные файла, включая права доступа, в длинном формате.
+Подсказка: используйте `ls` с флагом `-l`, затем выделите первое поле — строку с правами доступа.
 
 2. Print the permission bits of `/tmp` (sticky bit expected).
 
@@ -463,5 +463,5 @@ hint: Use ls with the -l flag on the target file, then consider how to isolate j
    drwxrwxrwt
    ```
 
-hint: Think about which Linux command displays file and directory metadata, including permission bits.
-hint: Use ls with the -ld flags targeting /tmp, which shows the directory entry itself along with its permission string.
+Подсказка: вспомните команду Linux, которая показывает метаданные файла или каталога, включая биты прав.
+Подсказка: используйте `ls -ld /tmp`, чтобы вывести сам каталог `/tmp` вместе со строкой прав доступа.

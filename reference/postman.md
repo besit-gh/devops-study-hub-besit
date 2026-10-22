@@ -1,19 +1,19 @@
-# Postman / API Testing — Quick Reference
+# Postman и тестирование API — краткая справка
 
-## Newman CLI
+## CLI Newman
 
 | Command | Description |
 |---------|-------------|
-| `newman run collection.json` | Run a collection |
-| `newman run collection.json -e environment.json` | With environment |
-| `newman run collection.json -d data.json` | Data-driven run |
-| `newman run collection.json -n 3` | Run 3 iterations |
-| `newman run collection.json --bail` | Stop on first failure |
-| `newman run collection.json -r html,cli --reporter-html-export report.html` | Generate HTML report |
-| `newman run url` | Run from Postman URL |
-| `newman run collection.json --timeout 10000` | 10s request timeout |
+| `newman run collection.json` | Запустить коллекцию |
+| `newman run collection.json -e environment.json` | С указанием окружения |
+| `newman run collection.json -d data.json` | Запуск с использованием набора данных |
+| `newman run collection.json -n 3` | Выполнить 3 итерации |
+| `newman run collection.json --bail` | Остановиться при первой ошибке |
+| `newman run collection.json -r html,cli --reporter-html-export report.html` | Создать HTML-отчёт |
+| `newman run url` | Запустить по URL Postman |
+| `newman run collection.json --timeout 10000` | Тайм-аут запроса 10 секунд |
 
-## Environment & Variables
+## Окружения и переменные
 
 | Context | Set | Get |
 |---------|-----|-----|
@@ -22,7 +22,7 @@
 | Collection | `pm.collectionVariables.set("key", val)` | `pm.collectionVariables.get("key")` |
 | Local (request) | `pm.variables.set("key", val)` | `pm.variables.get("key")` |
 
-## Pre-request Script Patterns
+## Шаблоны pre-request-скриптов
 
 ```javascript
 // Set dynamic timestamp

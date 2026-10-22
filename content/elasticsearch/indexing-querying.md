@@ -1,5 +1,5 @@
 ---
-title: Indexing & Querying
+title: Индексация и запросы Elasticsearch
 module: elasticsearch
 duration_min: 25
 difficulty: intermediate
@@ -7,11 +7,11 @@ tags: [elasticsearch, query-dsl, aggregations, bulk-api, search]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Writing data into Elasticsearch and retrieving it efficiently are the two most operationally critical skills for anyone working with the ELK stack. A poorly written bulk ingest pipeline can saturate a cluster's indexing thread pool in minutes; a query that runs aggregations on a `text` field instead of a `keyword` field can OOM a node's heap. These are production incidents, not theoretical problems — and they almost always trace back to misunderstanding either the mapping of a field or the semantics of a query type.
+Запись данных в Elasticsearch и их эффективное извлечение — два ключевых эксплуатационных навыка для работы со стеком ELK. Плохо спроектированный bulk ingest может за минуты перегрузить пул потоков индексации кластера; запрос агрегации по полю `text` вместо `keyword` способен исчерпать heap узла. Это реальные production-инциденты, а не теория: почти всегда причина — неверное понимание mapping поля или семантики типа запроса.
 
-Elasticsearch is built on Apache Lucene. Every index is divided into shards, each shard is a self-contained Lucene index, and each Lucene index is composed of immutable segments. When you index a document, it lands in an in-memory buffer, gets flushed to a new segment on disk, and is eventually merged with other segments. This immutability is why "updating" a document is actually a delete-and-reindex internally — there is no in-place mutation. Understanding this model explains why certain operations are expensive (deep pagination, updating many documents), why certain query structures are fast (filter caching, doc values), and why index design decisions made at creation time are difficult to change later.
+Elasticsearch построен на Apache Lucene. Каждый индекс делится на shards; каждый shard представляет собой отдельный индекс Lucene, состоящий из неизменяемых сегментов. При индексации документ попадает в буфер памяти, затем записывается в новый сегмент на диске и позже объединяется с другими сегментами. Поэтому «обновление» документа фактически выполняется как удаление и повторная индексация — изменить существующий сегмент на месте нельзя. Эта модель объясняет дороговизну глубокой пагинации и массового обновления документов, а также эффективность кэширования фильтров и doc values. Она также показывает, почему решения о структуре индекса, принятые при создании, трудно изменить позже.
 
 In the broader DevOps toolchain, Elasticsearch sits at the query layer of the observability stack. Beats and Logstash handle collection and transformation; Elasticsearch handles storage and search; Kibana renders the results. The patterns in this lesson — bulk indexing, bool queries, aggregation pipelines, and cursor-based pagination — are the same patterns Kibana uses internally when it renders a dashboard. Understanding them lets you debug slow queries, optimize ingest pipelines, and build custom tooling that talks directly to the Elasticsearch API.
 
@@ -79,7 +79,7 @@ Note the `Content-Type: application/x-ndjson` header on the bulk request. The Bu
 curl -s "http://localhost:9200/services/_count" | jq .count
 ```
 
-## Concepts
+## Основные понятия
 
 ### Mappings and Field Types
 
@@ -536,7 +536,7 @@ curl -s -X GET http://localhost:9200/services/_explain/svc-003 \
 
 `_explain` shows exactly why a document matched or did not match a query, including the full BM25 scoring breakdown: term frequency in the document, inverse document frequency across the index, and field-length normalization. When a document is missing from results you expect, use `_explain` to identify which clause excluded it before guessing at the mapping.
 
-## Examples
+## Примеры
 
 ### Example 1 — Incident Triage: Identifying the Source of Error Spikes
 
@@ -773,7 +773,7 @@ curl -s -X POST http://localhost:9200/api-logs/_doc \
   | jq .error.type
 ```
 
-## Exercises
+## Практические задания
 
 ### Exercise 1 — Design and Query a Kubernetes Events Index
 
@@ -848,7 +848,7 @@ Use `_explain` on `svc-debug` with this query to identify **both** bugs. Fix the
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Extract the query type from an Elasticsearch DSL stub. Run: `printf '{"query":{"match":{"title":"devops"}}}\n' | python3 -c "import sys,json; q=json.load(sys.stdin)['query']; print(list(q.keys())[0])"`
 

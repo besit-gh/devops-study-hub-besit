@@ -1,5 +1,5 @@
 ---
-title: Performance Tuning
+title: Настройка производительности Logstash
 module: logstash
 duration_min: 20
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [logstash, performance, tuning, jvm, monitoring]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Logstash sits at the processing core of many ELK-stack pipelines, responsible for ingesting, transforming, and routing log data at scale. A misconfigured Logstash node is one of the most common causes of log pipeline backpressure, data loss, and excessive Elasticsearch indexing latency. Because Logstash is a JVM process with persistent on-disk queues, multi-threaded pipeline workers, and a plugin-per-stage architecture, its performance characteristics differ significantly from simpler log shippers like Filebeat — and its failure modes are correspondingly more nuanced.
+Logstash находится в центре многих пайплайнов ELK и отвечает за приём, преобразование и маршрутизацию больших объёмов логов. Неправильно настроенный узел Logstash часто вызывает обратное давление в конвейере, потерю данных и чрезмерную задержку индексации Elasticsearch. Поскольку Logstash работает на JVM, использует постоянные очереди на диске, многопоточные обработчики и плагины на каждом этапе, его производительность заметно отличается от более простых отправителей логов вроде Filebeat, а сбои требуют более тонкой диагностики.
 
-Tuning Logstash is a matter of matching three resources to your workload profile: CPU (pipeline workers), memory (JVM heap and batch sizes), and disk I/O (persistent queue throughput). These levers interact — increasing batch size raises throughput but also heap pressure; adding workers increases parallelism but also contention on shared queue locks. The monitoring API provides the operational feedback loop that makes tuning empirical rather than guesswork.
+Настройка Logstash сводится к подбору трёх ресурсов под характер нагрузки: CPU (число pipeline workers), память (heap JVM и размер batch) и дисковый ввод-вывод (пропускная способность persistent queue). Эти параметры взаимосвязаны: увеличение batch повышает пропускную способность, но усиливает давление на heap; добавление workers увеличивает параллелизм, но может усилить конкуренцию за блокировки очередей. Monitoring API позволяет опираться на измерения, а не на догадки.
 
 In the broader DevOps toolchain, Logstash occupies the transformation tier between data collection (Filebeat, Fluentd, syslog) and storage/analysis (Elasticsearch, Kafka, S3). It is not always the right choice — Elasticsearch ingest node pipelines and Filebeat processors handle simple transformations with less operational overhead. Knowing when Logstash earns its place, and when it is unnecessary complexity, is as important as knowing how to tune it.
 
-## Concepts
+## Основные понятия
 
-### Pipeline Workers vs Batch Size
+### Pipeline workers vs Batch Size
 
 These two settings are the primary performance levers and are frequently confused because both affect throughput. They operate at different stages of the pipeline and have distinct resource implications.
 
@@ -282,7 +282,7 @@ Adding Logstash means another JVM process to monitor, another set of queues to s
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Diagnosing and Fixing an Elasticsearch Output Bottleneck
 
@@ -506,7 +506,7 @@ curl -s http://localhost:9600/_node/stats/pipelines/security_audit | \
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Establish a Performance Baseline and Identify a Bottleneck
 
@@ -586,7 +586,7 @@ watch -n 5 "curl -s http://localhost:9600/_node/stats/pipelines/main | \
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 4. Calculate events per second for a batch size of 125 at a 50 ms interval. Run: `python3 -c "print(125 * int(1000/50))"`
 

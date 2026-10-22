@@ -1,35 +1,35 @@
-# Kibana — Quick Reference
+# Kibana — краткая справка
 
-## KQL (Kibana Query Language)
-
-| Query | Description |
-|-------|-------------|
-| `status: 404` | Exact field match |
-| `status: 4*` | Wildcard match |
-| `status >= 400 and status < 500` | Numeric range |
-| `message: "connection refused"` | Phrase search |
-| `response_time > 1000` | Greater than |
-| `NOT status: 200` | Negate |
-| `service: nginx AND status: error` | AND |
-| `env: prod OR env: staging` | OR |
-| `tags: (error OR warning)` | Multiple values |
-| `_exists_: user.id` | Field exists |
-| `NOT _exists_: error_code` | Field missing |
-
-## Lucene Query Syntax (Discover fallback)
+## KQL (язык запросов Kibana)
 
 | Query | Description |
 |-------|-------------|
-| `field:value` | Term match |
+| `status: 404` | Точное совпадение поля |
+| `status: 4*` | Совпадение по шаблону |
+| `status >= 400 and status < 500` | Числовой диапазон |
+| `message: "connection refused"` | Поиск фразы |
+| `response_time > 1000` | Больше чем |
+| `NOT status: 200` | Отрицание условия |
+| `service: nginx AND status: error` | Логическое И |
+| `env: prod OR env: staging` | Логическое ИЛИ |
+| `tags: (error OR warning)` | Несколько значений |
+| `_exists_: user.id` | Поле существует |
+| `NOT _exists_: error_code` | Поле отсутствует |
+
+## Синтаксис запросов Lucene (альтернатива в Discover)
+
+| Query | Description |
+|-------|-------------|
+| `field:value` | Совпадение термина |
 | `field:"exact phrase"` | Phrase match |
-| `field:val*` | Wildcard |
-| `field:[100 TO 200]` | Inclusive range |
-| `field:{100 TO 200}` | Exclusive range |
-| `field:[100 TO *]` | Open-ended range |
-| `+must -mustnot should` | Boolean shorthand |
-| `field:(a OR b)` | Multiple terms |
+| `field:val*` | Шаблон с подстановочными символами |
+| `field:[100 TO 200]` | Включающий диапазон |
+| `field:{100 TO 200}` | Исключающий диапазон |
+| `field:[100 TO *]` | Диапазон без верхней границы |
+| `+must -mustnot should` | Сокращённая булева запись |
+| `field:(a OR b)` | Несколько терминов |
 
-## ES\|QL (Elasticsearch Query Language)
+## ES\|QL (язык запросов Elasticsearch)
 
 ```esql
 FROM logs-*

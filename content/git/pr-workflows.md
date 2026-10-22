@@ -1,5 +1,5 @@
 ---
-title: PR Workflows
+title: Рабочий процесс Pull Request
 module: git
 duration_min: 15
 difficulty: beginner
@@ -7,19 +7,19 @@ tags: [git, pull-request, code-review, github, codeowners, workflow]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Pull requests (PRs) — called Merge Requests on GitLab — are the primary mechanism through which code enters a shared codebase in professional software teams. In a DevOps context, a well-designed PR workflow is not just a courtesy for reviewers: it is the first gate in your delivery pipeline. PRs are where security vulnerabilities get caught before deployment, where infrastructure changes get a second pair of eyes before they touch production, and where the CI system proves that the change is safe to ship. Getting this workflow right is one of the most visible signs of engineering maturity on a team.
+Pull Request (PR; в GitLab — Merge Request) — основной механизм попадания изменений в общий код профессиональной команды. В DevOps правильно организованный PR — не просто вежливость по отношению к ревьюерам, а первый контрольный этап delivery-пайплайна. На ревью обнаруживают уязвимости до развёртывания, повторно проверяют изменения инфраструктуры перед production, а CI подтверждает безопасность релиза. Качественный PR-процесс — один из заметных признаков инженерной зрелости команды.
 
-The core design principle behind PR workflows is that **no change merges unreviewed and untested**. This is enforced through a combination of social conventions (good PR descriptions, prompt review turnaround) and hard technical controls (branch protection rules, required status checks, CODEOWNERS). The human side and the automation side must both work together — automation without good conventions produces rubber-stamped approvals, while good conventions without automation produce bypassed rules the moment someone is in a hurry.
+Основной принцип PR-процесса: **изменения нельзя сливать без ревью и тестирования**. Это обеспечивается и командными договорённостями (качественное описание PR, своевременное ревью), и техническими ограничениями (защита веток, обязательные проверки статуса, CODEOWNERS). Люди и автоматизация должны работать вместе: без хороших договорённостей проверки превращаются в формальность, а без автоматических ограничений правила обходят при первой спешке.
 
-In the broader DevOps toolchain, the PR sits between local development and CI/CD. A developer opens a PR, which triggers automated checks (linting, tests, security scanning, infrastructure plan previews). A human reviewer approves it. Then automated merge gates confirm everything is green before the change lands on `main` and is picked up by continuous deployment. Understanding PR workflows means understanding the handoff between the human and automated parts of that chain.
+В DevOps PR связывает локальную разработку и CI/CD. Разработчик открывает PR, запускаются автоматические проверки (линтеры, тесты, сканирование безопасности, предварительный план изменений инфраструктуры). Ревьюер подтверждает изменения, после чего автоматические merge gates проверяют успешность всех обязательных этапов. Только затем изменения попадают в `main` и могут быть подхвачены continuous deployment. Понимание PR-процесса помогает разобраться в передаче ответственности между человеком и автоматизацией.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### Fork Model vs Branch Model
+### Модель fork и модель веток
 
 The two dominant PR collaboration models differ on whether contributors share a single repository or work in isolated copies.
 
@@ -374,7 +374,7 @@ gh pr view 247 --web
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Full Branch Model PR Lifecycle
 
@@ -629,7 +629,7 @@ gh pr view 289 --json mergeable,reviewDecision
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Set Up a Complete PR Workflow from Scratch
 
@@ -684,7 +684,7 @@ gh pr view 289 --json mergeable,reviewDecision
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Validate a PR branch name against the team's naming convention.
 

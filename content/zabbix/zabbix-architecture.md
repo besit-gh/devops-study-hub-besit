@@ -1,5 +1,5 @@
 ---
-title: Architecture & Installation
+title: Архитектура и установка Zabbix
 module: zabbix
 duration_min: 20
 difficulty: beginner
@@ -7,17 +7,17 @@ tags: [zabbix, architecture, installation, server, agent, database]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Zabbix is an enterprise-grade open-source monitoring platform that has been a staple of traditional infrastructure monitoring for over two decades. It monitors servers, network devices, applications, and cloud resources using both agent-based and agentless methods. Unlike newer cloud-native tools that emerged from the Kubernetes ecosystem, Zabbix is built for breadth — it handles SNMP for network switches, IPMI for bare-metal servers, and JMX for Java applications alongside standard Linux metrics. DevOps engineers encounter Zabbix heavily in on-premises and hybrid environments, and understanding its architecture is essential for both operating it and integrating it with modern tooling like Grafana or alerting pipelines built on PagerDuty and Opsgenie.
+Zabbix — корпоративная open-source платформа мониторинга, которая уже более двадцати лет используется для наблюдения за традиционной инфраструктурой. Она мониторит серверы, сетевые устройства, приложения и облачные ресурсы как с агентами, так и без них. В отличие от более новых cloud-native инструментов из экосистемы Kubernetes, Zabbix охватывает широкий спектр технологий: SNMP для сетевых коммутаторов, IPMI для физических серверов, JMX для Java-приложений и стандартные Linux-метрики. DevOps-инженеры часто встречают Zabbix в локальных и гибридных инфраструктурах, поэтому понимание его архитектуры необходимо для эксплуатации и интеграции с Grafana, PagerDuty и Opsgenie.
 
-The design philosophy behind Zabbix is centralized control with distributed collection. One server owns all configuration, trigger evaluation, and alerting logic. Proxies push that collection perimeter outward — into remote datacenters, DMZs, or cloud VPCs — without creating independent control planes. This keeps operational complexity low while scaling geographically. The tradeoff is that the server and its database become a shared bottleneck; database tuning and cache configuration are therefore first-class operational concerns, not afterthoughts.
+Архитектура Zabbix сочетает централизованное управление с распределённым сбором данных. Один сервер отвечает за конфигурацию, вычисление триггеров и логику оповещений. Прокси расширяют географию сбора данных — в удалённые дата-центры, DMZ или облачные VPC — без создания независимых плоскостей управления. Это позволяет масштабировать мониторинг географически, не усложняя эксплуатацию. The tradeoff is that the server and its database become a shared bottleneck; database tuning and cache configuration are therefore first-class operational concerns, not afterthoughts.
 
 In the broader DevOps toolchain, Zabbix occupies the infrastructure observability layer. It excels at classic availability monitoring — "is this host up, is this service responding, is this disk filling?" — and at high-frequency metric collection from heterogeneous device types that a pure Prometheus stack would struggle to cover without extensive exporter management. In modern shops, Zabbix often coexists with Prometheus: Zabbix owns legacy infrastructure and network gear; Prometheus owns containerized workloads. Grafana sits above both, unifying dashboards via the Zabbix datasource plugin.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### Component Overview
 
@@ -123,7 +123,7 @@ Zabbix supports both collection modes, and most real deployments use both simult
 
 ---
 
-### Installation: Server, Database, and Frontend
+### Установка: Server, Database, and Frontend
 
 Zabbix provides its own package repositories for all major distributions. Always use the official Zabbix repo rather than distribution-bundled packages — distro packages lag several major versions behind and lack up-to-date templates.
 
@@ -382,7 +382,7 @@ Zabbix exposes its own operational health via the `zabbix[]` internal item key. 
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Full Single-Node Installation on Ubuntu 22.04 with MySQL
 
@@ -617,7 +617,7 @@ watch -n5 "zabbix_server -R config_cache_reload 2>&1; \
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Trace Data Flow from Agent to Database
 
@@ -695,7 +695,7 @@ watch -n5 "zabbix_server -R config_cache_reload 2>&1; \
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 6. Identify the default Zabbix agent listening port. Run: `python3 -c "ports={'agent': 10050, 'server': 10051}; print(ports['agent'])"`
 

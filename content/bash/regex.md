@@ -1,5 +1,5 @@
 ---
-title: Regex
+title: Регулярные выражения
 module: bash
 duration_min: 20
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [bash, regex, grep, egrep, sed, patterns, ERE, BRE]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Regular expressions are a universal language for describing text patterns. In DevOps work you will use them daily: grepping application logs for errors, extracting IPs from access logs, validating configuration values in deployment scripts, filtering `kubectl` output, writing nginx location blocks, and building alerting pipelines that classify log lines. Knowing regex well separates engineers who write precise, fast one-liners from those who pipe through ten extra `awk` calls.
+Регулярные выражения — универсальный язык описания текстовых шаблонов. В DevOps они используются ежедневно: поиск ошибок в логах приложений, извлечение IP из access-логов, проверка значений конфигурации, фильтрация вывода `kubectl`, написание правил `location` в nginx и построение пайплайнов оповещений. Хорошее владение regex позволяет писать точные и быстрые однострочные команды без множества лишних вызовов `awk`.
 
-The core design principle behind regex is declarative pattern matching — you describe the shape of the text you want, and the engine finds it. Most tools you already use (grep, sed, awk, Python, Go, JavaScript, Terraform, GitHub Actions) share a common regex vocabulary with minor dialect differences. Mastering the POSIX ERE dialect plus Perl-compatible extensions gives you coverage across nearly every tool in the DevOps toolchain.
+Принцип regex — декларативный поиск по шаблону: вы описываете форму нужного текста, а движок находит совпадения. Большинство знакомых инструментов (`grep`, `sed`, `awk`, Python, Go, JavaScript, Terraform, GitHub Actions) используют близкие наборы регулярных выражений с небольшими различиями. Освоение POSIX ERE и расширений, совместимых с Perl, покрывает почти весь DevOps-стек.
 
 Regex fits into DevOps in several layers: interactive shell work (grep, awk), scripted automation (bash `=~`, sed in pipelines), log aggregation (Fluentd, Logstash, Promtail `pipeline_stages`), and platform configuration (nginx `location ~`, Kubernetes admission webhooks, OPA policies). The investment in learning regex has one of the highest returns of any technical skill at this level.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### Two Flavors: BRE and ERE
 
@@ -49,7 +49,7 @@ grep -P "(?<=\[)\d{4}-\d{2}-\d{2}" app.log
 
 ---
 
-### Character Classes
+### Классы символов
 
 Character classes define a set of acceptable characters at a single position.
 
@@ -410,7 +410,7 @@ https?://[a-zA-Z0-9.-]+(:[0-9]+)?(/[^[:space:]]*)?
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Incident Triage — Extracting Error Rates from Nginx Logs
 
@@ -619,7 +619,7 @@ echo '2024-01-15T10:23:45.000Z [INFO] (api) Health check OK |' \
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Log Analysis Pipeline
 
@@ -713,7 +713,7 @@ For each: name the specific rule or concept it violates, then write the correcte
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Using `sed -E` and capture groups, transform `"Smith, John"` into `"John Smith"` (swap last name, first name order). Write a one-liner piping `echo` into `sed`.
 

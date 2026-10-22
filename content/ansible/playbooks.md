@@ -1,5 +1,5 @@
 ---
-title: Playbooks & Inventory
+title: Playbook и inventory Ansible
 module: ansible
 duration_min: 20
 difficulty: beginner
@@ -7,18 +7,18 @@ tags: [ansible, playbooks, inventory, tasks, modules, idempotent]
 exercises: 4
 ---
 
-## Overview
-Ansible automates configuration management and application deployment across many servers simultaneously, over SSH, with no agent required. A **playbook** describes what to do; the **inventory** describes where to do it. Everything runs from a control node — your laptop or CI server — pushing changes via SSH. This lesson covers the fundamentals of both.
+## Обзор
+Ansible автоматизирует управление конфигурацией и развёртывание приложений сразу на множестве серверов через SSH, без установки агента на управляемых узлах. **Playbook** описывает, что нужно сделать, а **inventory** — на каких узлах это выполнить. Все операции запускаются с управляющего узла — например, ноутбука или CI-сервера, — который передаёт изменения по SSH. В уроке разбираются основы обоих компонентов.
 
-## Concepts
+## Основные понятия
 
-### Key Principles
+### Основные принципы
 - **Agentless** — only SSH and Python required on managed nodes
 - **Idempotent** — running a playbook twice produces the same result; no harmful side effects
 - **Declarative** — you describe the desired state, Ansible figures out what needs to change
 - **Push model** — the control node connects to managed nodes (vs Puppet/Chef pull model)
 
-### Inventory
+### Inventory — список узлов
 The inventory tells Ansible which hosts to manage:
 
 ```ini
@@ -72,7 +72,7 @@ ansible -i inventory.ini webservers -m shell -a "uptime"
 ansible -i inventory.ini all -m shell -a "df -h" -b   # -b: become (sudo)
 ```
 
-### Playbook Structure
+### Структура playbook
 ```yaml
 # deploy.yml
 ---
@@ -232,7 +232,7 @@ handlers:
       state: reloaded
 ```
 
-## Examples
+## Примеры
 
 ### Nginx Setup Playbook
 ```yaml
@@ -285,7 +285,7 @@ handlers:
         state: reloaded
 ```
 
-## Exercises
+## Практические задания
 
 1. Write an inventory file with two groups (`webservers` and `databases`) and at least one host each. Run `ansible -i inventory.ini all -m ping` to verify connectivity. Run an ad-hoc `uptime` command against one group.
 2. Write a playbook that installs `nginx` on the `webservers` group, ensures it's started and enabled, and creates a simple `index.html` file. Use `--check` mode first to preview changes.
@@ -295,7 +295,7 @@ handlers:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Count tasks in an Ansible play stub. Run: `printf '- name: Install nginx\n  apt:\n- name: Start nginx\n  service:\n- name: Copy config\n  template:\n' | grep -c '^- name:'`
 

@@ -1,5 +1,5 @@
 ---
-title: TCP/IP Fundamentals
+title: Основы TCP/IP
 module: networking
 duration_min: 20
 difficulty: beginner
@@ -7,19 +7,19 @@ tags: [networking, tcp, ip, udp, osi, protocols, ports]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Everything in DevOps runs on TCP/IP. When a service is unreachable, a port is blocked, or a connection times out, you need to understand what's happening at the network layer to diagnose it quickly — before you start restarting containers or blaming the application. TCP/IP is the foundation on which every service mesh, load balancer, container network, and cloud VPC is built, so fluency here pays off across your entire career.
+В DevOps практически всё работает поверх TCP/IP. Если сервис недоступен, порт заблокирован или соединение завершается по тайм-ауту, нужно понимать происходящее на сетевом уровне — прежде чем перезапускать контейнеры или обвинять приложение. TCP/IP лежит в основе service mesh, балансировщиков нагрузки, контейнерных сетей и облачных VPC, поэтому эти знания пригодятся на протяжении всей карьеры.
 
-The TCP/IP model emerged from ARPANET research in the 1970s with a core design principle: packet-switched, best-effort delivery at the network layer, with reliability pushed up to the transport layer. This layering means each concern is isolated — IP doesn't care about ordering, TCP doesn't care about routing, HTTP doesn't care about whether the underlying transport is wired or wireless. That separation is what makes the stack composable and diagnosable.
+Модель TCP/IP сформировалась в ходе исследований ARPANET в 1970-х годах. Её ключевой принцип — пакетная передача с best-effort доставкой на сетевом уровне, а обеспечение надёжности возлагается на транспортный уровень. Такое разделение изолирует ответственность: IP не отвечает за порядок пакетов, TCP — за маршрутизацию, а HTTP не зависит от того, используется проводная или беспроводная сеть. Благодаря этому стек можно компоновать и диагностировать по уровням.
 
-In the DevOps toolchain, TCP/IP knowledge surfaces constantly: Kubernetes network policies filter by port and IP block, Docker bridge networks assign RFC 1918 addresses, Prometheus scrapes targets over HTTP, health checks use TCP probes, and Ansible connects over SSH. When any of those break, your debugging starts at the network layer and works upward. This lesson gives you the mental model and the commands to do that efficiently.
+В DevOps знания TCP/IP используются постоянно: NetworkPolicy в Kubernetes фильтрует трафик по портам и IP-подсетям, bridge-сети Docker назначают адреса RFC 1918, Prometheus собирает метрики по HTTP, health checks используют TCP-пробы, а Ansible подключается через SSH. Если что-то из этого ломается, диагностику начинают с сетевого уровня и поднимаются выше. Урок даёт модель и команды для такой проверки.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### The OSI Model (Practical View)
+### Модель OSI на практике
 
 The full 7-layer OSI model is useful as a mental map for isolating where a problem lives. In practice, you'll spend most of your time at layers 3, 4, and 7.
 
@@ -397,7 +397,7 @@ echo "=== HTTP ===" && curl -o /dev/null -sw "HTTP %{http_code} in %{time_total}
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Diagnose a "Connection Refused" Error from an Application Container
 
@@ -606,7 +606,7 @@ ss -tan | awk 'NR>1 {print $1}' | sort | uniq -c | sort -rn
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Map a Running Service End-to-End
 
@@ -690,7 +690,7 @@ No special tools required — use `ip` and a calculator or your own mental arith
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Classify port 443 as well-known or ephemeral.
 

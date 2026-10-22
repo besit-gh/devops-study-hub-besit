@@ -1,5 +1,5 @@
 ---
-title: Scripting Fundamentals
+title: Основы скриптов на Python
 module: python
 duration_min: 30
 difficulty: beginner
@@ -7,17 +7,17 @@ tags: [python, variables, functions, loops, conditionals, types]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Python is the lingua franca of DevOps automation. Every major tool — Ansible, AWS CDK, Airflow, SaltStack — either uses Python or provides a Python SDK. Unlike Bash, Python scales: it handles JSON, YAML, HTTP APIs, and complex logic without becoming unreadable. Unlike Go or Java, it requires no compilation step and ships on virtually every Linux system. This combination — readable, available, batteries-included — is why Python dominates the automation layer of the DevOps toolchain.
+Python — основной язык автоматизации в DevOps. Крупные инструменты — Ansible, AWS CDK, Airflow, SaltStack — либо используют Python, либо предоставляют Python SDK. В отличие от Bash, Python подходит для более сложной логики, работы с JSON, YAML и HTTP API без потери читаемости. В отличие от Go или Java, он не требует этапа компиляции и доступен почти в каждой Linux-системе. Читаемость, доступность и богатая стандартная библиотека сделали Python главным языком автоматизации в DevOps.
 
-This lesson covers the subset of Python that matters most for scripting: variables and types, control flow, functions, file I/O, and accepting input from the environment. These aren't academic exercises. The patterns here appear directly in CI/CD scripts, health checkers, log parsers, and deployment tools. Understanding them deeply means you can write a working script from scratch in an interview, contribute to an existing automation codebase on day one, and debug tools like Ansible or Fabric when they fail.
+В уроке рассматривается наиболее важная для скриптов часть Python: переменные и типы, управление потоком выполнения, функции, работа с файлами и получение данных из окружения. Это не абстрактные упражнения: такие шаблоны используются в CI/CD-скриптах, health checks, парсерах логов и инструментах развёртывания. Их понимание позволит написать рабочий скрипт на собеседовании, сразу вносить вклад в существующую автоматизацию и диагностировать сбои инструментов вроде Ansible или Fabric.
 
-Python sits between the shell and a full application framework in the DevOps toolchain. Use Bash for one-liners, command chaining, and wrapping CLI tools. Use Python when you need data structures, error handling, reusable functions, or anything involving APIs and file parsing. Use a full framework (Flask, FastAPI) only when you need persistent services. Most DevOps scripts live firmly in Python territory.
+В DevOps Python занимает промежуточное положение между shell и полноценным приложением. Используйте Bash для однострочных команд, конвейеров и обёрток над CLI-утилитами. Выбирайте Python, когда нужны структуры данных, обработка ошибок, повторно используемые функции, API или разбор файлов. Полноценный фреймворк вроде Flask или FastAPI нужен, когда требуется постоянно работающий сервис. Большинство DevOps-скриптов достаточно писать на Python.
 
-## Concepts
+## Основные понятия
 
-### Variables and Types
+### Переменные и типы
 
 Python is dynamically typed — the variable holds a reference to an object, and the type follows the object, not the variable name. There are no declarations.
 
@@ -466,7 +466,7 @@ if __name__ == "__main__":
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Log Error Rate Checker
 
@@ -729,7 +729,7 @@ kill %1   # stop the test server
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Parse a CSV and Compute Statistics
 
@@ -825,7 +825,7 @@ steps = [
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Sum the values of a dictionary.
 

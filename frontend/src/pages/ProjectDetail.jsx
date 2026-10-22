@@ -33,7 +33,7 @@ function HintBox({ hints }) {
         disabled={hintCount >= hints.length}
         className="text-xs text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-700 px-2.5 py-1 rounded-md hover:bg-amber-50 dark:hover:bg-amber-950/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
-        {hintCount === 0 ? 'Hint' : hintCount >= hints.length ? 'No more hints' : 'Next hint'}
+        {hintCount === 0 ? 'Подсказка' : hintCount >= hints.length ? 'Подсказок больше нет' : 'Следующая подсказка'}
       </button>
     </div>
   )
@@ -112,14 +112,14 @@ function SandboxStep({ step, projectSlug, onComplete, onXpEarned }) {
           disabled={running || !code.trim()}
           className="px-4 py-1.5 rounded-md text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-40 transition-colors"
         >
-          {running ? 'Running…' : 'Run'}
+          {running ? 'Выполняется…' : 'Запустить'}
         </button>
         <button
           onClick={check}
           disabled={checking || !code.trim()}
           className="px-4 py-1.5 rounded-md text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors"
         >
-          {checking ? 'Checking…' : 'Check'}
+          {checking ? 'Проверяем…' : 'Проверить'}
         </button>
       </div>
       {result && (
@@ -134,25 +134,25 @@ function SandboxStep({ step, projectSlug, onComplete, onXpEarned }) {
           )}
           {result.kind === 'run' && result.stdout && (
             <div>
-              <div className="text-xs text-gray-400 font-sans mb-1">Output</div>
+              <div className="text-xs text-gray-400 font-sans mb-1">Вывод</div>
               <pre className="text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{result.stdout}</pre>
             </div>
           )}
           {result.kind === 'check' && !result.passed && (
             <div className="space-y-2">
               <div>
-                <div className="text-xs text-gray-400 font-sans">Got</div>
+                <div className="text-xs text-gray-400 font-sans">Получено</div>
                 <pre className="text-xs text-red-600 dark:text-red-400 whitespace-pre-wrap">{result.actual || '(empty)'}</pre>
               </div>
               <div>
-                <div className="text-xs text-gray-400 font-sans">Expected</div>
+                <div className="text-xs text-gray-400 font-sans">Ожидалось</div>
                 <pre className="text-xs text-emerald-600 dark:text-emerald-400 whitespace-pre-wrap">{result.expected}</pre>
               </div>
             </div>
           )}
           {result.stderr && (
             <div>
-              <div className="text-xs text-gray-400 font-sans mb-1">Stderr</div>
+              <div className="text-xs text-gray-400 font-sans mb-1">Ошибки (stderr)</div>
               <pre className="text-xs text-red-500 whitespace-pre-wrap">{result.stderr}</pre>
             </div>
           )}
@@ -194,7 +194,7 @@ function AiStep({ step, projectSlug, onComplete, onXpEarned }) {
       <textarea
         value={answer}
         onChange={e => setAnswer(e.target.value)}
-        placeholder="Write your answer here — YAML, HCL, config blocks, explanations…"
+        placeholder="Введите ответ: YAML, HCL, конфигурацию или объяснение…"
         rows={10}
         className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200 p-3 font-mono resize-y focus:outline-none focus:border-emerald-500 dark:focus:border-emerald-500"
       />
@@ -217,7 +217,7 @@ function AiStep({ step, projectSlug, onComplete, onXpEarned }) {
           </div>
           <div className="p-4 space-y-3 text-sm">
             <div>
-              <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Feedback</div>
+              <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Обратная связь</div>
               <p className="text-gray-700 dark:text-gray-300">{result.feedback}</p>
             </div>
             <div>
@@ -272,9 +272,9 @@ export default function ProjectDetail({ onXpEarned }) {
     setStepStatus(prev => ({ ...prev, [stepId]: { status, score } }))
   }
 
-  if (loading) return <div className="p-6 text-gray-400 dark:text-gray-500">Loading…</div>
+  if (loading) return <div className="p-6 text-gray-400 dark:text-gray-500">Загрузка…</div>
   if (error) return <div className="p-6 text-red-500">{error}</div>
-  if (!project) return <div className="p-6 text-red-500">Project not found.</div>
+  if (!project) return <div className="p-6 text-red-500">Проект не найден.</div>
 
   const totalDone = Object.values(stepStatus).filter(s => ['passed', 'graded'].includes(s.status)).length
   const allDone = project.steps.length > 0 && totalDone === project.steps.length
@@ -387,8 +387,8 @@ export default function ProjectDetail({ onXpEarned }) {
 
       {allDone && (
         <div className="mt-6 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-center">
-          <div className="text-emerald-700 dark:text-emerald-300 font-semibold">Project complete!</div>
-          <div className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">+75 XP bonus awarded</div>
+          <div className="text-emerald-700 dark:text-emerald-300 font-semibold">Проект завершён!div>
+          <div className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">Получен бонус: +75 XP</div>
         </div>
       )}
     </div>

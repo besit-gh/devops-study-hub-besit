@@ -1,5 +1,5 @@
 ---
-title: Inputs, Filters & Outputs
+title: Inputs, filters и outputs Logstash
 module: logstash
 duration_min: 25
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [logstash, grok, filters, inputs, outputs, elk]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-The plugin triad — inputs, filters, and outputs — is where the bulk of Logstash pipeline authoring happens. Getting this right determines whether your data arrives in Elasticsearch clean, correctly typed, and with accurate timestamps. Grok in particular is the most-used and most-debugged filter in ELK deployments. A common source of confusion is that grok looks complex but follows a simple rule: every pattern is a named regex that captures into a field. Once you understand that rule, you can build any pattern from the library of ~120 built-ins.
+Основная часть настройки pipeline Logstash связана с тремя типами плагинов: inputs, filters и outputs. От их правильной конфигурации зависит, попадут ли данные в Elasticsearch очищенными, с корректными типами и временными метками. Grok — один из наиболее часто используемых и отлаживаемых фильтров в ELK. Он кажется сложным, но работает по простому правилу: каждый шаблон — именованное регулярное выражение, которое сохраняет совпадение в поле. Поняв этот принцип, можно собирать шаблоны из примерно 120 встроенных вариантов.
 
-This lesson walks through each plugin category in the order you'll use them: inputs first (where data comes from), then filters (how to transform it), then outputs (where it goes). Every concept is followed by a working code block. The exercises at the end require only what is taught here — no assumed knowledge of regex beyond the basics taught in the grok section.
+В уроке категории плагинов рассматриваются в порядке их использования: сначала inputs (откуда приходят данные), затем filters (как их преобразовать), затем outputs (куда отправить результат). После каждого понятия приведён рабочий пример кода. Для выполнения заданий достаточно материала этого урока и базовых знаний регулярных выражений, объяснённых в разделе о grok.
 
 A key principle throughout: every event that enters Logstash is a hash of key-value pairs. Filters add keys, remove keys, rename keys, or change values. The output serialises that hash and sends it somewhere. There is no magic — just data manipulation at each step.
 
-## Concepts
+## Основные понятия
 
-### Inputs
+### Inputs — источники данных — источники данных
 
 Inputs define where events come from. Multiple inputs can exist in a single pipeline. All events from all inputs flow into the same filter chain.
 
@@ -113,7 +113,7 @@ input {
 
 After parsing, syslog input adds: `facility`, `severity`, `priority`, `program`, `pid`, `logsource`, `timestamp`.
 
-### Filters
+### Filters — обработка данных — обработка данных
 
 Filters transform events. Multiple filter plugins in the same `filter {}` block run in order, top to bottom.
 
@@ -404,7 +404,7 @@ filter {
 
 Adds: `[user_agent][name]` (Chrome, Firefox), `[user_agent][os][name]` (Windows, macOS), `[user_agent][device][name]`.
 
-### Outputs
+### Outputs — отправка данных — отправка данных
 
 Outputs send events to their final destination. Multiple outputs can run in the same pipeline — every event goes to every output (unless wrapped in a conditional).
 
@@ -554,7 +554,7 @@ curl -s "http://localhost:9600/_node/stats/pipelines/main" | \
 
 The `events.in` vs `events.out` difference for a grok filter is the number of pattern-failure events (events still pass through; they just get the failure tag).
 
-## Examples
+## Примеры
 
 ### Full pipeline: Beats → Nginx parse → Elasticsearch
 
@@ -655,7 +655,7 @@ filter {
 
 Result event fields: `level`, `service`, `request_id`, `username`, `duration_ms` (integer), `status`, `env`, `@timestamp`.
 
-## Exercises
+## Практические задания
 
 1. Write a grok pattern that parses this log line into fields `log_timestamp`, `level`, `service`, and `log_message`:
    ```
@@ -670,7 +670,7 @@ Result event fields: `level`, `service`, `request_id`, `username`, `duration_ms`
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 4. Count grok pattern captures in a pattern string. Run: `echo '%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:level} %{GREEDYDATA:message}' | grep -o '%{[^}]*}' | wc -l`
 

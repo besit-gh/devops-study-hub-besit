@@ -1,5 +1,5 @@
 ---
-title: Managing Releases
+title: Управление релизами Helm
 module: helm
 duration_min: 15
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [helm, releases, upgrade, rollback, repositories, install]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-A Helm **release** is a named, tracked instance of a chart deployed into a Kubernetes cluster. The same chart can be installed multiple times under different release names — one release per environment, or one per tenant in a multi-tenant system — each with its own configuration and independently managed lifecycle. Helm stores release metadata as Secrets in the target namespace (by default), which means release state is cluster-native and survives Helm client restarts without any external database.
+**Release Helm** — именованный экземпляр chart, развёрнутый в кластере Kubernetes и отслеживаемый системой. Один chart можно установить несколько раз под разными именами: например, по одному релизу на окружение или арендатора в многопользовательской системе. У каждого будет своя конфигурация и независимый жизненный цикл. По умолчанию Helm хранит метаданные релиза в Secret целевого namespace, поэтому состояние релизов находится внутри кластера и сохраняется после перезапуска клиента без внешней базы данных.
 
-The core design principle behind Helm's release model is atomic, revisioned deployments. Every `install` or `upgrade` creates a new revision. Helm renders the chart templates with the supplied values, applies the resulting manifests to the cluster, and either declares success (all resources healthy) or rolls back automatically if you've used `--atomic`. This is a deliberate departure from `kubectl apply`, which is stateless — Helm knows what was deployed before and can diff, upgrade, and revert it.
+Основной принцип модели релизов Helm — атомарные развёртывания с ревизиями. Каждая команда `install` или `upgrade` создаёт новую ревизию. Helm обрабатывает шаблоны с заданными values и применяет получившиеся манифесты к кластеру. Операция либо завершается успешно, либо автоматически откатывается при использовании `--atomic`. В отличие от stateless-команды `kubectl apply`, Helm помнит предыдущее развёртывание и умеет сравнивать, обновлять и откатывать его.
 
 In the broader DevOps toolchain, Helm sits between your CI/CD pipeline and the Kubernetes API. Source code is built into images by CI; Helm is the mechanism by which a specific image version, combined with environment-specific configuration, becomes a live deployment. Tools like ArgoCD, Flux, and Spinnaker all have first-class Helm integrations, making release management a foundational Helm skill regardless of which deployment platform you ultimately use.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### What Helm Tracks Per Release
 
@@ -365,7 +365,7 @@ helm get values "$RELEASE" -n "$NAMESPACE" | grep tag
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Installing and Upgrading PostgreSQL from Bitnami
 
@@ -640,7 +640,7 @@ helm list -n production -o json | jq '.[].chart'
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Release Inspection and Values Tracing
 
@@ -716,7 +716,7 @@ Write a shell script (not a one-liner) that:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Extract the release status from a `helm list` output stub. Run: `printf 'NAME\tSTATUS\tCHART\nmyapp\tdeployed\tmyapp-1.0.0\n' | awk '/^myapp/{print $2}'`
 

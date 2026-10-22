@@ -1,5 +1,5 @@
 ---
-title: IAM Best Practices
+title: Лучшие практики IAM
 module: devsecops
 duration_min: 20
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [devsecops, iam, aws, gcp, least-privilege, oidc, mfa, audit, access-contr
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-IAM (Identity and Access Management) is the authorization layer that controls who can do what to which cloud resources. In practice, IAM misconfiguration is the leading cause of cloud breaches — overly permissive roles, leaked access keys, and unused permissions all create pivot points for attackers. Unlike a network firewall that a single team configures once, IAM permissions sprawl across every team, every CI/CD pipeline, and every service account in your organization. The blast radius of a single misconfigured role can be the entire cloud account.
+IAM (Identity and Access Management) — уровень авторизации, который определяет, кто и какие действия может выполнять над облачными ресурсами. На практике неправильная настройка IAM — одна из главных причин компрометации облаков: чрезмерно широкие роли, утёкшие ключи доступа и неиспользуемые разрешения создают точки входа для атакующих. В отличие от сетевого firewall, который может централизованно настраивать одна команда, права IAM распределены между всеми командами, CI/CD-пайплайнами и сервисными аккаунтами организации. Ошибка в одной роли может затронуть весь облачный аккаунт.
 
-IAM best practices are not a one-time checklist. They are operational habits built into your deployment process: permissions reviewed on every merge, credential rotation enforced by policy, and access patterns monitored continuously. The mental model to internalize is that access is debt — every permission you grant is a liability that must be justified, reviewed, and revoked when no longer needed.
+Лучшие практики IAM — не разовый чек-лист, а операционные привычки, встроенные в процесс развёртывания: проверка прав при каждом merge, обязательная ротация credentials и постоянный мониторинг шаблонов доступа. Полезная модель мышления: доступ — это долг. Каждое выданное разрешение создаёт обязательство, которое нужно обосновывать, регулярно пересматривать и отзывать, когда оно больше не требуется.
 
-In the DevOps toolchain, IAM sits at the intersection of infrastructure-as-code (where roles are defined), CI/CD pipelines (where they are assumed), and observability (where their usage is audited). Getting IAM right means treating it the same way you treat code: version-controlled, peer-reviewed, and automatically tested.
+В DevOps IAM находится на пересечении Infrastructure as Code (где определяются роли), CI/CD-пайплайнов (где эти роли используются) и наблюдаемости (где аудитируется их применение). Правильно настроенный IAM нужно сопровождать так же, как код: хранить в системе контроля версий, проверять на ревью и автоматически тестировать.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### Principle of Least Privilege
 
@@ -563,7 +563,7 @@ aws cloudwatch put-metric-alarm \
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Provision a Scoped CI/CD Role with OIDC (GitHub → AWS)
 
@@ -891,7 +891,7 @@ aws iam get-role \
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Audit and Trim an Overpermissioned Role
 
@@ -943,7 +943,7 @@ The script should output each finding prefixed with `[PASS]` or `[FAIL]` so it c
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 6. Parse this minimal IAM policy and print `overprivileged` if any statement grants `Action: '*'`, otherwise print `ok`.
 

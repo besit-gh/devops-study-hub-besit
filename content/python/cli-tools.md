@@ -1,5 +1,5 @@
 ---
-title: Writing CLI Tools
+title: Создание CLI-инструментов на Python
 module: python
 duration_min: 20
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [python, argparse, cli, click, typer, scripts]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Command-line tools are the connective tissue of DevOps automation. Deployment scripts, health checkers, log parsers, secret rotators — they are almost always CLI programs that other tools invoke, pipe together, or schedule via cron and CI systems. A well-written CLI tool behaves like a Unix citizen: it reads from stdin when appropriate, writes data to stdout and diagnostics to stderr, returns meaningful exit codes, and documents itself through `--help`. A poorly-written one forces engineers to read source code before they can use it safely in production.
+CLI-инструменты связывают компоненты DevOps-автоматизации. Скрипты развёртывания, проверки здоровья, парсеры логов и ротации секретов обычно представляют собой программы командной строки, которые вызывают другие инструменты, объединяют в конвейеры или запускают по расписанию через cron и CI. Хороший CLI ведёт себя как полноценная Unix-утилита: при необходимости читает stdin, выводит данные в stdout, диагностику — в stderr, возвращает осмысленные коды завершения и документирует себя через `--help`. Плохо спроектированный инструмент заставляет инженера изучать исходный код перед безопасным использованием в production.
 
-Python's `argparse` is the right default starting point: it ships with the standard library, generates help text automatically, validates types and choices, and handles subcommands. For more complex tools, `click` and `typer` offer decorator-based APIs that reduce boilerplate, but they add dependencies. Understanding `argparse` deeply first means you can reason about what the higher-level libraries are doing under the hood — and it's what you'll reach for when writing tools that need to run in minimal environments without a pip install.
+Для начала лучше всего подходит `argparse`: модуль входит в стандартную библиотеку, автоматически формирует справку, проверяет типы и допустимые значения и поддерживает подкоманды. Для более сложных инструментов `click` и `typer` предлагают API на основе декораторов и уменьшают количество шаблонного кода, но добавляют зависимости. Сначала стоит разобраться в `argparse`, чтобы понимать внутреннюю работу высокоуровневых библиотек и создавать инструменты для минимальных окружений без установки дополнительных пакетов.
 
 CLI tools in the DevOps toolchain occupy a specific role: they are the human-facing and script-facing interface to automation. They get invoked by CI pipelines, Makefiles, Ansible tasks, and cron jobs — all of which depend on exit codes and clean output to make decisions. Getting those contracts right is what separates a script that works on your laptop from one that can be trusted in a pipeline.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### argparse Basics
 
@@ -425,7 +425,7 @@ if __name__ == "__main__":
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Production Health Check Tool
 
@@ -762,7 +762,7 @@ tail -f /var/log/nginx/access.log | ./logsummary.py
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Build a Service Checker with Proper Exit Codes
 
@@ -845,7 +845,7 @@ python jsonfilter.py --field level --value ERROR test.jsonl --output errors.json
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Split a shell command string into a list of arguments.
 

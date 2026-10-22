@@ -1,5 +1,5 @@
 ---
-title: Subnets & CIDR
+title: Подсети и CIDR
 module: networking
 duration_min: 15
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [networking, cidr, subnets, ip, vpc, routing]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-CIDR (Classless Inter-Domain Routing) notation and subnetting are foundational skills for any DevOps engineer working with cloud infrastructure, containers, or on-premises networks. You encounter them constantly: defining a VPC, writing a security group rule that allows only your office IP, configuring Kubernetes pod and service CIDRs, setting up VPN split tunneling, or ensuring two peered VPCs don't have overlapping address spaces. Misunderstanding even one of these can result in silent routing failures, security holes, or a refactoring project when you run out of IP addresses six months after launch.
+Нотация CIDR (Classless Inter-Domain Routing) и разбиение сетей на подсети — базовые навыки DevOps-инженера, работающего с облаками, контейнерами или локальной инфраструктурой. CIDR встречается при создании VPC, настройке security group только для офисного IP, назначении подсетей Pod и Service в Kubernetes, настройке split tunneling VPN и проверке пересечения адресных диапазонов связанных VPC. Ошибка в этих вопросах может привести к незаметным проблемам маршрутизации, уязвимостям или необходимости переработать сеть после исчерпания адресов.
 
-The core design principle behind subnetting is hierarchical address allocation — you take a large block of addresses and divide it into smaller blocks, each with a fixed network prefix and a variable host portion. The prefix length (the `/N`) tells you exactly where that boundary is. Everything follows from that single idea: how many hosts fit, whether two IPs share a subnet, whether traffic needs a router, and how to aggregate routes efficiently.
+Основной принцип подсетей — иерархическое распределение адресов: большой диапазон делится на меньшие блоки, каждый с фиксированным сетевым префиксом и переменной частью для узлов. Длина префикса (`/N`) определяет границу между ними. Из этого следуют остальные свойства: сколько узлов помещается в подсеть, находятся ли два IP в одной подсети, нужен ли маршрутизатор и как эффективно агрегировать маршруты.
 
 In the DevOps toolchain, CIDR knowledge sits at the infrastructure layer but surfaces constantly in higher-level tools: Terraform `aws_subnet` resources, Helm chart values for Kubernetes CNI plugins, Ansible firewall rules, and Docker network configurations all require you to reason about address blocks. Getting subnetting right at design time saves enormous pain later — you cannot easily re-CIDR a production VPC with running workloads.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### IP Addresses and Binary Representation
 
@@ -50,7 +50,7 @@ To internalize binary conversion, practice these anchors:
 
 These are exactly the values that appear in the last octet of non-octet-aligned subnet masks — memorize them.
 
-### CIDR Notation
+### Нотация CIDR
 
 CIDR notation writes an address block as `<network address>/<prefix length>`. The network address has all host bits set to zero. The prefix length says how many of the 32 bits belong to the network part.
 
@@ -394,7 +394,7 @@ print(ip in net)  # True
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Auditing a VPC for Overlapping Subnets Before Peering
 
@@ -650,7 +650,7 @@ terraform plan -target=output.public_cidrs -target=output.private_cidrs -target=
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Binary Subnet Math Without a Calculator
 
@@ -775,7 +775,7 @@ python3 audit_cidrs.py 192.168.10.0/24 10.244.0.0/16 10.96.0.0/12
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Calculate the number of usable host addresses in a `/20` subnet.
 

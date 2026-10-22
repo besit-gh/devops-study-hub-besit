@@ -7,15 +7,15 @@ tags: [prometheus, alertmanager, alerting, oncall, slack, pagerduty]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Alertmanager handles the lifecycle of alerts fired by Prometheus (and other Prometheus-compatible systems). It receives raw alert events, groups related alerts to reduce noise, routes them to the correct receiver based on labels, deduplicates repeated firings, and manages silences for planned maintenance. Understanding Alertmanager is essential for on-call work — misconfigured routing trees cause missed pages or alert storms, both of which have direct production impact.
+Alertmanager управляет жизненным циклом оповещений от Prometheus и других совместимых систем. Он получает события, группирует связанные оповещения для уменьшения шума, направляет их нужным получателям по меткам, устраняет дубликаты и поддерживает silences на время планового обслуживания. Понимание Alertmanager необходимо для дежурств: ошибки в дереве маршрутизации приводят к пропущенным уведомлениям или шквалу оповещений, напрямую влияющим на production.
 
 The split between Prometheus and Alertmanager is deliberate. Prometheus evaluates alerting rules and sends alert events to Alertmanager over HTTP — but Prometheus has no opinion about who gets notified or when. Alertmanager is solely responsible for the notification lifecycle: grouping alerts that arrive close together, waiting before sending (to allow bursts to settle), routing by label, and suppressing duplicates. This separation means multiple Prometheus instances can all send to the same Alertmanager cluster, and Alertmanager handles deduplication across them.
 
 A critical operational point: misconfiguring `group_wait`, `group_interval`, and `repeat_interval` causes two failure modes. Too aggressive (very short intervals) and you generate alert spam that trains people to ignore pages. Too conservative (very long `repeat_interval`) and a sustained incident stops generating pages after the first notification, leaving it invisible. Calibrating these values for each team's on-call culture is as important as writing the alerting expressions.
 
-## Concepts
+## Основные понятия
 
 ### Alerting Rules in Prometheus
 
@@ -154,7 +154,7 @@ Incoming alerts
   [Receiver]      ← Slack, PagerDuty, email, webhook, etc.
 ```
 
-### Routing Tree
+### Дерево маршрутизации
 
 The routing tree is the core of Alertmanager config. It is a tree of `route` nodes; each alert walks the tree top-down and is matched to the first (or all, if `continue: true`) matching route. The root route is a catch-all — it must have a receiver and cannot have match conditions.
 
@@ -362,7 +362,7 @@ amtool --alertmanager.url=http://alertmanager:9093 config show
 
 Alertmanager deduplicates alerts automatically: if the same alert (same labels) keeps firing, only one notification is sent (then repeated per `repeat_interval`). This is different from grouping — deduplication prevents re-sending the same alert within a group, while grouping controls how alerts are bundled into notifications.
 
-## Examples
+## Примеры
 
 **Run Alertmanager with Docker:**
 
@@ -451,7 +451,7 @@ receivers:
         send_resolved: true
 ```
 
-## Exercises
+## Практические задания
 
 1. Write a complete `alertmanager.yml` that routes: (a) `severity=critical` alerts to PagerDuty with a 10s group_wait, (b) `severity=warning` alerts to a Slack channel with 5m group_wait, (c) everything else to a "null" receiver (drop). Add an inhibition rule that suppresses warning alerts when a critical alert fires for the same `job`.
 
@@ -462,7 +462,7 @@ receivers:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 4. Count receivers in an Alertmanager config stub. Run: `printf 'receivers:\n- name: team-slack\n- name: team-email\n- name: team-pagerduty\n' | grep -c '^- name:'`
 

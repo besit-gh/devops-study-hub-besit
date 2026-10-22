@@ -1,35 +1,35 @@
-# Python — Quick Reference
+# Python — краткая справка
 
-## Built-in Types & Operations
-
-| Pattern | Description |
-|---------|-------------|
-| `[x for x in lst if cond]` | List comprehension |
-| `{k: v for k, v in d.items()}` | Dict comprehension |
-| `{x for x in lst}` | Set comprehension |
-| `(x for x in lst)` | Generator expression |
-| `*args, **kwargs` | Variadic positional / keyword args |
-| `a, *rest = lst` | Unpack with rest |
-| `d.get("key", default)` | Dict get with default |
-| `sorted(lst, key=lambda x: x.val)` | Sort by attribute |
-| `zip(a, b)` | Parallel iteration |
-| `enumerate(lst)` | Index + value iteration |
-| `any(cond for x in lst)` | Any element satisfies |
-| `all(cond for x in lst)` | All elements satisfy |
-
-## File & I/O
+## Встроенные типы и операции
 
 | Pattern | Description |
 |---------|-------------|
-| `with open("f") as fh:` | Safe file open |
-| `fh.read()` | Read entire file |
-| `fh.readlines()` | Read as list of lines |
-| `for line in fh:` | Stream lines |
-| `json.load(fh)` | Parse JSON file |
-| `json.dump(obj, fh, indent=2)` | Write JSON file |
-| `json.loads(s)` | Parse JSON string |
-| `json.dumps(obj)` | Serialize to JSON string |
-| `pathlib.Path("dir") / "file"` | Path join |
+| `[x for x in lst if cond]` | Генератор списка |
+| `{k: v for k, v in d.items()}` | Генератор словаря |
+| `{x for x in lst}` | Генератор множества |
+| `(x for x in lst)` | Генераторное выражение |
+| `*args, **kwargs` | Переменное число позиционных и именованных аргументов |
+| `a, *rest = lst` | Распаковка с остатком |
+| `d.get("key", default)` | Получить значение словаря с умолчанием |
+| `sorted(lst, key=lambda x: x.val)` | Сортировать по атрибуту |
+| `zip(a, b)` | Параллельный обход |
+| `enumerate(lst)` | Обход с индексом и значением |
+| `any(cond for x in lst)` | Хотя бы один элемент удовлетворяет условию |
+| `all(cond for x in lst)` | Все элементы удовлетворяют условию |
+
+## Файлы и ввод-вывод
+
+| Pattern | Description |
+|---------|-------------|
+| `with open("f") as fh:` | Безопасно открыть файл |
+| `fh.read()` | Прочитать файл целиком |
+| `fh.readlines()` | Прочитать как список строк |
+| `for line in fh:` | Читать строки последовательно |
+| `json.load(fh)` | Разобрать JSON-файл |
+| `json.dump(obj, fh, indent=2)` | Записать JSON-файл |
+| `json.loads(s)` | Разобрать строку JSON |
+| `json.dumps(obj)` | Сериализовать в строку JSON |
+| `pathlib.Path("dir") / "file"` | Объединить части пути |
 | `Path("f").read_text()` | Read file in one call |
 | `Path("f").write_text(s)` | Write file in one call |
 
@@ -44,7 +44,7 @@
 | `result.returncode` | Exit code |
 | `subprocess.run(cmd, shell=True)` | Shell string (avoid if possible) |
 
-## Error Handling
+## Обработка ошибок
 
 | Pattern | Description |
 |---------|-------------|

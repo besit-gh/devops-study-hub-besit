@@ -1,5 +1,5 @@
 ---
-title: DNS
+title: DNS — система доменных имён
 module: networking
 duration_min: 15
 difficulty: beginner
@@ -7,17 +7,17 @@ tags: [networking, dns, dig, nslookup, records, resolution]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-DNS (Domain Name System) is the distributed database that translates human-readable names like `api.example.com` into IP addresses that routers can act on. Every service call your application makes — whether it's hitting a database, calling a third-party API, or resolving a Kubernetes service — starts with a DNS lookup. When DNS breaks, failures surface as connection timeouts, NXDOMAIN errors, or mysterious slowdowns that look like application bugs. DNS literacy is a first-responder skill: before you can diagnose anything network-related, you need to understand what the system is doing and what it should be doing.
+DNS (Domain Name System) — распределённая система, преобразующая понятные человеку имена вроде `api.example.com` в IP-адреса, с которыми работают сетевые устройства. Любое обращение приложения к сервису — базе данных, стороннему API или Kubernetes Service — начинается с DNS-запроса. При сбое DNS появляются тайм-ауты соединения, ошибки NXDOMAIN и загадочные задержки, похожие на ошибки приложения. Понимание DNS необходимо для первичной диагностики сетевых проблем.
 
-DNS is designed around three principles: **delegation** (no single server knows everything — authority is delegated through a hierarchy), **caching** (every answer carries a TTL that controls how long it can be reused), and **eventual consistency** (changes propagate over time as caches expire, not instantly). These principles explain most of the counterintuitive behavior you'll encounter — why a DNS change "takes time," why different clients see different answers, and why querying two nameservers can return different results.
+DNS опирается на три принципа: **делегирование** — ни один сервер не знает всего, полномочия передаются по иерархии; **кэширование** — каждый ответ содержит TTL, определяющий срок повторного использования; **согласованность с течением времени** — изменения распространяются по мере истечения кэшей, а не мгновенно. Эти принципы объясняют, почему DNS-изменения требуют времени, разные клиенты могут видеть разные ответы, а запросы к двум DNS-серверам иногда возвращают разные результаты.
 
 In the DevOps toolchain, DNS sits at the intersection of infrastructure, networking, and deployment. You configure DNS records when you launch a service, manage TTLs during blue-green deployments, rely on internal DNS for Kubernetes service discovery, and debug it when services can't find each other. Cloud providers (AWS Route 53, GCP Cloud DNS, Cloudflare) expose DNS as an API, making it a first-class piece of infrastructure-as-code. Understanding DNS deeply means you can diagnose incidents faster, design safer deployment strategies, and reason about where failures actually originate.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### The DNS Resolution Chain
 
@@ -419,7 +419,7 @@ kubectl logs -n kube-system -l k8s-app=kube-dns  # any errors in CoreDNS logs?
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Diagnosing a Failed Deployment Cutover
 
@@ -604,7 +604,7 @@ certbot renew --dry-run --cert-name example.com
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Trace and Interpret a Full Resolution Chain
 
@@ -656,7 +656,7 @@ Pick a domain you control, or use a public domain for read-only analysis (e.g., 
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Extract the TTL from a mock DNS A record — the same field you read in `dig` output.
 

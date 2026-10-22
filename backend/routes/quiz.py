@@ -4,7 +4,7 @@ from datetime import date
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from ai_client import generate
+from ai_client import generate, AINotConfiguredError
 from db import get_conn
 from srs import update_srs
 
@@ -25,11 +25,11 @@ def _get_lesson_row(slug: str):
 
 def _generate_and_store(lesson_id: int, title: str, content: str) -> None:
     prompt = (
-        f"Generate exactly 5 multiple-choice questions for a DevOps lesson.\n\n"
+        f"Сгенерируй ровно 5 вопросов с вариантами ответа по уроку DevOps. Все формулировки вопросов, варианты и объяснения должны быть на русском языке.\n\n"
         f"Lesson: {title}\n\nContent:\n{content}\n\n"
         "Return ONLY a JSON array — no other text, no markdown fences. Each item:\n"
         '{"question":"...","options":["A","B","C","D"],"correct_index":0,"explanation":"1-2 sentences why correct"}\n\n'
-        "Rules: test understanding not memorisation; all 4 options must be plausible; correct_index is 0-3."
+        "Правила: проверяй понимание, а не запоминание; все 4 варианта должны выглядеть правдоподобно; correct_index — число от 0 до 3. Технические команды и термины сохраняй в оригинале."
     )
     text = generate(prompt, max_tokens=2048)
     if text.startswith("```"):
@@ -38,7 +38,7 @@ def _generate_and_store(lesson_id: int, title: str, content: str) -> None:
     try:
         questions = json.loads(text)
     except json.JSONDecodeError as e:
-        raise HTTPException(status_code=502, detail=f"Claude returned unparseable JSON: {e}")
+        raise HTTPException(status_code=502, detail=f"OpenAI вернул некорректный JSON: {e}")
 
     conn = get_conn()
     try:
@@ -196,7 +196,10 @@ def get_quiz(lesson_slug: str):
     else:
         content = text
 
-    _generate_and_store(lesson["id"], lesson["title"], content)
+    try:
+        _generate_and_store(lesson["id"], lesson["title"], content)
+    except AINotConfiguredError as e:
+        raise HTTPException(status_code=503, detail=str(e))
     return _fetch_questions(lesson["id"])
 
 

@@ -1,19 +1,19 @@
-# Opsgenie — Quick Reference
+# Opsgenie — краткая справка
 
-## Opsgenie CLI (opsgenie-cli / ogcli)
+## CLI Opsgenie (opsgenie-cli / ogcli)
 
 | Command | Description |
 |---------|-------------|
-| `ogcli get alert --id ID` | Get alert details |
-| `ogcli list alert` | List open alerts |
-| `ogcli create alert --message "msg" --priority P2` | Create alert |
-| `ogcli acknowledge alert --id ID` | Acknowledge alert |
-| `ogcli close alert --id ID --note "resolved"` | Close alert |
-| `ogcli add alert note --id ID --note "msg"` | Add note to alert |
-| `ogcli list schedule` | List on-call schedules |
-| `ogcli get who-is-on-call --schedule "Team"` | Current on-call |
+| `ogcli get alert --id ID` | Получить сведения об оповещении |
+| `ogcli list alert` | Список открытых оповещений |
+| `ogcli create alert --message "msg" --priority P2` | Создать оповещение |
+| `ogcli acknowledge alert --id ID` | Подтвердить получение оповещения |
+| `ogcli close alert --id ID --note "resolved"` | Закрыть оповещение |
+| `ogcli add alert note --id ID --note "msg"` | Добавить заметку к оповещению |
+| `ogcli list schedule` | Список графиков дежурств |
+| `ogcli get who-is-on-call --schedule "Team"` | Кто сейчас дежурит |
 
-## Alerts API (curl)
+## API оповещений (curl)
 
 ```bash
 OG_KEY="your-api-key"

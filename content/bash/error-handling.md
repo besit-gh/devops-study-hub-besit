@@ -1,5 +1,5 @@
 ---
-title: Error Handling
+title: Обработка ошибок в Bash
 module: bash
 duration_min: 15
 difficulty: intermediate
@@ -7,19 +7,19 @@ tags: [bash, error-handling, set-e, trap, exit-codes, pipefail]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Bash's default behavior is dangerous: it continues executing after errors. A failed `cp` in the middle of a deployment script doesn't stop the script — it silently proceeds to the next line, potentially leaving your system in a half-deployed, inconsistent state. This matters in DevOps because scripts drive production deployments, database migrations, infrastructure provisioning, and backup jobs. A script that fails silently is worse than one that crashes loudly, because you may not discover the problem until you need the backup or the migration result.
+Поведение Bash по умолчанию опасно: после ошибки выполнение продолжается. Если `cp` завершится неудачно посреди скрипта развёртывания, скрипт перейдёт к следующей строке и может оставить систему в частично обновлённом, несогласованном состоянии. Это особенно важно в DevOps, где скрипты управляют production-развёртываниями, миграциями баз данных, подготовкой инфраструктуры и резервным копированием. Тихий сбой хуже явного падения: проблему можно обнаружить лишь тогда, когда понадобится резервная копия или результат миграции.
 
-The core design principle is *fail fast, clean up always*. The combination of `set -euo pipefail` makes the shell treat errors like a typed language would: undefined variables and failed commands are hard stops, not warnings. The `trap` builtin adds the cleanup guarantee — you register a function once, and the shell calls it whether the script succeeds, hits an error, or receives a signal. This turns Bash from a fragile sequence of commands into something with predictable lifecycle semantics.
+Основной принцип — *быстро завершаться при ошибке и всегда выполнять очистку*. Комбинация `set -euo pipefail` заставляет shell строго реагировать на сбои: неопределённые переменные и неудачные команды становятся причиной остановки, а не просто предупреждением. Встроенная команда `trap` обеспечивает очистку: зарегистрированная функция вызывается при успешном завершении, ошибке или получении сигнала. Так последовательность команд Bash становится более предсказуемой.
 
-In the broader DevOps toolchain, robust error handling in Bash is foundational. CI/CD pipelines (Jenkins, GitHub Actions, GitLab CI) execute shell steps and use exit codes to determine pass/fail. Infrastructure tools like Ansible run shell commands and check return codes. Docker `ENTRYPOINT` and `RUN` instructions are shell commands — a `RUN` step that exits non-zero breaks the image build. Understanding Bash error handling is not just a scripting skill; it's a prerequisite for understanding how every other tool in the ecosystem signals success and failure.
+Надёжная обработка ошибок Bash важна для всего DevOps-стека. CI/CD-пайплайны (Jenkins, GitHub Actions, GitLab CI) выполняют shell-команды и определяют успех по кодам возврата. Ansible проверяет результаты запуска команд, а инструкции Docker `ENTRYPOINT` и `RUN` также выполняют команды: ненулевой код `RUN` ломает сборку образа. Понимание обработки ошибок в Bash необходимо, чтобы разбираться в том, как другие инструменты сообщают об успехе и сбоях.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### set -e — Exit on Error
+### set -e — завершение при ошибке
 
 ```bash
 set -e   # or: set -o errexit
@@ -386,7 +386,7 @@ set -x
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Robust Deployment Script with Automatic Rollback
 
@@ -644,7 +644,7 @@ export DB_HOST=db.internal DB_PORT=5432 DEPLOY_ENV=staging AWS_REGION=us-east-1
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Find the Silent Failures
 
@@ -731,7 +731,7 @@ Run the script four times, setting `FAIL_AT_STAGE` to 1, 2, 3, and 4 in turn, an
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Run `bash -c 'exit 42'` and immediately print its exit code using `echo $?`. Write both commands semicolon-separated on one line.
 

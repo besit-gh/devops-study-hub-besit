@@ -43,13 +43,13 @@ def _fetch_questions(module_id: int) -> list[dict]:
 
 def _generate_and_store(module_id: int, title: str) -> None:
     prompt = (
-        f"Generate exactly 5 DevOps job interview questions on the topic: {title}.\n\n"
+        f"Сгенерируй ровно 5 вопросов для технического собеседования DevOps по теме: {title}.\n\n"
         "Requirements:\n"
         "- Scenario-based or conceptual, not trivia\n"
         "- Test real understanding and ability to communicate tradeoffs\n"
         "- Mix of 'explain', 'how would you', and 'what's the difference between' styles\n\n"
         "Return ONLY a JSON array of 5 strings — no other text, no markdown fences.\n"
-        'Example: ["How would you debug a container that keeps crashing in production?", ...]'
+        'Пример: ["Как диагностировать контейнер, который постоянно перезапускается в production?", ...]'
     )
     text = generate(prompt, max_tokens=1024, timeout=60.0)
     if text.startswith("```"):
@@ -58,9 +58,9 @@ def _generate_and_store(module_id: int, title: str) -> None:
     try:
         questions = json.loads(text)
     except json.JSONDecodeError as e:
-        raise HTTPException(status_code=502, detail=f"Claude returned unparseable JSON: {e}")
+        raise HTTPException(status_code=502, detail=f"OpenAI вернул некорректный JSON: {e}")
     if not isinstance(questions, list) or not all(isinstance(q, str) for q in questions):
-        raise HTTPException(status_code=502, detail="Claude returned unexpected format: expected array of strings")
+        raise HTTPException(status_code=502, detail="OpenAI вернул неожиданный формат: expected array of strings")
 
     conn = get_conn()
     try:
@@ -115,12 +115,12 @@ def evaluate_answer(req: EvaluateRequest):
     module_title = mod["title"]
 
     prompt = (
-        f"You are evaluating a DevOps job interview answer.\n\n"
+        f"Ты оцениваешь ответ кандидата на техническом собеседовании DevOps. Пиши feedback и model_answer на русском языке.\n\n"
         f"Topic: {module_title}\n"
         f"Question: {req.question}\n"
         f"Candidate's answer: {req.answer}\n\n"
-        "Score the answer and return ONLY a JSON object — no other text, no markdown fences:\n"
-        '{"score":"Weak|Adequate|Strong","feedback":"2-3 sentences on what was good and what was missing","model_answer":"A strong answer in 3-5 sentences"}'
+        "Оцени ответ и верни ТОЛЬКО JSON-объект без другого текста и Markdown-обрамления:\n"
+        '{"score":"Weak|Adequate|Strong","feedback":"2–3 предложения: что хорошо и чего не хватает","model_answer":"сильный пример ответа в 3–5 предложениях"}'
     )
     result = None
     last_err = None
@@ -130,12 +130,12 @@ def evaluate_answer(req: EvaluateRequest):
         except AINotConfiguredError as e:
             raise HTTPException(status_code=503, detail=str(e))
         except AITimeoutError:
-            raise HTTPException(status_code=504, detail="Evaluation timed out — please try again")
+            raise HTTPException(status_code=504, detail="Время ожидания оценки истекло — попробуйте ещё раз")
         # Strip markdown fences (```json ... ``` or ``` ... ```)
         if "```" in text:
             parts = text.split("```")
             text = parts[1].lstrip("json").strip() if len(parts) > 1 else text
-        # Extract first {...} block in case Claude adds prose around JSON
+        # Extract first {...} block in case OpenAI adds prose around JSON
         start, end = text.find('{'), text.rfind('}')
         if start != -1 and end != -1:
             text = text[start:end + 1]
@@ -146,16 +146,16 @@ def evaluate_answer(req: EvaluateRequest):
             last_err = e
             logger.warning("evaluate attempt %d: JSON parse failed: %s", attempt + 1, e)
     if result is None:
-        raise HTTPException(status_code=502, detail=f"Claude returned unparseable JSON: {last_err}")
+        raise HTTPException(status_code=502, detail=f"OpenAI вернул некорректный JSON: {last_err}")
 
     if not isinstance(result, dict):
-        raise HTTPException(status_code=502, detail=f"Claude returned unexpected type: {type(result).__name__}")
+        raise HTTPException(status_code=502, detail=f"OpenAI вернул неожиданный тип: {type(result).__name__}")
     required = {'score', 'feedback', 'model_answer'}
     missing = required - result.keys()
     if missing:
-        raise HTTPException(status_code=502, detail=f"Claude response missing keys: {missing}")
+        raise HTTPException(status_code=502, detail=f"В ответе OpenAI отсутствуют обязательные поля: {missing}")
     if result['score'] not in ('Weak', 'Adequate', 'Strong'):
-        raise HTTPException(status_code=502, detail=f"Claude returned invalid score: {result['score']!r}")
+        raise HTTPException(status_code=502, detail=f"OpenAI вернул недопустимую оценку: {result['score']!r}")
 
     xp_earned = 0
     xp_total = 0

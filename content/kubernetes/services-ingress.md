@@ -1,5 +1,5 @@
 ---
-title: Services & Ingress
+title: Service и Ingress в Kubernetes
 module: kubernetes
 duration_min: 20
 difficulty: intermediate
@@ -7,12 +7,12 @@ tags: [kubernetes, services, ingress, clusterip, nodeport, loadbalancer, network
 exercises: 4
 ---
 
-## Overview
-Pods are ephemeral and get new IPs every restart. Services give you a stable endpoint that automatically routes to healthy Pods — regardless of which specific Pod IPs are active. Ingress routes external HTTP/HTTPS traffic to the right Service based on hostname or path. Together they form the networking layer every Kubernetes app depends on.
+## Обзор
+Pod эфемерны и при каждом пересоздании могут получать новые IP-адреса. Service предоставляет стабильную точку доступа и автоматически направляет запросы к здоровым Pod независимо от их текущих IP. Ingress маршрутизирует внешний HTTP/HTTPS-трафик к нужному Service по имени хоста или пути. Вместе они образуют сетевой слой, от которого зависит каждое приложение Kubernetes.
 
-## Concepts
+## Основные понятия
 
-### Service Types
+### Типы Service
 | Type | Accessible from | Use case |
 |---|---|---|
 | `ClusterIP` | Inside cluster only | Internal service-to-service |
@@ -20,7 +20,7 @@ Pods are ephemeral and get new IPs every restart. Services give you a stable end
 | `LoadBalancer` | Public IP (cloud LB) | Production external access |
 | `ExternalName` | Inside cluster | DNS alias to an external hostname |
 
-### ClusterIP (Default)
+### ClusterIP (по умолчанию)
 ```yaml
 apiVersion: v1
 kind: Service
@@ -180,7 +180,7 @@ spec:
         - port: 5432
 ```
 
-## Examples
+## Примеры
 
 ### Full Stack: Deployment + Service + Ingress
 ```yaml
@@ -235,7 +235,7 @@ spec:
                   number: 80
 ```
 
-## Exercises
+## Практические задания
 
 1. Create a Deployment and a ClusterIP Service for an nginx Pod. Verify the Service resolves correctly by running `kubectl run -it --rm debug --image=busybox -- wget -qO- http://<service-name>` from within the cluster.
 2. Change the Service type to `NodePort`. Find the assigned node port with `kubectl get svc`. Access the service from outside the cluster at `<node-ip>:<node-port>`.
@@ -245,7 +245,7 @@ spec:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Extract the `targetPort` from a Service spec stub. Run: `printf 'ports:\n- port: 80\n  targetPort: 8080\n' | awk '/targetPort:/{print $2}'`
 

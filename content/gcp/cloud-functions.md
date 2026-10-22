@@ -7,18 +7,18 @@ tags: [gcp, cloud-functions, serverless, triggers, pubsub, eventarc, python, gcl
 exercises: 4
 ---
 
-## Overview
-Cloud Functions is GCP's serverless function platform. 2nd generation functions (now the default) are built on Cloud Run under the hood, giving you longer timeouts (60 minutes), higher concurrency (up to 1000 concurrent requests per instance), and more memory. The programming model is identical to Lambda: write a handler function, configure a trigger, deploy. Cloud Functions 2nd gen runs on Cloud Run behind the scenes — if you need more control, use Cloud Run directly.
+## Обзор
+Cloud Functions — serverless-платформа функций в GCP. Функции второго поколения (теперь это вариант по умолчанию) работают на базе Cloud Run, обеспечивая более длительные тайм-ауты (до 60 минут), большую параллельность (до 1000 одновременных запросов на экземпляр) и больший объём памяти. Модель программирования похожа на Lambda: напишите обработчик, настройте триггер и выполните развёртывание. Поскольку Cloud Functions 2nd gen работает поверх Cloud Run, для более тонкого контроля можно использовать Cloud Run напрямую.
 
-## Concepts
+## Основные понятия
 
-### Function Types
+### Типы функций
 ```
 HTTP functions   — invoked by HTTP requests (GET, POST, etc.)
 Event functions  — triggered by Pub/Sub, Cloud Storage, Eventarc, Firestore
 ```
 
-### HTTP Function (Python)
+### HTTP-функция на Python
 ```python
 # main.py
 import functions_framework
@@ -226,7 +226,7 @@ functions-framework --target process_message \
   --signature-type cloudevent
 ```
 
-## Examples
+## Примеры
 
 ### Image Processing Pipeline
 ```python
@@ -261,7 +261,7 @@ def resize_image(cloud_event):
     print(f"Resized {source_blob}")
 ```
 
-## Exercises
+## Практические задания
 
 1. Write and deploy an HTTP Cloud Function (2nd gen, Python) that accepts a JSON body with a `text` field and returns the text reversed. Test with `gcloud functions call` and with `curl`.
 2. Create a Pub/Sub topic and deploy a Cloud Function triggered by it. The function should log the decoded message content. Publish 5 test messages and verify all appear in the function logs.
@@ -271,7 +271,7 @@ def resize_image(cloud_event):
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Extract the trigger type from a Cloud Function config stub. Run: `printf 'trigger:\n  type: http\n  allowUnauthenticated: true\n' | awk '/^  type:/{print $2}'`
 

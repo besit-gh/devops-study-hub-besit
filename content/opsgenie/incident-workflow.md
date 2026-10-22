@@ -1,5 +1,5 @@
 ---
-title: Incident Management Workflow
+title: Рабочий процесс управления инцидентами
 module: opsgenie
 duration_min: 20
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [opsgenie, incident-management, postmortem, jira, mttr, mtta]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Opsgenie is not just an alert router — it is a full incident management platform built around the idea that outages are processes, not emergencies to be improvised through. The alert-to-incident lifecycle, war room coordination, status page updates, and postmortem creation are all structured surfaces where DevOps engineers operate during and after outages. Treating these surfaces as a system — rather than reacting to each in isolation — is what separates teams with consistent 30-minute MTTRs from teams that take hours. Understanding the Opsgenie incident workflow means you can run an incident predictably under pressure, hand it off mid-flight, and reconstruct it accurately afterwards.
+Opsgenie — не просто маршрутизатор оповещений, а полноценная платформа управления инцидентами, исходящая из того, что сбой — это управляемый процесс, а не чрезвычайная ситуация, которую приходится решать импровизацией. Жизненный цикл от оповещения до инцидента, координация war room, обновления status page и создание postmortem — структурированные действия DevOps-инженера во время и после аварии. Системный подход к ним отличает команды, стабильно восстанавливающие сервис за 30 минут, от команд, которым требуются часы. Понимание workflow Opsgenie помогает предсказуемо вести инцидент под давлением, передавать дежурство и точно восстанавливать ход событий.
 
-Opsgenie's core design principle is that every meaningful action during an incident should be captured automatically in a timeline, and every human decision should be an explicit, logged state change. This is why alerts and incidents are distinct objects, why severity levels drive automated behavior, and why the postmortem is generated from the incident log rather than reconstructed from memory. The platform is opinionated: it wants you to declare incidents early, keep the timeline annotated, and close the loop with action items tied to real tickets.
+Основной принцип Opsgenie — автоматически фиксировать каждое значимое действие в хронологии инцидента, а каждое решение человека представлять как явное изменение состояния с записью в журнале. Поэтому оповещения и инциденты являются разными объектами, уровни серьёзности управляют автоматическими действиями, а postmortem строится на основе журнала, а не восстанавливается по памяти. The platform is opinionated: it wants you to declare incidents early, keep the timeline annotated, and close the loop with action items tied to real tickets.
 
 In the broader DevOps toolchain, Opsgenie sits at the intersection of observability (receives alerts from Prometheus, Datadog, CloudWatch), communication (integrates with Slack and Teams), project tracking (syncs with Jira Service Management), and customer communication (connects to Atlassian Statuspage). It is the coordination layer that links a firing metric to a resolved customer impact to a completed remediation task. Engineers working in SRE, platform engineering, or on-call rotation roles interact with Opsgenie under the worst conditions — high stress, incomplete information, time pressure — so knowing the workflow cold is a genuine operational advantage.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### Alert vs. Incident: Two Distinct Objects
 
@@ -431,7 +431,7 @@ rules:
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: End-to-End SEV-1 Incident Response
 
@@ -715,7 +715,7 @@ done
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Simulate a Full Incident Lifecycle in Opsgenie
 
@@ -785,7 +785,7 @@ done
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 7. Calculate MTTR from an incident duration. Run: `python3 -c "print(47 - 0)"`
 

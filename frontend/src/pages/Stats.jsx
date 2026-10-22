@@ -42,15 +42,15 @@ export default function Stats() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch {
-      setExportError('Export failed. Please try again.')
+      setExportError('Не удалось экспортировать. Попробуйте ещё раз.')
     } finally {
       exportingRef.current = false
       setExporting(false)
     }
   }
 
-  if (loading) return <div className="p-6 text-sm text-gray-400 dark:text-gray-500">Loading…</div>
-  if (!data) return <div className="p-6 text-sm text-red-500">Failed to load stats.</div>
+  if (loading) return <div className="p-6 text-sm text-gray-400 dark:text-gray-500">Загрузка…</div>
+  if (!data) return <div className="p-6 text-sm text-red-500">Не удалось загрузить статистику.</div>
 
   const { summary, xp_by_day, quiz_by_module } = data
   const quiz_weak_lessons = data.quiz_weak_lessons ?? []
@@ -60,23 +60,23 @@ export default function Stats() {
     : null
 
   const summaryCards = [
-    { label: 'Total XP', value: `${summary.total_xp} XP` },
-    { label: 'Lessons done', value: summary.lessons_done },
-    { label: 'Quiz accuracy', value: quizAccuracy !== null ? `${quizAccuracy}%` : '—' },
-    { label: 'Current streak', value: summary.streak > 0 ? `${summary.streak} day${summary.streak > 1 ? 's' : ''}` : '—' },
+    { label: 'Всего XP', value: `${summary.total_xp} XP` },
+    { label: 'Пройдено уроков', value: summary.lessons_done },
+    { label: 'Точность тестов', value: quizAccuracy !== null ? `${quizAccuracy}%` : '—' },
+    { label: 'Текущая серия', value: summary.streak > 0 ? `${summary.streak} day${summary.streak > 1 ? 's' : ''}` : '—' },
   ]
 
   return (
     <div className="p-6 max-w-2xl space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Stats</h1>
+        <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Статистика</h1>
         <div className="flex flex-col items-end gap-1">
           <button
             onClick={handleExport}
             disabled={exporting}
             className="text-xs px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {exporting ? 'Exporting…' : 'Export progress'}
+            {exporting ? 'Экспорт…' : 'Экспортировать прогресс'}
           </button>
           {exportError && (
             <span className="text-[11px] text-red-500 dark:text-red-400">{exportError}</span>
@@ -94,7 +94,7 @@ export default function Stats() {
       </div>
 
       <div>
-        <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">XP — last 30 days</div>
+        <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">XP за последние 30 дней</div>
         <div className="h-24 flex items-end gap-px bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
           {xp_by_day.map(({ day, xp }) => (
             <XpBar key={day} xp={xp} max={maxXp} day={day} />
@@ -102,13 +102,13 @@ export default function Stats() {
         </div>
         <div className="flex justify-between mt-1 text-[10px] text-gray-400 dark:text-gray-500 px-2">
           <span>{xp_by_day[0]?.day.slice(5)}</span>
-          <span>today</span>
+          <span>сегодня</span>
         </div>
       </div>
 
       {quiz_by_module.length > 0 ? (
         <div>
-          <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">Quiz accuracy by module</div>
+          <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">Точность тестов по модулям</div>
           <div className="space-y-2.5">
             {quiz_by_module.map(({ module_title, module_slug, total, correct }) => {
               const pct = total > 0 ? Math.round((correct / total) * 100) : 0
@@ -129,20 +129,20 @@ export default function Stats() {
         </div>
       ) : (
         <p className="text-sm text-gray-400 dark:text-gray-500">
-          No quiz attempts yet — complete some quizzes to see accuracy here.
+          Пока нет попыток пройти тесты. Пройдите несколько тестов, чтобы увидеть точность.
         </p>
       )}
 
       {summary.quiz_attempts > 0 && (
         <div>
-          <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Quiz Weak Areas</div>
+          <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Слабые темы по тестам</div>
           {/* Threshold 70 must match WHERE accuracy < 70 in backend/routes/stats.py */}
           <div className="text-xs text-gray-400 dark:text-gray-500 mb-3">
-            Lessons below 70% accuracy (≥ 3 attempts) — sorted weakest first
+            Уроки с точностью ниже 70% (≥ 3 попыток) — от самых сложных
           </div>
           {quiz_weak_lessons.length === 0 ? (
             <p className="text-sm text-gray-400 dark:text-gray-500">
-              No lessons below 70% accuracy — keep it up!
+              Нет уроков с точностью ниже 70% — так держать!
             </p>
           ) : (
             <>
@@ -151,7 +151,7 @@ export default function Stats() {
                 to="/drill"
                 className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
               >
-                Drill weak areas →
+                Повторить слабые темы →
               </Link>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -159,11 +159,11 @@ export default function Stats() {
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-700">
                     <th className="text-left px-4 py-2 text-gray-400 dark:text-gray-500 font-medium w-6">#</th>
-                    <th className="text-left px-4 py-2 text-gray-400 dark:text-gray-500 font-medium">Lesson</th>
-                    <th className="text-left px-4 py-2 text-gray-400 dark:text-gray-500 font-medium">Module</th>
-                    <th className="px-4 py-2 text-gray-400 dark:text-gray-500 font-medium">Accuracy</th>
-                    <th className="text-right px-4 py-2 text-gray-400 dark:text-gray-500 font-medium">Wrong</th>
-                    <th className="text-right px-4 py-2 text-gray-400 dark:text-gray-500 font-medium">Attempts</th>
+                    <th className="text-left px-4 py-2 text-gray-400 dark:text-gray-500 font-medium">Урок</th>
+                    <th className="text-left px-4 py-2 text-gray-400 dark:text-gray-500 font-medium">Модуль</th>
+                    <th className="px-4 py-2 text-gray-400 dark:text-gray-500 font-medium">Точность</th>
+                    <th className="text-right px-4 py-2 text-gray-400 dark:text-gray-500 font-medium">Ошибок</th>
+                    <th className="text-right px-4 py-2 text-gray-400 dark:text-gray-500 font-medium">Попыток</th>
                   </tr>
                 </thead>
                 <tbody>

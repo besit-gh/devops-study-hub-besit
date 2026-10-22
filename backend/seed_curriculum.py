@@ -15,7 +15,7 @@ Options:
 
 What it does per lesson (in order):
 1. Check if content is thin (< min_lines non-blank lines OR missing required sections)
-2. If thin: call Claude API to expand it, write expanded markdown back to disk
+2. If thin: call OpenAI API to expand it, write expanded markdown back to disk
 3. Check if 5 quiz questions exist in DB
 4. If not: generate 5 questions from (now-expanded) content, store in DB
 
@@ -33,7 +33,7 @@ from db import get_conn, init_db
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
-REQUIRED_SECTIONS = ["## Overview", "## Concepts", "## Examples", "## Exercises"]
+REQUIRED_SECTIONS = [("## Overview", "## Обзор"), ("## Concepts", "## Основные понятия"), ("## Examples", "## Примеры"), ("## Exercises", "## Практические задания")]
 MIN_LINES_DEFAULT = 200
 
 # ---------------------------------------------------------------------------
@@ -41,20 +41,19 @@ MIN_LINES_DEFAULT = 200
 # ---------------------------------------------------------------------------
 
 EXPANSION_PROMPT = """\
-You are expanding a thin lesson for a DevOps study platform. The learner is \
-preparing for a DevOps job and needs thorough, practical content.
+You are expanding a thin lesson for a DevOps study platform. The learner is preparing for a DevOps job and needs thorough, practical content. Write all learner-facing prose in Russian. Keep command names, code, configuration keys, and standard technical terms in English.
 
 Lesson: {title}
 Module: {module}
 
 REQUIRED STRUCTURE — every section must be present:
 
-## Overview (2-3 paragraphs)
+## Обзор (2–3 абзаца)
 - What this technology/concept is and why it matters for DevOps
 - Core design decisions or guiding principles
 - Where it fits in the broader DevOps toolchain
 
-## Concepts (main body — multiple ### subsections)
+## Основные понятия (основная часть — несколько подразделов ###)
 - Each subsection covers one coherent idea
 - Explain the concept, then show it in action
 - Include realistic code blocks: bash commands, config files, YAML, etc.
@@ -62,15 +61,15 @@ REQUIRED STRUCTURE — every section must be present:
 - Bold callouts for gotchas, warnings, or non-obvious behavior
 - Depth: the learner should be able to answer an interview question on each subsection
 
-## Examples (2-4 complete, runnable real-world scenarios)
+## Примеры (2–4 полных, запускаемых сценария из реальной практики)
 - Full commands or configs, not isolated fragments
 - Show the setup, the action, and how to verify it worked
 - Comment non-obvious choices in code
 
-## Exercises (3-4 hands-on tasks)
+## Практические задания (3–4 практические задачи)
 - Tasks the learner can do in a terminal or lab environment
 - Each should reinforce a different concept from the lesson
-- Require understanding — not just copy-pasting from the Concepts section
+- Require understanding — not just copy-pasting from the разделе «Основные понятия»
 - Use imperative voice throughout: "Write a script that:" followed by bullets like \
 "1. Accept a URL as the first argument" NOT "1. Accepts a URL as the first argument"
 
@@ -169,7 +168,7 @@ def _is_thin(content: str, min_lines: int) -> tuple[bool, str]:
     count = len(non_blank)
     if count < min_lines:
         return True, f"{count} lines"
-    missing = [s for s in REQUIRED_SECTIONS if s not in content]
+    missing = ["/".join(options) for options in REQUIRED_SECTIONS if not any(section in content for section in options)]
     if missing:
         return True, f"missing {', '.join(missing)}"
     return False, ""
@@ -363,7 +362,7 @@ def main() -> None:
                         new_body = _strip_frontmatter(expanded)
                         fm_intact = new_body != expanded.strip()
                         blocks_closed = new_body.count("```") % 2 == 0
-                        missing = [s for s in REQUIRED_SECTIONS if s not in new_body]
+                        missing = ["/".join(options) for options in REQUIRED_SECTIONS if not any(section in new_body for section in options)]
                         issues = (
                             ([] if fm_intact else ["frontmatter lost"]) +
                             ([] if blocks_closed else ["unclosed code block"]) +

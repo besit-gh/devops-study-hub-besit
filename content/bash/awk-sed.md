@@ -1,5 +1,5 @@
 ---
-title: awk & sed
+title: Обработка текста с awk и sed
 module: bash
 duration_min: 20
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [bash, awk, sed, text-processing, pipelines]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-`awk` and `sed` are the workhorses of Unix text processing, and for a DevOps engineer they are as fundamental as knowing how to write a loop. Almost every system you operate emits text: log files, config files, command output, CSV exports, YAML fragments. The ability to reshape that text on the fly — without writing a Python script, without installing a dependency, without leaving the terminal — is what separates engineers who can debug production incidents in minutes from those who need to set up a notebook first.
+`awk` и `sed` — основные инструменты обработки текста в Unix, для DevOps-инженера столь же важные, как умение писать циклы. Почти каждая система выдаёт текст: журналы, конфигурации, вывод команд, CSV-экспорты и фрагменты YAML. Умение преобразовать текст на месте — без отдельного скрипта Python, установки зависимостей и выхода из терминала — помогает разбирать production-инциденты за минуты.
 
-`sed` (stream editor) applies editing commands to a stream of text line by line. Its sweet spot is substitution, deletion, and insertion: patching a config value across a fleet, stripping comment lines before piping output, or toggling a flag from `true` to `false` across a directory of files. `awk` is a full programming language disguised as a field processor. It splits each line into columns, lets you filter on field values, accumulate totals, and format reports — making it the right tool for anything involving structured text: access logs, `ps` output, CSV data, or the output of any command that prints in columns.
+`sed` (stream editor) применяет команды редактирования к текстовому потоку построчно. Он особенно удобен для замены, удаления и вставки: изменения значения в конфигурациях на множестве серверов, удаления комментариев перед конвейером или переключения флага с `true` на `false` в каталоге файлов. `awk` — полноценный язык программирования, замаскированный под обработчик полей. Он разбивает строки на столбцы, фильтрует их по значениям, суммирует данные и форматирует отчёты, поэтому подходит для структурированного текста: access-логов, вывода `ps`, CSV и других табличных результатов.
 
 In the DevOps toolchain these two tools appear constantly in CI/CD pipeline scripts, Dockerfile `RUN` layers, Ansible tasks, Kubernetes init containers, and monitoring dashboards generated from log data. They run everywhere without installation, execute in microseconds on files that would choke a naive Python script, and compose naturally with `sort`, `uniq`, `grep`, and `xargs` in pipelines. Mastering them means you can solve the majority of text-manipulation problems with a single line rather than a dedicated script.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### sed — Stream Editor
 
@@ -397,7 +397,7 @@ grep -c 'new_value' critical.conf || { echo "Edit failed to apply"; exit 1; }
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: nginx Access Log Analysis Script
 
@@ -654,7 +654,7 @@ function parse_ts(ts,    parts, t) {
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Parsing df Output
 
@@ -767,7 +767,7 @@ awk 'BEGIN {
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Using `awk`, sum the values piped from `printf '10\n20\n30\n40\n'` and print the total. Write a one-liner: `printf '10\n20\n30\n40\n' | awk ...`
 

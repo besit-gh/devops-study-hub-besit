@@ -1,5 +1,5 @@
 ---
-title: Agents & Templates
+title: Агенты и шаблоны Zabbix
 module: zabbix
 duration_min: 20
 difficulty: intermediate
@@ -7,15 +7,15 @@ tags: [zabbix, agent, templates, lld, userparameter, discovery]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-The Zabbix Agent is the primary collection mechanism for host-level metrics. It runs as a lightweight daemon on monitored systems and communicates with the Zabbix server through a structured key-value protocol. Unlike SNMP polling or agentless SSH checks, the agent has direct access to the host's kernel, filesystem, processes, and logs — making it the most capable and performant collection method for Linux and Windows systems. At scale, the difference between a well-configured agent deployment and a poorly planned one is the difference between a monitoring system that works and one that falls over under its own polling load.
+Zabbix Agent — основной механизм сбора метрик на уровне хоста. Он работает как лёгкий демон на наблюдаемых системах и обменивается данными с сервером Zabbix по структурированному протоколу ключ-значение. В отличие от опроса по SNMP или проверок через SSH без агента, агент имеет прямой доступ к ядру, файловой системе, процессам и журналам хоста, поэтому особенно эффективен на Linux и Windows. При масштабировании грамотное развёртывание агентов отличает устойчивую систему мониторинга от системы, которая перегружается собственным опросом.
 
 Templates are Zabbix's configuration reuse mechanism. Instead of manually defining items, triggers, and graphs for each host, you define them once in a template and link that template to as many hosts as needed. Updates propagate automatically. Templates compose — a production web server template might link together an OS template, a network template, and an Nginx template, all managed independently. Low-Level Discovery (LLD) extends templates further by generating monitoring objects dynamically at runtime, removing the need to predict in advance how many disks, interfaces, or containers a host will have.
 
 In the broader DevOps toolchain, these three features — agents, templates, and LLD — are what allow Zabbix to scale from 10 hosts to 10,000 without proportional administrative overhead. Infrastructure-as-code practices apply directly: templates can be exported as YAML, stored in Git, and imported via the API, enabling the same GitOps workflows used for application deployments. Understanding these components deeply is the prerequisite for treating Zabbix as a managed service rather than a manually operated tool.
 
-## Concepts
+## Основные понятия
 
 ### Active vs Passive Agents
 
@@ -213,7 +213,7 @@ zabbix_get -s <agent-ip> -p 10050 -k "custom.service.active[nginx]"
 
 **Gotcha:** if a UserParameter command returns an empty string or exits non-zero without producing output, Zabbix marks the item as **unsupported** and stops polling it entirely. It will not retry until you manually re-enable it or the `UnsupportedItemCheckFrequency` interval elapses (default: 10 minutes). Always ensure your command produces output in all exit conditions — even `echo 0` on failure is better than silence.
 
-### Templates — Structure and Purpose
+### Шаблоны — Structure and Purpose
 
 A Zabbix template is a named collection of monitoring objects that can be linked to hosts. Every object inside the template is inherited by every linked host. Updating the template propagates changes to all linked hosts immediately.
 
@@ -295,7 +295,7 @@ curl -s -X POST "$ZBXURL" \
 
 **Gotcha:** `deleteMissing: true` on items or triggers will delete any object in the running configuration that isn't present in your YAML file. This is useful for keeping templates clean but dangerous if you're importing a partial export — you can silently delete production monitoring. Leave it `false` until you're managing the full template lifecycle from code.
 
-### Low-Level Discovery (LLD)
+### Low-Level Discovery (LLD) (LLD)
 
 LLD solves a specific problem: you can't write a template item for every filesystem, network interface, CPU core, Docker container, or JVM pool at template-authoring time — you don't know how many there will be. LLD discovers them at runtime and creates items, triggers, and graphs automatically.
 
@@ -372,7 +372,7 @@ filter:
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Deploy and Verify an Active Agent on a New Linux Host
 
@@ -614,7 +614,7 @@ Type:  Zabbix agent (active)
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Debug a Silent Active Agent
 
@@ -670,7 +670,7 @@ Type:  Zabbix agent (active)
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 6. Count monitored item keys in a template list. Run: `printf 'system.cpu.util\nvm.memory.size[available]\nnet.if.in[eth0]\nproc.num\nvfs.fs.size[/,pfree]\n' | wc -l`
 

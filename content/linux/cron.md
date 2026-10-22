@@ -1,5 +1,5 @@
 ---
-title: Cron Jobs
+title: Задания cron
 module: linux
 duration_min: 10
 difficulty: beginner
@@ -7,21 +7,21 @@ tags: [cron, crontab, scheduling, automation]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Cron is Linux's built-in task scheduler, present on virtually every Unix-like system since the 1970s. It executes commands or scripts at defined times or intervals without any human intervention. For DevOps engineers, cron is the simplest reliable tool for recurring operational work: rotating logs, running database backups, syncing files to object storage, pruning old Docker images, polling external APIs, and triggering health checks. It requires no additional infrastructure and is available the moment a machine boots.
+Cron — встроенный планировщик задач Linux, существующий практически во всех Unix-подобных системах с 1970-х годов. Он запускает команды и скрипты в заданное время или через определённые интервалы без участия человека. Для DevOps-инженера это простой и надёжный инструмент регулярных операций: ротации журналов, резервного копирования баз данных, синхронизации файлов с объектным хранилищем, удаления старых Docker-образов, опроса API и запуска проверок работоспособности. Дополнительная инфраструктура не нужна; cron доступен сразу после загрузки машины.
 
-Cron's design is deliberately minimal. Each job is a single line in a plain text file. There is no dependency graph, no retry logic, no distributed coordination — just "run this command at this time." That simplicity is both its strength and its limitation. Cron is the right tool when your schedule is predictable, your job is self-contained, and failure is either tolerable or handled inside the script itself. When you need retries, alerting on failure, job chaining, or distributed execution, you outgrow cron and reach for tools like Airflow, Kubernetes CronJobs, or Systemd timers. Understanding exactly where cron's limits are is part of knowing when to use it.
+Cron намеренно устроен минималистично: каждая задача — одна строка в обычном текстовом файле. Нет графа зависимостей, повторных попыток или распределённой координации — только «запусти эту команду в это время». Простота одновременно является преимуществом и ограничением. Cron подходит, если расписание предсказуемо, задача автономна, а ошибку можно допустить или обработать внутри скрипта. Если нужны повторы, оповещения об ошибках, цепочки задач или распределённое выполнение, стоит использовать Airflow, Kubernetes CronJobs или systemd timers. Понимание ограничений cron помогает выбирать правильный инструмент.
 
-In the broader DevOps toolchain, cron sits at the foundation. It predates containers and CI/CD pipelines, but it is still used in both. Containerized environments like Kubernetes replace it with `CronJob` resources that offer restartability and observability — but those resources follow the same five-field time syntax cron established. Ansible, Puppet, and Chef all have modules that manage crontabs. Knowing cron cold means you can read and reason about any system's scheduled work, regardless of the abstraction layer on top of it.
+В DevOps cron остаётся базовым инструментом. Он появился задолго до контейнеров и CI/CD, но продолжает использоваться и сегодня. В Kubernetes для расписаний есть ресурс `CronJob`, который добавляет возможности наблюдаемости и управления перезапусками, сохраняя привычный синтаксис из пяти временных полей. У Ansible, Puppet и Chef есть модули для управления crontab. Уверенное владение cron помогает понимать расписания в любой инфраструктуре.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### Crontab Syntax
+### Синтаксис crontab
 
-Every cron job is a single line with five time fields followed by the command to execute. The fields are positional and whitespace-separated.
+Каждая задача cron занимает одну строку: пять временных полей, а затем команда для выполнения. Поля разделяются пробелами и имеют фиксированный порядок.
 
 ```
 ┌─ minute        (0–59)
@@ -33,14 +33,14 @@ Every cron job is a single line with five time fields followed by the command to
 * * * * *  /path/to/command --args
 ```
 
-Reading a cron expression is a skill that comes up constantly — in code review, in runbooks, in incident investigations. Practice reading them right-to-left: "on what days of the week, in what months, on what days of the month, at what hours, at what minutes." For example:
+Умение читать cron-выражения постоянно нужно при ревью кода, работе с runbook и расследовании инцидентов. Попробуйте читать выражение справа налево: «в какие дни недели, в какие месяцы, в какие дни месяца, в какие часы и минуты». Например:
 
 ```
 30 2 * * 1   →  "at minute 30 of hour 2, any day of month, any month, on Monday"
              →  Every Monday at 2:30 AM
 ```
 
-**Day-of-month and day-of-week interaction:** If you specify a non-`*` value in *both* the day-of-month and the day-of-week fields, cron runs the job when *either* condition is true — not both. This surprises most people.
+**Взаимодействие дня месяца и дня недели:** если в обоих полях указано значение, отличное от `*`, cron запускает задачу при выполнении *любого* из условий, а не обоих одновременно. Это часто удивляет новичков.
 
 ```bash
 # This does NOT mean "on the 1st if it's a Monday"
@@ -48,53 +48,53 @@ Reading a cron expression is a skill that comes up constantly — in code review
 0 9 1 * 1   /usr/bin/script.sh
 ```
 
-Use [crontab.guru](https://crontab.guru) to sanity-check expressions before deploying them. Pasting a broken expression into production is a common source of jobs that silently never run.
+Перед развёртыванием проверяйте выражения с помощью [crontab.guru](https://crontab.guru). Ошибка в расписании — частая причина того, что задача в production незаметно не запускается.
 
 ---
 
-### Field Value Syntax
+### Синтаксис значений полей
 
-| Symbol | Meaning | Example | Reads as |
+| Символ | Значение | Пример | Как читать |
 |--------|---------|---------|----------|
-| `*` | Any / every | `* * * * *` | Every minute |
-| `,` | List of values | `0,30 * * * *` | At :00 and :30 of every hour |
-| `-` | Inclusive range | `0 9-17 * * *` | At :00 of every hour from 9 AM to 5 PM |
-| `/` | Step interval | `*/15 * * * *` | Every 15 minutes |
-| `/` with range | Step within range | `0 8-18/2 * * *` | Every 2 hours between 8 AM and 6 PM |
+| `*` | Любое значение / каждый | `* * * * *` | Каждую минуту |
+| `,` | Список значений | `0,30 * * * *` | В начале и на 30-й минуте каждого часа |
+| `-` | Включительный диапазон | `0 9-17 * * *` | В начале каждого часа с 9:00 до 17:00 |
+| `/` | Интервал шага | `*/15 * * * *` | Каждые 15 минут |
+| `/` с диапазоном | Шаг внутри диапазона | `0 8-18/2 * * *` | Каждые два часа с 8:00 до 18:00 |
 
-Steps and ranges can combine. `*/15` is shorthand for `0-59/15`. `0-23/6` means "every 6 hours starting at 0": 0, 6, 12, 18.
+Шаги и диапазоны можно комбинировать. `*/15` — сокращение для `0-59/15`. `0-23/6` означает «каждые шесть часов, начиная с нуля»: 0, 6, 12, 18.
 
-**Named shortcuts** — some cron implementations (Vixie cron, cronie) support these strings instead of the five fields:
+**Именованные сокращения** — некоторые реализации cron (Vixie cron, cronie) поддерживают эти строки вместо пяти полей:
 
-| Shortcut | Equivalent | Meaning |
+| Сокращение | Эквивалент | Значение |
 |----------|------------|---------|
-| `@reboot` | *(none)* | Once at startup |
-| `@hourly` | `0 * * * *` | Every hour at :00 |
-| `@daily` | `0 0 * * *` | Every day at midnight |
-| `@midnight` | `0 0 * * *` | Alias for @daily |
-| `@weekly` | `0 0 * * 0` | Every Sunday at midnight |
-| `@monthly` | `0 0 1 * *` | First of month at midnight |
-| `@yearly` | `0 0 1 1 *` | January 1st at midnight |
+| `@reboot` | *(нет)* | Один раз при запуске cron |
+| `@hourly` | `0 * * * *` | Каждый час в начале часа |
+| `@daily` | `0 0 * * *` | Каждый день в полночь |
+| `@midnight` | `0 0 * * *` | Псевдоним `@daily` |
+| `@weekly` | `0 0 * * 0` | Каждое воскресенье в полночь |
+| `@monthly` | `0 0 1 * *` | Первого числа каждого месяца в полночь |
+| `@yearly` | `0 0 1 1 *` | Первого января в полночь |
 
-**`@reboot` gotcha:** `@reboot` jobs run when the cron daemon starts, not strictly when the OS boots. If crond restarts mid-session, the job runs again. Don't use it for truly one-time initialization.
+**Важный нюанс `@reboot`:** задача запускается при старте демона cron, а не строго при загрузке ОС. Если crond перезапустится во время работы системы, задача выполнится повторно. Не используйте `@reboot` для инициализации, которая должна происходить строго один раз.
 
 ---
 
-### Where Cron Jobs Live
+### Где хранятся задания cron
 
-Cron jobs are not all in one place. The location determines who owns the job, what user it runs as, and how it gets deployed.
+Задания cron хранятся в разных местах. Расположение определяет владельца задачи, пользователя, от имени которого она запускается, и способ развёртывания.
 
-| Location | Purpose | User field required | Deployed by |
+| Расположение | Назначение | Нужно поле пользователя | Кто устанавливает |
 |----------|---------|---------------------|-------------|
-| `crontab -e` (per-user) | User's personal scheduled tasks | No (implicit) | The user themselves |
-| `/etc/crontab` | System-wide single file | **Yes** | Root / config management |
-| `/etc/cron.d/` | System-wide, one file per application | **Yes** | Packages, config management |
-| `/etc/cron.hourly/` | Scripts run hourly | No | Drop executable script |
-| `/etc/cron.daily/` | Scripts run daily | No | Drop executable script |
-| `/etc/cron.weekly/` | Scripts run weekly | No | Drop executable script |
-| `/etc/cron.monthly/` | Scripts run monthly | No | Drop executable script |
+| `crontab -e` (для пользователя) | Личные задачи по расписанию | Нет (неявно) | Сам пользователь |
+| `/etc/crontab` | Общесистемный файл | **Да** | Root / управление конфигурацией |
+| `/etc/cron.d/` | Общесистемный каталог, отдельный файл на приложение | **Да** | Пакеты и управление конфигурацией |
+| `/etc/cron.hourly/` | Скрипты, запускаемые каждый час | Нет | Поместить исполняемый скрипт |
+| `/etc/cron.daily/` | Скрипты, запускаемые ежедневно | Нет | Поместить исполняемый скрипт |
+| `/etc/cron.weekly/` | Скрипты, запускаемые еженедельно | Нет | Поместить исполняемый скрипт |
+| `/etc/cron.monthly/` | Скрипты, запускаемые ежемесячно | Нет | Поместить исполняемый скрипт |
 
-**`/etc/cron.d/` is the right place for application-owned jobs in production.** When you deploy an application via a package, Ansible, or Chef, you drop a file in `/etc/cron.d/` named after your app. This keeps jobs discoverable, auditable, and version-controlled. Files in `/etc/cron.d/` must be owned by root and must not be world-writable — cron silently ignores files that fail this permission check.
+**`/etc/cron.d/` — подходящее место для заданий приложения в production.** При развёртывании через пакет, Ansible или Chef поместите в `/etc/cron.d/` файл с именем приложения. Так задания проще находить, проверять и хранить в системе контроля версий. Файлы в `/etc/cron.d/` должны принадлежать root и не должны быть доступны для записи всем пользователям: cron молча игнорирует файлы, не прошедшие проверку прав.
 
 **`crontab -e` is for personal or ad hoc jobs.** Jobs installed this way live in `/var/spool/cron/crontabs/<username>`. They disappear if the user is deleted. Avoid using personal crontabs for production workloads — no one else knows they exist.
 
@@ -345,7 +345,7 @@ chown root:root /opt/scripts/backup.sh
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Nightly Database Backup with Locking and Logging
 
@@ -549,7 +549,7 @@ tail /var/log/myapp-healthcheck.log
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Audit and Fix a Broken Cron Job
 
@@ -600,7 +600,7 @@ Build a complete log archiving solution using cron. Requirements:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Count the number of fields in a cron expression.
 

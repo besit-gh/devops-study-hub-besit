@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { getBookmarks } from '../store/curriculumStore'
+import { localizeLessonTitle, localizeModuleTitle } from '../utils/localization'
 
 export default function BookmarksDropdown() {
   const [open, setOpen] = useState(false)
@@ -39,7 +40,7 @@ export default function BookmarksDropdown() {
             : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400'
         }`}
       >
-        Saved
+        Сохранённое
       </button>
       {open && (
         <div className="absolute left-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-40 overflow-hidden">
@@ -50,8 +51,8 @@ export default function BookmarksDropdown() {
               onClick={() => setOpen(false)}
               className="block px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
             >
-              <div className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{r.moduleTitle}</div>
-              <div className="text-sm text-gray-800 dark:text-gray-100 truncate">{r.lessonTitle}</div>
+              <div className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{localizeModuleTitle(r.moduleSlug, r.moduleTitle)}</div>
+              <div className="text-sm text-gray-800 dark:text-gray-100 truncate">{localizeLessonTitle(r.lessonTitle)}</div>
             </Link>
           ))}
         </div>

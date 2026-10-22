@@ -1,41 +1,41 @@
-# Helm — Quick Reference
+# Helm — краткая справка
 
-## Core Commands
-
-| Command | Description |
-|---------|-------------|
-| `helm install name chart` | Install a release |
-| `helm install name chart -f values.yaml` | Install with custom values |
-| `helm install name chart --set key=val` | Install with inline value |
-| `helm upgrade name chart` | Upgrade a release |
-| `helm upgrade --install name chart` | Install or upgrade |
-| `helm uninstall name` | Uninstall a release |
-| `helm list` | List releases in current namespace |
-| `helm list -A` | List all releases |
-| `helm status name` | Show release status |
-| `helm history name` | Show release history |
-
-## Values & Templates
+## Основные команды
 
 | Command | Description |
 |---------|-------------|
-| `helm show values chart` | Show default values |
-| `helm show chart chart` | Show chart metadata |
-| `helm get values name` | Show applied values |
-| `helm get manifest name` | Show rendered manifests |
-| `helm template name chart` | Render templates locally |
-| `helm template name chart -f values.yaml` | Render with custom values |
-| `helm lint chart/` | Validate chart syntax |
-| `helm diff upgrade name chart` | Preview changes (requires plugin) |
+| `helm install name chart` | Установить релиз |
+| `helm install name chart -f values.yaml` | Установить с пользовательскими values |
+| `helm install name chart --set key=val` | Установить с параметром через --set |
+| `helm upgrade name chart` | Обновить релиз |
+| `helm upgrade --install name chart` | Установить или обновить релиз |
+| `helm uninstall name` | Удалить релиз |
+| `helm list` | Список релизов в текущем пространстве имён |
+| `helm list -A` | Список всех релизов |
+| `helm status name` | Показать состояние релиза |
+| `helm history name` | Показать историю релиза |
 
-## Rollback & Debugging
+## Values и шаблоны
 
 | Command | Description |
 |---------|-------------|
-| `helm rollback name 1` | Roll back to revision 1 |
-| `helm rollback name 0` | Roll back to previous revision |
-| `helm test name` | Run chart tests |
-| `helm get notes name` | Show post-install notes |
+| `helm show values chart` | Показать значения по умолчанию |
+| `helm show chart chart` | Показать метаданные chart |
+| `helm get values name` | Показать применённые values |
+| `helm get manifest name` | Показать сформированные манифесты |
+| `helm template name chart` | Сформировать шаблоны локально |
+| `helm template name chart -f values.yaml` | Сформировать шаблоны с пользовательскими values |
+| `helm lint chart/` | Проверить синтаксис chart |
+| `helm diff upgrade name chart` | Предварительно просмотреть изменения (нужен плагин) |
+
+## Откат и отладка
+
+| Command | Description |
+|---------|-------------|
+| `helm rollback name 1` | Откатиться к ревизии 1 |
+| `helm rollback name 0` | Откатиться к предыдущей ревизии |
+| `helm test name` | Запустить тесты chart |
+| `helm get notes name` | Показать заметки после установки |
 | `helm upgrade name chart --debug --dry-run` | Dry run with debug output |
 | `helm upgrade name chart --atomic` | Roll back automatically on failure |
 | `helm upgrade name chart --timeout 5m0s` | Set timeout |

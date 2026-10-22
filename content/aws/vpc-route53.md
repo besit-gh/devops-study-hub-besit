@@ -1,5 +1,5 @@
 ---
-title: VPC and Route 53
+title: VPC и Route 53
 module: aws
 duration_min: 25
 difficulty: intermediate
@@ -7,12 +7,12 @@ tags: [aws, vpc, subnets, route53, networking, nat-gateway, security-groups, dns
 exercises: 4
 ---
 
-## Overview
-VPC gives you a private, isolated network in AWS. Route 53 is AWS's DNS service. Together they control how traffic enters your infrastructure, how it's routed between services, and how the outside world discovers your endpoints. Most real infrastructure issues trace back to VPC misconfiguration — wrong route table, overly permissive security group, or missing NAT gateway.
+## Обзор
+VPC предоставляет приватную изолированную сеть в AWS, а Route 53 — DNS-сервис AWS. Вместе они определяют, как трафик попадает в инфраструктуру, маршрутизируется между сервисами и как внешние клиенты находят ваши endpoint. Многие реальные проблемы инфраструктуры связаны с ошибками VPC: неверной таблицей маршрутизации, слишком широкими правилами security group или отсутствующим NAT Gateway.
 
-## Concepts
+## Основные понятия
 
-### VPC Structure
+### Структура VPC
 ```
 VPC (10.0.0.0/16)
 ├── Public Subnet (10.0.1.0/24) — AZ us-east-1a
@@ -28,7 +28,7 @@ VPC (10.0.0.0/16)
 A **public subnet** has a route to an Internet Gateway (IGW).
 A **private subnet** has no IGW route — outbound-only internet via NAT Gateway.
 
-### Creating a VPC (CLI)
+### Создание VPC через CLI
 ```bash
 # Create VPC
 VPC_ID=$(aws ec2 create-vpc \
@@ -235,7 +235,7 @@ HC_ID=$(aws route53 create-health-check \
 
 Associate a health check with a DNS record — Route 53 stops routing to unhealthy endpoints in failover and latency routing policies.
 
-## Examples
+## Примеры
 
 ### Standard 3-Tier VPC (Terraform)
 ```hcl
@@ -255,7 +255,7 @@ module "vpc" {
 }
 ```
 
-## Exercises
+## Практические задания
 
 1. Create a VPC with two public and two private subnets across two AZs. Add an Internet Gateway for the public subnets and a NAT Gateway (in one public subnet) for the private subnets. Verify a private subnet instance can reach the internet via the NAT Gateway by checking `curl https://example.com`.
 2. Create two security groups: `web-sg` (allows 443 from 0.0.0.0/0) and `app-sg` (allows port 8080 only from `web-sg`). Demonstrate that restricting the app security group to the web security group source prevents direct internet access.
@@ -265,7 +265,7 @@ module "vpc" {
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Calculate the number of usable host addresses in a /24 subnet. Run: `python3 -c "print(2**(32-24) - 2)"`
 

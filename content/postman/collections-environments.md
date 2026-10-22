@@ -1,5 +1,5 @@
 ---
-title: Collections and Environments
+title: Коллекции и окружения Postman
 module: postman
 duration_min: 20
 difficulty: intermediate
@@ -7,12 +7,12 @@ tags: [postman, collections, environments, variables, pre-request, scripts, work
 exercises: 4
 ---
 
-## Overview
-Collections organize related API requests into a folder hierarchy with shared configuration. Environments let you switch between dev/staging/prod with a single dropdown — same collection, different base URLs and credentials. Together they eliminate copy-paste errors, make API docs executable, and form the foundation for automated testing. Pre-request scripts let you generate tokens, timestamps, and signatures dynamically before each request.
+## Обзор
+Коллекции группируют связанные API-запросы в иерархию папок с общей конфигурацией. Окружения позволяют переключаться между dev/staging/prod одним выбором: коллекция остаётся той же, а базовые URL и учётные данные меняются. Вместе они сокращают ошибки копирования, превращают документацию API в исполняемые запросы и создают основу автоматизированного тестирования. Pre-request-скрипты позволяют динамически генерировать токены, временные метки и подписи перед каждым запросом.
 
-## Concepts
+## Основные понятия
 
-### Collections
+### Коллекции
 A collection is a named group of API requests that share:
 - Base URL (via collection variable or environment)
 - Auth configuration (set at collection level, inherited by all requests)
@@ -39,7 +39,7 @@ MyApp API (collection)
     └── Create User → Create Order → Verify
 ```
 
-### Variables
+### Переменные
 Variables let you parameterize requests. Four scopes, in precedence order (highest first):
 
 ```
@@ -215,7 +215,7 @@ postman.setNextRequest(null);
 
 Exporting a collection to JSON and committing it to Git makes the API documentation versioned and executable.
 
-## Examples
+## Примеры
 
 ### Login → Use Token Pattern
 ```javascript
@@ -245,7 +245,7 @@ if (!token || Date.now() / 1000 >= parseInt(expiry || 0)) {
 }
 ```
 
-## Exercises
+## Практические задания
 
 1. Create a Postman collection for a public API (GitHub or JSONPlaceholder). Set `{{base_url}}` as a collection variable. Create two environments (local and production) with different base URLs. Verify switching environments changes all requests without editing them.
 2. Write a pre-request script on a collection that: checks if `access_token` is set and less than 30 seconds from expiry; if so, calls the refresh endpoint and updates the environment variable. Test by artificially setting a past expiry timestamp.
@@ -255,7 +255,7 @@ if (!token || Date.now() / 1000 >= parseInt(expiry || 0)) {
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Count environment variables in a stub file. Run: `printf 'base_url=https://api.example.com\napi_key=secret123\ntimeout=30\nenv=prod\n' | wc -l`
 

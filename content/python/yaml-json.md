@@ -1,5 +1,5 @@
 ---
-title: YAML & JSON Parsing
+title: Разбор YAML и JSON на Python
 module: python
 duration_min: 15
 difficulty: beginner
@@ -7,17 +7,17 @@ tags: [python, yaml, json, config, pyyaml, parsing]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-DevOps work is inseparable from structured text files. Kubernetes manifests, Helm values, Docker Compose stacks, Terraform outputs, GitHub Actions workflows, Ansible inventories, and virtually every CI/CD pipeline configuration is expressed in YAML or JSON. Python is the dominant scripting language for gluing these systems together — reading a manifest to patch an image tag, comparing two config snapshots, or extracting Terraform outputs to pass into a deployment script are daily tasks for a DevOps engineer. Knowing how to parse, transform, and write both formats reliably is a foundational skill, not a nice-to-have.
+Работа DevOps неразрывно связана со структурированными текстовыми файлами. Манифесты Kubernetes, values Helm, стеки Docker Compose, выходные данные Terraform, workflow GitHub Actions, inventory Ansible и почти все конфигурации CI/CD описываются в YAML или JSON. Python — основной язык для интеграции этих систем: изменение тега образа в манифесте, сравнение конфигураций и передача выходных значений Terraform в скрипт развёртывания — обычные задачи DevOps-инженера. Надёжный разбор, преобразование и запись обоих форматов — базовый навык.
 
-JSON is part of Python's standard library — no installation required. YAML requires the `PyYAML` package (`pip install pyyaml`), which is available in virtually every DevOps container base image and CI runner. Both formats map cleanly onto Python's native data structures (dicts, lists, strings, numbers, booleans, None), which means once you've parsed a document you work with ordinary Python — no special API, no query language.
+JSON входит в стандартную библиотеку Python и не требует установки. Для YAML нужен пакет `PyYAML` (`pip install pyyaml`), доступный во многих базовых образах DevOps-контейнеров и CI-runner. Оба формата естественно преобразуются в стандартные структуры Python — словари, списки, строки, числа, булевы значения и `None`. После разбора документа вы работаете с обычными объектами Python без отдельного API или языка запросов.
 
 In the broader DevOps toolchain these skills connect upward to infrastructure automation (Ansible, Terraform), container orchestration (Kubernetes), and GitOps pipelines (Argo CD, Flux), all of which expect you to programmatically produce or consume structured config. They also connect downward to basic shell scripting — `jq` and `yq` handle simple one-liners, but Python is what you reach for when logic, validation, or multi-file merging is involved.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### JSON — Built-In Parsing and Serialization
 
@@ -468,7 +468,7 @@ update_deployment_config("infra/terraform", "deploy/config.yaml")
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1 — Patch a Kubernetes Deployment Image Tag
 
@@ -743,7 +743,7 @@ ansible-playbook deploy.yml --extra-vars @tf_vars.yaml
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1 — Fix the YAML Coercion Bugs
 
@@ -836,7 +836,7 @@ Exit with code 0 if only warnings, code 1 if any errors.
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Serialize a dict to a JSON string.
 

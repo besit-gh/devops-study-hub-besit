@@ -1,30 +1,30 @@
-# GCP — Quick Reference
+# GCP — краткая справка
 
-## gcloud Setup
+## Настройка gcloud
 
 | Command | Description |
 |---------|-------------|
-| `gcloud init` | Initialize SDK and login |
-| `gcloud auth login` | Authenticate |
-| `gcloud auth application-default login` | Auth for application code |
-| `gcloud config list` | Show active config |
-| `gcloud config set project PROJECT_ID` | Set default project |
-| `gcloud config set compute/zone us-central1-a` | Set default zone |
-| `gcloud config configurations list` | List named configurations |
-| `gcloud info` | SDK environment info |
+| `gcloud init` | Инициализировать SDK и войти в аккаунт |
+| `gcloud auth login` | Пройти аутентификацию |
+| `gcloud auth application-default login` | Аутентификация для кода приложения |
+| `gcloud config list` | Показать активную конфигурацию |
+| `gcloud config set project PROJECT_ID` | Задать проект по умолчанию |
+| `gcloud config set compute/zone us-central1-a` | Задать зону по умолчанию |
+| `gcloud config configurations list` | Список именованных конфигураций |
+| `gcloud info` | Сведения об окружении SDK |
 
 ## Compute Engine
 
 | Command | Description |
 |---------|-------------|
-| `gcloud compute instances list` | List VMs |
-| `gcloud compute instances create name --zone=z --machine-type=e2-micro` | Create VM |
-| `gcloud compute instances start name --zone=z` | Start instance |
-| `gcloud compute instances stop name --zone=z` | Stop instance |
-| `gcloud compute instances delete name --zone=z` | Delete instance |
-| `gcloud compute ssh name --zone=z` | SSH into instance |
-| `gcloud compute scp file name:~/dest --zone=z` | Copy file to instance |
-| `gcloud compute firewall-rules list` | List firewall rules |
+| `gcloud compute instances list` | Список виртуальных машин |
+| `gcloud compute instances create name --zone=z --machine-type=e2-micro` | Создать виртуальную машину |
+| `gcloud compute instances start name --zone=z` | Запустить экземпляр |
+| `gcloud compute instances stop name --zone=z` | Остановить экземпляр |
+| `gcloud compute instances delete name --zone=z` | Удалить экземпляр |
+| `gcloud compute ssh name --zone=z` | Подключиться к экземпляру по SSH |
+| `gcloud compute scp file name:~/dest --zone=z` | Скопировать файл на экземпляр |
+| `gcloud compute firewall-rules list` | Список правил межсетевого экрана |
 
 ## GKE
 

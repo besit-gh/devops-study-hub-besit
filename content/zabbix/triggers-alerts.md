@@ -1,5 +1,5 @@
 ---
-title: Triggers & Alerting
+title: Триггеры и оповещения Zabbix
 module: zabbix
 duration_min: 20
 difficulty: intermediate
@@ -7,12 +7,12 @@ tags: [zabbix, triggers, alerting, media-types, actions, escalation, maintenance
 exercises: 3
 ---
 
-## Overview
-Zabbix triggers are boolean expressions evaluated against item values. When a trigger evaluates to true (PROBLEM state), Zabbix generates an event that can drive notifications, auto-remediation, or ticket creation. The alerting pipeline — triggers → events → actions → media types — is the operational core of Zabbix. Understanding how to write correct trigger expressions, configure multi-channel notifications, build escalation ladders, and suppress alerts during planned maintenance are all skills that come up in both interviews and day-to-day operations. A poorly written trigger expression is one of the most common sources of alert fatigue in production Zabbix deployments.
+## Обзор
+Триггеры Zabbix — логические выражения, вычисляемые по значениям элементов данных. Когда выражение становится истинным (состояние PROBLEM), Zabbix создаёт событие, которое может запустить уведомления, автоматическое исправление или создание тикета. Конвейер оповещений — triggers → events → actions → media types — составляет операционное ядро Zabbix. Умение правильно писать выражения триггеров, настраивать уведомления по нескольким каналам, строить эскалации и подавлять оповещения во время планового обслуживания важно и на собеседованиях, и в повседневной работе. Ошибки в выражениях триггеров часто приводят к alert fatigue.
 
-## Concepts
+## Основные понятия
 
-### Trigger Expressions
+### Выражения триггеров
 A trigger expression evaluates to 0 (OK) or 1 (PROBLEM). The expression language uses functions applied to item history.
 
 **Basic expression syntax:**
@@ -221,7 +221,7 @@ Schedule type: One time only
 **Recurring maintenance:**
 Set `Schedule type: Weekly` or `Monthly` with specific day-of-week offsets for patch cycles.
 
-## Examples
+## Примеры
 
 **Full alert pipeline — disk space warning with escalation:**
 
@@ -261,7 +261,7 @@ curl -s -X POST http://zabbix-server/api_jsonrpc.php \
   }' | jq '.result[] | {host: .hosts[0].host, trigger: .description, severity: .priority}'
 ```
 
-## Exercises
+## Практические задания
 
 1. Write a trigger expression for a host that fires at `Average` severity when the 5-minute CPU load average exceeds 4 for more than 3 consecutive minutes, and recovers only when it drops below 2. Include a recovery expression. Explain why using `avg()` instead of `last()` is important here.
 2. Configure a three-step escalation action: Step 1 sends a Slack message to `#alerts`, Step 2 (after 30 minutes if unacknowledged) sends a PagerDuty alert to on-call, Step 3 (after 1 hour) sends an email to the engineering manager. Set conditions so only `High` or `Disaster` severity triggers from the `Production` host group match.
@@ -270,7 +270,7 @@ curl -s -X POST http://zabbix-server/api_jsonrpc.php \
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 4. Evaluate a simple Zabbix trigger threshold. Run: `python3 -c "cpu=85; threshold=80; print('PROBLEM' if cpu > threshold else 'OK')"`
 

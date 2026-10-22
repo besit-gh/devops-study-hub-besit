@@ -1,5 +1,5 @@
 ---
-title: Charts, Templates & Values
+title: Chart, шаблоны и values Helm
 module: helm
 duration_min: 20
 difficulty: intermediate
@@ -7,19 +7,19 @@ tags: [helm, charts, templates, values, go-templates, kubernetes]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Helm is the de facto package manager for Kubernetes. Rather than maintaining separate, nearly-identical YAML manifests for each environment, Helm lets you define a single parameterized chart and override values at install time. This single source of truth dramatically reduces configuration drift between dev, staging, and production — a core DevOps objective. Under the hood, Helm renders Go templates against a merged values tree to produce plain Kubernetes manifests, then manages those manifests as a named release with full lifecycle support (install, upgrade, rollback, uninstall).
+Helm — фактический стандарт пакетного менеджера Kubernetes. Вместо поддержки отдельных почти одинаковых YAML-манифестов для каждого окружения вы описываете один параметризованный chart и переопределяете значения при установке. Единый источник истины значительно уменьшает configuration drift между dev, staging и production — одну из ключевых проблем DevOps. Внутри Helm обрабатывает Go-шаблоны с объединённым набором values, создаёт обычные манифесты Kubernetes и управляет ими как именованным релизом с поддержкой полного жизненного цикла: install, upgrade, rollback и uninstall.
 
-The design philosophy is explicit separation of concerns: structure lives in `templates/`, defaults live in `values.yaml`, and environment-specific overrides live in external values files or `--set` flags. The chart itself is versioned independently from the application it deploys, which means you can patch your deployment strategy without shipping new application code. Helm 3 dropped the server-side Tiller component entirely; the Helm binary now communicates directly with the Kubernetes API server, which simplifies RBAC and removes a security surface.
+Философия Helm — явное разделение ответственности: шаблоны хранятся в `templates/`, значения по умолчанию — в `values.yaml`, а настройки конкретного окружения — во внешних values-файлах или параметрах `--set`. Версия chart управляется независимо от версии приложения, поэтому стратегию развёртывания можно изменить без выпуска нового кода приложения. В Helm 3 полностью отказались от серверного компонента Tiller: клиент Helm напрямую взаимодействует с Kubernetes API server, что упрощает архитектуру, интеграцию с RBAC и уменьшает поверхность атаки.
 
-In the broader DevOps toolchain, Helm slots between your CI system and your cluster. A pipeline builds an image, pushes it to a registry, then calls `helm upgrade --install` with the new image tag. Tools like ArgoCD and Flux can watch a Helm chart repository and apply changes declaratively. Understanding chart internals — how values merge, how templates render, when to use helpers — is essential for writing maintainable charts and debugging broken deployments.
+В DevOps Helm располагается между CI-системой и кластером. Пайплайн собирает образ, отправляет его в registry, а затем вызывает `helm upgrade --install` с новым тегом образа. Инструменты вроде Argo CD и Flux могут отслеживать репозиторий Helm chart и декларативно применять изменения. Понимание того, как объединяются values, обрабатываются шаблоны и используются helpers, необходимо для поддержки удобных в сопровождении chart и диагностики неудачных развёртываний.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### Chart Structure
+### Структура chart
 
 Every Helm chart is a directory with a predictable layout. Knowing what each file does is the foundation for reading and writing any chart.
 
@@ -504,7 +504,7 @@ global:
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Multi-Environment Deployment with Per-Environment Values Files
 
@@ -751,7 +751,7 @@ helm template myapp ./mychart -s templates/configmap.yaml
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Add a Horizontal Pod Autoscaler with Conditional Rendering
 
@@ -823,7 +823,7 @@ This exercise simulates the real-world pattern of sharing templates across multi
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 7. Extract the chart name from a Chart.yaml stub. Run: `printf 'apiVersion: v2\nname: mywebapp\nversion: 1.0.0\n' | awk '/^name:/{print $2}'`
 

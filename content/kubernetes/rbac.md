@@ -1,5 +1,5 @@
 ---
-title: RBAC
+title: RBAC — управление доступом
 module: kubernetes
 duration_min: 20
 difficulty: advanced
@@ -7,19 +7,19 @@ tags: [kubernetes, rbac, roles, clusterrole, serviceaccount, permissions, securi
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Role-Based Access Control (RBAC) is Kubernetes' authorization mechanism for answering the question: "Is this identity allowed to perform this action on this resource?" It sits between authentication (proving who you are) and the API server's actual execution of a request. Without RBAC, a compromised Pod or misconfigured CI pipeline can read every Secret, delete every Deployment, or exfiltrate cluster state. With it, you enforce least-privilege: each identity gets exactly what it needs and nothing more.
+Role-Based Access Control (RBAC) — механизм авторизации Kubernetes, который отвечает на вопрос: «Разрешено ли этой идентичности выполнить это действие над этим ресурсом?». Он действует после аутентификации, подтверждающей личность, и до выполнения запроса API-сервером. Без RBAC скомпрометированный Pod или неправильно настроенный CI-пайплайн может прочитать все Secret, удалить любой Deployment или извлечь данные кластера. RBAC помогает соблюдать принцип минимальных привилегий: каждая идентичность получает только необходимые права.
 
-RBAC's design is intentionally additive — there are no deny rules. Permissions accumulate across all bindings that apply to a subject. This means you can never use RBAC to explicitly block access to something that would otherwise be allowed; you simply avoid granting it. The model consists of four object types arranged as two independent layers: the *definition layer* (Role, ClusterRole) describes what operations are permitted, and the *binding layer* (RoleBinding, ClusterRoleBinding) attaches those definitions to identities called *subjects*. This separation lets you write a role once and reuse it across teams, namespaces, or automation accounts.
+RBAC намеренно построен по разрешающей модели: правил явного запрета нет. Права суммируются по всем binding-объектам, применимым к субъекту. Поэтому RBAC не может отменить уже выданное разрешение отдельным deny-правилом — нужно просто не предоставлять лишние права. Модель включает четыре типа объектов в двух независимых слоях: слой *определения* (Role, ClusterRole) задаёт разрешённые операции, а слой *привязки* (RoleBinding, ClusterRoleBinding) назначает эти права идентичностям, называемым *subjects*. Благодаря этому роль можно определить один раз и использовать для разных команд, пространств имён и сервисных аккаунтов.
 
-In the broader DevOps toolchain, RBAC sits at the intersection of platform security and developer self-service. Platform teams define roles that describe what CI pipelines, monitoring agents, and application operators need. Developers consume those roles through service accounts without touching raw kubeconfig credentials. Security audits reduce to inspecting bindings, not hunting through application code. Understanding RBAC deeply also makes you effective at diagnosing `Forbidden` errors — the most common Kubernetes access error in production — and at designing multi-tenant clusters where teams share infrastructure without interfering with each other.
+В DevOps RBAC находится на пересечении безопасности платформы и самостоятельной работы разработчиков. Платформенная команда задаёт роли для CI-пайплайнов, агентов мониторинга и операторов приложений. Разработчики используют их через service accounts, не работая напрямую с учётными данными kubeconfig. Аудит безопасности сводится к проверке binding-объектов, а не поиску прав в коде приложений. Понимание RBAC помогает диагностировать `Forbidden` — одну из самых частых ошибок доступа в production Kubernetes, — и проектировать многопользовательские кластеры.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### The Four RBAC Objects
+### Четыре объекта RBAC
 
 Every RBAC configuration is built from exactly four object kinds. Understanding their scope is the key to designing a correct permission model.
 
@@ -266,7 +266,7 @@ That message contains all three elements you need to fix it: the **subject** (`s
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: CI/CD Pipeline with Scoped Deploy Permissions
 
@@ -458,7 +458,7 @@ kubectl get clusterrolebindings,rolebindings -A -o yaml > rbac-audit-$(date +%Y%
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Build a Read-Only Namespace Role
 
@@ -584,7 +584,7 @@ kubectl patch serviceaccount default -n hardened \
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 7. Count verbs in an RBAC rule. Run: `printf 'verbs: ["get", "list", "watch"]\n' | tr ',' '\n' | grep -c '"'`
 

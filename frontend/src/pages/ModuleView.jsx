@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { markLessonComplete, resetLessonProgress } from '../store/curriculumStore'
 import { readinessColor } from '../utils/readiness'
+import { localizeLessonTitle } from '../utils/localization'
 
 export default function ModuleView({ modules, progress, onProgressUpdate, readiness = {} }) {
   const { moduleSlug } = useParams()
@@ -12,7 +13,7 @@ export default function ModuleView({ modules, progress, onProgressUpdate, readin
   const moduleReadiness = readiness[moduleSlug]
 
   if (!mod) return (
-    <div className="p-6 text-gray-500 dark:text-gray-400">Module not found.</div>
+    <div className="p-6 text-gray-500 dark:text-gray-400">Модуль не найден.</div>
   )
 
   const lessons = mod.lessons || []
@@ -44,13 +45,13 @@ export default function ModuleView({ modules, progress, onProgressUpdate, readin
           <p className="text-sm text-gray-500 dark:text-gray-400">{lessons.length} lessons</p>
           {moduleReadiness && (
             <div className="flex items-center gap-3 mt-2 text-xs text-gray-400 dark:text-gray-500">
-              <span>Completion <span className="font-medium text-gray-600 dark:text-gray-300">{moduleReadiness.completion_pct}%</span></span>
+              <span>Завершение <span className="font-medium text-gray-600 dark:text-gray-300">{moduleReadiness.completion_pct}%</span></span>
               <span>·</span>
-              <span>Quiz <span className="font-medium text-gray-600 dark:text-gray-300">{moduleReadiness.quiz_pct}%</span></span>
+              <span>Тест <span className="font-medium text-gray-600 dark:text-gray-300">{moduleReadiness.quiz_pct}%</span></span>
               <span>·</span>
-              <span>Interview <span className="font-medium text-gray-600 dark:text-gray-300">{moduleReadiness.interview_pct}%</span></span>
+              <span>Собеседование <span className="font-medium text-gray-600 dark:text-gray-300">{moduleReadiness.interview_pct}%</span></span>
               <span>·</span>
-              <span>Module Progress <span className={`font-semibold ${readinessColor(moduleReadiness.readiness)}`}>{moduleReadiness.readiness}%</span></span>
+              <span>Прогресс модуля <span className={`font-semibold ${readinessColor(moduleReadiness.readiness)}`}>{moduleReadiness.readiness}%</span></span>
             </div>
           )}
         </div>
@@ -64,7 +65,7 @@ export default function ModuleView({ modules, progress, onProgressUpdate, readin
           <button
             onClick={() => navigate(`/module/${moduleSlug}/quiz`)}
             className="shrink-0 text-xs px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            title="Randomised questions across all lessons in this module"
+            title="Случайные вопросы по всем урокам этого модуля"
           >
             Module Quiz
           </button>
@@ -80,8 +81,8 @@ export default function ModuleView({ modules, progress, onProgressUpdate, readin
       {completedBanner && (
         <div className="mb-6 flex items-start justify-between gap-4 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-800">
           <div>
-            <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Module complete!</div>
-            <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">+50 XP module bonus earned.</div>
+            <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Модуль завершён!div>
+            <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">Получен бонус за модуль: +50 XP.</div>
           </div>
           <button
             onClick={() => setCompletedBanner(false)}
@@ -110,7 +111,7 @@ export default function ModuleView({ modules, progress, onProgressUpdate, readin
                   to={`/module/${moduleSlug}/lesson/${lesson.slug}`}
                   className="text-sm font-medium text-gray-800 dark:text-gray-100 hover:text-emerald-600 dark:hover:text-emerald-400"
                 >
-                  {lesson.title}
+                  {localizeLessonTitle(lesson.title)}
                 </Link>
                 <div className="text-xs text-gray-400 mt-0.5">
                   ~{lesson.duration_min} min read · {lesson.difficulty}
@@ -126,7 +127,7 @@ export default function ModuleView({ modules, progress, onProgressUpdate, readin
               )}
               {done && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Done</span>
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Готово</span>
                   <button
                     onClick={() => handleReset(lesson.id)}
                     className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"

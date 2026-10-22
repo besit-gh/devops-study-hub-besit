@@ -1,5 +1,5 @@
 ---
-title: Pipes & Redirects
+title: Конвейеры и перенаправление потоков
 module: bash
 duration_min: 10
 difficulty: beginner
@@ -7,19 +7,19 @@ tags: [bash, pipes, redirects, stdin, stdout, stderr, tee]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Pipes and redirects are the foundation of Unix composability — the design philosophy that small, focused tools should be chainable into larger workflows. Instead of building monolithic programs, Unix provides primitives that let `grep`, `awk`, `sort`, `cut`, and hundreds of other utilities collaborate through shared data streams. For DevOps engineers, this is not an academic concept: every log parser, deployment script, health check, and CI pipeline step relies on correctly routing data between processes. Getting it wrong silently discards errors, breaks pipelines, or produces misleading output in automated environments where no human is watching.
+Конвейеры и перенаправления — основа композиционности Unix: небольшие специализированные инструменты можно объединять в более сложные цепочки. Вместо монолитных программ Unix предоставляет механизмы, позволяющие `grep`, `awk`, `sort`, `cut` и сотням других утилит обмениваться потоками данных. Для DevOps это не абстрактная теория: парсеры логов, скрипты развёртывания, health checks и шаги CI-пайплайнов зависят от правильной передачи данных между процессами. Ошибка может незаметно отбросить сообщения об ошибках, сломать конвейер или выдать вводящий в заблуждение результат.
 
-The underlying mechanism is the file descriptor — a numbered handle that the kernel assigns to every open resource a process has. The three standard ones (stdin, stdout, stderr) are present in every process by default. Redirects rewire where those handles point; pipes connect one process's stdout directly to another's stdin through an in-kernel buffer. Because these are kernel-level abstractions, they work the same whether you are running a local script, a remote SSH command, or a container entrypoint — making them universally applicable across the DevOps toolchain.
+В основе лежит файловый дескриптор — числовой идентификатор открытого ресурса, назначаемый ядром процессу. По умолчанию у каждого процесса есть три стандартных дескриптора: stdin, stdout и stderr. Перенаправление меняет назначение дескриптора, а конвейер соединяет stdout одного процесса со stdin другого через буфер ядра. Эти механизмы работают одинаково в локальном скрипте, удалённой SSH-команде и entrypoint контейнера, поэтому применимы во всём DevOps-стеке.
 
-In the broader DevOps context, pipes and redirects appear in: CI/CD pipeline scripts (capturing build output, separating errors from progress), log processing (extracting, filtering, and aggregating log streams), infrastructure automation (feeding configuration into tools like `mysql`, `kubectl`, or `terraform`), and observability workflows (tailing, parsing, and forwarding log data). Mastering them is a force multiplier for everything else you do in bash.
+В DevOps конвейеры и перенаправления используются в скриптах CI/CD (сбор вывода сборки и отделение ошибок от обычных сообщений), обработке логов, автоматизации инфраструктуры (передаче конфигурации в `mysql`, `kubectl` или `terraform`) и процессах наблюдаемости. Владение этими приёмами значительно повышает эффективность любой работы с Bash.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### File Descriptors
+### Файловые дескрипторы
 
 Every process inherits three open file descriptors from its parent:
 
@@ -358,7 +358,7 @@ wait "$JOB_PID" && echo "Job succeeded" || echo "Job failed with code $?"
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Parsing Nginx Access Logs During an Incident
 
@@ -581,7 +581,7 @@ echo "fake-pod	registry.example.com/old-image:v0.9" >> baseline-production.txt
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Redirect Ordering and FD Wiring
 
@@ -663,7 +663,7 @@ echo "fake-pod	registry.example.com/old-image:v0.9" >> baseline-production.txt
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 3. Count the number of unique words in the string `"one two three two one"` using a pipeline. Print only the integer count. Hint: `echo "..." | tr ' ' '\n' | sort -u | wc -l | awk '{print $1}'`
 

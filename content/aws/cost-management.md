@@ -1,5 +1,5 @@
 ---
-title: AWS Cost Management
+title: Управление затратами AWS
 module: aws
 duration_min: 20
 difficulty: intermediate
@@ -7,9 +7,9 @@ tags: [aws, cost, billing, cost-explorer, budgets, savings-plans, spot, tagging]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-AWS bills grow silently. An undeleted NAT Gateway costs ~$32/month before you move a single byte through it. A forgotten EC2 instance running idle, an S3 bucket accumulating 10 GB/day, an Elastic IP sitting unattached — these are the real failure modes of cloud operations. Cost management is not a finance function; it is an operational discipline that belongs in the same category as reliability and security. In a DevOps role you will be expected to understand what the infrastructure costs, explain why it costs that, and reduce waste without degrading service.
+Расходы AWS могут незаметно расти. Неудалённый NAT Gateway стоит около 32 долларов в месяц, даже если через него не проходит ни одного байта. Забытый простаивающий экземпляр EC2, бакет S3, который накапливает по 10 ГБ в день, или неиспользуемый Elastic IP — типичные проблемы эксплуатации облака. Управление затратами — не только финансовая функция, а операционная дисциплина наравне с надёжностью и безопасностью. От DevOps-инженера ожидают понимания стоимости инфраструктуры, объяснения причин затрат и сокращения потерь без ухудшения сервиса.
 
 The guiding principle of AWS cost management is **visibility before action**: you cannot optimize what you cannot see. The toolchain follows a natural sequence — tag resources so costs are attributable, use Cost Explorer to understand current spending, set Budgets to detect anomalies early, then apply the right pricing model and storage class to each workload. Every step depends on the previous one. An account with no tags produces Cost Explorer reports that are useless for team-level attribution.
 
@@ -17,7 +17,7 @@ In the broader DevOps toolchain, cost management sits alongside infrastructure p
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### Cost Explorer
 
@@ -77,7 +77,7 @@ aws ce get-cost-and-usage \
 
 ---
 
-### Budgets and Alerts
+### Бюджеты и оповещения
 
 Budgets are proactive guardrails. Cost Explorer tells you what happened; Budgets tell you what is about to happen. Set them up before you need them — the notification lag on `ACTUAL` alerts is up to 8 hours, so you are not getting real-time interruption, but you will catch runaway spend within a day.
 
@@ -498,7 +498,7 @@ aws compute-optimizer get-ebs-volume-recommendations \
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Investigating a 40% Cost Spike
 
@@ -833,7 +833,7 @@ aws ce get-cost-and-usage \
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Identify the Top 3 Cost Drivers in Your Account
 
@@ -926,7 +926,7 @@ You are given three workloads:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Calculate monthly EC2 cost from an hourly rate. Run: `python3 -c "print(round(0.096 * 24 * 30, 2))"`
 

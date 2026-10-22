@@ -1,22 +1,22 @@
-# CI/CD Pipelines — Quick Reference
+# CI/CD-пайплайны — краткая справка
 
-## GitHub Actions CLI (gh)
+## CLI GitHub Actions (gh)
 
 | Command | Description |
 |---------|-------------|
-| `gh workflow list` | List workflows |
-| `gh workflow run name.yml` | Trigger workflow manually |
-| `gh run list` | List recent workflow runs |
-| `gh run view ID` | View run details |
-| `gh run watch ID` | Watch run in progress |
-| `gh run download ID` | Download run artifacts |
-| `gh secret list` | List repository secrets |
-| `gh secret set NAME` | Set a secret (prompts) |
-| `gh variable list` | List Actions variables |
-| `gh cache list` | List runner cache entries |
-| `gh cache delete KEY` | Delete cache entry |
+| `gh workflow list` | Список workflow |
+| `gh workflow run name.yml` | Запустить workflow вручную |
+| `gh run list` | Список недавних запусков workflow |
+| `gh run view ID` | Просмотреть детали запуска |
+| `gh run watch ID` | Следить за текущим запуском |
+| `gh run download ID` | Скачать артефакты запуска |
+| `gh secret list` | Список секретов репозитория |
+| `gh secret set NAME` | Задать секрет (с запросом значения) |
+| `gh variable list` | Список переменных Actions |
+| `gh cache list` | Список записей кэша runner |
+| `gh cache delete KEY` | Удалить запись кэша |
 
-## GitHub Actions — Key Workflow Patterns
+## GitHub Actions — основные шаблоны workflow
 
 ```yaml
 on:
@@ -46,7 +46,7 @@ jobs:
           path: dist/
 ```
 
-## GitHub Actions — Common Patterns
+## GitHub Actions — распространённые шаблоны
 
 | Pattern | Description |
 |---------|-------------|

@@ -1,5 +1,5 @@
 ---
-title: SAST and DAST
+title: SAST и DAST
 module: devsecops
 duration_min: 20
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [devsecops, sast, dast, security-testing, bandit, semgrep, zap, owasp, ci]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-SAST (Static Application Security Testing) analyzes source code, bytecode, or compiled artifacts without executing them. It catches hardcoded secrets, SQL injection patterns, insecure function calls, and dangerous API usage at commit time — before any code reaches a running environment. Because SAST operates on code, it gives developers precise file-and-line feedback and integrates naturally into editors, pre-commit hooks, and CI pipelines. The tradeoff is that SAST cannot see runtime behavior: it cannot know what HTTP headers your server actually returns, whether an auth check is bypassed by a specific request sequence, or how your app behaves under a real attacker's input.
+SAST (Static Application Security Testing) анализирует исходный код, bytecode или собранные артефакты без выполнения программы. Он обнаруживает жёстко заданные секреты, шаблоны SQL injection, небезопасные вызовы функций и рискованное использование API на этапе коммита, до запуска кода. Поскольку SAST работает с исходниками, он указывает разработчику конкретные файлы и строки и легко интегрируется в редакторы, pre-commit hooks и CI-пайплайны. Ограничение в том, что SAST не видит поведение во время выполнения: реальные HTTP-заголовки, обход проверки авторизации последовательностью запросов или реакцию приложения на ввод злоумышленника.
 
-DAST (Dynamic Application Security Testing) attacks a live application the way an external attacker would. It sends crafted HTTP requests, inspects responses, follows redirects, and probes for vulnerabilities that only surface at runtime: authentication bypasses, reflected and stored XSS, misconfigured security headers, open redirects, and server-side request forgery. DAST is language-agnostic — it does not care what framework your app uses — but it requires a running target, which means it belongs later in the pipeline, typically against a staging or ephemeral environment.
+DAST (Dynamic Application Security Testing) проверяет работающее приложение так, как это делал бы внешний злоумышленник. Он отправляет специально сформированные HTTP-запросы, анализирует ответы, следует перенаправлениям и ищет уязвимости, проявляющиеся только во время выполнения: обход аутентификации, reflected и stored XSS, неправильные security headers, open redirect и SSRF. DAST не зависит от языка или фреймворка приложения, но требует работающей цели, поэтому обычно запускается позже в пайплайне — против staging или временного тестового окружения.
 
-Together, SAST and DAST implement defense in depth for application security. SAST shifts security left to the developer's workstation and the PR stage; DAST validates the running system before promotion to production. Neither replaces the other, and neither replaces human code review or penetration testing. In a mature DevSecOps pipeline they are complementary layers: SAST is fast and cheap (run on every commit), DAST is slower and more realistic (run on every deploy to a test environment). Both feed findings into a unified place — GitHub Security tab, Defect Dojo, or similar — so teams can track, triage, and close vulnerabilities systematically.
+Вместе SAST и DAST обеспечивают многоуровневую защиту приложения. SAST сдвигает проверки безопасности влево — на рабочую станцию разработчика и этап PR; DAST проверяет работающую систему перед выпуском в production. Они не заменяют друг друга, а также не отменяют ручное code review и penetration testing. В зрелом DevSecOps-пайплайне это дополняющие уровни: SAST быстрый и дешёвый, поэтому запускается при каждом коммите; DAST медленнее, но ближе к реальной атаке и запускается при развёртывании в тестовую среду. Результаты обоих инструментов собираются в едином месте — например, GitHub Security или Defect Dojo, — чтобы команда могла системно отслеживать и устранять уязвимости.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### SAST vs DAST: Core Differences
 
@@ -420,7 +420,7 @@ Scheduled (nightly or weekly — against long-lived staging)
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Python Flask App — SAST in GitHub Actions
 
@@ -664,7 +664,7 @@ semgrep --config=rules/org-standards.yml /tmp/bad.py /tmp/good.py
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Run Bandit Against a Vulnerable Python App and Triage Findings
 
@@ -776,7 +776,7 @@ Your team uses `requests.get()` throughout the codebase. Your security team has 
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 7. This code string passes user input to `subprocess` with `shell=True` — a high-severity SAST finding. Print `HIGH` if the pattern is detected, `LOW` otherwise.
 

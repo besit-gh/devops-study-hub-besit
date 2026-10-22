@@ -1,5 +1,5 @@
 ---
-title: Image Optimization
+title: Оптимизация Docker-образов
 module: docker
 duration_min: 15
 difficulty: intermediate
@@ -7,15 +7,15 @@ tags: [docker, optimization, size, security, layers, slim, distroless]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Large Docker images are a compounding problem in production DevOps workflows. A 1 GB image takes significantly longer to pull on cold nodes during an incident, burns bandwidth costs on every CI push to a registry, and increases the attack surface exposed to a potential container escape. In a Kubernetes environment where pods are scheduled across nodes that may not have a local image cache, pull latency directly affects how fast you can respond to a scale event or a rolling deployment. Optimizing images is not aesthetic work — it has measurable impact on deployment speed, infrastructure cost, and security posture.
+Большие Docker-образы создают нарастающие проблемы в production. Образ размером 1 ГБ дольше загружается на узлы без локального кэша во время инцидента, увеличивает расходы на трафик при каждой отправке из CI и расширяет поверхность атаки в случае побега из контейнера. В Kubernetes Pod могут запускаться на узлах без нужного образа в кэше, поэтому задержка загрузки влияет на скорость масштабирования и rolling deployment. Оптимизация образов — не косметика: она измеримо влияет на скорость развёртывания, стоимость инфраструктуры и безопасность.
 
-The core principle behind Docker image optimization is understanding the union filesystem model. Every `FROM`, `RUN`, `COPY`, and `ADD` instruction writes a new read-only layer. These layers are stacked at runtime to create the container's filesystem view. Crucially, data deleted in layer N is not removed from the image — it is still present in layer N-1 and contributes to the total compressed image size. This means optimization is not just about what ends up in the final image conceptually, but what ends up written into any layer at any point during the build. Multi-stage builds, combined `RUN` commands, and `.dockerignore` files all exist to manage this constraint.
+Ключ к оптимизации Docker-образов — понимание модели union filesystem. Каждая инструкция `FROM`, `RUN`, `COPY` и `ADD` создаёт новый слой только для чтения. Во время запуска слои объединяются в представление файловой системы контейнера. Важно: удаление файла в слое N не убирает его из предыдущего слоя N−1, поэтому данные продолжают увеличивать сжатый размер образа. Следовательно, важно не только то, что концептуально остаётся в финальном образе, но и то, какие данные записывались в любом слое во время сборки. Для контроля этого используют многоэтапную сборку, объединение команд `RUN` и `.dockerignore`.
 
 In the broader DevOps toolchain, image optimization sits at the intersection of CI/CD, security, and platform engineering. A well-optimized image is the artifact that travels from `git push` through the pipeline, into a registry, and onto production nodes. Vulnerability scanning, non-root users, and minimal base images are practices that harden that artifact before it ever reaches runtime. Teams that treat image quality as a first-class concern — scanning in CI, enforcing size budgets, pinning digests — reduce the operational risk carried by every deployment.
 
-## Concepts
+## Основные понятия
 
 ### Measure First
 
@@ -451,7 +451,7 @@ trivy image --download-db-only   # refresh before scanning
 
 A stale database misses CVEs published after the last update — a false sense of security is worse than no scanning.
 
-## Examples
+## Примеры
 
 ### Example 1: Optimizing a Python Flask API from 900 MB to ~80 MB
 
@@ -721,7 +721,7 @@ docker run --rm node-app:latest node -e "require('jest')"
 # Error: Cannot find module 'jest'  ← correct; jest is a devDependency
 ```
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Layer Archaeology
 
@@ -814,7 +814,7 @@ This exercise connects base image choice directly to CVE counts.
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 6. Count `RUN` instructions in a Dockerfile stub (combining saves a layer). Run: `printf 'FROM ubuntu:22.04\nRUN apt-get update\nRUN apt-get install -y curl git\nRUN apt-get clean\nRUN rm -rf /var/lib/apt/lists/*\n' | grep -c '^RUN'`
 

@@ -1,5 +1,5 @@
 ---
-title: Multi-stage Builds
+title: Многоэтапная сборка Docker
 module: docker
 duration_min: 15
 difficulty: intermediate
@@ -7,19 +7,19 @@ tags: [docker, multi-stage, dockerfile, optimization, build]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Multi-stage builds solve one of the oldest tensions in containerization: the tools you need to *build* software are almost never the tools you need to *run* it. Before multi-stage builds, teams used separate Dockerfiles for CI and production, or shell-scripted their way around the problem by building outside Docker and copying artifacts in. Both approaches broke reproducibility. Multi-stage builds collapse the entire pipeline — dependency installation, compilation, testing, and packaging — into a single Dockerfile with a clean separation between build-time and runtime concerns.
+Многоэтапная сборка решает одну из давних проблем контейнеризации: инструменты, необходимые для *сборки* ПО, почти никогда не нужны для его *запуска*. До появления multi-stage builds команды использовали отдельные Dockerfile для CI и production либо собирали приложение вне Docker и копировали артефакты внутрь. Оба подхода ухудшали воспроизводимость. Многоэтапная сборка объединяет установку зависимостей, компиляцию, тестирование и упаковку в одном Dockerfile, чётко разделяя этапы сборки и выполнения.
 
-The guiding principle is **artifact promotion**: each stage produces something, and later stages cherry-pick only what they need via `COPY --from`. The intermediate layers — compilers, test frameworks, downloaded source tarballs, intermediate object files — are discarded automatically. The final image is exactly what you declare it to be. This matters for security as much as size: a production image without a shell, a package manager, or source code has a dramatically smaller attack surface.
+Основной принцип — **перенос артефактов**: каждый этап создаёт результат, а следующие этапы забирают только нужные файлы через `COPY --from`. Промежуточные слои — компиляторы, тестовые фреймворки, исходные архивы и объектные файлы — автоматически исключаются из финального образа. Это важно не только для размера, но и для безопасности: production-образ без shell, менеджера пакетов и исходного кода имеет значительно меньшую поверхность атаки.
 
-In the broader DevOps toolchain, multi-stage builds sit at the intersection of CI/CD and container security. They enable a single `docker build` call to serve as a full pipeline step: install, compile, test, package. The `--target` flag lets CI systems stop at any stage — run tests in one job, push the production image in the next — without maintaining separate Dockerfiles. Combined with layer caching and build arguments, they make image builds both fast and auditable.
+В DevOps многоэтапная сборка находится на пересечении CI/CD и безопасности контейнеров. Один вызов `docker build` может включать установку зависимостей, компиляцию, тесты и упаковку. Флаг `--target` позволяет CI остановиться на нужном этапе: например, выполнить тесты в одной job, а затем отправить production-образ в registry — без отдельных Dockerfile. Вместе с кэшированием слоёв и аргументами сборки это делает процесс быстрым и проверяемым.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### The Problem Multi-stage Solves
+### Какую проблему решает многоэтапная сборка
 
 Without multi-stage builds, a naive Dockerfile bundles everything that touched the build process into the final image.
 
@@ -281,7 +281,7 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Go REST API to `scratch`
 
@@ -551,7 +551,7 @@ docker stop frontend && docker rm frontend
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Measure the Impact of Multi-stage Builds
 
@@ -614,7 +614,7 @@ docker stop frontend && docker rm frontend
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Extract stage aliases from a multi-stage Dockerfile. Run: `printf 'FROM golang:1.21 AS builder\nFROM gcr.io/distroless/static AS runtime\n' | awk '/AS/{print $NF}'`
 

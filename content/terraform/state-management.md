@@ -1,5 +1,5 @@
 ---
-title: State Management
+title: Управление состоянием Terraform
 module: terraform
 duration_min: 20
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [terraform, state, remote-state, s3, locking, import, drift]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Terraform state is the mechanism by which Terraform maps your configuration to the real world. Every resource block in your HCL corresponds to a record in `terraform.tfstate` — a JSON file containing the resource's type, name, provider-assigned ID, and every attribute Terraform knows about. Without state, Terraform has no way to know whether an `aws_instance.web` block refers to an already-running EC2 instance or needs to create a new one. State is not a cache; it is the authoritative record of what Terraform owns and how it relates to your configuration. Losing or corrupting state is one of the most disruptive things that can happen to a Terraform-managed environment — recovery requires manually re-importing every resource.
+Terraform state — механизм, связывающий конфигурацию Terraform с реальной инфраструктурой. Каждому блоку ресурса в HCL соответствует запись в `terraform.tfstate` — JSON-файле с типом и именем ресурса, ID от провайдера и известными Terraform атрибутами. Без state Terraform не может определить, относится ли блок `aws_instance.web` к уже работающему экземпляру EC2 или нужно создать новый. State — не кэш, а авторитетная запись о том, какими ресурсами управляет Terraform и как они связаны с конфигурацией. Потеря или повреждение state может серьёзно нарушить работу среды: для восстановления придётся вручную импортировать ресурсы заново.
 
-Local state (`terraform.tfstate` on disk) is acceptable for solo experimentation but is a liability in any team setting. It cannot be shared between engineers, it provides no concurrency protection, and it is trivially lost or corrupted. Remote backends — S3, GCS, Azure Blob, Terraform Cloud — solve all three problems: the file lives in a durable, versioned object store, and a locking mechanism prevents two `terraform apply` runs from racing. For S3, the traditional locking mechanism uses a DynamoDB table; Terraform 1.10+ introduced native S3 file locking that eliminates the DynamoDB dependency entirely.
+Локальный state (`terraform.tfstate` на диске) подходит для личных экспериментов, но опасен для командной работы. Его сложно безопасно разделять между инженерами, он не защищён от одновременных операций и может быть случайно потерян или повреждён. Удалённые backend — S3, GCS, Azure Blob или Terraform Cloud — решают эти проблемы: файл хранится в надёжном версионируемом объектном хранилище, а блокировка предотвращает одновременное выполнение конфликтующих `terraform apply`. Традиционно для блокировки S3 использовалась таблица DynamoDB; Terraform 1.10+ добавил встроенную блокировку файлов S3, позволяющую отказаться от зависимости DynamoDB.
 
-State management also covers operational tasks you will encounter regularly: importing resources that exist outside Terraform, detecting and resolving drift when infrastructure is modified manually, reorganizing state when refactoring configurations, and sharing outputs across configurations with the `terraform_remote_state` data source. Understanding state deeply is what separates a practitioner who can safely operate Terraform in production from one who can only run it in a tutorial.
+Управление state также включает регулярные операционные задачи: импорт ресурсов, созданных вне Terraform; обнаружение и устранение drift после ручных изменений инфраструктуры; реорганизацию state при рефакторинге конфигураций; передачу выходных значений между конфигурациями через источник данных `terraform_remote_state`. Глубокое понимание state отличает инженера, который безопасно эксплуатирует Terraform в production, от того, кто умеет лишь повторять команды из учебника.
 
-## Concepts
+## Основные понятия
 
-### What State Contains and How Terraform Uses It
+### Что хранит state и как Terraform его использует
 
 The state file is a JSON document. At the top level it records the Terraform version, a serial number (incremented on every successful write), a lineage UUID (a unique ID assigned when the state is first created), and a `resources` array. Each entry in that array maps a configuration address (`aws_s3_bucket.app_assets`) to a provider resource type and a set of instances, each of which holds the full set of attributes as returned by the provider after the last apply.
 
@@ -408,7 +408,7 @@ terraform state pull > pre-refactor-backup.tfstate
 jq '.serial' pre-refactor-backup.tfstate
 ```
 
-## Examples
+## Примеры
 
 ### Example 1: Bootstrap S3 Remote Backend with Native Locking
 
@@ -666,7 +666,7 @@ terraform apply
 # No changes. Your infrastructure matches the configuration.
 ```
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Configure and Validate a Remote S3 Backend
 
@@ -725,7 +725,7 @@ Practice the most common state manipulation operation: renaming a resource witho
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 7. Count resources in a Terraform state list. Run: `printf 'aws_instance.web\naws_s3_bucket.logs\naws_iam_role.app\naws_security_group.web\n' | wc -l`
 

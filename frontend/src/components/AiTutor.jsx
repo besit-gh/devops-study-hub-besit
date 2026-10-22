@@ -71,7 +71,7 @@ export default function AiTutor({ lessonSlug }) {
       }
     } catch (e) {
       if (e.name !== 'AbortError') {
-        setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${e.message}` }])
+        setMessages(prev => [...prev, { role: 'assistant', content: `Ошибка: ${e.message}` }])
       }
     } finally {
       setStreaming(false)
@@ -91,7 +91,7 @@ export default function AiTutor({ lessonSlug }) {
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 min-h-0">
         {messages.length === 0 && (
           <p className="text-xs text-gray-400 dark:text-gray-500 text-center mt-6 px-2">
-            No questions yet. Ask something about this lesson.
+            Пока нет вопросов. Спроси что-нибудь по этому уроку.
           </p>
         )}
         {messages.map((msg, i) => (
@@ -121,7 +121,7 @@ export default function AiTutor({ lessonSlug }) {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKey}
-          placeholder="Ask a question… (Enter to send)"
+          placeholder="Задай вопрос… (Enter — отправить)"
           rows={2}
           disabled={streaming}
           className="w-full resize-none text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:opacity-50"
@@ -131,7 +131,7 @@ export default function AiTutor({ lessonSlug }) {
           disabled={!input.trim() || streaming}
           className="mt-2 w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 text-white text-sm font-medium rounded-lg transition-colors disabled:cursor-not-allowed"
         >
-          {streaming ? 'Thinking…' : 'Send'}
+          {streaming ? 'Думаю…' : 'Отправить'}
         </button>
       </div>
     </>

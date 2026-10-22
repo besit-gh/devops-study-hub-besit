@@ -1,17 +1,17 @@
-# Grafana — Quick Reference
+# Grafana — краткая справка
 
 ## grafana-cli
 
 | Command | Description |
 |---------|-------------|
-| `grafana-cli plugins list-remote` | List available plugins |
-| `grafana-cli plugins install plugin-id` | Install plugin |
-| `grafana-cli plugins ls` | List installed plugins |
-| `grafana-cli plugins remove plugin-id` | Remove plugin |
-| `grafana-cli plugins update-all` | Update all plugins |
-| `grafana-cli admin reset-admin-password newpass` | Reset admin password |
+| `grafana-cli plugins list-remote` | Список доступных плагинов |
+| `grafana-cli plugins install plugin-id` | Установить плагин |
+| `grafana-cli plugins ls` | Список установленных плагинов |
+| `grafana-cli plugins remove plugin-id` | Удалить плагин |
+| `grafana-cli plugins update-all` | Обновить все плагины |
+| `grafana-cli admin reset-admin-password newpass` | Сбросить пароль администратора |
 
-## HTTP API (curl patterns)
+## HTTP API (примеры curl)
 
 ```bash
 GRAFANA="http://admin:password@localhost:3000"
@@ -42,7 +42,7 @@ curl -X POST "$GRAFANA/api/alertmanager/grafana/api/v2/silences" \
   -d '{"matchers":[{"name":"alertname","value":"MyAlert","isRegex":false}],"startsAt":"...","endsAt":"..."}'
 ```
 
-## Dashboard Provisioning (YAML)
+## Подготовка дашбордов (YAML)
 
 ```yaml
 apiVersion: 1
@@ -54,7 +54,7 @@ providers:
       foldersFromFilesStructure: true
 ```
 
-## Data Source Provisioning (YAML)
+## Настройка источников данных (YAML)
 
 ```yaml
 apiVersion: 1

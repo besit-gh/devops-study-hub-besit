@@ -1,5 +1,5 @@
 ---
-title: Rebase vs Merge
+title: Rebase и merge: сравнение
 module: git
 duration_min: 15
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [git, rebase, merge, history, squash, interactive-rebase]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Merge and rebase both integrate changes from one branch into another, but they produce fundamentally different histories and carry different tradeoffs. `git merge` preserves the full truth of what happened: when branches diverged, who worked in parallel, and when the work was brought together. `git rebase` rewrites history to look as if development happened linearly, producing a cleaner log at the cost of replacing original commits with new ones. The choice between them is not just aesthetic — it affects how readable your `git log` is, how useful `git bisect` and `git blame` are when debugging, and how much pain colleagues experience when your commits land on a shared branch.
+И `merge`, и `rebase` интегрируют изменения из одной ветки в другую, но формируют разную историю и имеют разные компромиссы. `git merge` сохраняет реальную картину: когда ветки разошлись, кто работал параллельно и когда изменения объединили. `git rebase` переписывает историю так, будто разработка шла линейно, делая журнал чище, но заменяя исходные коммиты новыми. Это не только вопрос эстетики: выбор влияет на читаемость `git log`, полезность `git bisect` и `git blame` при отладке и на то, насколько сложно коллегам интегрировать ваши коммиты в общую ветку.
 
-In a DevOps context, understanding this distinction is operationally important. CI/CD pipelines, automated changelogs, and release tooling all read commit history. A `main` branch full of merge commits from dozens of short-lived feature branches is harder to `bisect` than a linear history. Conversely, a team that rebases carelessly on shared branches can corrupt colleagues' working trees and break pipelines mid-flight. Most teams settle on a hybrid: free-form commits during development, squash or rebase on merge, strict no-rebase rules for long-lived shared branches.
+В DevOps это различие имеет практическое значение. CI/CD-пайплайны, автоматические changelog и инструменты релизов анализируют историю коммитов. В `main`, заполненной merge-коммитами из множества короткоживущих feature-веток, сложнее использовать `bisect`, чем при линейной истории. Но неосторожный rebase общей ветки может нарушить рабочие копии коллег и сломать пайплайн. Многие команды выбирают гибридный подход: свободные коммиты во время разработки, squash или rebase при слиянии и запрет на переписывание истории долгоживущих общих веток.
 
 Both strategies fit into the broader Git workflow regardless of whether you use GitHub Flow, GitLab Flow, or trunk-based development. Merge is the default and the safest; rebase is the power tool. Knowing when each is appropriate — and what the failure modes look like — is a baseline expectation for a DevOps engineer who touches release pipelines, reviews PRs, or maintains shared infrastructure repositories.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### How Merge Works
 
@@ -256,7 +256,7 @@ There is no universally correct answer. The right strategy depends on team size,
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Update a Feature Branch with Latest Main
 
@@ -412,7 +412,7 @@ git push --force-with-lease origin feature/pipeline-overhaul
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Compare Merge and Rebase Side by Side
 
@@ -530,7 +530,7 @@ git commit --allow-empty -m "chore: main advanced again"
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Demonstrate a fast-forward merge on a linear branch history.
 

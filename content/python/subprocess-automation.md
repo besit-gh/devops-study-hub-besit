@@ -1,5 +1,5 @@
 ---
-title: Subprocess & Automation
+title: Subprocess и автоматизация
 module: python
 duration_min: 20
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [python, subprocess, automation, shell, os, shlex]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-DevOps scripts constantly need to reach outside Python and talk to the operating system: restart a service, invoke `kubectl`, check disk usage, call `git`, compress a tarball. Python's `subprocess` module is the standard, correct way to do this. It captures stdout and stderr separately, surfaces exit codes, enforces timeouts, and avoids the shell injection vulnerabilities that come with older alternatives like `os.system()` or `commands.getoutput()`. Every production automation script you write will use it.
+DevOps-скриптам постоянно приходится выходить за пределы Python и обращаться к операционной системе: перезапускать службу, запускать `kubectl`, проверять использование диска, вызывать `git` или сжимать архив. Стандартный способ делать это — модуль Python `subprocess`. Он раздельно собирает stdout и stderr, предоставляет коды завершения, поддерживает тайм-ауты и помогает избежать shell injection, возможного при использовании устаревших альтернатив вроде `os.system()` или `commands.getoutput()`. Этот модуль пригодится почти в каждом production-скрипте автоматизации.
 
-The design philosophy of `subprocess` is explicit control. You construct the command as a list of strings — no shell interpolation, no implicit `/bin/sh` wrapper unless you ask for one. This mirrors how the kernel actually executes programs (`execve`), which means there are no surprises with quoting, globbing, or variable expansion. When you do need shell features (pipes, redirects, globs), you opt in deliberately and handle the security implications yourself.
+Философия `subprocess` — явный контроль. Команда задаётся списком строк: без интерполяции shell и без неявного запуска `/bin/sh`, если вы сами этого не запросили. Такой подход соответствует тому, как ядро запускает программы через `execve`, и избавляет от неожиданных эффектов кавычек, glob-шаблонов и раскрытия переменных. Если нужны возможности shell (конвейеры, перенаправления, glob), их следует включать осознанно и учитывать последствия для безопасности.
 
 In the broader DevOps toolchain, `subprocess` is the glue layer between your Python logic and every other CLI tool in your environment. It sits below high-level libraries like `boto3` or `kubernetes-client` (which have their own HTTP transports) but above raw `os.fork()`/`os.execve()` calls. When a dedicated SDK doesn't exist — or when you're wrapping an existing CLI tool for consistency — `subprocess` is the right abstraction. Understanding it deeply means you can reliably automate deployments, health checks, infrastructure queries, and build pipelines from a single Python process.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### subprocess.run — The Right Default
 
@@ -511,7 +511,7 @@ if rc != 0:
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Deployment Health Check Script
 
@@ -850,7 +850,7 @@ jq 'select(.used_pct > 50)' /var/log/disk_monitor.json
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Service Restart with Idempotency Check
 
@@ -908,7 +908,7 @@ Write a script that:
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Run a command with `subprocess.run` and capture its output.
 

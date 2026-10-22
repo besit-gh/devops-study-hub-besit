@@ -1,5 +1,5 @@
 ---
-title: Firewalls & Load Balancers
+title: Межсетевые экраны и балансировщики нагрузки
 module: networking
 duration_min: 20
 difficulty: intermediate
@@ -7,9 +7,9 @@ tags: [networking, firewall, iptables, ufw, security-groups, load-balancer, ngin
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Firewalls and load balancers are the gatekeepers of every production system. A firewall enforces access policy — it decides which packets are allowed to reach a service and which are dropped before they arrive. A load balancer distributes accepted traffic across multiple backend instances, enabling horizontal scaling and fault tolerance. In practice, these two components are almost always deployed together: the firewall controls who can reach the load balancer, and the load balancer decides which backend handles the request.
+Межсетевые экраны и балансировщики нагрузки — привратники любой production-системы. Firewall применяет политику доступа: определяет, какие пакеты могут дойти до сервиса, а какие будут отброшены. Балансировщик распределяет разрешённый трафик между несколькими backend-экземплярами, обеспечивая горизонтальное масштабирование и отказоустойчивость. На практике эти компоненты почти всегда работают вместе: firewall контролирует доступ к балансировщику, а балансировщик выбирает backend для обработки запроса.
 
 For a DevOps engineer, understanding both is non-negotiable. Misconfigured firewalls are one of the most common causes of "it works on my machine" connectivity failures in staging and production environments. Misconfigured load balancers cause silent data-loss bugs, uneven traffic distribution, and failed health checks that route traffic to dead instances. You need to be able to read a ruleset, write a new one, and diagnose failures at each layer — on bare metal, in VMs, and in cloud infrastructure.
 
@@ -17,7 +17,7 @@ Both technologies exist at multiple layers of the stack simultaneously. On a sin
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### How Firewall Rule Evaluation Works
 
@@ -205,7 +205,7 @@ Inbound:
 
 ---
 
-### Load Balancer Types and Layer Differences
+### Типы балансировщиков нагрузки and Layer Differences
 
 | Type | OSI Layer | What it inspects | Typical use |
 |------|-----------|-----------------|-------------|
@@ -379,7 +379,7 @@ containers:
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Hardening a New Ubuntu Server with ufw
 
@@ -675,7 +675,7 @@ nc -zv 10.0.1.5 5432
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Build and Test an iptables Ruleset
 
@@ -754,7 +754,7 @@ This exercise is design and CLI-based. You need AWS CLI access and an AWS accoun
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Parse the default policy from an `iptables -L` chain header.
 

@@ -8,14 +8,14 @@ from db import get_conn
 PROJECTS = [
     {
         "slug": "containerize-python-app",
-        "title": "Containerize a Python App",
-        "description": "Build and containerize a Python web service, then write a CI/CD pipeline to test and publish it.",
+        "title": "Контейнеризация приложения на Python",
+        "description": "Соберите и контейнеризируйте веб-сервис на Python, затем создайте CI/CD-пайплайн для его тестирования и публикации.",
         "modules": ["Python", "Docker", "CI/CD Pipelines"],
         "difficulty": "intermediate",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Generate a requirements file",
+                "title": "Создать файл requirements",
                 "type": "sandbox",
                 "prompt": (
                     "Write a bash command that creates `/tmp/requirements.txt` containing exactly two lines:\n\n"
@@ -31,7 +31,7 @@ PROJECTS = [
             },
             {
                 "order_index": 2,
-                "title": "Parse app configuration",
+                "title": "Разобрать конфигурацию приложения",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that parses this YAML string and prints the value of `port`:\n\n"
@@ -47,7 +47,7 @@ PROJECTS = [
             },
             {
                 "order_index": 3,
-                "title": "Write a production Dockerfile",
+                "title": "Написать production Dockerfile",
                 "type": "ai",
                 "prompt": (
                     "Write a multi-stage Dockerfile for a Python Flask application.\n\n"
@@ -65,7 +65,7 @@ PROJECTS = [
             },
             {
                 "order_index": 4,
-                "title": "Design the CI pipeline",
+                "title": "Спроектировать CI-пайплайн",
                 "type": "ai",
                 "prompt": (
                     "Write a GitHub Actions workflow (`.github/workflows/ci.yml`) that:\n"
@@ -86,14 +86,14 @@ PROJECTS = [
     },
     {
         "slug": "zero-downtime-deploy",
-        "title": "Zero-Downtime Kubernetes Deployment",
-        "description": "Design a Kubernetes workload with rolling updates, readiness probes, and a self-healing strategy.",
+        "title": "Развёртывание в Kubernetes без простоя",
+        "description": "Спроектируйте рабочую нагрузку Kubernetes с rolling updates, readiness probes и механизмом самовосстановления.",
         "modules": ["Kubernetes", "Docker", "CI/CD Pipelines"],
         "difficulty": "advanced",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Extract image from kubectl output",
+                "title": "Извлечь образ из вывода kubectl",
                 "type": "sandbox",
                 "prompt": (
                     "Use `awk` to extract the container image from this `kubectl get pods -o wide` output line "
@@ -109,7 +109,7 @@ PROJECTS = [
             },
             {
                 "order_index": 2,
-                "title": "Parse pod status JSON",
+                "title": "Разобрать JSON состояния Pod",
                 "type": "sandbox",
                 "prompt": (
                     "Write a bash one-liner (using Python) that parses this JSON and prints the pod phase:\n\n"
@@ -124,7 +124,7 @@ PROJECTS = [
             },
             {
                 "order_index": 3,
-                "title": "Write a Deployment manifest",
+                "title": "Написать манифест Deployment",
                 "type": "ai",
                 "prompt": (
                     "Write a complete Kubernetes Deployment manifest for an app called `api-server` with:\n"
@@ -144,7 +144,7 @@ PROJECTS = [
             },
             {
                 "order_index": 4,
-                "title": "Readiness vs liveness probes",
+                "title": "Сравнить readiness- и liveness-пробы",
                 "type": "ai",
                 "prompt": (
                     "Explain the difference between Kubernetes readiness and liveness probes.\n\n"
@@ -164,14 +164,14 @@ PROJECTS = [
     },
     {
         "slug": "linux-system-hardening",
-        "title": "Linux System Hardening",
-        "description": "Audit and lock down a Linux server: file permissions, SSH config, cron jobs, and user management.",
+        "title": "Усиление безопасности Linux",
+        "description": "Проведите аудит и защитите Linux-сервер: права доступа, конфигурация SSH, задания cron и управление пользователями.",
         "modules": ["Linux", "DevSecOps"],
         "difficulty": "intermediate",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Find world-writable files",
+                "title": "Найти файлы, доступные для записи всем",
                 "type": "sandbox",
                 "prompt": (
                     "Write a bash script that:\n"
@@ -188,7 +188,7 @@ PROJECTS = [
             },
             {
                 "order_index": 2,
-                "title": "Extract privileged users",
+                "title": "Найти пользователей с повышенными привилегиями",
                 "type": "sandbox",
                 "prompt": (
                     "Write a bash one-liner that extracts all users with UID 0 from this `/etc/passwd` snippet "
@@ -206,7 +206,7 @@ PROJECTS = [
             },
             {
                 "order_index": 3,
-                "title": "Write SSH hardening config",
+                "title": "Настроить усиленную конфигурацию SSH",
                 "type": "ai",
                 "prompt": (
                     "Write a production-ready `/etc/ssh/sshd_config` block with at least 8 hardening settings. "
@@ -223,7 +223,7 @@ PROJECTS = [
             },
             {
                 "order_index": 4,
-                "title": "Design a log rotation strategy",
+                "title": "Спроектировать ротацию журналов",
                 "type": "ai",
                 "prompt": (
                     "Design a complete log rotation strategy for a web server generating logs in `/var/log/myapp/`.\n\n"
@@ -244,14 +244,14 @@ PROJECTS = [
     },
     {
         "slug": "observability-stack",
-        "title": "Observability Stack Setup",
-        "description": "Deploy a full observability stack with Prometheus and Grafana, write PromQL queries, and configure alerting.",
+        "title": "Настройка стека наблюдаемости",
+        "description": "Разверните стек наблюдаемости на Prometheus и Grafana, напишите запросы PromQL и настройте оповещения.",
         "modules": ["Prometheus", "Grafana", "Docker"],
         "difficulty": "intermediate",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Extract a metric value",
+                "title": "Извлечь значение метрики",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that parses this Prometheus text-format string and prints "
@@ -268,7 +268,7 @@ PROJECTS = [
             },
             {
                 "order_index": 2,
-                "title": "Parse an alerting rule",
+                "title": "Разобрать правило оповещения",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that parses this Prometheus alerting rule YAML "
@@ -285,7 +285,7 @@ PROJECTS = [
             },
             {
                 "order_index": 3,
-                "title": "Write PromQL queries",
+                "title": "Написать запросы PromQL",
                 "type": "ai",
                 "prompt": (
                     "Write PromQL queries for these three scenarios:\n"
@@ -303,7 +303,7 @@ PROJECTS = [
             },
             {
                 "order_index": 4,
-                "title": "Design the full stack",
+                "title": "Спроектировать стек целиком",
                 "type": "ai",
                 "prompt": (
                     "Write a `docker-compose.yml` that runs:\n"
@@ -325,14 +325,14 @@ PROJECTS = [
     },
     {
         "slug": "gitops-argocd",
-        "title": "GitOps Pipeline with ArgoCD",
-        "description": "Implement a GitOps deployment model using ArgoCD: write Application manifests, configure sync strategies, and design a multi-environment promotion workflow.",
+        "title": "GitOps-пайплайн с Argo CD",
+        "description": "Реализуйте модель GitOps-развёртывания с Argo CD: создайте манифесты Application, настройте стратегии синхронизации и спроектируйте продвижение между несколькими окружениями.",
         "modules": ["Git & VCS", "Kubernetes", "CI/CD Pipelines"],
         "difficulty": "advanced",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Count merge commits",
+                "title": "Подсчитать merge-коммиты",
                 "type": "sandbox",
                 "prompt": (
                     "Write a bash one-liner that counts the number of merge commits in this "
@@ -351,7 +351,7 @@ PROJECTS = [
             },
             {
                 "order_index": 2,
-                "title": "Parse ArgoCD application status",
+                "title": "Разобрать состояние приложения Argo CD",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that parses this ArgoCD Application status JSON "
@@ -367,7 +367,7 @@ PROJECTS = [
             },
             {
                 "order_index": 3,
-                "title": "Write an ArgoCD Application manifest",
+                "title": "Написать манифест Application для Argo CD",
                 "type": "ai",
                 "prompt": (
                     "Write a complete ArgoCD `Application` manifest that:\n"
@@ -387,7 +387,7 @@ PROJECTS = [
             },
             {
                 "order_index": 4,
-                "title": "Design environment promotion strategy",
+                "title": "Спроектировать стратегию продвижения между окружениями",
                 "type": "ai",
                 "prompt": (
                     "Design a GitOps multi-environment promotion workflow for dev → staging → production "
@@ -410,14 +410,14 @@ PROJECTS = [
     },
     {
         "slug": "ansible-config",
-        "title": "Ansible Server Configuration",
-        "description": "Automate Linux server provisioning with Ansible: write playbooks, define roles, manage inventory, and enforce idempotent configuration across a fleet.",
+        "title": "Настройка серверов с Ansible",
+        "description": "Автоматизируйте подготовку Linux-серверов с Ansible: создайте playbook, определите роли, настройте inventory и обеспечьте идемпотентную конфигурацию парка серверов.",
         "modules": ["Ansible", "Linux"],
         "difficulty": "intermediate",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Count tasks in a playbook",
+                "title": "Подсчитать задачи в playbook",
                 "type": "sandbox",
                 "prompt": (
                     "Write a bash one-liner that counts the number of tasks in this Ansible playbook "
@@ -436,7 +436,7 @@ PROJECTS = [
             },
             {
                 "order_index": 2,
-                "title": "Count hosts in an inventory group",
+                "title": "Подсчитать узлы в группе inventory",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that counts the number of hosts in the `[webservers]` group "
@@ -453,7 +453,7 @@ PROJECTS = [
             },
             {
                 "order_index": 3,
-                "title": "Write an Nginx Ansible role",
+                "title": "Создать роль Ansible для Nginx",
                 "type": "ai",
                 "prompt": (
                     "Write an Ansible role called `nginx` that:\n"
@@ -474,7 +474,7 @@ PROJECTS = [
             },
             {
                 "order_index": 4,
-                "title": "Design idempotent user management",
+                "title": "Спроектировать идемпотентное управление пользователями",
                 "type": "ai",
                 "prompt": (
                     "Write an Ansible playbook that manages a team of engineers across a fleet of servers. "
@@ -498,14 +498,14 @@ PROJECTS = [
     },
     {
         "slug": "elk-log-pipeline",
-        "title": "ELK Stack Log Analysis",
-        "description": "Build a full log ingestion pipeline with Logstash and Elasticsearch, write Query DSL searches, and design a Kibana dashboard with alerting.",
+        "title": "Анализ логов в стеке ELK",
+        "description": "Создайте полный конвейер сбора логов с Logstash и Elasticsearch, напишите запросы Query DSL и спроектируйте дашборд Kibana с оповещениями.",
         "modules": ["Elasticsearch", "Logstash", "Kibana"],
         "difficulty": "advanced",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Extract HTTP status from an access log",
+                "title": "Извлечь HTTP-статус из access-лога",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that extracts the HTTP status code from this Apache access log line "
@@ -521,7 +521,7 @@ PROJECTS = [
             },
             {
                 "order_index": 2,
-                "title": "Parse an Elasticsearch query response",
+                "title": "Разобрать ответ запроса Elasticsearch",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that parses this Elasticsearch query response and "
@@ -537,7 +537,7 @@ PROJECTS = [
             },
             {
                 "order_index": 3,
-                "title": "Write a Logstash pipeline for Apache logs",
+                "title": "Создать pipeline Logstash для логов Apache",
                 "type": "ai",
                 "prompt": (
                     "Write a complete Logstash pipeline configuration (`logstash.conf`) that:\n"
@@ -557,7 +557,7 @@ PROJECTS = [
             },
             {
                 "order_index": 4,
-                "title": "Design index lifecycle and Kibana dashboard",
+                "title": "Спроектировать жизненный цикл индекса и дашборд Kibana",
                 "type": "ai",
                 "prompt": (
                     "Design an Elasticsearch Index Lifecycle Management (ILM) policy for the Apache log index that:\n"
@@ -581,14 +581,14 @@ PROJECTS = [
     },
     {
         "slug": "helm-chart",
-        "title": "Helm Chart Development",
-        "description": "Build a production-grade Helm chart for a microservice with templating, values overrides, and a multi-environment deployment strategy using Helm upgrade and rollback.",
+        "title": "Разработка Helm chart",
+        "description": "Создайте production-ready Helm chart для микросервиса с шаблонами, переопределением values и стратегией развёртывания в нескольких окружениях через Helm upgrade и rollback.",
         "modules": ["Helm", "Kubernetes"],
         "difficulty": "intermediate",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Scaffold a Helm chart directory",
+                "title": "Создать структуру каталога Helm chart",
                 "type": "sandbox",
                 "prompt": (
                     "Write a bash script that creates a minimal Helm chart directory at `/tmp/mychart` with "
@@ -604,7 +604,7 @@ PROJECTS = [
             },
             {
                 "order_index": 2,
-                "title": "Parse Helm values YAML",
+                "title": "Разобрать YAML values Helm",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that parses this Helm `values.yaml` content and prints the replica count:\n\n"
@@ -619,7 +619,7 @@ PROJECTS = [
             },
             {
                 "order_index": 3,
-                "title": "Write a Helm chart for a stateless service",
+                "title": "Создать Helm chart для stateless-сервиса",
                 "type": "ai",
                 "prompt": (
                     "Write a Helm chart for a stateless web service called `api-server`. "
@@ -642,7 +642,7 @@ PROJECTS = [
             },
             {
                 "order_index": 4,
-                "title": "Multi-environment values and release management",
+                "title": "Управление values и релизами в нескольких окружениях",
                 "type": "ai",
                 "prompt": (
                     "Describe a strategy for deploying the same Helm chart to dev, staging, and production "
@@ -666,14 +666,14 @@ PROJECTS = [
     },
     {
         "slug": "api-security-testing",
-        "title": "API Security & Testing",
-        "description": "Design and execute a comprehensive API testing strategy: validate authentication flows, test for OWASP API vulnerabilities, and automate security checks in CI.",
+        "title": "Безопасность и тестирование API",
+        "description": "Спроектируйте и реализуйте комплексную стратегию тестирования API: проверьте сценарии аутентификации, уязвимости OWASP API и автоматизируйте проверки безопасности в CI.",
         "modules": ["Postman / API Testing", "DevSecOps"],
         "difficulty": "intermediate",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Validate JWT structure",
+                "title": "Проверить структуру JWT",
                 "type": "sandbox",
                 "prompt": (
                     "Write a bash one-liner that prints the number of parts in this JWT "
@@ -691,7 +691,7 @@ PROJECTS = [
             },
             {
                 "order_index": 2,
-                "title": "Decode a JWT payload",
+                "title": "Декодировать payload JWT",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that base64-decodes the middle segment of this JWT "
@@ -711,7 +711,7 @@ PROJECTS = [
             },
             {
                 "order_index": 3,
-                "title": "Write a Postman collection for an auth API",
+                "title": "Создать коллекцию Postman для API аутентификации",
                 "type": "ai",
                 "prompt": (
                     "Write a Postman collection (JSON) for an authentication API with these three requests:\n\n"
@@ -733,7 +733,7 @@ PROJECTS = [
             },
             {
                 "order_index": 4,
-                "title": "Design an API security testing strategy",
+                "title": "Спроектировать стратегию тестирования безопасности API",
                 "type": "ai",
                 "prompt": (
                     "Design an API security testing strategy covering these OWASP API Security Top 10 risks:\n\n"
@@ -756,13 +756,13 @@ PROJECTS = [
     {
         "slug": "iac-aws-vpc",
         "title": "Infrastructure as Code: AWS VPC",
-        "description": "Write Terraform to provision a production-grade AWS VPC with subnets, security groups, and extract it into a reusable module.",
+        "description": "Напишите Terraform-конфигурацию для production-ready AWS VPC с подсетями и security groups, затем выделите конфигурацию в повторно используемый модуль.",
         "modules": ["Terraform", "AWS", "Networking Essentials"],
         "difficulty": "advanced",
         "steps": [
             {
                 "order_index": 1,
-                "title": "Count Terraform variable blocks",
+                "title": "Подсчитать блоки переменных Terraform",
                 "type": "sandbox",
                 "prompt": (
                     "Write a bash one-liner that counts the number of `variable` blocks in this HCL snippet "
@@ -780,7 +780,7 @@ PROJECTS = [
             },
             {
                 "order_index": 2,
-                "title": "Parse Terraform output JSON",
+                "title": "Разобрать JSON-вывод Terraform",
                 "type": "sandbox",
                 "prompt": (
                     "Write a Python one-liner that parses this Terraform output JSON and prints the VPC ID value:\n\n"
@@ -795,7 +795,7 @@ PROJECTS = [
             },
             {
                 "order_index": 3,
-                "title": "Write a reusable VPC module",
+                "title": "Создать повторно используемый модуль VPC",
                 "type": "ai",
                 "prompt": (
                     "Write a Terraform module for a production AWS VPC. "
@@ -819,7 +819,7 @@ PROJECTS = [
             },
             {
                 "order_index": 4,
-                "title": "Security group design",
+                "title": "Спроектировать security group",
                 "type": "ai",
                 "prompt": (
                     "Write Terraform `aws_security_group` resources for a 3-tier application:\n"

@@ -1,5 +1,5 @@
 ---
-title: Ansible vs Terraform
+title: Ansible и Terraform: сравнение
 module: ansible
 duration_min: 15
 difficulty: intermediate
@@ -7,15 +7,15 @@ tags: [ansible, terraform, iac, configuration-management, comparison, when-to-us
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-Ansible and Terraform are both Infrastructure as Code tools, but they solve fundamentally different problems. Terraform is a provisioner: it creates and manages the existence of infrastructure resources — VPCs, EC2 instances, RDS databases, DNS records — by talking directly to cloud APIs and tracking what it created in a state file. Ansible is a configurator: it connects to servers that already exist, installs software, writes config files, restarts services, and runs deployment steps. The mental model is simple: Terraform builds the stage; Ansible sets the props and directs the actors.
+Ansible и Terraform относятся к Infrastructure as Code, но решают разные задачи. Terraform создаёт и управляет жизненным циклом ресурсов инфраструктуры — VPC, экземпляров EC2, баз данных RDS и DNS-записей — через облачные API и фиксирует созданные объекты в state-файле. Ansible настраивает уже существующие серверы: устанавливает ПО, записывает конфигурации, перезапускает службы и выполняет шаги развёртывания. Простая модель: Terraform строит сцену, а Ansible расставляет декорации и управляет действием.
 
-The core design difference is how each tool thinks about state. Terraform maintains a `.tfstate` file that represents the last known condition of your infrastructure. When you run `terraform apply`, it diffs your configuration against that state file and against the real world, then issues only the API calls needed to converge. Ansible has no such file. Every time an Ansible playbook runs, it reaches out to the live system, checks the current condition of each task, and acts if the condition isn't already satisfied. This makes Ansible resilient and self-healing for configuration drift, but it means Ansible has no memory of what cloud resources it created last Tuesday.
+Главное архитектурное различие — работа с состоянием. Terraform хранит файл `.tfstate`, описывающий последнее известное состояние инфраструктуры. При `terraform apply` он сравнивает конфигурацию с state и реальными ресурсами, затем выполняет только необходимые API-вызовы. У Ansible такого файла нет: при каждом запуске playbook он проверяет текущее состояние систем и выполняет действия, если нужное состояние ещё не достигнуто. Это помогает устранять configuration drift, но Ansible не хранит историю облачных ресурсов, созданных ранее.
 
 In the broader DevOps toolchain, these tools occupy adjacent but distinct layers. Terraform sits at the infrastructure layer — it's often run in CI pipelines during environment provisioning or by platform engineers managing shared infrastructure. Ansible sits at the configuration and deployment layer — it's invoked during application releases, OS hardening runs, and operational tasks. In Kubernetes-centric shops, Helm partially displaces Ansible for application delivery, but Ansible remains essential for everything that isn't a container: CI runners, bastion hosts, bare-metal nodes, legacy workloads. Knowing when to reach for each tool — and when they're being misused — is one of the most practical and frequently tested skills in a DevOps interview.
 
-## Concepts
+## Основные понятия
 
 ### Core Distinction
 
@@ -363,7 +363,7 @@ Are you managing Kubernetes manifests on an existing cluster?
 - "We use Terraform `remote-exec` to deploy our app" → should be split: Terraform provisions, Ansible deploys
 - "We use Ansible to spin up and tear down test environments" → acceptable for simple cases, but Terraform handles the resource lifecycle better at any meaningful scale
 
-## Examples
+## Примеры
 
 ### Example 1: Provision an EC2 Instance with Terraform, Then Configure It with Ansible
 
@@ -704,7 +704,7 @@ ansible-playbook -i "${WEB_IP}," -u ec2-user \
 # Output: "changed=1" — Ansible corrects it automatically
 ```
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Identify Misused Tools in a Pipeline Script
 
@@ -801,7 +801,7 @@ Write a one-paragraph explanation of what you observed about how each tool handl
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 7. Identify which tool uses declarative state management. Run: `printf 'ansible:stateless\nterraform:declarative-state\n' | awk -F: '/declarative-state/{print $1}'`
 

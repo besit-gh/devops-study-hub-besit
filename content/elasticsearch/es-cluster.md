@@ -1,5 +1,5 @@
 ---
-title: Cluster Management
+title: Управление кластером Elasticsearch
 module: elasticsearch
 duration_min: 20
 difficulty: intermediate
@@ -7,12 +7,12 @@ tags: [elasticsearch, cluster-health, cat-api, snapshots, aliases, reindex]
 exercises: 3
 ---
 
-## Overview
-Running Elasticsearch in production means knowing how to interpret cluster health, diagnose shard problems, reroute data safely, and perform operations like reindex and snapshot/restore without downtime. These are the tasks that land on a DevOps or SRE engineer when the Kibana status turns yellow or red at 2 AM — and they are staples of Elastic-related interviews.
+## Обзор
+Эксплуатация Elasticsearch в production требует умения интерпретировать состояние кластера, диагностировать проблемы shards, безопасно перенаправлять данные и выполнять reindex или snapshot/restore без простоя. Именно с такими задачами сталкиваются DevOps- и SRE-инженеры, когда статус Kibana становится жёлтым или красным посреди ночи. Эти темы часто встречаются и на собеседованиях по Elastic.
 
-## Concepts
+## Основные понятия
 
-### Cluster Health
+### Состояние кластера
 
 ```bash
 GET /_cluster/health
@@ -272,7 +272,7 @@ PUT /_cluster/settings
 }
 ```
 
-## Examples
+## Примеры
 
 ### Yellow Cluster Runbook
 
@@ -284,7 +284,7 @@ PUT /_cluster/settings
    - **NODE_LEFT**: wait for the node to return, or force-allocate the replica elsewhere.
    - **Single-node cluster**: set `number_of_replicas: 0` on small dev/test indices.
 
-## Exercises
+## Практические задания
 
 1. Simulate a yellow cluster on a local Docker setup (two Elasticsearch nodes, one replica per index). Stop one container. Run `_cat/shards` and `_cluster/allocation/explain` and document every field in the explain output. Bring the node back and observe the recovery sequence using `_cat/recovery?v`.
 
@@ -295,7 +295,7 @@ PUT /_cluster/settings
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 4. Calculate the minimum master-eligible nodes for quorum in a 5-node cluster. Run: `python3 -c "nodes=5; print(nodes // 2 + 1)"`
 

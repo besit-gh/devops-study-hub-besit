@@ -1,19 +1,19 @@
-# Logstash — Quick Reference
+# Logstash — краткая справка
 
-## CLI Commands
+## Команды CLI
 
 | Command | Description |
 |---------|-------------|
-| `logstash -f pipeline.conf` | Run with config file |
-| `logstash -f /etc/logstash/conf.d/` | Run config directory |
-| `logstash --config.test_and_exit -f pipeline.conf` | Validate config, then exit |
-| `logstash --config.reload.automatic -f pipeline.conf` | Auto-reload on change |
-| `logstash -e 'input { stdin{} } output { stdout{} }'` | Inline pipeline (testing) |
-| `logstash --log.level debug -f pipeline.conf` | Debug logging |
-| `logstash-plugin list` | List installed plugins |
-| `logstash-plugin install plugin-name` | Install plugin |
+| `logstash -f pipeline.conf` | Запустить с файлом конфигурации |
+| `logstash -f /etc/logstash/conf.d/` | Запустить с каталогом конфигурации |
+| `logstash --config.test_and_exit -f pipeline.conf` | Проверить конфигурацию и завершить работу |
+| `logstash --config.reload.automatic -f pipeline.conf` | Автоматически перезагружать при изменениях |
+| `logstash -e 'input { stdin{} } output { stdout{} }'` | Pipeline в командной строке (для тестирования) |
+| `logstash --log.level debug -f pipeline.conf` | Журналирование для отладки |
+| `logstash-plugin list` | Список установленных плагинов |
+| `logstash-plugin install plugin-name` | Установить плагин |
 
-## Pipeline Structure
+## Структура pipeline
 
 ```ruby
 input {

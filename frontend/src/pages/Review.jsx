@@ -61,7 +61,7 @@ export default function Review({ onXpEarned, onComplete }) {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500 text-sm">Loading…</div>
+    return <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500 text-sm">Загрузка…</div>
   }
 
   if (error) {
@@ -83,7 +83,7 @@ export default function Review({ onXpEarned, onComplete }) {
             onClick={start}
             className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
           >
-            Start Review
+            Начать повторение
           </button>
         )}
       </div>
@@ -95,7 +95,7 @@ export default function Review({ onXpEarned, onComplete }) {
     const color = pct >= 80 ? 'text-emerald-500' : pct >= 60 ? 'text-amber-500' : 'text-red-500'
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 px-8 text-center">
-        <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Session complete</div>
+        <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Сессия завершена</div>
         <div className={`text-5xl font-bold ${color}`}>{pct}%</div>
         <div className="text-sm text-gray-500 dark:text-gray-400">{score} / {queue.length} correct</div>
         {xpEarned > 0 && (
@@ -188,7 +188,7 @@ export default function Review({ onXpEarned, onComplete }) {
             disabled={submitting}
             className="self-end px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
           >
-            {index + 1 >= queue.length ? 'Finish' : 'Next →'}
+            {index + 1 >= queue.length ? 'Завершить' : 'Далее →'}
           </button>
         </div>
       )}

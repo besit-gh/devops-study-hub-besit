@@ -1,5 +1,5 @@
 ---
-title: Dashboards & Visualizations
+title: Дашборды и визуализация Kibana
 module: kibana
 duration_min: 20
 difficulty: intermediate
@@ -7,17 +7,17 @@ tags: [kibana, dashboards, lens, visualizations, elk]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Kibana dashboards are the operational display layer for your ELK stack — the place your team watches during deploys, incidents, and capacity reviews. A dashboard that surfaces the right signal in the right format during a 3am incident is genuinely valuable; one that looks polished but uses misleading aggregations or wrong visualization types will get ignored or, worse, cause wrong decisions. This lesson treats dashboards as engineering artifacts: they have correct and incorrect designs, and the difference matters in production.
+Дашборды Kibana — операционный интерфейс для стека ELK, за которым команда следит во время развёртываний, инцидентов и анализа мощности. Дашборд, показывающий нужный сигнал в правильном формате во время ночного инцидента, действительно полезен. Красивый дашборд с вводящими в заблуждение агрегациями или неподходящими типами визуализации будут игнорировать или, что хуже, принимать по нему неверные решения. В уроке дашборды рассматриваются как инженерные артефакты с корректными и ошибочными проектными решениями.
 
-Kibana's visualization system is built directly on top of Elasticsearch aggregations. Every panel on a dashboard is a query. When you drag a field onto the Lens canvas, you are configuring a bucket or metric aggregation that runs against your Elasticsearch index. Understanding this connection is what separates engineers who build accurate dashboards from those who accidentally display meaningless numbers — like averaging percentiles, or using a Terms aggregation when a Date histogram is needed.
+Система визуализации Kibana построена непосредственно на агрегациях Elasticsearch. Каждая панель дашборда — это запрос. Перетаскивая поле на холст Lens, вы настраиваете bucket- или metric-агрегацию, которая выполняется над индексом Elasticsearch. Понимание этой связи помогает строить точные дашборды и избегать бессмысленных показателей, например усреднения перцентилей или использования Terms-агрегации там, где нужна Date histogram.
 
 In the broader DevOps toolchain, Kibana dashboards sit at the observability presentation layer alongside Grafana (which typically fronts Prometheus/Loki). Kibana's strength is log-centric workflows: correlating structured log fields, drilling from a high-level error rate chart into the raw log events that caused it, and filtering by arbitrary field combinations without writing queries manually. It complements but does not replace a metrics-focused tool like Grafana. Many teams run both.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### Lens Editor
 
@@ -381,7 +381,7 @@ jobs:
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: HTTP Error Rate Dashboard Panel
 
@@ -661,7 +661,7 @@ curl -s "http://kibana-prod:5601/api/saved_objects/_find?type=dashboard&search=S
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Build an Error Rate Panel with Correct Aggregation
 
@@ -723,7 +723,7 @@ You have been handed a dashboard that "takes forever to load." It has 15 panels 
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 6. Count panels in a Kibana dashboard stub. Run: `printf 'panels:\n- title: Requests\n- title: Errors\n- title: Latency\n- title: CPU\n' | grep -c '^- title:'`
 

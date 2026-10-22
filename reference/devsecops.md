@@ -1,34 +1,34 @@
-# DevSecOps — Quick Reference
+# DevSecOps — краткая справка
 
-## Secret Scanning
-
-| Tool / Command | Description |
-|----------------|-------------|
-| `gitleaks detect --source .` | Scan repo for secrets |
-| `gitleaks detect --no-git -s dir/` | Scan directory (non-git) |
-| `git log --all --full-history -- '*.env'` | Find deleted env files |
-| `trufflehog git file://./repo` | Scan git history for secrets |
-| `detect-secrets scan > .secrets.baseline` | Create secrets baseline |
-| `detect-secrets audit .secrets.baseline` | Review baseline |
-
-## SAST (Static Analysis)
+## Поиск секретов
 
 | Tool / Command | Description |
 |----------------|-------------|
-| `bandit -r src/` | Python SAST scan |
-| `bandit -r src/ -f json -o report.json` | JSON output |
-| `semgrep --config auto src/` | Multi-language SAST |
-| `semgrep --config p/owasp-top-ten src/` | OWASP ruleset |
-| `eslint --ext .js,.jsx src/` | JS/JSX linting |
-| `hadolint Dockerfile` | Dockerfile linting |
-| `checkov -d .` | IaC security scan (TF, K8s, Docker) |
-| `tfsec .` | Terraform-specific security scan |
+| `gitleaks detect --source .` | Просканировать репозиторий на секреты |
+| `gitleaks detect --no-git -s dir/` | Просканировать каталог вне Git-репозитория |
+| `git log --all --full-history -- '*.env'` | Найти удалённые env-файлы в истории |
+| `trufflehog git file://./repo` | Просканировать историю Git на секреты |
+| `detect-secrets scan > .secrets.baseline` | Создать базовый список секретов |
+| `detect-secrets audit .secrets.baseline` | Проверить базовый список |
 
-## Container Security
+## SAST (статический анализ)
+
+| Tool / Command | Description |
+|----------------|-------------|
+| `bandit -r src/` | SAST-анализ Python-кода |
+| `bandit -r src/ -f json -o report.json` | Вывод в JSON |
+| `semgrep --config auto src/` | SAST-анализ нескольких языков |
+| `semgrep --config p/owasp-top-ten src/` | Набор правил OWASP |
+| `eslint --ext .js,.jsx src/` | Линтинг JS/JSX |
+| `hadolint Dockerfile` | Линтинг Dockerfile |
+| `checkov -d .` | Проверка безопасности IaC (Terraform, Kubernetes, Docker) |
+| `tfsec .` | Проверка безопасности Terraform |
+
+## Безопасность контейнеров
 
 | Command | Description |
 |---------|-------------|
-| `docker scout cves image:tag` | CVE scan with Docker Scout |
+| `docker scout cves image:tag` | Поиск CVE с помощью Docker Scout |
 | `trivy image image:tag` | Scan image for CVEs |
 | `trivy fs .` | Scan filesystem / repo |
 | `grype image:tag` | Another image CVE scanner |

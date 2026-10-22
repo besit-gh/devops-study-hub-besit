@@ -1,5 +1,5 @@
 ---
-title: Discover & Search
+title: Discover и поиск в Kibana
 module: kibana
 duration_min: 15
 difficulty: beginner
@@ -7,15 +7,15 @@ tags: [kibana, discover, kql, search, elk]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Kibana Discover is the primary interface for ad-hoc log investigation and exploratory data analysis against Elasticsearch. In a DevOps context it is where you go first during an incident — searching logs, inspecting individual events, and understanding data shape before building dashboards or writing alerts. The difference between an engineer who can triage in 5 minutes and one who takes 30 often comes down to fluency with KQL and comfort navigating Discover's layout. Every second spent hunting for the right query syntax during a production outage is a second your users are experiencing downtime.
+Kibana Discover — основной интерфейс для разового исследования логов и анализа данных Elasticsearch. Во время инцидента сюда часто обращаются в первую очередь: ищут записи, изучают отдельные события и понимают структуру данных до создания дашбордов или оповещений. Разница между диагностикой за пять минут и за полчаса часто зависит от владения KQL и умения пользоваться интерфейсом Discover. Каждая секунда, потраченная на поиск синтаксиса запроса во время production-сбоя, продлевает простой для пользователей.
 
-Discover is built around two core design principles. First, it is intentionally query-first: every action — filtering by field value, zooming the histogram, clicking a top value in the sidebar — translates into an explicit, visible query or filter chip that you can audit, copy, and share. Nothing is hidden in opaque UI state. Second, it is non-destructive and read-only against your data: all filtering is client-side scoped, so you cannot accidentally modify documents while investigating. This makes Discover safe to use under pressure.
+Discover построен на двух принципах. Во-первых, он ориентирован на запросы: каждое действие — фильтрация по значению поля, масштабирование гистограммы или выбор популярного значения на боковой панели — превращается в явный запрос или видимый фильтр, который можно проверить, скопировать и передать коллегам. Непрозрачного скрытого состояния нет. Во-вторых, интерфейс не изменяет данные: фильтры ограничивают отображение результатов, поэтому при исследовании нельзя случайно изменить документы. Это делает Discover безопасным инструментом во время инцидента.
 
 In the broader ELK/Elastic Stack toolchain, Discover sits between data ingestion (Beats, Logstash, Elastic Agent) and visualization (Dashboards, Lens). You use Discover to validate that logs are being ingested correctly, to explore a new data source before you know what fields exist, and to investigate specific incidents by drilling down from a dashboard alert into the raw events. Saved searches from Discover can be embedded directly in dashboards, so the work you do in Discover is reusable and composable with the rest of the stack.
 
-## Concepts
+## Основные понятия
 
 ### The Discover Interface
 
@@ -284,7 +284,7 @@ Click the **›** arrow on any document row to expand the full event.
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Structured Incident Triage — Payment Service 5xx Spike
 
@@ -470,7 +470,7 @@ level: ERROR
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: KQL Query Construction Under Constraints
 
@@ -557,7 +557,7 @@ This exercise builds the habit of looking before and after an error, not just at
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 6. Extract the index pattern from a Discover config stub. Run: `printf 'index: logs-*\ntime_field: @timestamp\n' | awk '/^index:/{print $2}'`
 

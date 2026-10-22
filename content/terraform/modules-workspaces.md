@@ -1,5 +1,5 @@
 ---
-title: Modules & Workspaces
+title: Модули и рабочие пространства Terraform
 module: terraform
 duration_min: 20
 difficulty: intermediate
@@ -7,12 +7,12 @@ tags: [terraform, modules, workspaces, reusability, for-each, count]
 exercises: 4
 ---
 
-## Overview
-Modules package reusable Terraform configurations — instead of copy-pasting the same VPC or EKS cluster definition across teams, you write it once as a module and call it with different inputs. Workspaces let a single configuration manage multiple state files for different environments. Together they're the foundation of scalable Terraform architecture.
+## Обзор
+Модули упаковывают повторно используемые конфигурации Terraform. Вместо копирования одного и того же описания VPC или кластера EKS между командами вы создаёте модуль один раз и вызываете его с разными входными параметрами. Workspaces позволяют одной конфигурации управлять несколькими файлами состояния для разных окружений. Вместе они составляют основу масштабируемой архитектуры Terraform.
 
-## Concepts
+## Основные понятия
 
-### Modules
+### Модули
 A module is any directory containing `.tf` files. You've been using the root module; child modules are referenced from it:
 
 ```hcl
@@ -47,7 +47,7 @@ module "db" {
 
 After adding or changing a module source, run `terraform init` again.
 
-### Module Structure
+### Структура модуля
 ```
 modules/
   vpc/
@@ -138,7 +138,7 @@ resource "aws_subnet" "private" {
 
 Prefer `for_each` over `count` for anything named — removing an element from a `count` list shifts indices and causes Terraform to destroy and recreate everything after the gap.
 
-### Workspaces
+### Рабочие пространства
 Workspaces let you use the same configuration with separate state files — one per workspace:
 
 ```bash
@@ -192,7 +192,7 @@ module "eks" {
 
 Always pin module versions in production — `source = "...//module"` without a `version` is a footgun.
 
-## Examples
+## Примеры
 
 ### Multi-Environment with Modules
 ```hcl
@@ -250,7 +250,7 @@ module "eks" {
 }
 ```
 
-## Exercises
+## Практические задания
 
 1. Extract a repeated resource block (e.g. multiple S3 buckets or EC2 instances) into a module. Call it from the root module with different inputs for each instance. Verify `terraform plan` shows the same result as before.
 2. Use `for_each` to create three S3 buckets from a `toset` of names. Then remove one name from the set — observe how `terraform plan` handles removal vs what would happen with `count`.
@@ -260,7 +260,7 @@ module "eks" {
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Count `module` blocks in an HCL config stub. Run: `printf 'module "vpc" {\n  source = "./modules/vpc"\n}\nmodule "eks" {\n  source = "./modules/eks"\n}\n' | grep -c '^module'`
 

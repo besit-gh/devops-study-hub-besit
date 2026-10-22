@@ -1,5 +1,5 @@
 ---
-title: Roles
+title: Роли Ansible
 module: ansible
 duration_min: 20
 difficulty: intermediate
@@ -7,12 +7,12 @@ tags: [ansible, roles, galaxy, reusability, defaults, handlers, templates]
 exercises: 4
 ---
 
-## Overview
-Roles are the packaging mechanism for Ansible. Instead of one giant playbook, you split configuration into self-contained, reusable roles — a `nginx` role, a `postgres` role, a `common` role. Each role has a standard directory structure that Ansible understands automatically. Roles can be shared via Ansible Galaxy or kept private in your organization.
+## Обзор
+Роли — механизм упаковки и повторного использования конфигурации Ansible. Вместо одного огромного playbook конфигурацию разбивают на независимые роли: `nginx`, `postgres`, `common` и другие. У каждой роли стандартная структура каталогов, которую Ansible распознаёт автоматически. Роли можно публиковать через Ansible Galaxy или хранить приватно внутри организации.
 
-## Concepts
+## Основные понятия
 
-### Role Directory Structure
+### Структура каталогов роли
 ```
 roles/
   nginx/
@@ -254,7 +254,7 @@ molecule destroy                 # clean up
         timeout: 5
 ```
 
-## Examples
+## Примеры
 
 ### Common Role (Applied to All Hosts)
 ```yaml
@@ -283,7 +283,7 @@ molecule destroy                 # clean up
   loop: "{{ common_sysctl_params | dict2items }}"
 ```
 
-## Exercises
+## Практические задания
 
 1. Create a `nginx` role using `ansible-galaxy role init nginx`. Implement tasks to install nginx, deploy a template-based config, and handle service management. Apply it in a playbook.
 2. Use the `defaults/main.yml` to define configurable variables (`nginx_port`, `nginx_worker_processes`). Override them from the playbook for one group of hosts and use defaults for another.
@@ -293,7 +293,7 @@ molecule destroy                 # clean up
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 5. Count standard role subdirectories. Run: `printf 'tasks\nhandlers\ndefaults\nvars\nfiles\ntemplates\nmeta\n' | wc -l`
 

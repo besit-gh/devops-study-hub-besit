@@ -1,5 +1,5 @@
 ---
-title: HTTP & HTTPS
+title: HTTP и HTTPS
 module: networking
 duration_min: 15
 difficulty: beginner
@@ -7,19 +7,19 @@ tags: [networking, http, https, tls, ssl, headers, status-codes, curl]
 exercises: 4
 ---
 
-## Overview
+## Обзор
 
-HTTP (HyperText Transfer Protocol) is the application-layer protocol that underpins nearly every interaction between services in a modern infrastructure. As a DevOps engineer, you encounter HTTP constantly: in health checks, load balancer configs, reverse proxy rules, CI/CD pipeline webhook calls, container readiness probes, and API integrations. A surface-level understanding gets you through simple setups; a deep understanding lets you diagnose why a deployment broke at 2 AM when a 502 starts cascading across your cluster.
+HTTP (HyperText Transfer Protocol) — протокол прикладного уровня, на котором основано большинство взаимодействий между сервисами современной инфраструктуры. DevOps-инженер сталкивается с HTTP в health checks, конфигурациях балансировщиков и reverse proxy, webhook-вызовах CI/CD, readiness probes контейнеров и интеграциях API. Базовых знаний хватает для простых настроек, но глубокое понимание позволяет диагностировать ночные инциденты, когда ошибка 502 распространяется по кластеру.
 
-HTTP's design is intentionally simple: a stateless request-response protocol where the client sends a structured message and the server replies with a structured response. That statelessness is both a strength and a source of bugs — each request must carry all the context the server needs (credentials, content type, session state), which means misconfigured headers are a surprisingly common root cause of production incidents. HTTPS layers TLS on top of HTTP to add encryption, authentication, and integrity — and since most modern services enforce HTTPS, understanding TLS certificate mechanics is a practical requirement, not an academic one.
+HTTP намеренно устроен просто: это stateless-протокол «запрос — ответ», в котором клиент отправляет структурированное сообщение, а сервер возвращает ответ. Отсутствие состояния упрощает масштабирование, но создаёт и источник ошибок: каждый запрос должен содержать необходимый контекст — учётные данные, тип содержимого и состояние сессии. Поэтому неправильно настроенные заголовки часто становятся причиной production-инцидентов. HTTPS добавляет поверх HTTP TLS для шифрования, аутентификации и проверки целостности. Поскольку современные сервисы обычно требуют HTTPS, понимание сертификатов TLS — практическая необходимость.
 
-In the DevOps toolchain, HTTP knowledge connects directly to your work with nginx/Caddy/HAProxy configuration, Kubernetes Ingress and Service definitions, Prometheus scraping, container health checks, API gateway rules, and observability pipelines. The tools in this lesson — primarily `curl` and `openssl` — are available on virtually every server and are the first tools you should reach for when something between two services stops working.
+В DevOps знание HTTP напрямую связано с настройкой nginx, Caddy и HAProxy, ресурсами Ingress и Service в Kubernetes, сбором метрик Prometheus, health checks контейнеров, правилами API gateway и конвейерами наблюдаемости. Основные инструменты урока — `curl` и `openssl` — доступны почти на каждом сервере и должны быть среди первых средств диагностики, когда нарушается взаимодействие двух сервисов.
 
 ---
 
-## Concepts
+## Основные понятия
 
-### HTTP Request Structure
+### Структура HTTP-запроса
 
 Every HTTP request is plain text with a defined structure. Understanding this structure means you can construct requests manually, read raw logs, and spot malformed requests without needing a GUI.
 
@@ -494,7 +494,7 @@ spec:
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Debugging a 502 Bad Gateway in a Proxy Setup
 
@@ -716,7 +716,7 @@ docker stop api-test && docker rm api-test
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Decode and Analyze a Full HTTP Transaction
 
@@ -767,7 +767,7 @@ Test it against `https://httpbin.org/status/200` (should succeed immediately) an
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 1. Decode a Basic Auth credential — the value you would send in the `Authorization` header.
 

@@ -1,5 +1,5 @@
 ---
-title: On-Call Schedules & Escalations
+title: Графики дежурств и эскалации Opsgenie
 module: opsgenie
 duration_min: 20
 difficulty: beginner
@@ -7,17 +7,17 @@ tags: [opsgenie, on-call, schedules, escalation, incident-management]
 exercises: 3
 ---
 
-## Overview
+## Обзор
 
-Opsgenie is Atlassian's alert management and on-call scheduling platform. At its core it answers two questions: who is on call right now, and what happens if they don't respond? In DevOps teams, Opsgenie sits between monitoring tools (Prometheus, Datadog, Grafana) and the humans who fix things. Without a system like Opsgenie, alerts land in a shared inbox or Slack channel where diffusion of responsibility is almost guaranteed — everyone assumes someone else saw it. Opsgenie solves this by making accountability explicit: a specific person is on call, they have a deadline to respond, and if they miss it, a defined chain of escalation fires automatically.
+Opsgenie — платформа Atlassian для управления оповещениями и расписаниями дежурств. Она отвечает на два вопроса: кто дежурит сейчас и что произойдёт, если человек не ответит. В DevOps Opsgenie связывает инструменты мониторинга (Prometheus, Datadog, Grafana) с людьми, которые устраняют сбои. Без такой системы оповещения попадают в общий почтовый ящик или канал Slack, где ответственность размывается и каждый предполагает, что сообщение увидел кто-то другой. Opsgenie делает ответственность явной: назначает конкретного дежурного, устанавливает срок ответа и автоматически запускает заданную цепочку эскалации, если ответа нет.
 
-The design philosophy is separation of concerns: *schedules* answer "who is available when," *escalation policies* answer "what happens when no one responds," and *routing rules* answer "which team owns this alert." These three concepts compose to handle arbitrarily complex organizational structures. A small startup might have one schedule and one escalation policy. A large enterprise might have hundreds, but each is built from the same primitives. This modularity means you can change one piece — swap a rotation type, add an escalation step — without rebuilding everything else.
+Архитектура основана на разделении ответственности: *расписания* отвечают на вопрос «кто и когда доступен», *политики эскалации* — «что делать, если никто не ответил», а *правила маршрутизации* — «какая команда отвечает за оповещение». Эти три механизма можно комбинировать для организаций любой сложности. A small startup might have one schedule and one escalation policy. A large enterprise might have hundreds, but each is built from the same primitives. This modularity means you can change one piece — swap a rotation type, add an escalation step — without rebuilding everything else.
 
 In the broader DevOps toolchain, Opsgenie is the last mile between detection and response. Prometheus fires an alert; Alertmanager routes it to Opsgenie; Opsgenie determines the on-call engineer and notifies them. It integrates with incident management (Jira, PagerDuty-style incident timelines), communication tools (Slack, Microsoft Teams), and runbook systems so that when an engineer is paged, they receive context alongside the notification. Mastering schedules and escalation policies is the foundation — everything else in Opsgenie assumes you have these configured correctly.
 
 ---
 
-## Concepts
+## Основные понятия
 
 ### Teams and Users
 
@@ -248,7 +248,7 @@ curl -X GET \
 
 ---
 
-### Escalation Policies
+### Политики эскалации
 
 An **escalation policy** defines what happens when an alert is not acknowledged within a time window. It is the "if nobody responds, then…" chain. Every alert routed to a team triggers that team's escalation policy.
 
@@ -375,7 +375,7 @@ For most production services, use "one at a time." Simultaneous mode is occasion
 
 ---
 
-## Examples
+## Примеры
 
 ### Example 1: Follow-the-Sun Schedule via API
 
@@ -704,7 +704,7 @@ alias: '{{ .GroupLabels.alertname }}-{{ .GroupLabels.cluster }}'
 
 ---
 
-## Exercises
+## Практические задания
 
 ### Exercise 1: Audit a Schedule for Coverage Gaps
 
@@ -788,7 +788,7 @@ Your team has an SLA that states: *"P1 alerts must reach an engineer within 5 mi
 
 ---
 
-### Quick Checks
+### Быстрая проверка
 
 7. Calculate hours in a 7-day on-call rotation. Run: `python3 -c "print(7 * 24)"`
 

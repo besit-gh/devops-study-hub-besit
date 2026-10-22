@@ -1,67 +1,67 @@
-# Kubernetes — Quick Reference
+# Kubernetes — краткая справка
 
-## kubectl Basics
-
-| Command | Description |
-|---------|-------------|
-| `kubectl get pods` | List pods in current namespace |
-| `kubectl get pods -A` | List pods in all namespaces |
-| `kubectl get all` | List all resources |
-| `kubectl get pods -o wide` | Include node and IP |
-| `kubectl get pod NAME -o yaml` | Output full YAML spec |
-| `kubectl describe pod NAME` | Detailed pod info + events |
-| `kubectl apply -f file.yaml` | Apply manifest |
-| `kubectl delete -f file.yaml` | Delete from manifest |
-| `kubectl delete pod NAME` | Delete specific pod |
-
-## Namespaces & Context
+## Основы kubectl
 
 | Command | Description |
 |---------|-------------|
-| `kubectl config get-contexts` | List contexts |
-| `kubectl config use-context ctx` | Switch context |
-| `kubectl config current-context` | Show active context |
-| `kubectl get ns` | List namespaces |
-| `kubectl create ns name` | Create namespace |
-| `kubectl -n ns get pods` | Pods in specific namespace |
-| `kubectl config set-context --current --namespace=ns` | Set default namespace |
+| `kubectl get pods` | Список pod в текущем пространстве имён |
+| `kubectl get pods -A` | Список pod во всех пространствах имён |
+| `kubectl get all` | Список всех ресурсов |
+| `kubectl get pods -o wide` | Показать узел и IP-адрес |
+| `kubectl get pod NAME -o yaml` | Вывести полную спецификацию YAML |
+| `kubectl describe pod NAME` | Подробные сведения о pod и событиях |
+| `kubectl apply -f file.yaml` | Применить манифест |
+| `kubectl delete -f file.yaml` | Удалить ресурсы, описанные в манифесте |
+| `kubectl delete pod NAME` | Удалить конкретный pod |
 
-## Workloads
-
-| Command | Description |
-|---------|-------------|
-| `kubectl create deployment name --image=img` | Create deployment |
-| `kubectl scale deploy name --replicas=3` | Scale deployment |
-| `kubectl rollout status deploy name` | Watch rollout |
-| `kubectl rollout undo deploy name` | Rollback deployment |
-| `kubectl rollout history deploy name` | Rollout history |
-| `kubectl set image deploy name app=img:tag` | Update image |
-| `kubectl get deploy` | List deployments |
-| `kubectl get rs` | List ReplicaSets |
-
-## Services & Networking
+## Пространства имён и контекст
 
 | Command | Description |
 |---------|-------------|
-| `kubectl get svc` | List services |
-| `kubectl expose deploy name --port=80 --type=ClusterIP` | Expose deployment |
-| `kubectl port-forward pod NAME 8080:80` | Forward local port to pod |
-| `kubectl port-forward svc NAME 8080:80` | Forward to service |
-| `kubectl get ingress` | List ingresses |
-| `kubectl get endpoints` | Show service endpoints |
+| `kubectl config get-contexts` | Список контекстов |
+| `kubectl config use-context ctx` | Переключить контекст |
+| `kubectl config current-context` | Показать активный контекст |
+| `kubectl get ns` | Список пространств имён |
+| `kubectl create ns name` | Создать пространство имён |
+| `kubectl -n ns get pods` | Pod в указанном пространстве имён |
+| `kubectl config set-context --current --namespace=ns` | Задать пространство имён по умолчанию |
 
-## Debugging
+## Рабочие нагрузки
 
 | Command | Description |
 |---------|-------------|
-| `kubectl logs pod NAME` | Pod logs |
-| `kubectl logs -f pod NAME` | Follow logs |
-| `kubectl logs pod NAME -c container` | Specific container |
-| `kubectl logs pod NAME --previous` | Previous (crashed) container |
-| `kubectl exec -it pod NAME -- bash` | Shell into pod |
-| `kubectl exec -it pod NAME -c ctr -- sh` | Specific container |
-| `kubectl top pods` | CPU/memory usage |
-| `kubectl top nodes` | Node resource usage |
+| `kubectl create deployment name --image=img` | Создать Deployment |
+| `kubectl scale deploy name --replicas=3` | Изменить число реплик Deployment |
+| `kubectl rollout status deploy name` | Следить за обновлением Deployment |
+| `kubectl rollout undo deploy name` | Откатить Deployment |
+| `kubectl rollout history deploy name` | История обновлений |
+| `kubectl set image deploy name app=img:tag` | Обновить образ |
+| `kubectl get deploy` | Список Deployment |
+| `kubectl get rs` | Список ReplicaSet |
+
+## Сервисы и сеть
+
+| Command | Description |
+|---------|-------------|
+| `kubectl get svc` | Список Service |
+| `kubectl expose deploy name --port=80 --type=ClusterIP` | Опубликовать Deployment как Service |
+| `kubectl port-forward pod NAME 8080:80` | Переадресовать локальный порт в pod |
+| `kubectl port-forward svc NAME 8080:80` | Переадресовать порт в Service |
+| `kubectl get ingress` | Список Ingress |
+| `kubectl get endpoints` | Показать конечные точки Service |
+
+## Отладка
+
+| Command | Description |
+|---------|-------------|
+| `kubectl logs pod NAME` | Журналы pod |
+| `kubectl logs -f pod NAME` | Следить за журналом |
+| `kubectl logs pod NAME -c container` | Указать конкретный контейнер |
+| `kubectl logs pod NAME --previous` | Предыдущий контейнер (завершившийся с ошибкой) |
+| `kubectl exec -it pod NAME -- bash` | Открыть shell в pod |
+| `kubectl exec -it pod NAME -c ctr -- sh` | Указать конкретный контейнер |
+| `kubectl top pods` | Использование CPU и памяти |
+| `kubectl top nodes` | Использование ресурсов узла |
 | `kubectl events --sort-by=.lastTimestamp` | Sorted events |
 
 ## Config & Secrets
