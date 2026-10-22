@@ -13,22 +13,22 @@ exercises: 4
 
 JSON входит в стандартную библиотеку Python и не требует установки. Для YAML нужен пакет `PyYAML` (`pip install pyyaml`), доступный во многих базовых образах DevOps-контейнеров и CI-runner. Оба формата естественно преобразуются в стандартные структуры Python — словари, списки, строки, числа, булевы значения и `None`. После разбора документа вы работаете с обычными объектами Python без отдельного API или языка запросов.
 
-In the broader DevOps toolchain these skills connect upward to infrastructure automation (Ansible, Terraform), container orchestration (Kubernetes), and GitOps pipelines (Argo CD, Flux), all of which expect you to programmatically produce or consume structured config. They also connect downward to basic shell scripting — `jq` and `yq` handle simple one-liners, but Python is what you reach for when logic, validation, or multi-file merging is involved.
+В DevOps эти навыки связаны с автоматизацией инфраструктуры (Ansible, Terraform), оркестрацией контейнеров (Kubernetes) и GitOps-конвейерами (Argo CD, Flux), где требуется программно создавать и обрабатывать структурированные конфигурации. Они также дополняют shell-скрипты: `jq` и `yq` подходят для простых однострочных команд, а Python удобнее, когда нужны логика, валидация или объединение нескольких файлов.
 
 ---
 
 ## Основные понятия
 
-### JSON — Built-In Parsing and Serialization
+### JSON — встроенный разбор и сериализация
 
-Python's `json` module handles the full read/write cycle. The two most important distinctions to internalize: `json.loads` / `json.load` (note the `s` = string) and `json.dumps` / `json.dump` (note the `s` = string).
+Модуль `json` в Python поддерживает полный цикл чтения и записи. Важно различать `json.loads` и `json.load` (буква `s` означает string) и `json.dumps` и `json.dump` (та же буква `s` означает строку).
 
-| Function | Input | Output | Use when |
+| Функция | Входные данные | Результат | Когда использовать |
 |---|---|---|---|
-| `json.loads(s)` | JSON string | Python object | Parsing API responses, subprocess output |
-| `json.load(f)` | File object | Python object | Reading a `.json` file from disk |
-| `json.dumps(obj)` | Python object | JSON string | Sending to an API, printing to stdout |
-| `json.dump(obj, f)` | Python object + file | Writes to file | Persisting a `.json` file to disk |
+| `json.loads(s)` | Строка JSON | Объект Python | Разбор ответов API и вывода subprocess |
+| `json.load(f)` | Файловый объект | Объект Python | Чтение файла `.json` с диска |
+| `json.dumps(obj)` | Объект Python | Строка JSON | Отправка в API и вывод в stdout |
+| `json.dump(obj, f)` | Объект Python и файл | Записывает в файл | Сохранение файла `.json` на диске |
 
 ```python
 import json
@@ -52,25 +52,25 @@ with open("output.json", "w") as f:
     json.dump(config, f, indent=2, sort_keys=True)
 ```
 
-**Type mapping — memorize this table:**
+**Соответствие типов — запомните таблицу:**
 
-| JSON type | Python type |
+| Тип JSON | Тип Python |
 |---|---|
 | `object` `{}` | `dict` |
 | `array` `[]` | `list` |
 | `string` `""` | `str` |
-| `number` (integer) | `int` |
-| `number` (float) | `float` |
+| `number` (целое число) | `int` |
+| `number` (дробное число) | `float` |
 | `true` / `false` | `True` / `False` |
 | `null` | `None` |
 
-**`sort_keys=True` gotcha:** it flattens key order globally. If your downstream system expects a specific key order (rare, but some legacy tools do), don't sort. Otherwise always sort — it makes version-controlled JSON files produce clean `git diff` output.
+**Особенность `sort_keys=True`:** ключи сортируются во всём документе. Если downstream-система требует определённого порядка ключей (редкий случай, но такое бывает в устаревших инструментах), не сортируйте. В остальных случаях сортировка делает diff JSON-файлов в Git чище.
 
 ---
 
-### JSON Edge Cases and Error Handling
+### Пограничные случаи JSON и обработка ошибок
 
-Real-world JSON from APIs, Terraform, and CI tools is often messier than examples suggest.
+Реальные JSON-данные из API, Terraform и CI-инструментов часто сложнее учебных примеров.
 
 ```python
 import json
@@ -120,15 +120,15 @@ print(data["ratio"] + 0.2)   # 0.30000000000000004 — standard IEEE 754 float b
 # Use round() or the decimal module when precision matters (e.g., cost calculations)
 ```
 
-**Trailing commas:** JSON does not allow trailing commas (`{"a": 1,}` is a syntax error). YAML does not have this problem. If you're consuming hand-edited JSON configs and hitting parse errors, trailing commas are a common culprit. Consider the `json5` or `commentjson` packages for human-edited files, or enforce a linter in CI (`jsonlint`, `jq .` as a validity check).
+**Завершающие запятые:** JSON не допускает запятую после последнего элемента (`{"a": 1,}` — синтаксическая ошибка). В YAML такой проблемы нет. Если ошибки разбора возникают в JSON-конфигурациях, редактируемых вручную, проверьте завершающие запятые. Для таких файлов можно использовать `json5` или `commentjson`, либо проверять формат в CI через `jsonlint` или `jq .`.
 
-**Empty string vs. missing key:** `json.loads('{"key": ""}')` gives `{"key": ""}` — the key exists with an empty string value. This is distinct from a missing key. Use `data.get("key")` carefully — it returns `None` for missing keys and `""` for empty strings, both of which are falsy in Python.
+**Пустая строка и отсутствующий ключ:** `json.loads('{"key": ""}')` возвращает `{"key": ""}` — ключ существует, но его значение пустое. Это не то же самое, что отсутствие ключа. Осторожно используйте `data.get("key")`: для отсутствующего ключа вернётся `None`, для пустой строки — `""`; оба значения считаются ложными в Python.
 
 ---
 
-### YAML — PyYAML Fundamentals
+### YAML — основы PyYAML
 
-YAML is a superset of JSON but far more common in infrastructure tooling because it supports comments, multi-line strings, and a cleaner syntax for nested structures.
+YAML является надмножеством JSON, но гораздо чаще используется в инфраструктурных инструментах, поскольку поддерживает комментарии, многострочные строки и более удобный синтаксис вложенных структур.
 
 ```python
 import yaml
@@ -164,27 +164,27 @@ with open("output.yaml", "w", encoding="utf-8") as f:
     yaml.safe_dump(config, f, default_flow_style=False, allow_unicode=True)
 ```
 
-**Always use `yaml.safe_load()`, never `yaml.load()`.**
-`yaml.load()` with the default `Loader` can deserialize arbitrary Python objects — including executing code — from attacker-controlled YAML. This is a real CVE class (CVE-2017-18342 and others). `safe_load` restricts deserialization to basic types only. There is no legitimate use case in DevOps scripting that requires `yaml.load()`.
+**Всегда используйте `yaml.safe_load()`, никогда не используйте `yaml.load()`.**
+`yaml.load()` с загрузчиком по умолчанию может десериализовать произвольные объекты Python, в том числе выполнить код из YAML, контролируемого злоумышленником. Это реальный класс уязвимостей (CVE-2017-18342 и другие). `safe_load` ограничивает десериализацию базовыми типами. Для DevOps-скриптов нет обоснованной причины использовать `yaml.load()`.
 
-**`default_flow_style=False`:** without this flag, `safe_dump` may render short lists and dicts on a single line (`{host: db.example.com, port: 5432}`). Setting it to `False` forces block style throughout, which is what Kubernetes and Helm tooling expect and what humans can read in code review.
+**`default_flow_style=False`:** без этого параметра `safe_dump` может вывести короткие списки и словари в одну строку (`{host: db.example.com, port: 5432}`). Значение `False` принудительно включает блочный стиль, ожидаемый инструментами Kubernetes и Helm и удобный для проверки кода.
 
-**YAML vs JSON for config files:**
+**YAML и JSON для файлов конфигурации:**
 
-| Concern | YAML | JSON |
+| Критерий | YAML | JSON |
 |---|---|---|
-| Comments supported | ✅ Yes | ❌ No |
-| Multi-line strings | ✅ Native (`|`, `>`) | Cumbersome (`\n` escapes) |
-| Standard library | ❌ Requires PyYAML | ✅ Built-in |
-| Strictness | ❌ Type coercion traps | ✅ Explicit types |
-| Tooling (k8s, Helm, Ansible) | ✅ Primary format | Secondary |
-| Machine-generated config | Either | ✅ Preferred (no ambiguity) |
+| Поддержка комментариев | ✅ Да | ❌ Нет |
+| Многострочные строки | ✅ Встроенная поддержка (`|`, `>`) | Неудобно (`\n` в строке) |
+| Стандартная библиотека | ❌ Нужен PyYAML | ✅ Встроен |
+| Строгость типов | ❌ Есть ловушки преобразования типов | ✅ Типы заданы явно |
+| Инструменты (k8s, Helm, Ansible) | ✅ Основной формат | Вторичный |
+| Конфигурация, создаваемая машиной | Оба варианта | ✅ Предпочтительнее (меньше неоднозначности) |
 
 ---
 
-### YAML Type Coercion Traps
+### Ловушки преобразования типов YAML
 
-YAML's automatic type inference is convenient but has sharp edges that have caused production incidents.
+Автоматическое определение типов в YAML удобно, но имеет особенности, которые уже приводили к production-инцидентам.
 
 ```python
 import yaml
@@ -237,13 +237,13 @@ print(helm_values["featureFlags"])
 # {'newCheckout': True, 'region': False, 'fileMode': 420}
 ```
 
-**Norway Problem summary:** in YAML 1.1 (PyYAML's default), `NO`, `Yes`, `On`, `Off`, `True`, `False`, and all case variants are booleans. Country codes, environment names (`ON` for Ontario), and feature flags often collide with this list. **Quote any string value that could be mistaken for a boolean or null.** YAML 1.2 fixes this (only `true`/`false` are booleans), but PyYAML implements 1.1. The `ruamel.yaml` library supports YAML 1.2 if you need strict compliance.
+**Проблема Norway:** в YAML 1.1 (по умолчанию в PyYAML) `NO`, `Yes`, `On`, `Off`, `True`, `False` и варианты регистра интерпретируются как булевы значения. С ними могут совпасть коды стран, имена окружений (например, `ON` для Онтарио) и feature flags. **Заключайте в кавычки любую строку, которую можно принять за boolean или null.** YAML 1.2 исправляет это (булевы значения — только `true` и `false`), но PyYAML использует 1.1. Библиотека `ruamel.yaml` поддерживает YAML 1.2.
 
-**Defensive quoting rules of thumb:**
-- Always quote: `yes`, `no`, `on`, `off`, `true`, `false`, and their case variants
-- Always quote: file permission strings like `"0755"`, `"0644"`
-- Always quote: version strings that look like floats (`"1.10"` vs `1.10` = `1.1`)
-- Always quote: ISO dates if you want strings, not `datetime.date` objects
+**Практические правила безопасного использования кавычек:**
+- Всегда заключайте в кавычки: `yes`, `no`, `on`, `off`, `true`, `false` и варианты регистра
+- Всегда заключайте в кавычки строки прав доступа вроде `"0755"` и `"0644"`
+- Всегда заключайте в кавычки версии, похожие на дробные числа (`"1.10"` и `1.10` — это разные значения; второе станет `1.1`)
+- Всегда заключайте в кавычки даты ISO, если нужна строка, а не объект `datetime.date`
 
 ---
 
