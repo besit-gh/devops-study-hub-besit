@@ -62,13 +62,13 @@ xpack.security.http.ssl.certificate_authorities: /etc/elasticsearch/certs/ca.crt
 ```
 
 `verification_mode` options:
-- `certificate` — verify the certificate is signed by the trusted CA (recommended for inter-node)
-- `full` — also verify the hostname matches the cert SAN (required for HTTP client-facing)
-- `none` — no verification (development only, never production)
+- `certificate` — проверить, что сертификат подписан доверенным центром сертификации (рекомендуется для соединений между узлами).
+- `full` — дополнительно проверить, что имя узла соответствует SAN сертификата (требуется для HTTP-соединений с клиентами).
+- `none` — проверка отключена (только для разработки, никогда не используйте в production).
 
 ### Built-in Users
 
-Elasticsearch ships with several built-in users:
+В Elasticsearch предусмотрено несколько встроенных пользователей:
 
 | Username | Purpose |
 |----------|---------|
@@ -79,7 +79,7 @@ Elasticsearch ships with several built-in users:
 | `apm_system` | APM server |
 | `remote_monitoring_user` | Cross-cluster monitoring |
 
-Set or reset passwords:
+Установите или сбросьте пароли:
 ```bash
 # From the command line
 ./bin/elasticsearch-reset-password -u elastic
