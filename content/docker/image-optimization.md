@@ -13,13 +13,13 @@ exercises: 4
 
 Ключ к оптимизации Docker-образов — понимание модели union filesystem. Каждая инструкция `FROM`, `RUN`, `COPY` и `ADD` создаёт новый слой только для чтения. Во время запуска слои объединяются в представление файловой системы контейнера. Важно: удаление файла в слое N не убирает его из предыдущего слоя N−1, поэтому данные продолжают увеличивать сжатый размер образа. Следовательно, важно не только то, что концептуально остаётся в финальном образе, но и то, какие данные записывались в любом слое во время сборки. Для контроля этого используют многоэтапную сборку, объединение команд `RUN` и `.dockerignore`.
 
-In the broader DevOps toolchain, image optimization sits at the intersection of CI/CD, security, and platform engineering. A well-optimized image is the artifact that travels from `git push` through the pipeline, into a registry, and onto production nodes. Vulnerability scanning, non-root users, and minimal base images are practices that harden that artifact before it ever reaches runtime. Teams that treat image quality as a first-class concern — scanning in CI, enforcing size budgets, pinning digests — reduce the operational risk carried by every deployment.
+В цепочке DevOps оптимизация образов объединяет CI/CD, безопасность и платформенную инженерию. Хорошо оптимизированный образ проходит путь от `git push` через конвейер и реестр до production-узлов. Сканирование уязвимостей, запуск от непривилегированного пользователя и минимальные базовые образы повышают безопасность ещё до запуска. Команды, которые контролируют качество образов — сканируют их в CI, ограничивают размер и фиксируют digest, — снижают операционные риски каждого развёртывания.
 
 ## Основные понятия
 
-### Measure First
+### Сначала измерьте
 
-Before changing anything, establish a baseline. Optimization without measurement is guesswork.
+Перед изменениями зафиксируйте исходные показатели. Оптимизация без измерений — это гадание.
 
 ```bash
 # List all local images sorted by size (largest first)
@@ -41,9 +41,9 @@ docker run --rm -it \
   wagoodman/dive myapp:latest
 ```
 
-**Dive's "wasted space" metric** shows bytes that exist in a lower layer but are hidden (deleted or overwritten) by a higher layer. This is the clearest signal of fixable layer hygiene problems.
+Метрика **«потерянное пространство» в Dive** показывает объём данных нижнего слоя, скрытых (удалённых или перезаписанных) верхним слоем. Это наглядный признак проблем, которые можно исправить, улучшив структуру слоёв.
 
-To track size over time in CI, emit image size as a metric:
+Чтобы отслеживать изменение размера образа в CI, публикуйте его размер как метрику:
 
 ```bash
 # Output image size in bytes — pipe to your metrics system or fail on threshold
@@ -56,7 +56,7 @@ if [ "$SIZE" -gt 524288000 ]; then
 fi
 ```
 
-Pair this with `docker history` to identify which layer is responsible for a size spike after a change lands. Fix the layer before it reaches the main branch, not after.
+Используйте это вместе с `docker history`, чтобы найти слой, из-за которого размер вырос после изменения. Исправляйте проблему до попадания изменения в основную ветку, а не после.
 
 ### Base Image Choice
 
