@@ -165,7 +165,7 @@ IRSA позволяет выдавать Pod точечные разрешени
 3. EKS injects a projected service account token into the pod (via a volume mount at `/var/run/secrets/eks.amazonaws.com/serviceaccount/token`).
 4. The AWS SDK in the pod exchanges that token for temporary STS credentials using `AssumeRoleWithWebIdentity`.
 
-The pod never touches instance metadata credentials. If the pod is compromised, the blast radius is limited to the permissions of that single IAM role.
+Pod не использует учётные данные из метаданных инстанса. Если Pod будет скомпрометирован, радиус поражения ограничится разрешениями одной назначенной роли IAM.
 
 ```bash
 # Step 1: Associate OIDC provider (if not done at cluster creation)
@@ -185,7 +185,7 @@ eksctl create iamserviceaccount \
   --override-existing-serviceaccounts
 ```
 
-The generated trust policy (inspecting the IAM role confirms IRSA is wired correctly):
+Сгенерированная политика доверия. Проверка роли IAM позволяет убедиться, что IRSA настроен правильно:
 ```json
 {
   "Effect": "Allow",
@@ -229,7 +229,7 @@ spec:
           # by the EKS mutating webhook when the SA has the eks.amazonaws.com/role-arn annotation
 ```
 
-**Verify IRSA is working:**
+**Проверьте работу IRSA:**
 ```bash
 # Check the annotation on the service account
 kubectl get sa s3-reader-sa -n production -o yaml | grep role-arn
@@ -239,7 +239,7 @@ kubectl exec -it <pod-name> -n production -- aws sts get-caller-identity
 # Should return the IRSA role ARN, NOT the node's instance profile ARN
 ```
 
-**IRSA gotcha:** The trust policy `Condition` block uses `StringEquals` on the fully qualified service account name (`system:serviceaccount:<namespace>:<name>`). If you rename the service account or move it to a different namespace, the trust relationship breaks and all AWS SDK calls return `AccessDenied` — with no error message that points to the namespace mismatch. Treat the namespace + service account name as immutable parts of your IAM configuration.
+**Важный нюанс IRSA:** блок `Condition` политики доверия использует `StringEquals` для полного имени сервисной учётной записи (`system:serviceaccount:<namespace>:<name>`). Если переименовать учётную запись или переместить её в другое пространство имён, связь доверия нарушится, а все вызовы AWS SDK вернут `AccessDenied`. Сообщение об ошибке при этом может не указывать на несовпадение пространства имён. Считайте пространство имён и имя сервисной учётной записи неизменяемыми частями конфигурации IAM.
 
 **Pod Identity vs. IRSA:** AWS introduced EKS Pod Identity in 2023 as a simpler alternative to IRSA. Pod Identity does not require an OIDC provider and uses an agent DaemonSet instead. IRSA remains the more widely supported option and works across all Kubernetes distributions. Pod Identity is worth evaluating for new clusters but is not yet universally supported by all addons.
 
